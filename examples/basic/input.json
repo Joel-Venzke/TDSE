@@ -1,5 +1,13 @@
 {
   "delta_t": 0.1, 
+  "dimensions": [
+    {"dim_size": 1,
+    "delta_x":   0.05},
+    {"dim_size": 2.05,
+    "delta_x":   0.1}],
+  "restart": 0,
+  "target":  "He",
+  "gobbler": 0.9,
   "pulses": [
     {"pulse_shape":   "sin2",
     "cycles_on":      10,
@@ -14,7 +22,5 @@
     "cycles_off":     10,
     "cep":            0.5,
     "energy":         0.5231e2,
-    "e_max":          0.525e-9}],
-  "restart": 0,
-  "target":  "He"
+    "e_max":          0.525e-9}]
 }

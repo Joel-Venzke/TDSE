@@ -1,3 +1,6 @@
-./configure
+#/bin/bash
+export LDFLAGS="-L/usr/lib -lnetcdf_c++"
+
+./configure 
 make 
 make install

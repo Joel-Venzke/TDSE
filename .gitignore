@@ -36,3 +36,6 @@ config.status
 config.log
 autom4te.cache/requests
 build
+
+#netcdf
+*.nc

@@ -129,8 +129,10 @@ TDSE.o: TDSE.cpp ../config.h \
   /usr/include/sys/_types/_fsfilcnt_t.h /usr/include/_types/_nl_item.h \
   /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1/bitset \
   /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1/__bit_reference \
-  Hamiltonian.h Observables.h Parameters.h Pulse.h Simulation.h \
-  Wavefuction.h
+  Hamiltonian.h Observables.h Parameters.h \
+  /usr/local/include/netcdfcpp.h /usr/local/include/ncvalues.h \
+  /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1/sstream \
+  /usr/local/include/netcdf.h Pulse.h Simulation.h Wavefuction.h
 
 ../config.h:
 
@@ -513,6 +515,14 @@ Hamiltonian.h:
 Observables.h:
 
 Parameters.h:
+
+/usr/local/include/netcdfcpp.h:
+
+/usr/local/include/ncvalues.h:
+
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1/sstream:
+
+/usr/local/include/netcdf.h:
 
 Pulse.h:
 
