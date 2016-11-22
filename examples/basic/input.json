@@ -1,14 +1,20 @@
 {
-  "pi": 3.141,
-  "happy": true,
-  "name": "Niels",
-  "nothing": null,
-  "answer": {
-    "everything": 42
-  },
-  "list": [1, 0, 2],
-  "object": {
-    "currency": "USD",
-    "value": 42.99
-  }
+  "delta_t": 0.1, 
+  "pulses": [
+    {"pulse_shape":   "sin2",
+    "cycles_on":      10,
+    "cycles_plateau": 0,
+    "cycles_off":     10,
+    "cep":            0.0,
+    "energy":         0.5e6,
+    "e_max":          0.525e9},
+    {"pulse_shape": "linear",
+    "cycles_on":      17,
+    "cycles_plateau": 0,
+    "cycles_off":     10,
+    "cep":            0.5,
+    "energy":         0.5231e2,
+    "e_max":          0.525e-9}],
+  "restart": 0,
+  "target":  "He"
 }
