@@ -2,6 +2,9 @@
 This code was developed by Joel Venzke during his PHD. It solves the Time Dependent Schroedinger Equation.
 
 # INSTALL 
+Copy a `build.${SYSTEM}` file that is similar to your system to `build`. Then make the needed changes to paths and run `.\build`. If the `prefix` is in your path, the `TDSE` command will run the code anywhere on your system.
+
+## Manual install
 To install this code run the following commands in the root directory replacing `${INSTALL_DIR}` with the path to where you want the binary installed at.
 
 ```

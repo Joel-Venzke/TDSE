@@ -30,9 +30,9 @@
 TDSE
 
 
-# http://www.gnu.org/software/automake
-
+# build system files
 Makefile
 config.status
 config.log
 autom4te.cache/requests
+build
