@@ -27,6 +27,7 @@
 *.exe
 *.out
 *.app
+TDSE
 
 
 # http://www.gnu.org/software/automake
@@ -68,3 +69,4 @@ Makefile.in
 build-aux/
 .deps/
 config.*
+Makefile
