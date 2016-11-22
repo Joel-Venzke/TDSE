@@ -12,6 +12,8 @@ using json = nlohmann::json;
 * Reads file and returns a string
 */
 std::string file_to_string(std::string file_name) {
+    // TODO: check if file exists
+
     std::ifstream t(file_name);
     std::string str((std::istreambuf_iterator<char>(t)),
                      std::istreambuf_iterator<char>());

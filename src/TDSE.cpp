@@ -1,3 +1,4 @@
+#include "config.h"
 #include <iostream>
 #include "Hamiltonian.h"
 #include "Observables.h"
