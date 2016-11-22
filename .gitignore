@@ -33,3 +33,6 @@ TDSE
 # http://www.gnu.org/software/automake
 
 Makefile
+config.status
+config.log
+autom4te.cache/requests
