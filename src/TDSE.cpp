@@ -10,13 +10,20 @@
 
 
 int main() {
-	// Open NetCDF file
-	NcFile data_file("TDSE.nc", NcFile::Replace);
-    if (!data_file.is_valid()){
-        std::cout << "Couldn't open file!\n";
+	Parameters p("input.json");
+    if (p.get_restart()) {
+        std::cout << "Restart not implemented!\n";
         return 2;
     }
-    Parameters p("input.json", &data_file);
+    else {
+		// Open NetCDF file
+		NcFile data_file("TDSE.nc", NcFile::Replace);
+	    if (!data_file.is_valid()){
+	        std::cout << "Couldn't open file!\n";
+	        return 2;
+	    }
+	    p.write_header(&data_file);
+	}
     Hamiltonian h;
     Observables o;
     Pulse pulse;

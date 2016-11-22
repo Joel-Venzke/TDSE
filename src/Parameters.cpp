@@ -29,7 +29,7 @@ json file_to_json(std::string file_name) {
 }
 
 // Constructor
-Parameters::Parameters(std::string file_name, NcFile * nc_data_file) {
+Parameters::Parameters(std::string file_name) {
     std::cout << "Reading input file: "<< file_name <<"\n";
     std::cout << std::flush;
     // read data from file
@@ -89,7 +89,7 @@ Parameters::Parameters(std::string file_name, NcFile * nc_data_file) {
         // std::cout << e_max[i] << "\n";
     }
 
-    write_header(nc_data_file);
+    // write_header(nc_data_file);
 
     std::cout << "Input file read\n" << std::flush;
 }

@@ -34,7 +34,7 @@ private:
 
 public:
 	// Constructors
-	Parameters(std::string file_name, NcFile * nc_data_file);
+	Parameters(std::string file_name);
 
 	void checkpoint();
 	void write_header(NcFile * nc_data_file);
