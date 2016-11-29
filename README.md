@@ -18,3 +18,8 @@ If changes are make to the anything relating to autoconf tools, you need to run 
 
 #USAGE
 The code can be used by using `TDSE` as a command
+
+
+#NOTES
+HDF5 complex
+http://stackoverflow.com/questions/24937785/best-way-to-save-an-array-of-complex-numbers-with-hdf5-and-c
