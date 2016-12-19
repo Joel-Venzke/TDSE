@@ -1,4 +1,3 @@
-#include <iostream>
 #include "Pulse.h"
 
 Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p) {

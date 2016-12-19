@@ -1,4 +1,3 @@
-#include <iostream>
 #include <fstream>
 #include <streambuf>
 #include <math.h>    // ceil()

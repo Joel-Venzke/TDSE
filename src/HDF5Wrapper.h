@@ -1,5 +1,7 @@
 #pragma once
 #include "Parameters.h"
+#include "H5Cpp.h"
+using namespace H5;
 
 class HDF5Wrapper {
 private:

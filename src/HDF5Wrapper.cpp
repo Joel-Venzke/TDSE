@@ -1,8 +1,4 @@
-#include <iostream>
 #include "HDF5Wrapper.h"
-#include "Parameters.h"
-#include "H5Cpp.h"
-using namespace H5;
 
 void HDF5Wrapper::end_run(std::string str) {
     std::cout << "\n\nERROR: " << str << "\n" << std::flush;

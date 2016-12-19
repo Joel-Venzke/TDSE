@@ -1,7 +1,5 @@
 #pragma once
 #include <iostream>
-#include "H5Cpp.h"
-using namespace H5;
 
 class Parameters {
 private:
