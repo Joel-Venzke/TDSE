@@ -101,7 +101,8 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_TDSE_OBJECTS = TDSE.$(OBJEXT) json.$(OBJEXT) Hamiltonian.$(OBJEXT) \
 	Parameters.$(OBJEXT) Simulation.$(OBJEXT) \
-	Wavefuction.$(OBJEXT) Observables.$(OBJEXT) Pulse.$(OBJEXT)
+	Wavefuction.$(OBJEXT) Observables.$(OBJEXT) Pulse.$(OBJEXT) \
+	HDF5Wrapper.$(OBJEXT)
 TDSE_OBJECTS = $(am_TDSE_OBJECTS)
 TDSE_LDADD = $(LDADD)
 AM_V_P = $(am__v_P_@AM_V@)
@@ -266,7 +267,7 @@ top_srcdir = @top_srcdir@
 # what flags you want to pass to the C compiler & linker
 AM_CXXFLAGS = -Wall -std=c++11 -O2
 AM_LDFLAGS = 
-TDSE_SOURCES = TDSE.cpp Parameters.h json.cpp Hamiltonian.h Observables.h Simulation.h Wavefuction.h Pulse.h Hamiltonian.cpp Parameters.cpp Simulation.cpp Wavefuction.cpp Observables.cpp Pulse.cpp
+TDSE_SOURCES = TDSE.cpp Parameters.h json.cpp Hamiltonian.h Observables.h Simulation.h Wavefuction.h Pulse.h Hamiltonian.cpp Parameters.cpp Simulation.cpp Wavefuction.cpp Observables.cpp Pulse.cpp HDF5Wrapper.h HDF5Wrapper.cpp
 all: all-am
 
 .SUFFIXES:
@@ -353,6 +354,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HDF5Wrapper.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Hamiltonian.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Observables.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Parameters.Po@am__quote@

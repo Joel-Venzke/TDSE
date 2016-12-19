@@ -37,5 +37,9 @@ config.log
 autom4te.cache/requests
 build
 
-#netcdf
-*.nc
+#hdf5
+*.h5
+
+# automake 
+autom4te.cache/
+.deps/

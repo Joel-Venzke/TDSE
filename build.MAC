@@ -1,5 +1,5 @@
 #/bin/bash
-export LDFLAGS="-L/usr/lib -lnetcdf_c++"
+export LDFLAGS="-I/usr/include -I/usr/local/opt/szip/include -L/usr/local/Cellar/hdf5/1.8.17/lib /usr/local/Cellar/hdf5/1.8.17/lib/libhdf5_hl_cpp.a /usr/local/Cellar/hdf5/1.8.17/lib/libhdf5_cpp.a /usr/local/Cellar/hdf5/1.8.17/lib/libhdf5_hl.a /usr/local/Cellar/hdf5/1.8.17/lib/libhdf5.a -L/usr/lib -L/usr/local/opt/szip/lib -lsz -lz -ldl -lm -L/usr/lib -lnetcdf_c++"
 
 ./configure 
 make 

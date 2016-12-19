@@ -17,4 +17,4 @@ make install
 If changes are make to the anything relating to autoconf tools, you need to run `autoreconf -i` before installing 
 
 #USAGE
-The code can be used by using `TDSE` as a command
+The code can be used by using `TDSE` as a command assuming the ${INSTALL_DIR} is in your path

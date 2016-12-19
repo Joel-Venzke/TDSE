@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
-#include <netcdfcpp.h>
+#include "H5Cpp.h"
+using namespace H5;
 
 class Parameters {
 private:
@@ -15,29 +16,30 @@ private:
 	// restart mode 
 	// 0 no restart, 1 restart from file
 	int         restart; 
-	std::string target; // type of target {"He"}
+	std::string target;      // type of target {"He"}
+	int         target_idx;  // index of target
 
 	// pulse data
-	int         num_pulses;      // number of pulses
-	std::string *pulse_shape;    // pulse shape {"sin2","linear"}
-	double      *cycles_on;      // ramp on cycles
-	double      *cycles_plateau; // plateau cycles
-	double      *cycles_off;     // ramp off cycles
-	double      *cep;            // carrier envelope phase
-	double      *energy;         // photon energy
-	double      *e_max;          // max amplitude
-
-	// files
-	NcFile *data_file;
-	NcDim** grid_dims;
-	NcDim*  num_grid_dims;
+	int         num_pulses;       // number of pulses
+	std::string *pulse_shape;     // pulse shape {"sin2","linear"}
+	int         *pulse_shape_idx; // index of pulse shape
+	double      *cycles_on;       // ramp on cycles
+	double      *cycles_plateau;  // plateau cycles
+	double      *cycles_off;      // ramp off cycles
+	double      *cep;             // carrier envelope phase
+	double      *energy;          // photon energy
+	double      *e_max;           // max amplitude
 
 public:
 	// Constructors
 	Parameters(std::string file_name);
+	~Parameters();
 
 	void checkpoint();
-	void write_header(NcFile * nc_data_file);
+	void validate();
+
+	void end_run(std::string str);
+	void end_run(std::string str, int exit_val);
 
 	// getters
 	int          get_num_dims();
@@ -47,8 +49,10 @@ public:
 	double       get_delta_t();
 	int          get_restart();
 	std::string  get_target();
+	int          get_target_idx();
 	int          get_num_pulses();
 	std::string* get_pulse_shape();
+	int*         get_pulse_shape_idx();
 	double*      get_cycles_on();
 	double*      get_cycles_plateau();
 	double*      get_cycles_off();
