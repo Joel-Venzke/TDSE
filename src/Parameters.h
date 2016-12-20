@@ -7,7 +7,6 @@ private:
     int     num_dims;   // number of dimensions
 	double  *dim_size;  // size of nth dimension in a.u.
 	double  *delta_x;   // size of grid step
-	int     *size_of_x; // number of grid points in nth dimension
 	double  delta_t;    // size of time step
 
 	// simulation behavior
@@ -24,6 +23,7 @@ private:
 	double      *cycles_on;       // ramp on cycles
 	double      *cycles_plateau;  // plateau cycles
 	double      *cycles_off;      // ramp off cycles
+	double      *cycles_delay;           // delay in number of cycles
 	double      *cep;             // carrier envelope phase
 	double      *energy;          // photon energy
 	double      *e_max;           // max amplitude
@@ -43,7 +43,6 @@ public:
 	int          get_num_dims();
 	double*      get_dim_size();
 	double*      get_delta_x();
-	int*         get_size_of_x();
 	double       get_delta_t();
 	int          get_restart();
 	std::string  get_target();
@@ -57,4 +56,5 @@ public:
 	double*      get_cep();
 	double*      get_energy();
 	double*      get_e_max();
+	double*      get_cycles_delay();
 };

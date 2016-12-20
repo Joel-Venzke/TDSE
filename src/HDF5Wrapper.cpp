@@ -79,13 +79,12 @@ void HDF5Wrapper::write_header(Parameters & p){
 
     // set up group
     Group param_group( data_file->createGroup( "/Parameters" ));
+    Group pulse_group( data_file->createGroup( "/Pulse" ));
 
     // write out header values
     write_object(num_dims,"/Parameters/num_dims");
     write_object(p.get_dim_size(),num_dims,"/Parameters/dim_size");
     write_object(p.get_delta_x(),num_dims,"/Parameters/delta_x");
-    write_object(p.get_size_of_x(),num_dims,
-        "/Parameters/size_of_x");
     write_object(p.get_delta_t(),"/Parameters/delta_t");
     write_object(p.get_target_idx(),"/Parameters/target_idx");
     write_object(num_pulses,"/Parameters/num_pulses");
@@ -97,6 +96,8 @@ void HDF5Wrapper::write_header(Parameters & p){
     	"/Parameters/cycles_plateau");
     write_object(p.get_cycles_off(), num_pulses,
     	"/Parameters/cycles_off");
+    write_object(p.get_cycles_delay(), num_pulses, 
+    	"/Parameters/cycles_delay");
     write_object(p.get_cep(), num_pulses, "/Parameters/cep");
     write_object(p.get_energy(), num_pulses, "/Parameters/energy");
     write_object(p.get_e_max(), num_pulses, "/Parameters/e_max");

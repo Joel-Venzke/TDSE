@@ -1,6 +1,5 @@
 #include <fstream>
 #include <streambuf>
-#include <math.h>    // ceil()
 #include "json.cpp"
 #include "Parameters.h"
 #include <cstdlib>     // exit
@@ -52,12 +51,10 @@ Parameters::Parameters(std::string file_name) {
     num_dims   = data["dimensions"].size();
     dim_size   = new double[num_dims];
     delta_x    = new double[num_dims];
-    size_of_x  = new int[num_dims];
     for (int i = 0; i < num_dims; ++i)
     {
         dim_size[i]  = data["dimensions"][i]["dim_size"];
         delta_x[i]   = data["dimensions"][i]["delta_x"];
-        size_of_x[i] = ceil(dim_size[i]/delta_x[i])+1;
     }
 
     // get simulation behavior;
@@ -77,6 +74,7 @@ Parameters::Parameters(std::string file_name) {
     cycles_on       = new double[num_pulses];
     cycles_plateau  = new double[num_pulses];
     cycles_off      = new double[num_pulses];
+    cycles_delay    = new double[num_pulses];
     cep             = new double[num_pulses];
     energy          = new double[num_pulses];
     e_max           = new double[num_pulses];
@@ -93,6 +91,7 @@ Parameters::Parameters(std::string file_name) {
         cycles_on[i]      = data["pulses"][i]["cycles_on"];
         cycles_plateau[i] = data["pulses"][i]["cycles_plateau"];
         cycles_off[i]     = data["pulses"][i]["cycles_off"];
+        cycles_delay[i]   = data["pulses"][i]["cycles_delay"];
         cep[i]            = data["pulses"][i]["cep"];
         energy[i]         = data["pulses"][i]["energy"];
         e_max[i]          = data["pulses"][i]["e_max"];
@@ -107,12 +106,12 @@ Parameters::~Parameters(){
     std::cout << "Deleting Parameters\n" << std::flush;
     delete dim_size;
     delete delta_x;
-    delete size_of_x;
     delete[] pulse_shape;
     delete pulse_shape_idx;
     delete cycles_on;
     delete cycles_plateau;
     delete cycles_off;
+    delete cycles_delay;
     delete cep;
     delete energy;
     delete e_max;
@@ -220,11 +219,6 @@ double* Parameters::get_delta_x(){
     return delta_x;
 }
 
-int* Parameters::get_size_of_x(){
-    return size_of_x;
-}
-
-
 int Parameters::get_restart() {
     return restart;
 }
@@ -271,4 +265,8 @@ double* Parameters::get_energy() {
 
 double* Parameters::get_e_max() {
     return e_max;
+}
+
+double* Parameters::get_cycles_delay() {
+    return cycles_delay;
 }

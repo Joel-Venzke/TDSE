@@ -21,8 +21,7 @@ int main() {
     int num_pulses;
     int num_dims;
     double  *dim_size;  
-	double  *delta_x;   
-	int     *size_of_x;
+	double  *delta_x;
     std::string *pulse_shape;
     double      *cycles_on;
     double      *cycles_plateau;
@@ -30,7 +29,6 @@ int main() {
     double      *cep;
     double      *energy;
     double      *e_max;
-    double      **grid;
     std::string str;
 
     std::cout << "\n\ndelta t: " << parameters.get_delta_t() << "\n";
@@ -38,8 +36,6 @@ int main() {
     std::cout << "num dims: " << num_dims << "\n";
     dim_size   = parameters.get_dim_size();
     delta_x    = parameters.get_delta_x();
-    size_of_x  = parameters.get_size_of_x();
-    grid       = new double*[size_of_x[0]];
 
 
     std::cout << "restart: " << parameters.get_restart() << "\n";
