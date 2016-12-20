@@ -127,15 +127,14 @@ void Parameters::validate(){
     for (int i=0; i<num_pulses; i++ ){
         // Check pulse shapes
 
-        if (pulse_shape[i]!="sin2"
-            && pulse_shape[i]!="linear"){
+        if (pulse_shape[i]!="sin2"){
             error_found = true;
             err_str += "\nPulse ";
             err_str += std::to_string(i);
             err_str += " has unsupported pulse shape: \"";
             err_str += pulse_shape[i]+"\"\n";
             err_str += "Current support includes: ";
-            err_str += "\"sin2\" and \"linear\" \n";
+            err_str += "\"sin2\"\n";
         }
 
         // check e_max
