@@ -9,6 +9,7 @@
 #include "HDF5Wrapper.h"
 
 int main() {
+    // initialize all of the classes
 	Parameters parameters("input.json");
     HDF5Wrapper data_file(parameters);
     Pulse pulse(data_file, parameters);
@@ -17,7 +18,7 @@ int main() {
     Simulation s;
     Wavefuction w;
 
-
+    // used for testing, will be deleted at some point
     int num_pulses;
     int num_dims;
     double  *dim_size;  

@@ -29,11 +29,14 @@ json file_to_json(std::string file_name) {
     return j;
 }
 
+
+// prints error message, kills code and returns -1
 void Parameters::end_run(std::string str) {
     std::cout << "\n\nERROR: " << str << "\n" << std::flush;
     exit(-1);
 }
 
+// prints error message, kills code and returns exit_val
 void Parameters::end_run(std::string str, int exit_val) {
     std::cout << "\n\nERROR: " << str << "\n";
     exit(exit_val);
@@ -61,6 +64,8 @@ Parameters::Parameters(std::string file_name) {
     restart    = data["restart"];
     target     = data["target"];
 
+    // index is used throughout code for efficiency 
+    // and ease of writing to hdf5 
     if (target=="He") {
         target_idx = 0;
     }
@@ -83,11 +88,13 @@ Parameters::Parameters(std::string file_name) {
     for (int i = 0; i < num_pulses; ++i)
     {
         pulse_shape[i]    = data["pulses"][i]["pulse_shape"];
+        // index used similar target_idx
         if (pulse_shape[i]=="sin2") {
             pulse_shape_idx[i] = 0;
         } else if (pulse_shape[i]=="linear") {
             pulse_shape_idx[i] = 1;
         }
+
         cycles_on[i]      = data["pulses"][i]["cycles_on"];
         cycles_plateau[i] = data["pulses"][i]["cycles_plateau"];
         cycles_off[i]     = data["pulses"][i]["cycles_off"];
@@ -97,6 +104,8 @@ Parameters::Parameters(std::string file_name) {
         e_max[i]          = data["pulses"][i]["e_max"];
 
     }
+
+    // ensure input is good
     validate();
 
     std::cout << "Reading input complete\n" << std::flush;
@@ -117,16 +126,16 @@ Parameters::~Parameters(){
     delete e_max;
 }
 
+// checks important input parameters for errors
 void Parameters::validate(){
 
     std::cout << "Validating input\n";
     std::string err_str;
-    bool error_found = false;
+    bool error_found = false; // set to true if error is found
 
     // Check pulses
     for (int i=0; i<num_pulses; i++ ){
         // Check pulse shapes
-
         if (pulse_shape[i]!="sin2"){
             error_found = true;
             err_str += "\nPulse ";
@@ -174,6 +183,8 @@ void Parameters::validate(){
             err_str += "cycles_off should be >= 0\n";
         }
         
+        // exclude delay because it is zero anyways
+        // pulses must exist so we don't run supper long time scales
         double p_length = cycles_on[i] + cycles_off[i] +
                           cycles_plateau[i];
         if (p_length<=0) {
@@ -194,6 +205,7 @@ void Parameters::validate(){
         err_str += "\" \nvalid targets are \"He\"";
     }
 
+    // exit here to get all errors in one run
     if (error_found) {
         end_run(err_str);
     } else {

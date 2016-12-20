@@ -3,10 +3,13 @@
 
 Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p) {
 	std::cout << "Creating pulses\n" << std::flush;
+
+	// get number of pulses and dt from Parameters
 	num_pulses       = p.get_num_pulses();
 	delta_t          = p.get_delta_t();
-	max_pulse_length = 0;
+	max_pulse_length = 0; // stores longest pulse
 
+    // allocate arrays
 	pulse_shape_idx = new int[num_pulses];
     cycles_on       = new double[num_pulses];
     cycles_plateau  = new double[num_pulses];
@@ -20,6 +23,7 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p) {
     pulse_value     = new double*[num_pulses];
     pulse_envelope  = new double*[num_pulses];
 
+    // get data from Parameters
     for (int i = 0; i < num_pulses; ++i) {
         pulse_shape_idx[i] = p.get_pulse_shape_idx()[i];
         cycles_on[i]       = p.get_cycles_on()[i];
@@ -31,8 +35,12 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p) {
         cep[i]             = p.get_cep()[i];
         energy[i]          = p.get_energy()[i];
         e_max[i]           = p.get_e_max()[i];
+
+        // calculate length (number of array cells) of each pulse
         pulse_length[i]    = ceil(2.0*pi*cycles_total[i]/
         	                 (energy[i]*delta_t));
+
+        // find the largest
         if (pulse_length[i]>max_pulse_length){
         	max_pulse_length = pulse_length[i];
         }
@@ -65,8 +73,10 @@ Pulse::~Pulse() {
     }
     delete[] pulse_value;
     delete[] pulse_envelope;
+    delete   a_field;
 }
 
+// Build array with time in au
 void Pulse::initialize_time() {
 	time = new double[max_pulse_length];
 	for (int i = 0; i < max_pulse_length; ++i)
@@ -75,64 +85,70 @@ void Pulse::initialize_time() {
 	}
 }
 
-void Pulse::initialize_pulse(int idx){
+// build the nth pulse 
+void Pulse::initialize_pulse(int n){
 	int on_start, plateau_start, off_start, off_end;
-	double period = 2*pi/energy[idx];
+	double period = 2*pi/energy[n];
 	double s1;
 
 	// index that turns pulse on
-	on_start      = ceil(period*cycles_delay[idx]/
+	on_start      = ceil(period*cycles_delay[n]/
 		                 (delta_t));
 
 	// index that holds pulse at max
-	plateau_start = ceil(period*(cycles_on[idx]+cycles_delay[idx])/
+	plateau_start = ceil(period*(cycles_on[n]+cycles_delay[n])/
 		                 (delta_t));
 
 	// index that turns pulse off
 	off_start     = ceil(period*
-		                (cycles_plateau[idx]+cycles_on[idx]+
-		                cycles_delay[idx])/
+		                (cycles_plateau[n]+cycles_on[n]+
+		                cycles_delay[n])/
 		                (delta_t));	
 
 	// index that holds pulse at 0
 	off_end       = ceil(period*
-		                (cycles_off[idx]+cycles_plateau[idx]+
-		      	        cycles_on[idx]+cycles_delay[idx])/
+		                (cycles_off[n]+cycles_plateau[n]+
+		      	        cycles_on[n]+cycles_delay[n])/
 		      	        (delta_t));
 
-	pulse_envelope[idx] = new double[max_pulse_length];
-	pulse_value[idx] = new double[max_pulse_length];
+	pulse_envelope[n] = new double[max_pulse_length];
+	pulse_value[n] = new double[max_pulse_length];
 	for (int i = 0; i < max_pulse_length; ++i)
 	{
 
 		if (i<on_start){ // pulse still off
-			pulse_envelope[idx][i] = 0.0;
+			pulse_envelope[n][i] = 0.0;
 		} else if (i < plateau_start) { // pulse ramping on
-			s1 = sin(energy[idx]*delta_t*(i-on_start)/
-				    (4.0*cycles_on[idx]));
-			pulse_envelope[idx][i] = s1*s1;
+			s1 = sin(energy[n]*delta_t*(i-on_start)/
+				    (4.0*cycles_on[n]));
+			pulse_envelope[n][i] = e_max[n]*s1*s1;
 		} else if (i < off_start) { // pulse at max
-			pulse_envelope[idx][i] = 1.0;
+			pulse_envelope[n][i] = e_max[n];
 		} else if (i < off_end) { // pulse ramping off
-			s1 = sin(energy[idx]*delta_t*(i-off_start)/
-				    (4.0*cycles_off[idx]));
-			pulse_envelope[idx][i] = 1-(s1*s1);
+			s1 = sin(energy[n]*delta_t*(i-off_start)/
+				    (4.0*cycles_off[n]));
+			pulse_envelope[n][i] = e_max[n]*(1-(s1*s1));
 		} else { // pulse is off
-			pulse_envelope[idx][i] = 0.0;
+			pulse_envelope[n][i] = 0.0;
 		}
 
-		pulse_value[idx][i] = e_max[idx]*pulse_envelope[idx][i]*
-		                       sin(energy[idx]*
+		// calculate the actual pulse
+		pulse_value[n][i] = pulse_envelope[n][i]*
+		                       sin(energy[n]*
 		                       	delta_t*(i-on_start)+
-		                      	cep[idx]*2*pi);
+		                      	cep[n]*2*pi);
 	}
 }
 
+// sets up all pulses and calculates the a_field
 void Pulse::initialize_pulse(){
+	// set up the input pulses
 	for (int i = 0; i < num_pulses; ++i) {
 		initialize_pulse(i);
 	}
 
+	// calculate the a_field by summing each pulse
+	// TODO: add support for setting e_field
 	a_field = new double[max_pulse_length];
 	for (int i = 0; i < max_pulse_length; ++i) {
 		a_field[i] = 0;
@@ -142,9 +158,13 @@ void Pulse::initialize_pulse(){
 	}
 }
 
+// write out the state of the pulse
 void Pulse::checkpoint(HDF5Wrapper& data_file) {
+	// write time, a_field, and a_field_envelope to hdf5
 	data_file.write_object(time,max_pulse_length,"/Pulse/time");
 	data_file.write_object(a_field,max_pulse_length,"/Pulse/a_field");
+	
+	// write each pulse both value and envelope
 	for (int i = 0; i < num_pulses; ++i) {
 		data_file.write_object(pulse_envelope[i],max_pulse_length,
 			"/Pulse/Pulse_envelope_"+std::to_string(i));
