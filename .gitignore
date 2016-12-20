@@ -43,3 +43,6 @@ build
 # automake 
 autom4te.cache/
 .deps/
+
+# ipython
+.ipynb_checkpoints/
