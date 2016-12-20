@@ -22,6 +22,8 @@ private:
 	double       *time;
 	double       **pulse_value;    // pulse value
 	double       **pulse_envelope; // envelope function of pulse
+	double       *e_field;         // total e_field
+	double       *a_field;         // total vector potential
 
 	void initialize_pulse(int i);
 	void initialize_pulse();

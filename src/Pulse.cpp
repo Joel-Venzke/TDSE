@@ -26,8 +26,8 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p) {
         cycles_plateau[i]  = p.get_cycles_plateau()[i];
         cycles_off[i]      = p.get_cycles_off()[i];
         cycles_delay[i]    = p.get_cycles_delay()[i];
-        cycles_total[i]    = cycles_delay[i]+cycles_on[i]+cycles_plateau[i]+
-                             cycles_off[i];
+        cycles_total[i]    = cycles_delay[i]+cycles_on[i]+
+                             cycles_plateau[i]+cycles_off[i];
         cep[i]             = p.get_cep()[i];
         energy[i]          = p.get_energy()[i];
         e_max[i]           = p.get_e_max()[i];
@@ -129,14 +129,22 @@ void Pulse::initialize_pulse(int idx){
 }
 
 void Pulse::initialize_pulse(){
-	for (int i = 0; i < num_pulses; ++i)
-	{
+	for (int i = 0; i < num_pulses; ++i) {
 		initialize_pulse(i);
+	}
+
+	a_field = new double[max_pulse_length];
+	for (int i = 0; i < max_pulse_length; ++i) {
+		a_field[i] = 0;
+		for (int j = 0; j < num_pulses; ++j) {
+			a_field[i] += pulse_value[j][i];
+		}
 	}
 }
 
 void Pulse::checkpoint(HDF5Wrapper& data_file) {
 	data_file.write_object(time,max_pulse_length,"/Pulse/time");
+	data_file.write_object(a_field,max_pulse_length,"/Pulse/a_field");
 	for (int i = 0; i < num_pulses; ++i) {
 		data_file.write_object(pulse_envelope[i],max_pulse_length,
 			"/Pulse/Pulse_envelope_"+std::to_string(i));
