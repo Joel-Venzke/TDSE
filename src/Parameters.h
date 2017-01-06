@@ -23,7 +23,7 @@ private:
 	double      *cycles_on;       // ramp on cycles
 	double      *cycles_plateau;  // plateau cycles
 	double      *cycles_off;      // ramp off cycles
-	double      *cycles_delay;           // delay in number of cycles
+	double      *cycles_delay;    // delay in number of cycles
 	double      *cep;             // carrier envelope phase
 	double      *energy;          // photon energy
 	double      *e_max;           // max amplitude

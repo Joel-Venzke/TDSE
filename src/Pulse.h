@@ -18,21 +18,32 @@ private:
 	double       *cep;             // carrier envelope phase
 	double       *energy;          // photon energy
 	double       *e_max;           // max amplitude
-	int          *pulse_length;    // length of each pulse
-	double       *time;
+	double       *time;            // stores the time at each point
 	double       **pulse_value;    // pulse value
 	double       **pulse_envelope; // envelope function of pulse
-	// double       *e_field;         // total e_field
 	double       *a_field;         // total vector potential
+	// true if the individual pulses and envelopes are allocated
+	bool         pulse_alloc = false;
 
+	// private to avoid unneeded allocation calls and to protect the 
+    // developer form accessing garbage arrays
 	void initialize_pulse(int i);
 	void initialize_pulse();
 	void initialize_time();
+	void deallocate_pulses();
+	void initialize_a_field();
 public:
 	// Constructor
 	Pulse(HDF5Wrapper& data_file, Parameters& p);
 
+	// Destructor
 	~Pulse();
 
+	// write out data
 	void checkpoint(HDF5Wrapper& data_file);
+
+	// accessors methods
+	double* get_a_field();
+	double* get_time();
+	int     get_max_pulse_length();
 };

@@ -46,3 +46,10 @@ autom4te.cache/
 
 # ipython
 .ipynb_checkpoints/
+
+#latex
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.synctex.gz

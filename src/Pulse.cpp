@@ -2,6 +2,8 @@
 #include <math.h>    // ceil()
 
 Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p) {
+	int pulse_length = 0;
+
 	std::cout << "Creating pulses\n" << std::flush;
 
 	// get number of pulses and dt from Parameters
@@ -19,9 +21,6 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p) {
     cep             = new double[num_pulses];
     energy          = new double[num_pulses];
     e_max           = new double[num_pulses];
-    pulse_length    = new int[num_pulses];
-    pulse_value     = new double*[num_pulses];
-    pulse_envelope  = new double*[num_pulses];
 
     // get data from Parameters
     for (int i = 0; i < num_pulses; ++i) {
@@ -37,19 +36,23 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p) {
         e_max[i]           = p.get_e_max()[i];
 
         // calculate length (number of array cells) of each pulse
-        pulse_length[i]    = ceil(2.0*pi*cycles_total[i]/
+        pulse_length       = ceil(2.0*pi*cycles_total[i]/
         	                 (energy[i]*delta_t));
 
         // find the largest
-        if (pulse_length[i]>max_pulse_length){
-        	max_pulse_length = pulse_length[i];
+        if (pulse_length>max_pulse_length){
+        	max_pulse_length = pulse_length;
         }
     }
 
     initialize_time();
     initialize_pulse();
+    initialize_a_field();
 
     checkpoint(data_file);
+
+    deallocate_pulses();
+
 	std::cout << "Pulses created" << std::flush;
 }
 
@@ -64,15 +67,16 @@ Pulse::~Pulse() {
     delete cep;
     delete energy;
     delete e_max;
-    delete pulse_length;
     delete time;
-    for (int i = 0; i < num_pulses; ++i)
-    {
-    	delete pulse_value[i];
-    	delete pulse_envelope[i];
-    }
-    delete[] pulse_value;
-    delete[] pulse_envelope;
+    if (pulse_alloc) {
+    	for (int i = 0; i < num_pulses; ++i)
+	    {
+	    	delete pulse_value[i];
+	    	delete pulse_envelope[i];
+	    }
+	    delete[] pulse_value;
+	    delete[] pulse_envelope;
+    } 
     delete   a_field;
 }
 
@@ -110,9 +114,10 @@ void Pulse::initialize_pulse(int n){
 		                (cycles_off[n]+cycles_plateau[n]+
 		      	        cycles_on[n]+cycles_delay[n])/
 		      	        (delta_t));
-
-	pulse_envelope[n] = new double[max_pulse_length];
-	pulse_value[n] = new double[max_pulse_length];
+	if (! pulse_alloc) {
+		pulse_envelope[n] = new double[max_pulse_length];
+		pulse_value[n] = new double[max_pulse_length];
+	}
 	for (int i = 0; i < max_pulse_length; ++i)
 	{
 
@@ -143,12 +148,22 @@ void Pulse::initialize_pulse(int n){
 // sets up all pulses and calculates the a_field
 void Pulse::initialize_pulse(){
 	// set up the input pulses
+	if (! pulse_alloc) {
+	    pulse_value     = new double*[num_pulses];
+	    pulse_envelope  = new double*[num_pulses];
+	}
 	for (int i = 0; i < num_pulses; ++i) {
 		initialize_pulse(i);
 	}
+	pulse_alloc = true;
+}
 
+void Pulse::initialize_a_field() {
 	// calculate the a_field by summing each pulse
 	// TODO: add support for setting e_field
+	if (! pulse_alloc) {
+		initialize_pulse();
+	}
 	a_field = new double[max_pulse_length];
 	for (int i = 0; i < max_pulse_length; ++i) {
 		a_field[i] = 0;
@@ -164,11 +179,38 @@ void Pulse::checkpoint(HDF5Wrapper& data_file) {
 	data_file.write_object(time,max_pulse_length,"/Pulse/time");
 	data_file.write_object(a_field,max_pulse_length,"/Pulse/a_field");
 	
-	// write each pulse both value and envelope
-	for (int i = 0; i < num_pulses; ++i) {
-		data_file.write_object(pulse_envelope[i],max_pulse_length,
-			"/Pulse/Pulse_envelope_"+std::to_string(i));
-		data_file.write_object(pulse_value[i],max_pulse_length,
-			"/Pulse/Pulse_value_"+std::to_string(i));
+	if (pulse_alloc) {
+		// write each pulse both value and envelope
+		for (int i = 0; i < num_pulses; ++i) {
+			data_file.write_object(pulse_envelope[i],max_pulse_length,
+				"/Pulse/Pulse_envelope_"+std::to_string(i));
+			data_file.write_object(pulse_value[i],max_pulse_length,
+				"/Pulse/Pulse_value_"+std::to_string(i));
+		}
 	}
+}
+
+void Pulse::deallocate_pulses() {
+	if (pulse_alloc) {
+		for (int i = 0; i < num_pulses; ++i)
+	    {
+	    	delete pulse_value[i];
+	    	delete pulse_envelope[i];
+	    }
+	    delete[] pulse_value;
+	    delete[] pulse_envelope;
+	    pulse_alloc = false;
+	}
+}
+
+double* Pulse::get_a_field() {
+	return a_field;
+}
+
+double* Pulse::get_time(){
+	return time;
+}
+
+int Pulse::get_max_pulse_length(){
+	return max_pulse_length;
 }

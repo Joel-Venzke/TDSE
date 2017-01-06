@@ -1,0 +1,192 @@
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+
+\title{TDSE Code - Developers Notes}
+\author{J. Venzke}
+
+\begin{document}
+\maketitle
+\section{Introduction} % (fold)
+\label{sec:introduction}
+The TDSE code discussed here was developed by Joel Venzke while working on his Ph.D. in the Ultrafast Theory Group in JILA. It solves the Time Dependent Schrodinger Equation (TDSE) for various targets in a laser field with two active electrons.
+% section introduction (end)
+
+\section{Build System} % (fold)
+\label{sec:build_system}
+Currently using autoconfig, but that may change. See ``build.\$\{SYSTEM\}'' files for building examples on various systems. 
+% section build_system (end)
+
+\section{Classes} % (fold)
+\label{sec:classes}
+
+The classes used in this code are written so they can be tested independently. Therefore, all classes that depend on other classes require those classes to be passed into the constructor. The developer is responsible to not delete these classes until other dependent classes are deleted.
+
+\subsection{Parameters} % (fold)
+\label{sub:parameters}
+This class holds the input file information and will be used by all other classes. It depends on a json parser and reads inputs in json format. For more information about input parameter definitions and how they are used, see Section~\ref{sec:input}. This class is mainly used as a data structure. That being said, it does provided tools to validate various input parameters to limit user error.
+
+% subsection parameters (end)
+
+\subsection{HDF5Wappers} % (fold)
+\label{sub:hdf5wappers}
+IO for this code is done using HDF5 files. HDF5 files provide the ability to utilize parallel file systems, generate self describing data files, and write compressed data. With these advantages, it becomes slightly more difficult to write data. To alleviate this issues, this class provides tools for writing to HDF5 files in a straight forward way.
+
+Writing multidimensional arrays is difficult in HDF5. To avoid the added headache, one denominational arrays with the access pattern of
+\begin{equation}
+	array[x+y*nx] = array[x][y]
+\end{equation}
+and 
+\begin{equation}
+	array[x+y*nx+z*nx*ny] = array[x][y][z]
+\end{equation}
+and so on.
+% subsection hdf5wappers (end)
+
+\subsection{Pulse} % (fold)
+\label{sub:pulse}
+Pulse handles creating and storing various parts of the pulse. Much of the functionality is private rather than public to prevent accessing data that is not allocated. Since storing each individual pulse is only useful until it is printed to a file, it is deallocated inside the constructor. The result is a much more efficient use of memory, and protection from accessing garbage arrays. See Section~\ref{sec:input} on how to define pulses.
+% subsection pulse (end)
+
+% section classes (end)
+
+\section{Targets} % (fold)
+\label{sec:targets}
+These are the various targets that this code supports. Each one will only be supported for certain solvers, so please double check which ones are implemented. Validation will eventually be added to the Parameters class
+\subsection{He} % (fold)
+\label{sub:he}
+A two active electron target of Helium. Currently being developed using finite differences.
+% subsection he (end)
+% section targets (end)
+
+\section{Input} % (fold)
+\label{sec:input}
+
+All input values are in atomic units. The input file name should be ``input.json''
+
+\subsection{Parameters} % (fold)
+\label{sub:parameters_input}
+The following is the base set of parameters. Those with sub parameters will have additional sub sections. An example input file can be found in Section~\ref{sub:example_file}.
+\begin{itemize}
+	\item delta\_t
+	\begin{itemize}
+		\item The size of the time step in atomic units.
+	\end{itemize}
+	\item dimensions
+	\begin{itemize}
+		\item A list containing information about each dimension see Section~\ref{sub:dimensions} for more details.
+	\end{itemize}
+	\item restart
+	\begin{itemize}
+		\item When set to 1, it will restart the simulation from the last checkpoint in the hdf5 file. It also checks to see if the input files match the original one. Set to 0 if you want a new simulation.
+	\end{itemize}
+	\item target
+	\begin{itemize}
+		\item Tells the code what target the laser will be incident on. See Sections~\ref{sec:targets} for added information and the list of supported targets.
+	\end{itemize}
+	\item gobbler
+	\begin{itemize}
+		\item The percent of the grid that is ``gobbled'' by the absorbing potential so the wavefunction does not reflect off the edge of the box.
+	\end{itemize}
+	\item pulses
+	\begin{itemize}
+		\item A list of pulses used as a super position to create the laser field. See Section~\ref{sub:pulses} for more information.
+	\end{itemize}
+\end{itemize}
+% subsection parameters (end)
+
+\subsection{Dimensions} % (fold)
+\label{sub:dimensions}
+Each dimension requires the following two input parameters.
+\begin{itemize}
+	\item dim\_size
+	\begin{itemize}
+		\item The length of that dimension in atomic units.
+	\end{itemize}
+	\item delta\_x
+	\begin{itemize}
+		\item The step sizes in that dimension in atomic units.
+	\end{itemize}
+\end{itemize}
+% subsection dimensions (end)
+
+\subsection{Pulses} % (fold)
+\label{sub:pulses}
+Each pulse requires the following input parameters.
+\begin{itemize}
+	\item pulse\_shape
+	\begin{itemize}
+		\item The shape of the pulse envelope. Currently supports $sin^2$ envelopes. 
+	\end{itemize}
+    \item cycles\_on
+    \begin{itemize}
+    	\item The number of cycles the pulse uses to turn on.
+    \end{itemize}
+    \item cycles\_plateau
+    \begin{itemize}
+    	\item The number of cycles the pulse is at max amplitude. Usually 0.0
+    \end{itemize}
+    \item cycles\_off
+    \begin{itemize}
+    	\item The number of cycles the pulse uses to turn off.
+    \end{itemize}
+    \item cycles\_delay
+    \begin{itemize}
+    	\item The number of cycles before the pulse starts to turn on. 
+    \end{itemize}
+    \item cep
+    \begin{itemize}
+    	\item The carrying phase envelope of the pulse. It is defined at the time the pulse starts to turn on. 
+    \end{itemize}
+    \item energy
+    \begin{itemize}
+    	\item The fundamental angular frequency of the pulse. Corresponds to the energy of the photons in atomic units.
+    \end{itemize}
+    \item e\_max
+    \begin{itemize}
+    	\item The maximum amplitude of the pulse in atomic units.
+    \end{itemize}
+\end{itemize}
+% subsection pulses (end)
+
+\subsection{Example File} % (fold)
+\label{sub:example_file}
+Input files are in json format. Here is an example input file:
+\begin{verbatim}
+{
+  "delta_t": 0.2, 
+  "dimensions": [
+    {"dim_size": 1.0,
+    "delta_x":   0.01},
+    {"dim_size": 2.05,
+    "delta_x":   0.5}],
+  "restart": 0,
+  "target":  "He",
+  "gobbler": 0.9,
+  "pulses": [
+    {"pulse_shape":   "sin2",
+      "cycles_on":      3.0,
+      "cycles_plateau": 1.0,
+      "cycles_off":     3.0,
+      "cycles_delay":   0.0,
+      "cep":            0.0,
+      "energy":         5.338e-3,
+      "e_max":          1.0},
+    {"pulse_shape":   "sin2",
+      "cycles_on":      3.0,
+      "cycles_plateau": 0.0,
+      "cycles_off":     3.0,
+      "cycles_delay":   1.0,
+      "cep":            0.0,
+      "energy":         5.338e-3,
+      "e_max":          1.0}]
+}
+\end{verbatim}
+% subsection example_file (end)
+
+% section input (end)
+
+\section{Testing} % (fold)
+\label{sec:testing}
+The plan is to use Travis CI, but no current work has been done to this extent.
+% section testing (end)
+\end{document}
