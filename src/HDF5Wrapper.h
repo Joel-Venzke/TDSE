@@ -1,5 +1,7 @@
 #pragma once
 #include "Parameters.h"
+#include "H5Cpp.h"
+using namespace H5;
 
 class HDF5Wrapper {
 private:
@@ -12,7 +14,7 @@ public:
 	// destructor
 	~HDF5Wrapper();
 
-	// write 1D variables
+	// write single entry and 1D variables
 	void write_object(int data, H5std_string var_path);
 	void write_object(double data, H5std_string var_path);
 	void write_object(int *data, int size, H5std_string var_path);
@@ -21,6 +23,8 @@ public:
 
 	// write for parameters
 	void write_header(Parameters& p);
+
+	// reads restart and validates file
 	void read_restart(Parameters& p);
 	void read_restart(Parameters& p, std::string file_name);
 

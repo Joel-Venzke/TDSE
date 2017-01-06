@@ -1,7 +1,5 @@
-#include <iostream>
 #include <fstream>
 #include <streambuf>
-#include <math.h>    // ceil()
 #include "json.cpp"
 #include "Parameters.h"
 #include <cstdlib>     // exit
@@ -31,11 +29,14 @@ json file_to_json(std::string file_name) {
     return j;
 }
 
+
+// prints error message, kills code and returns -1
 void Parameters::end_run(std::string str) {
     std::cout << "\n\nERROR: " << str << "\n" << std::flush;
     exit(-1);
 }
 
+// prints error message, kills code and returns exit_val
 void Parameters::end_run(std::string str, int exit_val) {
     std::cout << "\n\nERROR: " << str << "\n";
     exit(exit_val);
@@ -53,18 +54,18 @@ Parameters::Parameters(std::string file_name) {
     num_dims   = data["dimensions"].size();
     dim_size   = new double[num_dims];
     delta_x    = new double[num_dims];
-    size_of_x  = new int[num_dims];
     for (int i = 0; i < num_dims; ++i)
     {
         dim_size[i]  = data["dimensions"][i]["dim_size"];
         delta_x[i]   = data["dimensions"][i]["delta_x"];
-        size_of_x[i] = ceil(dim_size[i]/delta_x[i])+1;
     }
 
     // get simulation behavior;
     restart    = data["restart"];
     target     = data["target"];
 
+    // index is used throughout code for efficiency 
+    // and ease of writing to hdf5 
     if (target=="He") {
         target_idx = 0;
     }
@@ -78,6 +79,7 @@ Parameters::Parameters(std::string file_name) {
     cycles_on       = new double[num_pulses];
     cycles_plateau  = new double[num_pulses];
     cycles_off      = new double[num_pulses];
+    cycles_delay    = new double[num_pulses];
     cep             = new double[num_pulses];
     energy          = new double[num_pulses];
     e_max           = new double[num_pulses];
@@ -86,19 +88,24 @@ Parameters::Parameters(std::string file_name) {
     for (int i = 0; i < num_pulses; ++i)
     {
         pulse_shape[i]    = data["pulses"][i]["pulse_shape"];
+        // index used similar target_idx
         if (pulse_shape[i]=="sin2") {
             pulse_shape_idx[i] = 0;
         } else if (pulse_shape[i]=="linear") {
             pulse_shape_idx[i] = 1;
         }
+
         cycles_on[i]      = data["pulses"][i]["cycles_on"];
         cycles_plateau[i] = data["pulses"][i]["cycles_plateau"];
         cycles_off[i]     = data["pulses"][i]["cycles_off"];
+        cycles_delay[i]   = data["pulses"][i]["cycles_delay"];
         cep[i]            = data["pulses"][i]["cep"];
         energy[i]         = data["pulses"][i]["energy"];
         e_max[i]          = data["pulses"][i]["e_max"];
 
     }
+
+    // ensure input is good
     validate();
 
     std::cout << "Reading input complete\n" << std::flush;
@@ -108,36 +115,35 @@ Parameters::~Parameters(){
     std::cout << "Deleting Parameters\n" << std::flush;
     delete dim_size;
     delete delta_x;
-    delete size_of_x;
     delete[] pulse_shape;
     delete pulse_shape_idx;
     delete cycles_on;
     delete cycles_plateau;
     delete cycles_off;
+    delete cycles_delay;
     delete cep;
     delete energy;
     delete e_max;
 }
 
+// checks important input parameters for errors
 void Parameters::validate(){
 
     std::cout << "Validating input\n";
     std::string err_str;
-    bool error_found = false;
+    bool error_found = false; // set to true if error is found
 
     // Check pulses
     for (int i=0; i<num_pulses; i++ ){
         // Check pulse shapes
-
-        if (pulse_shape[i]!="sin2"
-            && pulse_shape[i]!="linear"){
+        if (pulse_shape[i]!="sin2"){
             error_found = true;
             err_str += "\nPulse ";
             err_str += std::to_string(i);
             err_str += " has unsupported pulse shape: \"";
             err_str += pulse_shape[i]+"\"\n";
             err_str += "Current support includes: ";
-            err_str += "\"sin2\" and \"linear\" \n";
+            err_str += "\"sin2\"\n";
         }
 
         // check e_max
@@ -177,6 +183,8 @@ void Parameters::validate(){
             err_str += "cycles_off should be >= 0\n";
         }
         
+        // exclude delay because it is zero anyways
+        // pulses must exist so we don't run supper long time scales
         double p_length = cycles_on[i] + cycles_off[i] +
                           cycles_plateau[i];
         if (p_length<=0) {
@@ -197,6 +205,7 @@ void Parameters::validate(){
         err_str += "\" \nvalid targets are \"He\"";
     }
 
+    // exit here to get all errors in one run
     if (error_found) {
         end_run(err_str);
     } else {
@@ -220,11 +229,6 @@ double* Parameters::get_dim_size(){
 double* Parameters::get_delta_x(){
     return delta_x;
 }
-
-int* Parameters::get_size_of_x(){
-    return size_of_x;
-}
-
 
 int Parameters::get_restart() {
     return restart;
@@ -272,4 +276,8 @@ double* Parameters::get_energy() {
 
 double* Parameters::get_e_max() {
     return e_max;
+}
+
+double* Parameters::get_cycles_delay() {
+    return cycles_delay;
 }
