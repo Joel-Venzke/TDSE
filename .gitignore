@@ -27,3 +27,29 @@
 *.exe
 *.out
 *.app
+TDSE
+
+
+# build system files
+Makefile
+config.status
+config.log
+autom4te.cache/requests
+build
+
+#hdf5
+*.h5
+
+# automake 
+autom4te.cache/
+.deps/
+
+# ipython
+.ipynb_checkpoints/
+
+#latex
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.synctex.gz
