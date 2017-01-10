@@ -13,7 +13,7 @@ int main() {
     Parameters parameters("input.json");
     HDF5Wrapper data_file(parameters);
     Pulse pulse(data_file, parameters);
-    Wavefunction w(parameters);
+    Wavefunction w(data_file,parameters);
     Hamiltonian h;
     Observables o;
     Simulation s;

@@ -1,14 +1,21 @@
 #pragma once
 #include <iostream>
 #include "Parameters.h"
+#include <complex>
+#include "HDF5Wrapper.h"
+
+#define dcomp std::complex<double>
 
 class Wavefunction {
 private:
-	int test;
+    double** x_value;
+    dcomp* test; 
 public:
-	// Constructor
-	Wavefunction(Parameters& p);
+    // Constructor
+    Wavefunction(HDF5Wrapper& data_file, Parameters& p);
 
-        // destructor
-	~Wavefunction();
+    // destructor
+    ~Wavefunction();
+
+    void checkpoint(HDF5Wrapper& data_file);
 };
