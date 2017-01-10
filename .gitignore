@@ -43,6 +43,7 @@ build
 # automake 
 autom4te.cache/
 .deps/
+Makefile.in
 
 # ipython
 .ipynb_checkpoints/
@@ -53,3 +54,6 @@ autom4te.cache/
 *.fls
 *.log
 *.synctex.gz
+
+# other
+.nfs*
