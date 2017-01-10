@@ -1,0 +1,8 @@
+#/bin/bash
+module unload intel
+module load gcc
+module load hdf5
+module list 
+
+./configure CXX=h5c++ CC=h5cc
+make 
