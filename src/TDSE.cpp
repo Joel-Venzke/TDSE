@@ -5,24 +5,24 @@
 #include "Parameters.h"
 #include "Pulse.h"
 #include "Simulation.h"
-#include "Wavefuction.h"
+#include "Wavefunction.h"
 #include "HDF5Wrapper.h"
 
 int main() {
     // initialize all of the classes
-	Parameters parameters("input.json");
+    Parameters parameters("input.json");
     HDF5Wrapper data_file(parameters);
     Pulse pulse(data_file, parameters);
+    Wavefunction w(parameters);
     Hamiltonian h;
     Observables o;
     Simulation s;
-    Wavefuction w;
 
     // used for testing, will be deleted at some point
     int num_pulses;
     int num_dims;
-    double  *dim_size;  
-	double  *delta_x;
+    double* dim_size;
+    double* delta_x;
     std::string *pulse_shape;
     double      *cycles_on;
     double      *cycles_plateau;
