@@ -3,8 +3,8 @@
 
 class Hamiltonian {
 private:
-	int test;
+    int test;
 public:
-	// Constructor
-	Hamiltonian();
+    // Constructor
+    Hamiltonian();
 };

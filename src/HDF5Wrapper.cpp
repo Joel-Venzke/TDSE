@@ -149,15 +149,15 @@ void HDF5Wrapper::write_header(Parameters & p){
     write_object(p.get_target_idx(),"/Parameters/target_idx");
     write_object(num_pulses,"/Parameters/num_pulses");
     write_object(p.get_pulse_shape_idx(), num_pulses,
-    	"/Parameters/pulse_shape_idx");
+        "/Parameters/pulse_shape_idx");
     write_object(p.get_cycles_on(), num_pulses,
-    	"/Parameters/cycles_on");
+        "/Parameters/cycles_on");
     write_object(p.get_cycles_plateau(), num_pulses,
-    	"/Parameters/cycles_plateau");
+        "/Parameters/cycles_plateau");
     write_object(p.get_cycles_off(), num_pulses,
-    	"/Parameters/cycles_off");
+        "/Parameters/cycles_off");
     write_object(p.get_cycles_delay(), num_pulses, 
-    	"/Parameters/cycles_delay");
+        "/Parameters/cycles_delay");
     write_object(p.get_cep(), num_pulses, "/Parameters/cep");
     write_object(p.get_energy(), num_pulses, "/Parameters/energy");
     write_object(p.get_e_max(), num_pulses, "/Parameters/e_max");
@@ -189,7 +189,7 @@ void HDF5Wrapper::read_restart(Parameters & p, std::string file_name){
 // constructor 
 // file_name needs ending ".h5"
 HDF5Wrapper::HDF5Wrapper(std::string file_name, Parameters & p) {
-	if (p.get_restart() == 1) {
+    if (p.get_restart() == 1) {
         read_restart(p,file_name);
     } else {
         data_file = new H5File( file_name, H5F_ACC_TRUNC);
@@ -200,7 +200,7 @@ HDF5Wrapper::HDF5Wrapper(std::string file_name, Parameters & p) {
 // constructor 
 // file_name needs ending ".h5"
 HDF5Wrapper::HDF5Wrapper( Parameters & p) {
-	if (p.get_restart() == 1) {
+    if (p.get_restart() == 1) {
         read_restart(p);
     } else {
         data_file = new H5File( "TDSE.h5", H5F_ACC_TRUNC);
@@ -213,6 +213,6 @@ HDF5Wrapper::HDF5Wrapper( Parameters & p) {
 
 // destructor
 HDF5Wrapper::~HDF5Wrapper(){
-	std::cout << "Deleting HDF5Wrapper\n";
-	delete data_file;
+    std::cout << "Deleting HDF5Wrapper\n";
+    delete data_file;
 }

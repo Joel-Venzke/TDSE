@@ -2,6 +2,6 @@
 #include "Simulation.h"
 
 Simulation::Simulation() {
-	test = 1;
-	std::cout << "Simulation\n";
+    test = 1;
+    std::cout << "Simulation\n";
 }

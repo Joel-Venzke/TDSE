@@ -2,6 +2,6 @@
 #include "Hamiltonian.h"
 
 Hamiltonian::Hamiltonian() {
-	test = 1;
-	std::cout << "Hamiltonian\n";
+    test = 1;
+    std::cout << "Hamiltonian\n";
 }

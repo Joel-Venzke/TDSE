@@ -33,7 +33,7 @@ int main() {
     std::string str;
 
     std::cout << "\n\ndelta t: " << parameters.get_delta_t() << "\n";
-	num_dims   = parameters.get_num_dims();
+    num_dims   = parameters.get_num_dims();
     std::cout << "num dims: " << num_dims << "\n";
     dim_size   = parameters.get_dim_size();
     delta_x    = parameters.get_delta_x();

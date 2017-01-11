@@ -3,8 +3,8 @@
 
 class Simulation {
 private:
-	int test;
+    int test;
 public:
-	// Constructor
-	Simulation();
+    // Constructor
+    Simulation();
 };

@@ -3,8 +3,8 @@
 
 class Observables {
 private:
-	int test;
+    int test;
 public:
-	// Constructor
-	Observables();
+    // Constructor
+    Observables();
 };
