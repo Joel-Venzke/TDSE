@@ -47,6 +47,16 @@ and so on.
 Pulse handles creating and storing various parts of the pulse. Much of the functionality is private rather than public to prevent accessing data that is not allocated. Since storing each individual pulse is only useful until it is printed to a file, it is deallocated inside the constructor. The result is a much more efficient use of memory, and protection from accessing garbage arrays. See Section~\ref{sec:input} on how to define pulses.
 % subsection pulse (end)
 
+\subsection{Hamiltonian} % (fold)
+\label{sub:hamiltonian}
+\begin{equation}
+	\hat H = \frac{\hat{p_1}^2}{2} + \frac{\hat{p_2}^2}{2} - \frac{\vec{A} \cdot (\hat{p_1}+\hat{p_2})}{c} - \frac{Z}{x_1} - \frac{Z}{x_2} + v_{ee}
+\end{equation}
+\begin{equation}
+	v_{ee} = 
+\end{equation}
+% subsection hamiltonian (end)
+
 % section classes (end)
 
 \section{Targets} % (fold)

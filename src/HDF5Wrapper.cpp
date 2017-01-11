@@ -148,7 +148,7 @@ void HDF5Wrapper::read_restart(Parameters & p) {
 }
 
 // TODO: more of this restart stuff
-void HDF5Wrapper::read_restart(Parameters & p, std::string file_name) {
+void HDF5Wrapper::read_restart(Parameters & p, std::string file_name){
     std::string err_str;
     // Check if restart can use current file
     if (p.get_restart() == 1 ) {
