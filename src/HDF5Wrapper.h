@@ -1,11 +1,16 @@
 #pragma once
 #include "Parameters.h"
 #include "H5Cpp.h"
+#include <complex>
+
+#define dcomp std::complex<double>
+
 using namespace H5;
 
 class HDF5Wrapper {
 private:
-	H5File * data_file;
+    H5File * data_file;
+    CompType * complex_data_type;
 public:
 	// Constructor
 	HDF5Wrapper(Parameters& p);
@@ -19,6 +24,7 @@ public:
 	void write_object(double data, H5std_string var_path);
 	void write_object(int *data, int size, H5std_string var_path);
 	void write_object(double *data, int size, H5std_string var_path);
+	void write_object(dcomp *data, int size, H5std_string var_path);
 
 
 	// write for parameters

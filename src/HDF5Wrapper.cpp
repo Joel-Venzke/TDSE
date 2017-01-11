@@ -1,4 +1,7 @@
 #include "HDF5Wrapper.h"
+#include <complex>
+
+#define dcomp std::complex<double>
 
 // end run after printing error string with exit value -1
 void HDF5Wrapper::end_run(std::string str) {
@@ -102,15 +105,41 @@ void HDF5Wrapper::write_object(
     data_set.write(data, PredType::NATIVE_DOUBLE);
 }
 
+// Writes 1D complex double array to HDF5
+// takes 1D complex double array, array size, and var_path as inputs
+void HDF5Wrapper::write_object(
+    dcomp *data, 
+    int size,
+    H5std_string var_path) {
+
+    // size of array
+    hsize_t h5_size[1];
+    h5_size[0] = size;
+
+    // make DataSpace for array
+    DataSpace h5_space(1,h5_size);
+
+    // build the header for the data entry 
+    DataSet data_set = data_file->createDataSet(
+                            var_path, 
+                            complex_data_type[0], h5_space);
+
+    // write data to file
+    data_set.write(data, complex_data_type[0]);
+}
+
+
+
 // writes out header for Parameters and builds the various 
 // groups that will be used by other classes
 void HDF5Wrapper::write_header(Parameters & p){
-	int num_dims = p.get_num_dims();
-	int num_pulses = p.get_num_pulses();
+    int num_dims = p.get_num_dims();
+    int num_pulses = p.get_num_pulses();
 
     // set up group
     Group param_group( data_file->createGroup( "/Parameters" ));
     Group pulse_group( data_file->createGroup( "/Pulse" ));
+    Group wavefunction_group( data_file->createGroup( "/Wavefunction" ));
 
     // write out header values
     write_object(num_dims,"/Parameters/num_dims");
@@ -177,6 +206,9 @@ HDF5Wrapper::HDF5Wrapper( Parameters & p) {
         data_file = new H5File( "TDSE.h5", H5F_ACC_TRUNC);
         write_header(p);
     }
+    complex_data_type = new CompType(sizeof(dcomp(1.0,1.0)));
+    complex_data_type->insertMember( "r", 0, PredType::NATIVE_DOUBLE);
+    complex_data_type->insertMember( "i", sizeof(double), PredType::NATIVE_DOUBLE);
 }
 
 // destructor
