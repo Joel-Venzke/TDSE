@@ -47,15 +47,14 @@ Parameters::Parameters(std::string file_name) {
     std::cout << "Reading input file: "<< file_name <<"\n";
     std::cout << std::flush;
     // read data from file
-	json data  = file_to_json(file_name);
+    json data  = file_to_json(file_name);
 
     // get numeric information
     delta_t    = data["delta_t"]; 
     num_dims   = data["dimensions"].size();
     dim_size   = new double[num_dims];
     delta_x    = new double[num_dims];
-    for (int i = 0; i < num_dims; ++i)
-    {
+    for (int i = 0; i < num_dims; ++i) {
         dim_size[i]  = data["dimensions"][i]["dim_size"];
         delta_x[i]   = data["dimensions"][i]["delta_x"];
     }
@@ -85,8 +84,7 @@ Parameters::Parameters(std::string file_name) {
     e_max           = new double[num_pulses];
 
     // read data
-    for (int i = 0; i < num_pulses; ++i)
-    {
+    for (int i = 0; i < num_pulses; ++i) {
         pulse_shape[i]    = data["pulses"][i]["pulse_shape"];
         // index used similar target_idx
         if (pulse_shape[i]=="sin2") {
@@ -215,7 +213,7 @@ void Parameters::validate(){
 
 // getters
 double Parameters::get_delta_t() {
-	return delta_t;
+    return delta_t;
 }
 
 int Parameters::get_num_dims(){

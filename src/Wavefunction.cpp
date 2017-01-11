@@ -4,25 +4,40 @@
 
 #define dcomp std::complex<double>
 
+// prints error message, kills code and returns -1
+void Wavefunction::end_run(std::string str) {
+    std::cout << "\n\nERROR: " << str << "\n" << std::flush;
+    exit(-1);
+}
+
+// prints error message, kills code and returns exit_val
+void Wavefunction::end_run(std::string str, int exit_val) {
+    std::cout << "\n\nERROR: " << str << "\n";
+    exit(exit_val);
+}
+
 Wavefunction::Wavefunction(HDF5Wrapper& data_file, Parameters & p) {
-    std::cout << "Creating Wavefunction";
-    test = new dcomp[3];
-    test[0] = dcomp(1,0);
-    test[1] = dcomp(1.000234,1);
-    test[2] = test[0]+test[1];
-    std::cout << "\n";
-    std::cout << test[0] << "\n";
-    std::cout << test[1] << "\n";
-    std::cout << test[2] << "\n";
+    std::cout << "Creating Wavefunction\n";
+
+    // initialize values
+    psi_12_alloc = false;
+    num_dims     = p.get_num_dims();
+    dim_size     = p.get_dim_size();
+    delta_x      = p.get_delta_x();
+
+    // validation
+    if (num_dims>1) {
+        end_run("Only 1D is currently supported");
+    }
 
     checkpoint(data_file);
 
-    std::cout << "Wavefunction created";
+    std::cout << "Wavefunction created\n";
 }
 
 void Wavefunction::checkpoint(HDF5Wrapper& data_file) {
-    std::cout << "checkpointing Wavefunction\n";
-    data_file.write_object(test, 3, "/Wavefunction/test");
+    std::cout << "Checkpointing Wavefunction\n";
+    // data_file.write_object(test, 3, "/Wavefunction/test");
 }
 
 // destructor
