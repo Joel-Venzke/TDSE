@@ -2,6 +2,7 @@
 #include "Parameters.h"
 #include "H5Cpp.h"
 #include <complex>
+#include <vector>
 
 #define dcomp std::complex<double>
 
@@ -9,8 +10,12 @@ using namespace H5;
 
 class HDF5Wrapper {
 private:
-    H5File * data_file;
-    CompType * complex_data_type;
+    H5File                   *data_file;
+    CompType                 *complex_data_type;
+    // saves datasets for expendable variables
+    std::vector<DataSet*>    extendable_dataset; 
+    // saves variable names for expendable variables
+    std::vector<std::string> extendable_string;
 public:
     // Constructor
     HDF5Wrapper(Parameters& p);
@@ -25,6 +30,10 @@ public:
     void write_object(int *data, int size, H5std_string var_path);
     void write_object(double *data, int size, H5std_string var_path);
     void write_object(dcomp *data, int size, H5std_string var_path);
+
+    // time series writes
+    void write_object(dcomp *data, int size, H5std_string var_path,
+                      int time_step);
 
 
     // write for parameters

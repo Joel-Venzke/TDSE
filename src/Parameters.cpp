@@ -57,6 +57,10 @@ Parameters::Parameters(std::string file_name) {
     for (int i = 0; i < num_dims; ++i) {
         dim_size[i]  = data["dimensions"][i]["dim_size"];
         delta_x[i]   = data["dimensions"][i]["delta_x"];
+
+        // this should be small
+        std::cout << "Dim-" << i << " dx/dt^2 = ";
+        std::cout << delta_x[i]/delta_t*delta_t << "\n";
     }
 
     // get simulation behavior;

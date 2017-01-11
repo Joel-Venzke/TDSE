@@ -7,6 +7,7 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p) {
     std::cout << "Creating pulses\n" << std::flush;
 
     // get number of pulses and dt from Parameters
+    pulse_alloc      = false;
     num_pulses       = p.get_num_pulses();
     delta_t          = p.get_delta_t();
     max_pulse_length = 0; // stores longest pulse

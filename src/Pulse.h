@@ -23,7 +23,7 @@ private:
     double       **pulse_envelope; // envelope function of pulse
     double       *a_field;         // total vector potential
     // true if the individual pulses and envelopes are allocated
-    bool         pulse_alloc = false;
+    bool         pulse_alloc;
 
     // private to avoid unneeded allocation calls and to protect the 
     // developer form accessing garbage arrays

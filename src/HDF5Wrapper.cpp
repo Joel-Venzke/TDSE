@@ -128,6 +128,102 @@ void HDF5Wrapper::write_object(
     data_set.write(data, complex_data_type[0]);
 }
 
+void HDF5Wrapper::write_object(
+    dcomp *data, 
+    int size,
+    H5std_string var_path,
+    int write_idx) {
+    // create object
+    if (write_idx==0) {
+        // size of array
+        hsize_t h5_size[2];
+        h5_size[0] = 1;
+        h5_size[1] = size;
+
+        // max size of data set. 
+        // Built this way to make time the first dimension
+        hsize_t h5_max_size[2];
+        h5_max_size[0] = H5S_UNLIMITED; // time dim
+        h5_max_size[1] = H5S_UNLIMITED; // spacial dim
+
+        hsize_t h5_chunk[2];
+        h5_chunk[0] = 1;
+        h5_chunk[1] = size;
+
+        // set up data space
+        DataSpace h5_space(2,h5_size, h5_max_size);
+
+        // Modify dataset creation property to enable chunking
+        DSetCreatPropList prop;
+        prop.setChunk(2, h5_chunk);
+
+        DataSet *data_set = new DataSet(data_file->createDataSet(
+                                        var_path, 
+                                        complex_data_type[0], 
+                                        h5_space, prop));
+
+        // write data
+        data_set->write(data, complex_data_type[0]);
+
+        // save for later use
+        // TODO: make into hash table
+        extendable_dataset.push_back(data_set);
+        extendable_string.push_back(var_path);
+    } else {
+        // find the index of the dataset
+        // TODO: make into hash table
+        int idx = 0;
+        int idx_max = extendable_string.size();
+        while (extendable_string[idx]!=var_path) {
+            idx++;
+
+            // throw error if dataset is not created yet
+            if (idx >= idx_max) {
+                std::string str = var_path;
+                str += " not found when writing time step ";
+                str += std::to_string(write_idx);
+                end_run(str);
+            }
+        }
+
+        // get data set pointer from array
+        DataSet *data_set = extendable_dataset[idx];
+
+        // new dimension of dataset
+        hsize_t h5_size[2];
+        h5_size[0] = write_idx+1;
+        h5_size[1] = size;
+
+        // sizes of extension
+        hsize_t h5_extend[2];
+        h5_extend[0] = 1;
+        h5_extend[1] = size;
+
+        // sizes of extension
+        hsize_t h5_offset[2];
+        h5_offset[0] = write_idx;
+        h5_offset[1] = 0;
+
+        // extend data set
+        data_set->extend(h5_size);
+
+        // get hyperslab
+        DataSpace *filespace = new DataSpace(data_set->getSpace ());
+        filespace->selectHyperslab(H5S_SELECT_SET, 
+                                   h5_extend, h5_offset);
+
+        // get memory space
+        DataSpace *memspace = new DataSpace(2, h5_extend, NULL);
+
+        // write data
+        data_set->write(data,complex_data_type[0],
+                        *memspace, *filespace);
+
+        // clean up
+        delete filespace;
+        delete memspace;
+    }
+}
 
 
 // writes out header for Parameters and builds the various 
@@ -215,4 +311,7 @@ HDF5Wrapper::HDF5Wrapper( Parameters & p) {
 HDF5Wrapper::~HDF5Wrapper(){
     std::cout << "Deleting HDF5Wrapper\n";
     delete data_file;
+    for (int i=0; i<extendable_dataset.size(); i++) {
+        delete extendable_dataset[i];
+    }
 }
