@@ -50,7 +50,7 @@ Parameters::Parameters(std::string file_name) {
     json data  = file_to_json(file_name);
 
     // get numeric information
-    delta_t    = data["delta_t"]; 
+    delta_t    = data["delta_t"];
     num_dims   = data["dimensions"].size();
     dim_size   = new double[num_dims];
     delta_x    = new double[num_dims];
@@ -67,8 +67,8 @@ Parameters::Parameters(std::string file_name) {
     restart    = data["restart"];
     target     = data["target"];
 
-    // index is used throughout code for efficiency 
-    // and ease of writing to hdf5 
+    // index is used throughout code for efficiency
+    // and ease of writing to hdf5
     if (target=="He") {
         target_idx = 0;
     }
@@ -184,7 +184,7 @@ void Parameters::validate(){
             err_str += std::to_string(cycles_off[i])+"\"\n";
             err_str += "cycles_off should be >= 0\n";
         }
-        
+
         // exclude delay because it is zero anyways
         // pulses must exist so we don't run supper long time scales
         double p_length = cycles_on[i] + cycles_off[i] +

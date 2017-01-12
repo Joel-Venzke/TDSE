@@ -21,7 +21,7 @@ Wavefunction::Wavefunction(HDF5Wrapper& data_file, Parameters & p) {
     std::cout << "Creating Wavefunction\n";
 
     // initialize values
-    psi_12_alloc = false; 
+    psi_12_alloc = false;
     first_pass   = true;
     num_dims     = p.get_num_dims();
     dim_size     = p.get_dim_size();
@@ -56,18 +56,18 @@ Wavefunction::Wavefunction(HDF5Wrapper& data_file, Parameters & p) {
     std::cout << "Wavefunction created\n";
 }
 
-void Wavefunction::checkpoint(HDF5Wrapper& data_file, int write_idx, 
+void Wavefunction::checkpoint(HDF5Wrapper& data_file, int write_idx,
     double time) {
     std::cout << "Checkpointing Wavefunction: " << write_idx << "\n";
     std::string str;
-    
+
     // only write out at start
     if (first_pass) {
         // size of each dim
         data_file.write_object(num_x, num_dims, "/Wavefunction/num_x",
             "The number of physical dimension in the simulation");
 
-        // write each dims x values 
+        // write each dims x values
         for (int i=0; i<num_dims; i++) {
             str = "x_value_";
             str += std::to_string(i);
@@ -80,10 +80,10 @@ void Wavefunction::checkpoint(HDF5Wrapper& data_file, int write_idx,
         // write psi_1 and psi_2 if still allocated
         if (psi_12_alloc) {
             data_file.write_object(psi_1, num_psi_12,
-                "/Wavefunction/psi_1", 
+                "/Wavefunction/psi_1",
                 "Wavefunction of first electron");
             data_file.write_object(psi_2, num_psi_12,
-                "/Wavefunction/psi_2", 
+                "/Wavefunction/psi_2",
                 "Wavefunction of second electron");
         }
 
@@ -106,7 +106,7 @@ void Wavefunction::checkpoint(HDF5Wrapper& data_file, int write_idx,
         // write time
         data_file.write_object(time, "/Wavefunction/psi_time",
             write_idx);
-    }   
+    }
 }
 
 void Wavefunction::create_grid() {
@@ -139,7 +139,7 @@ void Wavefunction::create_grid() {
         // store center
         x_value[i][center] = 0.0;
 
-        // loop over all others 
+        // loop over all others
         for (int j=center-1; j>0; j--) {
             // get x value
             current_x = (j-center)*delta_x[i];
@@ -288,7 +288,7 @@ void Wavefunction::normalize(dcomp *data, int length, double dx) {
 // destructor
 Wavefunction::~Wavefunction(){
     std::cout << "Deleting Wavefunction\n";
-    // do not delete dim_size or delta_x 
+    // do not delete dim_size or delta_x
     // since they belong to the Parameter class
     // and will be freed there
     delete num_x;

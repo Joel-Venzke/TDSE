@@ -76,7 +76,7 @@ Pulse::~Pulse() {
         }
         delete[] pulse_value;
         delete[] pulse_envelope;
-    } 
+    }
     delete   a_field;
 }
 
@@ -88,7 +88,7 @@ void Pulse::initialize_time() {
     }
 }
 
-// build the nth pulse 
+// build the nth pulse
 void Pulse::initialize_pulse(int n){
     int on_start, plateau_start, off_start, off_end;
     double period = 2*pi/energy[n];
@@ -106,7 +106,7 @@ void Pulse::initialize_pulse(int n){
     off_start     = ceil(period*
                         (cycles_plateau[n]+cycles_on[n]+
                         cycles_delay[n])/
-                        (delta_t));    
+                        (delta_t));
 
     // index that holds pulse at 0
     off_end       = ceil(period*
@@ -177,7 +177,7 @@ void Pulse::checkpoint(HDF5Wrapper& data_file) {
         "The time for each index of the pulse in a.u.");
     data_file.write_object(a_field,max_pulse_length,"/Pulse/a_field",
         "The value of the A field at each point in time in a.u.");
-    
+
     if (pulse_alloc) {
         // write each pulse both value and envelope
         for (int i = 0; i < num_pulses; ++i) {

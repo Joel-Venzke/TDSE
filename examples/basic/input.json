@@ -1,5 +1,5 @@
 {
-  "delta_t": 0.2, 
+  "delta_t": 0.2,
   "dimensions": [
     {"dim_size": 15.0,
     "delta_x":   0.05}],

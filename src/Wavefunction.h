@@ -19,7 +19,7 @@ private:
     dcomp  *psi_2;       // wavefunction for electron 2
     dcomp  *psi;         // wavefunction for 2 electron system
     // true if psi_1 and psi_2 are allocated
-    bool   psi_12_alloc; 
+    bool   psi_12_alloc;
     // false if its not the first time checkpointing the wavefunction
     bool   first_pass;
 
@@ -36,7 +36,7 @@ public:
     ~Wavefunction();
 
     // IO
-    void checkpoint(HDF5Wrapper& data_file, int write_idx, 
+    void checkpoint(HDF5Wrapper& data_file, int write_idx,
         double time);
 
     // tools

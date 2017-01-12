@@ -25,7 +25,7 @@ private:
     // true if the individual pulses and envelopes are allocated
     bool         pulse_alloc;
 
-    // private to avoid unneeded allocation calls and to protect the 
+    // private to avoid unneeded allocation calls and to protect the
     // developer form accessing garbage arrays
     void initialize_pulse(int i);
     void initialize_pulse();

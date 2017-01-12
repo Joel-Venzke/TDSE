@@ -10,9 +10,9 @@ private:
     double  delta_t;    // size of time step
 
     // simulation behavior
-    // restart mode 
+    // restart mode
     // 0 no restart, 1 restart from file
-    int         restart; 
+    int         restart;
     std::string target;      // type of target {"He"}
     int         target_idx;  // index of target
 
