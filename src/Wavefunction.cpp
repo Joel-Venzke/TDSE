@@ -268,15 +268,7 @@ void Wavefunction::normalize() {
 
 // normalizes the array provided
 void Wavefunction::normalize(dcomp *data, int length, double dx) {
-    double total = 0;
-
-    // trapezoidal rule of conj(data)*data
-    total += (std::conj(data[0])*data[0]).real();
-    total += (std::conj(data[length-1])*data[length-1]).real();
-    for (int i=1; i<length-1; i++) {
-        total += 2.0*(std::conj(data[i])*data[i]).real();
-    }
-    total  *= dx/2.0;
+    double total = norm(data, length, dx);
 
     // square root to get normalization factor
     total = sqrt(total);
@@ -286,6 +278,26 @@ void Wavefunction::normalize(dcomp *data, int length, double dx) {
         data[i].real(data[i].real()/total);
         data[i].imag(data[i].imag()/total);
     }
+}
+
+// returns norm of psi
+double Wavefunction::norm() {
+    return norm(psi, num_psi, delta_x[0]);
+}
+
+// returns norm of array using trapezoidal rule
+double Wavefunction::norm(dcomp *data, int length, double dx) {
+    double total = 0;
+    // lower end
+    total += (std::conj(data[0])*data[0]).real();
+    // higher end
+    total += (std::conj(data[length-1])*data[length-1]).real();
+    // middle points
+    for (int i=1; i<length-1; i++) {
+        total += 2.0*(std::conj(data[i])*data[i]).real();
+    }
+    total  *= dx/2.0;
+    return total;
 }
 
 // destructor

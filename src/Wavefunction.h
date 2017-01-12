@@ -42,6 +42,8 @@ public:
     // tools
     void normalize();
     void normalize(dcomp *data, int length, double dx);
+    double norm();
+    double norm(dcomp *data, int length, double dx);
 
     // error handling
     void end_run(std::string str);
