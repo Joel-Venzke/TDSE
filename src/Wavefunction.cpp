@@ -204,6 +204,7 @@ void Wavefunction::create_psi() {
 void Wavefunction::create_psi(double offset) {
     double sigma;     // variance for Gaussian in psi
     double sigma2;    // variance squared for Gaussian in psi
+    double x1;        // x value squared
     double x2;        // x value squared
 
     // allocate data
@@ -218,11 +219,13 @@ void Wavefunction::create_psi(double offset) {
     // TODO: needs to be changed for more than one dim
     for (int i=0; i<num_psi_12; i++) {
         // get x value squared
+        x1 = x_value[0][i];
+        x1 *= x1;
         x2 = (x_value[0][i]-offset);
         x2 *= x2;
 
         // Gaussian centered around 0.0 with variation sigma
-        psi_1[i] = dcomp(exp(-1*x2/(2*sigma2)),0.0);
+        psi_1[i] = dcomp(exp(-1*x1/(2*sigma2)),0.0);
         psi_2[i] = dcomp(exp(-1*x2/(2*sigma2)),0.0);
     }
     if (! psi_12_alloc) {

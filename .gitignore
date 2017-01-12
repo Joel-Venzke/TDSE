@@ -43,7 +43,7 @@ build
 # videos
 *.mp4
 
-# automake 
+# automake
 autom4te.cache/
 .deps/
 Makefile.in
@@ -60,3 +60,9 @@ Makefile.in
 
 # other
 .nfs*
+
+# mac things
+*.DS_Store
+
+# plots and such
+figs/
