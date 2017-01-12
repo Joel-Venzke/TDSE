@@ -40,7 +40,15 @@ Wavefunction::Wavefunction(HDF5Wrapper& data_file, Parameters & p) {
     create_psi();
 
     // write out data
-    checkpoint(data_file, 0);
+    checkpoint(data_file, 0, 0.0);
+
+    for (int i=1; i<100; i++) {
+        // allocate psi_1, psi_2, and psi
+        create_psi(i*.1);
+
+        // write out data
+        checkpoint(data_file, i, i*p.get_delta_t());
+    }
 
     // delete psi_1 and psi_2
     cleanup();
@@ -48,39 +56,57 @@ Wavefunction::Wavefunction(HDF5Wrapper& data_file, Parameters & p) {
     std::cout << "Wavefunction created\n";
 }
 
-void Wavefunction::checkpoint(HDF5Wrapper& data_file, int write_idx) {
+void Wavefunction::checkpoint(HDF5Wrapper& data_file, int write_idx, 
+    double time) {
     std::cout << "Checkpointing Wavefunction: " << write_idx << "\n";
     std::string str;
     
     // only write out at start
     if (first_pass) {
         // size of each dim
-        data_file.write_object(num_x, num_dims, "/Wavefunction/num_x");
+        data_file.write_object(num_x, num_dims, "/Wavefunction/num_x",
+            "The number of physical dimension in the simulation");
 
         // write each dims x values 
         for (int i=0; i<num_dims; i++) {
             str = "x_value_";
             str += std::to_string(i);
             data_file.write_object(x_value[i], num_x[i],
-                "/Wavefunction/"+str);
+                "/Wavefunction/"+str,
+                "The coordinates of the "+std::to_string(i)+
+                "dimension");
         }
 
         // write psi_1 and psi_2 if still allocated
         if (psi_12_alloc) {
             data_file.write_object(psi_1, num_psi_12,
-                "/Wavefunction/psi_1");
+                "/Wavefunction/psi_1", 
+                "Wavefunction of first electron");
             data_file.write_object(psi_2, num_psi_12,
-                "/Wavefunction/psi_2");
+                "/Wavefunction/psi_2", 
+                "Wavefunction of second electron");
         }
+
+        // write data and attribute
+        data_file.write_object(psi, num_psi,
+            "/Wavefunction/psi",
+            "Wavefunction for the two electron system", write_idx);
+
+        // write time and attribute
+        data_file.write_object(time, "/Wavefunction/psi_time",
+            "Time step that psi was written to disk", write_idx);
 
         // allow for future passes to write psi only
         first_pass = false;
-    }
+    } else {
+        // write whenever this function is called
+        data_file.write_object(psi, num_psi,
+            "/Wavefunction/psi", write_idx);
 
-    // write whenever this function is called
-    data_file.write_object(psi, num_psi,
-        "/Wavefunction/psi", write_idx);
-    
+        // write time
+        data_file.write_object(time, "/Wavefunction/psi_time",
+            write_idx);
+    }   
 }
 
 void Wavefunction::create_grid() {
@@ -147,7 +173,8 @@ void Wavefunction::create_psi() {
     // TODO: needs to be changed for more than one dim
     for (int i=0; i<num_psi_12; i++) {
         // get x value squared
-        x2 = x_value[0][i]*x_value[0][i];
+        x2 = x_value[0][i];
+        x2 *= x2;
 
         // Gaussian centered around 0.0 with variation sigma
         psi_1[i] = dcomp(exp(-1*x2/(2*sigma2)),0.0);
@@ -162,6 +189,52 @@ void Wavefunction::create_psi() {
 
     // allocate psi
     psi = new dcomp[num_psi];
+
+    // tensor product of psi_1 and psi_2
+    for (int i=0; i<num_psi_12; i++) { // e_2 dim
+        for (int j=0; j<num_psi_12; j++) { // e_1 dim
+            psi[i*num_psi_12+j] = psi_1[i]*psi_2[j];
+        }
+    }
+
+    // normalize all psi
+    normalize();
+}
+
+void Wavefunction::create_psi(double offset) {
+    double sigma;     // variance for Gaussian in psi
+    double sigma2;    // variance squared for Gaussian in psi
+    double x2;        // x value squared
+
+    // allocate data
+    if (! psi_12_alloc) {
+        psi_1 = new dcomp[num_psi_12];
+        psi_2 = new dcomp[num_psi_12];
+    }
+
+    sigma  = 0.50;
+
+    sigma2 = sigma*sigma;
+    // TODO: needs to be changed for more than one dim
+    for (int i=0; i<num_psi_12; i++) {
+        // get x value squared
+        x2 = (x_value[0][i]-offset);
+        x2 *= x2;
+
+        // Gaussian centered around 0.0 with variation sigma
+        psi_1[i] = dcomp(exp(-1*x2/(2*sigma2)),0.0);
+        psi_2[i] = dcomp(exp(-1*x2/(2*sigma2)),0.0);
+    }
+    if (! psi_12_alloc) {
+        // psi_1 and psi_2 are allocated
+        psi_12_alloc = true;
+
+        // get size of psi
+        num_psi = num_psi_12*num_psi_12;
+
+        // allocate psi
+        psi = new dcomp[num_psi];
+    }
 
     // tensor product of psi_1 and psi_2
     for (int i=0; i<num_psi_12; i++) { // e_2 dim

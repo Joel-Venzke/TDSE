@@ -40,6 +40,9 @@ build
 #hdf5
 *.h5
 
+# videos
+*.mp4
+
 # automake 
 autom4te.cache/
 .deps/

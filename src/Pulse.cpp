@@ -173,16 +173,22 @@ void Pulse::initialize_a_field() {
 // write out the state of the pulse
 void Pulse::checkpoint(HDF5Wrapper& data_file) {
     // write time, a_field, and a_field_envelope to hdf5
-    data_file.write_object(time,max_pulse_length,"/Pulse/time");
-    data_file.write_object(a_field,max_pulse_length,"/Pulse/a_field");
+    data_file.write_object(time,max_pulse_length,"/Pulse/time",
+        "The time for each index of the pulse in a.u.");
+    data_file.write_object(a_field,max_pulse_length,"/Pulse/a_field",
+        "The value of the A field at each point in time in a.u.");
     
     if (pulse_alloc) {
         // write each pulse both value and envelope
         for (int i = 0; i < num_pulses; ++i) {
             data_file.write_object(pulse_envelope[i],max_pulse_length,
-                "/Pulse/Pulse_envelope_"+std::to_string(i));
+                "/Pulse/Pulse_envelope_"+std::to_string(i),
+                "The envelope function for the "+std::to_string(i)+
+                " pulse in the input file");
             data_file.write_object(pulse_value[i],max_pulse_length,
-                "/Pulse/Pulse_value_"+std::to_string(i));
+                "/Pulse/Pulse_value_"+std::to_string(i),
+                "The pulse value for the "+std::to_string(i)+
+                " pulse in the input file");
         }
     }
 }

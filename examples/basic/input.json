@@ -1,7 +1,7 @@
 {
   "delta_t": 0.2, 
   "dimensions": [
-    {"dim_size": 10.0,
+    {"dim_size": 15.0,
     "delta_x":   0.05}],
   "restart": 0,
   "target":  "He",

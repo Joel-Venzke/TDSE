@@ -26,6 +26,7 @@ private:
     // hidden from user for safety
     void create_grid();
     void create_psi();
+    void create_psi(double offset);
     void cleanup();
 public:
     // Constructor
@@ -35,7 +36,8 @@ public:
     ~Wavefunction();
 
     // IO
-    void checkpoint(HDF5Wrapper& data_file, int time_step);
+    void checkpoint(HDF5Wrapper& data_file, int write_idx, 
+        double time);
 
     // tools
     void normalize();

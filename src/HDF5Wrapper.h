@@ -13,9 +13,10 @@ private:
     H5File                   *data_file;
     CompType                 *complex_data_type;
     // saves datasets for expendable variables
-    std::vector<DataSet*>    extendable_dataset; 
-    // saves variable names for expendable variables
-    std::vector<std::string> extendable_string;
+    std::vector<DataSet*>    extendable_dataset_complex;
+    std::vector<std::string> extendable_string_complex;
+    std::vector<DataSet*>    extendable_dataset_double;
+    std::vector<std::string> extendable_string_double;
 public:
     // Constructor
     HDF5Wrapper(Parameters& p);
@@ -31,9 +32,27 @@ public:
     void write_object(double *data, int size, H5std_string var_path);
     void write_object(dcomp *data, int size, H5std_string var_path);
 
+    void write_object(int data, H5std_string var_path,
+                      H5std_string attribute);
+    void write_object(double data, H5std_string var_path,
+                      H5std_string attribute);
+    void write_object(int *data, int size, H5std_string var_path,
+                      H5std_string attribute);
+    void write_object(double *data, int size, H5std_string var_path,
+                      H5std_string attribute);
+    void write_object(dcomp *data, int size, H5std_string var_path,
+                      H5std_string attribute);
+
     // time series writes
     void write_object(dcomp *data, int size, H5std_string var_path,
-                      int time_step);
+                      int write_idx);
+    void write_object(dcomp *data, int size, H5std_string var_path,
+                      H5std_string attribute, int write_idx);
+    void write_object(double data, H5std_string var_path,
+                      int write_idx);
+    void write_object(double data, H5std_string var_path,
+                      H5std_string attribute, int write_idx);
+
 
 
     // write for parameters
