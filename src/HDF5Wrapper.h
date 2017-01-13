@@ -17,6 +17,8 @@ private:
     std::vector<std::string> extendable_string_complex;
     std::vector<DataSet*>    extendable_dataset_double;
     std::vector<std::string> extendable_string_double;
+
+    hsize_t* get_hsize_t(int size, int *dims);
 public:
     // Constructor
     HDF5Wrapper(Parameters& p);
@@ -28,26 +30,45 @@ public:
     // write single entry and 1D variables
     void write_object(int data, H5std_string var_path);
     void write_object(double data, H5std_string var_path);
+
     void write_object(int *data, int size, H5std_string var_path);
+    void write_object(int *data, int size, int* dims,
+        H5std_string var_path);
+
     void write_object(double *data, int size, H5std_string var_path);
+    void write_object(double *data, int size, int* dims,
+        H5std_string var_path);
+
     void write_object(dcomp *data, int size, H5std_string var_path);
+    void write_object(dcomp *data, int size, int* dims,
+        H5std_string var_path);
 
     void write_object(int data, H5std_string var_path,
-                      H5std_string attribute);
+        H5std_string attribute);
     void write_object(double data, H5std_string var_path,
-                      H5std_string attribute);
+        H5std_string attribute);
+
     void write_object(int *data, int size, H5std_string var_path,
                       H5std_string attribute);
+    void write_object(int *data, int size, int* dims,
+        H5std_string var_path, H5std_string attribute);
+
     void write_object(double *data, int size, H5std_string var_path,
-                      H5std_string attribute);
+        H5std_string attribute);
+    void write_object(double *data, int size, int *dims,
+        H5std_string var_path, H5std_string attribute);
+
     void write_object(dcomp *data, int size, H5std_string var_path,
-                      H5std_string attribute);
+        H5std_string attribute);
+    void write_object(dcomp *data, int size, int *dims,
+        H5std_string var_path, H5std_string attribute);
 
     // time series writes
     void write_object(dcomp *data, int size, H5std_string var_path,
                       int write_idx);
     void write_object(dcomp *data, int size, H5std_string var_path,
                       H5std_string attribute, int write_idx);
+
     void write_object(double data, H5std_string var_path,
                       int write_idx);
     void write_object(double data, H5std_string var_path,

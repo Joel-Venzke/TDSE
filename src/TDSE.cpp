@@ -8,6 +8,9 @@
 #include "Wavefunction.h"
 #include "HDF5Wrapper.h"
 
+#include <Eigen/Dense>
+using Eigen::MatrixXd;
+
 int main() {
     // initialize all of the classes
     Parameters parameters("input.json");
@@ -60,6 +63,13 @@ int main() {
         std::cout << energy[i] << " ";
         std::cout << e_max[i] << "\n";
     }
-
+    int dims[2] = {2,2};
+    MatrixXd m(2,2);
+    m(0,0) = 3;
+    m(1,0) = 2.5;
+    m(0,1) = -1;
+    m(1,1) = m(1,0) + m(0,1);
+    std::cout << m << std::endl;
+    data_file.write_object(m.data(),2,dims,"/Parameters/test");
     return 0;
 }

@@ -15,6 +15,15 @@ void HDF5Wrapper::end_run(std::string str, int exit_val) {
     exit(exit_val);
 }
 
+hsize_t* HDF5Wrapper::get_hsize_t(int size, int *dims) {
+    // size of array
+    hsize_t *h5_size = new hsize_t[size];
+    for (int i=0; i<size; i++) {
+        h5_size[i] = dims[i];
+    }
+    return h5_size;
+}
+
 // Writes int to HDF5
 // takes int and var_path as inputs
 void HDF5Wrapper::write_object(
@@ -82,6 +91,31 @@ void HDF5Wrapper::write_object(
     data_set.write(data, PredType::NATIVE_INT);
 }
 
+// Writes N-D int array to HDF5
+// takes N-D int array, array size, and var_path as inputs
+void HDF5Wrapper::write_object(
+    int *data,
+    int size,
+    int *dims,
+    H5std_string var_path) {
+
+    // size of array
+    hsize_t *h5_size = get_hsize_t(size, dims);
+
+    // make DataSpace for array
+    DataSpace h5_space(size,h5_size);
+
+    // build the header for the data entry
+    DataSet data_set = data_file->createDataSet(
+                            var_path,
+                            PredType::NATIVE_INT, h5_space);
+
+    // write data to file
+    data_set.write(data, PredType::NATIVE_INT);
+
+    delete[] h5_size;
+}
+
 // Writes 1D double array to HDF5
 // takes 1D double array, array size, and var_path as inputs
 void HDF5Wrapper::write_object(
@@ -105,6 +139,31 @@ void HDF5Wrapper::write_object(
     data_set.write(data, PredType::NATIVE_DOUBLE);
 }
 
+// Writes N-Dim double array to HDF5
+// takes N-Dim double array, array size, and var_path as inputs
+void HDF5Wrapper::write_object(
+    double *data,
+    int size,
+    int* dims,
+    H5std_string var_path) {
+
+    // size of array
+    hsize_t *h5_size = get_hsize_t(size, dims);
+
+    // make DataSpace for array
+    DataSpace h5_space(size,h5_size);
+
+    // build the header for the data entry
+    DataSet data_set = data_file->createDataSet(
+                            var_path,
+                            PredType::NATIVE_DOUBLE, h5_space);
+
+    // write data to file
+    data_set.write(data, PredType::NATIVE_DOUBLE);
+
+    delete[] h5_size;
+}
+
 // Writes 1D complex double array to HDF5
 // takes 1D complex double array, array size, and var_path as inputs
 void HDF5Wrapper::write_object(
@@ -126,6 +185,29 @@ void HDF5Wrapper::write_object(
 
     // write data to file
     data_set.write(data, complex_data_type[0]);
+}
+
+void HDF5Wrapper::write_object(
+    dcomp *data,
+    int size,
+    int *dims,
+    H5std_string var_path) {
+
+    // size of array
+    hsize_t *h5_size = get_hsize_t(size, dims);
+
+    // make DataSpace for array
+    DataSpace h5_space(1,h5_size);
+
+    // build the header for the data entry
+    DataSet data_set = data_file->createDataSet(
+                            var_path,
+                            complex_data_type[0], h5_space);
+
+    // write data to file
+    data_set.write(data, complex_data_type[0]);
+
+    delete[] h5_size;
 }
 
 // Writes int to HDF5
@@ -219,6 +301,39 @@ void HDF5Wrapper::write_object(
     att.write( str_type, attribute );
 }
 
+// Writes N-D int array to HDF5
+// takes N-D int array, array size, and var_path as inputs
+void HDF5Wrapper::write_object(
+    int *data,
+    int size,
+    int *dims,
+    H5std_string var_path,
+    H5std_string attribute) {
+
+    // size of array
+    hsize_t *h5_size = get_hsize_t(size, dims);
+
+    // make DataSpace for array
+    DataSpace h5_space(1,h5_size);
+
+    // build the header for the data entry
+    DataSet data_set = data_file->createDataSet(
+                            var_path,
+                            PredType::NATIVE_INT, h5_space);
+
+    // write data to file
+    data_set.write(data, PredType::NATIVE_INT);
+
+    // write attribute
+    StrType str_type(0, H5T_VARIABLE);
+    DataSpace att_space(H5S_SCALAR);
+    Attribute att = data_set.createAttribute( "Attribute", str_type,
+        att_space );
+    att.write( str_type, attribute );
+
+    delete h5_size;
+}
+
 // Writes 1D double array to HDF5
 // takes 1D double array, array size, and var_path as inputs
 void HDF5Wrapper::write_object(
@@ -250,6 +365,39 @@ void HDF5Wrapper::write_object(
     att.write( str_type, attribute );
 }
 
+// Writes N-D double array to HDF5
+// takes N-D double array, array size, and var_path as inputs
+void HDF5Wrapper::write_object(
+    double *data,
+    int size,
+    int *dims,
+    H5std_string var_path,
+    H5std_string attribute) {
+
+    // size of array
+    hsize_t *h5_size = get_hsize_t(size, dims);
+
+    // make DataSpace for array
+    DataSpace h5_space(1,h5_size);
+
+    // build the header for the data entry
+    DataSet data_set = data_file->createDataSet(
+                            var_path,
+                            PredType::NATIVE_DOUBLE, h5_space);
+
+    // write data to file
+    data_set.write(data, PredType::NATIVE_DOUBLE);
+
+    // write attribute
+    StrType str_type(0, H5T_VARIABLE);
+    DataSpace att_space(H5S_SCALAR);
+    Attribute att = data_set.createAttribute( "Attribute", str_type,
+        att_space );
+    att.write( str_type, attribute );
+
+    delete h5_size;
+}
+
 // Writes 1D complex double array to HDF5
 // takes 1D complex double array, array size, and var_path as inputs
 void HDF5Wrapper::write_object(
@@ -279,6 +427,40 @@ void HDF5Wrapper::write_object(
     Attribute att = data_set.createAttribute( "Attribute", str_type,
         att_space );
     att.write( str_type, attribute );
+}
+
+// Writes N-D complex double array to HDF5
+// takes N-D complex double array, array size, and var_path as inputs
+void HDF5Wrapper::write_object(
+    dcomp *data,
+    int size,
+    int * dims,
+    H5std_string var_path,
+    H5std_string attribute) {
+
+    // size of array
+    hsize_t *h5_size = get_hsize_t(size, dims);
+
+
+    // make DataSpace for array
+    DataSpace h5_space(1,h5_size);
+
+    // build the header for the data entry
+    DataSet data_set = data_file->createDataSet(
+                            var_path,
+                            complex_data_type[0], h5_space);
+
+    // write data to file
+    data_set.write(data, complex_data_type[0]);
+
+    // write attribute
+    StrType str_type(0, H5T_VARIABLE);
+    DataSpace att_space(H5S_SCALAR);
+    Attribute att = data_set.createAttribute( "Attribute", str_type,
+        att_space );
+    att.write( str_type, attribute );
+
+    delete h5_size;
 }
 
 void HDF5Wrapper::write_object(
