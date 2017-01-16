@@ -13,7 +13,7 @@ The TDSE code discussed here was developed by Joel Venzke while working on his P
 
 \section{Build System} % (fold)
 \label{sec:build_system}
-Currently using autoconfig, but that may change. See ``build.\$\{SYSTEM\}'' files for building examples on various systems. 
+Currently using autoconfig, but that may change. See ``build.\$\{SYSTEM\}'' files for building examples on various systems.
 % section build_system (end)
 
 \section{Classes} % (fold)
@@ -35,7 +35,7 @@ Writing multidimensional arrays is difficult in HDF5. To avoid the added headach
 \begin{equation}
 	array[x+y*nx] = array[x][y]
 \end{equation}
-and 
+and
 \begin{equation}
 	array[x+y*nx+z*nx*ny] = array[x][y][z]
 \end{equation}
@@ -125,7 +125,7 @@ Each pulse requires the following input parameters.
 \begin{itemize}
 	\item pulse\_shape
 	\begin{itemize}
-		\item The shape of the pulse envelope. Currently supports $sin^2$ envelopes. 
+		\item The shape of the pulse envelope. Currently supports $sin^2$ envelopes.
 	\end{itemize}
     \item cycles\_on
     \begin{itemize}
@@ -141,11 +141,11 @@ Each pulse requires the following input parameters.
     \end{itemize}
     \item cycles\_delay
     \begin{itemize}
-    	\item The number of cycles before the pulse starts to turn on. 
+    	\item The number of cycles before the pulse starts to turn on.
     \end{itemize}
     \item cep
     \begin{itemize}
-    	\item The carrying phase envelope of the pulse. It is defined at the time the pulse starts to turn on. 
+    	\item The carrying phase envelope of the pulse. It is defined at the time the pulse starts to turn on.
     \end{itemize}
     \item energy
     \begin{itemize}
@@ -163,7 +163,7 @@ Each pulse requires the following input parameters.
 Input files are in json format. Here is an example input file:
 \begin{verbatim}
 {
-  "delta_t": 0.2, 
+  "delta_t": 0.2,
   "dimensions": [
     {"dim_size": 1.0,
     "delta_x":   0.01},

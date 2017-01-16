@@ -27,39 +27,39 @@ public:
     // destructor
     ~HDF5Wrapper();
 
-    // write single entry and 1D variables
+    // write single entry
     void write_object(int data, H5std_string var_path);
-    void write_object(double data, H5std_string var_path);
-
-    void write_object(int *data, int size, H5std_string var_path);
-    void write_object(int *data, int size, int* dims,
-        H5std_string var_path);
-
-    void write_object(double *data, int size, H5std_string var_path);
-    void write_object(double *data, int size, int* dims,
-        H5std_string var_path);
-
-    void write_object(dcomp *data, int size, H5std_string var_path);
-    void write_object(dcomp *data, int size, int* dims,
-        H5std_string var_path);
-
     void write_object(int data, H5std_string var_path,
         H5std_string attribute);
+
+    void write_object(double data, H5std_string var_path);
     void write_object(double data, H5std_string var_path,
         H5std_string attribute);
 
+    void write_object(int *data, int size, H5std_string var_path);
     void write_object(int *data, int size, H5std_string var_path,
-                      H5std_string attribute);
-    void write_object(int *data, int size, int* dims,
+        H5std_string attribute);
+
+    void write_object(int *data, int size, int *dims,
+        H5std_string var_path);
+    void write_object(int *data, int size, int *dims,
         H5std_string var_path, H5std_string attribute);
 
+    void write_object(double *data, int size, H5std_string var_path);
     void write_object(double *data, int size, H5std_string var_path,
         H5std_string attribute);
+
+    void write_object(double *data, int size, int *dims,
+        H5std_string var_path);
     void write_object(double *data, int size, int *dims,
         H5std_string var_path, H5std_string attribute);
 
+    void write_object(dcomp *data, int size, H5std_string var_path);
     void write_object(dcomp *data, int size, H5std_string var_path,
         H5std_string attribute);
+
+    void write_object(dcomp *data, int size, int *dims,
+        H5std_string var_path);
     void write_object(dcomp *data, int size, int *dims,
         H5std_string var_path, H5std_string attribute);
 

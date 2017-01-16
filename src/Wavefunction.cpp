@@ -22,6 +22,7 @@ Wavefunction::Wavefunction(HDF5Wrapper& data_file, Parameters & p) {
 
     // initialize values
     psi_12_alloc = false;
+    psi_alloc    = false;
     first_pass   = true;
     num_dims     = p.get_num_dims();
     dim_size     = p.get_dim_size();
@@ -41,14 +42,6 @@ Wavefunction::Wavefunction(HDF5Wrapper& data_file, Parameters & p) {
 
     // write out data
     checkpoint(data_file, 0, 0.0);
-
-    for (int i=1; i<100; i++) {
-        // allocate psi_1, psi_2, and psi
-        create_psi(i*.1);
-
-        // write out data
-        checkpoint(data_file, i, i*p.get_delta_t());
-    }
 
     // delete psi_1 and psi_2
     cleanup();
@@ -88,7 +81,7 @@ void Wavefunction::checkpoint(HDF5Wrapper& data_file, int write_idx,
         }
 
         // write data and attribute
-        data_file.write_object(psi, num_psi,
+        data_file.write_object(psi->data(), num_psi,
             "/Wavefunction/psi",
             "Wavefunction for the two electron system", write_idx);
 
@@ -100,7 +93,7 @@ void Wavefunction::checkpoint(HDF5Wrapper& data_file, int write_idx,
         first_pass = false;
     } else {
         // write whenever this function is called
-        data_file.write_object(psi, num_psi,
+        data_file.write_object(psi->data(), num_psi,
             "/Wavefunction/psi", write_idx);
 
         // write time
@@ -188,12 +181,15 @@ void Wavefunction::create_psi() {
     num_psi = num_psi_12*num_psi_12;
 
     // allocate psi
-    psi = new dcomp[num_psi];
+    if (! psi_alloc) {
+        psi = new Eigen::VectorXcd(num_psi);
+        psi_alloc = true;
+    }
 
     // tensor product of psi_1 and psi_2
     for (int i=0; i<num_psi_12; i++) { // e_2 dim
         for (int j=0; j<num_psi_12; j++) { // e_1 dim
-            psi[i*num_psi_12+j] = psi_1[i]*psi_2[j];
+            psi[0](i*num_psi_12+j) = psi_1[i]*psi_2[j];
         }
     }
 
@@ -228,21 +224,22 @@ void Wavefunction::create_psi(double offset) {
         psi_1[i] = dcomp(exp(-1*x1/(2*sigma2)),0.0);
         psi_2[i] = dcomp(exp(-1*x2/(2*sigma2)),0.0);
     }
-    if (! psi_12_alloc) {
-        // psi_1 and psi_2 are allocated
-        psi_12_alloc = true;
+    // psi_1 and psi_2 are allocated
+    psi_12_alloc = true;
 
-        // get size of psi
-        num_psi = num_psi_12*num_psi_12;
+    // get size of psi
+    num_psi = num_psi_12*num_psi_12;
 
-        // allocate psi
-        psi = new dcomp[num_psi];
+    // allocate psi
+    if (! psi_alloc) {
+        psi = new Eigen::VectorXcd(num_psi);
+        psi_alloc = true;
     }
 
     // tensor product of psi_1 and psi_2
     for (int i=0; i<num_psi_12; i++) { // e_2 dim
         for (int j=0; j<num_psi_12; j++) { // e_1 dim
-            psi[i*num_psi_12+j] = psi_1[i]*psi_2[j];
+            psi[0](i*num_psi_12+j) = psi_1[i]*psi_2[j];
         }
     }
 
@@ -263,7 +260,7 @@ void Wavefunction::normalize() {
         normalize(psi_1, num_psi_12, delta_x[0]);
         normalize(psi_2, num_psi_12, delta_x[0]);
     }
-    normalize(psi, num_psi, delta_x[0]);
+    normalize(psi->data(), num_psi, delta_x[0]);
 }
 
 // normalizes the array provided
@@ -282,7 +279,7 @@ void Wavefunction::normalize(dcomp *data, int length, double dx) {
 
 // returns norm of psi
 double Wavefunction::norm() {
-    return norm(psi, num_psi, delta_x[0]);
+    return norm(psi->data(), num_psi, delta_x[0]);
 }
 
 // returns norm of array using trapezoidal rule
@@ -299,6 +296,19 @@ double Wavefunction::norm(dcomp *data, int length, double dx) {
     total  *= dx/2.0;
     return total;
 }
+
+int* Wavefunction::get_num_x() {
+    return num_x;
+}
+
+int Wavefunction::get_num_psi() {
+    return num_psi;
+}
+
+Eigen::VectorXcd* Wavefunction::get_psi() {
+    return psi;
+}
+
 
 // destructor
 Wavefunction::~Wavefunction(){

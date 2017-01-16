@@ -866,28 +866,39 @@ void HDF5Wrapper::write_header(Parameters & p){
     Group wavefunction_group( data_file->createGroup( "/Wavefunction" ));
 
     // write out header values
-    write_object(num_dims,"/Parameters/num_dims");
-    write_object(p.get_dim_size(),num_dims,"/Parameters/dim_size");
-    write_object(p.get_delta_x(),num_dims,"/Parameters/delta_x");
-    write_object(p.get_delta_t(),"/Parameters/delta_t");
-    write_object(p.get_target_idx(),"/Parameters/target_idx");
-    write_object(num_pulses,"/Parameters/num_pulses");
+    write_object(num_dims,"/Parameters/num_dims",
+        "Number of dimension in simulation");
+    write_object(p.get_dim_size(),num_dims, "/Parameters/dim_size",
+        "The length of that dimension in atomic units.");
+    write_object(p.get_delta_x(),num_dims, "/Parameters/delta_x",
+        "The step sizes in that dimension in atomic units.");
+    write_object(p.get_delta_t(), "/Parameters/delta_t",
+        "The size of the time step in atomic units.");
+    write_object(p.get_target_idx(), "/Parameters/target_idx",
+        "The index of the target. He:0 ");
+    write_object(num_pulses, "/Parameters/num_pulses",
+        "The number of pulses from the input file");
     write_object(p.get_pulse_shape_idx(), num_pulses,
-        "/Parameters/pulse_shape_idx");
+        "/Parameters/pulse_shape_idx",
+        "The index of the pulse shape. Sin2:0");
     write_object(p.get_cycles_on(), num_pulses,
-        "/Parameters/cycles_on");
+        "/Parameters/cycles_on",
+        "Number of cycles the pulse ramps on for");
     write_object(p.get_cycles_plateau(), num_pulses,
-        "/Parameters/cycles_plateau");
+        "/Parameters/cycles_plateau",
+        "Number of cycles the pulse stays at max amplitude for");
     write_object(p.get_cycles_off(), num_pulses,
-        "/Parameters/cycles_off");
+        "/Parameters/cycles_off",
+        "Number of cycles the pulse ramps off for");
     write_object(p.get_cycles_delay(), num_pulses,
-        "/Parameters/cycles_delay");
-    write_object(p.get_cep(), num_pulses, "/Parameters/cep");
-    write_object(p.get_energy(), num_pulses, "/Parameters/energy");
-    write_object(p.get_e_max(), num_pulses, "/Parameters/e_max");
-
-    // TODO: write attributes for each
-
+        "/Parameters/cycles_delay",
+        "Number of cycles before the pulse starts");
+    write_object(p.get_cep(), num_pulses, "/Parameters/cep",
+        "The carrying phase envelope of the pulse. It is defined at the time the pulse starts to turn on.");
+    write_object(p.get_energy(), num_pulses, "/Parameters/energy",
+        "The fundamental angular frequency of the pulse. Corresponds to the energy of the photons in atomic units.");
+    write_object(p.get_e_max(), num_pulses, "/Parameters/e_max",
+        "The maximum amplitude of the pulse in atomic units.");
 }
 
 // TDOD: set up restart

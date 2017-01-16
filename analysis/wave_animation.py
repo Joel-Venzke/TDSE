@@ -14,8 +14,8 @@ time_x    = np.min(x)*0.95
 time_y    = np.max(x)*0.9
 
 # calculate color bounds
-max_val   = np.max(psi_value[:50].real)
-min_val   = np.min(psi_value[:50].real)
+max_val   = np.max(psi_value[:].real)
+min_val   = np.min(psi_value[:].real)
 print "min: ", min_val
 print "max: ", max_val
 
