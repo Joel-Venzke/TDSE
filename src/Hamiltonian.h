@@ -11,6 +11,13 @@ private:
     int num_dims;
     int *num_x;
     int num_psi;
+    int num_psi_12;
+    double z;            // atomic number
+    double alpha;        // soft core atomic
+    double beta;         // soft core ee
+    double beta2;         // soft core ee
+    double *delta_x;
+    double **x_value;
     Eigen::SparseMatrix<dcomp>* time_independent;
     Eigen::SparseMatrix<dcomp>* time_dependent;
     Eigen::SparseMatrix<dcomp>* total_hamlitonian;

@@ -50,7 +50,10 @@ public:
 
     int* get_num_x();
     int  get_num_psi();
+    int  get_num_psi_12();
     Eigen::VectorXcd* get_psi();
+    double*  get_delta_x();
+    double** get_x_value();
 
     // error handling
     void end_run(std::string str);

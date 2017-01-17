@@ -115,7 +115,7 @@ void Wavefunction::create_grid() {
 
     // build grid
     for (int i=0; i<num_dims; i++) {
-        num_x[i] =  ceil(dim_size[i]/delta_x[i]);
+        num_x[i] =  ceil((dim_size[i])/delta_x[i]);
 
         // odd number so it is even on both sides
         if (num_x[i]%2==0) num_x[i]++;
@@ -305,10 +305,21 @@ int Wavefunction::get_num_psi() {
     return num_psi;
 }
 
+int Wavefunction::get_num_psi_12() {
+    return num_psi_12;
+}
+
 Eigen::VectorXcd* Wavefunction::get_psi() {
     return psi;
 }
 
+double*  Wavefunction::get_delta_x() {
+    return delta_x;
+}
+
+double** Wavefunction::get_x_value() {
+    return x_value;
+}
 
 // destructor
 Wavefunction::~Wavefunction(){
