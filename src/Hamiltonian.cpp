@@ -41,7 +41,6 @@ void Hamiltonian::create_time_independent(){
     // reserve right amount of memory to save storage
     time_independent->reserve(Eigen::VectorXi::Constant(num_psi,5));
 
-    std::cout << dx2;
     for (int i=0; i<num_psi; i++) {
         if (i-num_x[0]>=0 and i-num_x[0]<num_psi) {
             time_independent->insert(i-num_x[0],i) = off_diagonal;
@@ -64,9 +63,6 @@ void Hamiltonian::create_time_independent(){
             diagonal += dcomp(1/sqrt(diff*diff+beta2),0.0);
 
             time_independent->insert(i,i) = diagonal;
-
-            std::cout << x_value[0][idx_1] << " " << x_value[0][idx_2];
-            std::cout << " " << diagonal << "\n";
         }
         if (i+1>=0 and i+1<num_psi) {
             time_independent->insert(i+1,i) = off_diagonal;
@@ -79,13 +75,13 @@ void Hamiltonian::create_time_independent(){
     // reduce to correct size
     time_independent->makeCompressed();
 
-    for (int k=0; k<time_independent->outerSize(); ++k) {
-        for (Eigen::SparseMatrix<dcomp>::InnerIterator it(*time_independent,k); it; ++it)
-        {
-            std::cout << it.row() << " " << it.col() << " ";
-            std::cout << it.value() << "\n";
-        }
-    }
+    // for (int k=0; k<time_independent->outerSize(); ++k) {
+    //     for (Eigen::SparseMatrix<dcomp>::InnerIterator it(*time_independent,k); it; ++it)
+    //     {
+    //         std::cout << it.row() << " " << it.col() << " ";
+    //         std::cout << it.value() << "\n";
+    //     }
+    // }
 }
 
 void Hamiltonian::create_time_dependent(){

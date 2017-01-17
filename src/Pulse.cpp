@@ -38,7 +38,7 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p) {
 
         // calculate length (number of array cells) of each pulse
         pulse_length       = ceil(2.0*pi*cycles_total[i]/
-                             (energy[i]*delta_t));
+                             (energy[i]*delta_t))+1;
 
         // find the largest
         if (pulse_length>max_pulse_length){
@@ -96,23 +96,23 @@ void Pulse::initialize_pulse(int n){
 
     // index that turns pulse on
     on_start      = ceil(period*cycles_delay[n]/
-                         (delta_t));
+                         (delta_t))+1;
 
     // index that holds pulse at max
     plateau_start = ceil(period*(cycles_on[n]+cycles_delay[n])/
-                         (delta_t));
+                         (delta_t))+1;
 
     // index that turns pulse off
     off_start     = ceil(period*
                         (cycles_plateau[n]+cycles_on[n]+
                         cycles_delay[n])/
-                        (delta_t));
+                        (delta_t))+1;
 
     // index that holds pulse at 0
     off_end       = ceil(period*
                         (cycles_off[n]+cycles_plateau[n]+
                           cycles_on[n]+cycles_delay[n])/
-                          (delta_t));
+                          (delta_t))+1;
     if (! pulse_alloc) {
         pulse_envelope[n] = new double[max_pulse_length];
         pulse_value[n] = new double[max_pulse_length];

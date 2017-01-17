@@ -115,7 +115,7 @@ void Wavefunction::create_grid() {
 
     // build grid
     for (int i=0; i<num_dims; i++) {
-        num_x[i] =  ceil((dim_size[i])/delta_x[i]);
+        num_x[i] =  ceil((dim_size[i])/delta_x[i])+1;
 
         // odd number so it is even on both sides
         if (num_x[i]%2==0) num_x[i]++;
