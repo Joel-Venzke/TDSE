@@ -42,7 +42,7 @@ public:
     void checkpoint(HDF5Wrapper& data_file, int write_idx,
         double time);
     void checkpoint_psi(HDF5Wrapper& data_file,
-        H5std_string var_path);
+        H5std_string var_path, int write_idx);
 
     // tools
     void normalize();

@@ -85,7 +85,7 @@ void Simulation::imag_time_prop(int num_states) {
         // make sure all states are orthonormal for mgs
         states.push_back(psi[0]/psi->norm());
         wavefunction->checkpoint_psi(states_file,
-            "/State_"+std::to_string(iter));
+            "/States",iter);
         wavefunction->reset_psi();
         converged = false;
     }
