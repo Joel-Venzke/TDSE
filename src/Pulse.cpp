@@ -175,8 +175,10 @@ void Pulse::checkpoint(HDF5Wrapper& data_file) {
     // write time, a_field, and a_field_envelope to hdf5
     data_file.write_object(time,max_pulse_length,"/Pulse/time",
         "The time for each index of the pulse in a.u.");
+
     data_file.write_object(a_field,max_pulse_length,"/Pulse/a_field",
         "The value of the A field at each point in time in a.u.");
+
 
     if (pulse_alloc) {
         // write each pulse both value and envelope

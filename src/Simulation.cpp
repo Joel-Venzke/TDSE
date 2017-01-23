@@ -75,7 +75,7 @@ void Simulation::imag_time_prop(int num_states) {
             modified_gram_schmidt(states);
             wavefunction->normalize();
             if (i%write_frequency==0) {
-                converged = check_convergance(psi[0],psi_old,1e-4);
+                converged = check_convergance(psi[0],psi_old,1e-10);
                 wavefunction->checkpoint(*file,i/write_frequency,
                     i/write_frequency);
             }

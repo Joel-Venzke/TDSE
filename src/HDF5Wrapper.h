@@ -11,6 +11,9 @@ using namespace H5;
 class HDF5Wrapper {
 private:
     H5File                   *data_file;
+    std::string              file_name;
+    bool                     file_open;
+    bool                     header;
     CompType                 *complex_data_type;
     // saves datasets for expendable variables
     std::vector<DataSet*>    extendable_dataset_complex;
@@ -23,11 +26,16 @@ private:
 public:
     // Constructor
     HDF5Wrapper(Parameters& p);
-    HDF5Wrapper(std::string file_name, Parameters& p);
-    HDF5Wrapper(std::string file_name);
+    HDF5Wrapper(std::string f_name, Parameters& p);
+    HDF5Wrapper(std::string f_name);
 
     // destructor
     ~HDF5Wrapper();
+
+    void reopen();
+    void close();
+
+    void set_header(bool h);
 
     void create_group(H5std_string group_path);
 
@@ -85,7 +93,7 @@ public:
 
     // reads restart and validates file
     void read_restart(Parameters& p);
-    void read_restart(Parameters& p, std::string file_name);
+    void read_restart(Parameters& p, std::string f_name);
 
     // kill run
     void end_run(std::string str);

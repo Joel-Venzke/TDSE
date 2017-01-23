@@ -29,7 +29,7 @@ hsize_t* HDF5Wrapper::get_hsize_t(int size, int *dims) {
 void HDF5Wrapper::write_object(
     int data,
     H5std_string var_path) {
-
+    reopen();
     // size of "array"
     hsize_t h5_size[1];
     h5_size[0]     = 1;
@@ -44,6 +44,8 @@ void HDF5Wrapper::write_object(
 
     // write data to file
     data_set.write(&data, PredType::NATIVE_INT);
+
+    close();
 }
 
 // Writes double to HDF5
@@ -51,7 +53,7 @@ void HDF5Wrapper::write_object(
 void HDF5Wrapper::write_object(
     double data,
     H5std_string var_path) {
-
+    reopen();
     // size of "array"
     hsize_t h5_size[1];
     h5_size[0]     = 1;
@@ -66,6 +68,8 @@ void HDF5Wrapper::write_object(
 
     // write data to file
     data_set.write(&data, PredType::NATIVE_DOUBLE);
+
+    close();
 }
 
 // Writes 1D int array to HDF5
@@ -74,7 +78,7 @@ void HDF5Wrapper::write_object(
     int *data,
     int size,
     H5std_string var_path) {
-
+    reopen();
     // size of array
     hsize_t h5_size[1];
     h5_size[0]     = size;
@@ -89,6 +93,8 @@ void HDF5Wrapper::write_object(
 
     // write data to file
     data_set.write(data, PredType::NATIVE_INT);
+
+    close();
 }
 
 // Writes N-D int array to HDF5
@@ -98,7 +104,7 @@ void HDF5Wrapper::write_object(
     int size,
     int *dims,
     H5std_string var_path) {
-
+    reopen();
     // size of array
     hsize_t *h5_size = get_hsize_t(size, dims);
 
@@ -114,6 +120,8 @@ void HDF5Wrapper::write_object(
     data_set.write(data, PredType::NATIVE_INT);
 
     delete[] h5_size;
+
+    close();
 }
 
 // Writes 1D double array to HDF5
@@ -122,7 +130,7 @@ void HDF5Wrapper::write_object(
     double *data,
     int size,
     H5std_string var_path) {
-
+    reopen();
     // size of array
     hsize_t h5_size[1];
     h5_size[0]     = size;
@@ -137,6 +145,8 @@ void HDF5Wrapper::write_object(
 
     // write data to file
     data_set.write(data, PredType::NATIVE_DOUBLE);
+
+    close();
 }
 
 // Writes N-Dim double array to HDF5
@@ -146,7 +156,7 @@ void HDF5Wrapper::write_object(
     int size,
     int* dims,
     H5std_string var_path) {
-
+    reopen();
     // size of array
     hsize_t *h5_size = get_hsize_t(size, dims);
 
@@ -162,6 +172,8 @@ void HDF5Wrapper::write_object(
     data_set.write(data, PredType::NATIVE_DOUBLE);
 
     delete[] h5_size;
+
+    close();
 }
 
 // Writes 1D complex double array to HDF5
@@ -170,7 +182,7 @@ void HDF5Wrapper::write_object(
     dcomp *data,
     int size,
     H5std_string var_path) {
-
+    reopen();
     // size of array
     hsize_t h5_size[1];
     h5_size[0] = size;
@@ -185,6 +197,8 @@ void HDF5Wrapper::write_object(
 
     // write data to file
     data_set.write(data, complex_data_type[0]);
+
+    close();
 }
 
 void HDF5Wrapper::write_object(
@@ -192,7 +206,7 @@ void HDF5Wrapper::write_object(
     int size,
     int *dims,
     H5std_string var_path) {
-
+    reopen();
     // size of array
     hsize_t *h5_size = get_hsize_t(size, dims);
 
@@ -208,6 +222,8 @@ void HDF5Wrapper::write_object(
     data_set.write(data, complex_data_type[0]);
 
     delete[] h5_size;
+
+    close();
 }
 
 // Writes int to HDF5
@@ -216,7 +232,7 @@ void HDF5Wrapper::write_object(
     int data,
     H5std_string var_path,
     H5std_string attribute) {
-
+    reopen();
     // size of "array"
     hsize_t h5_size[1];
     h5_size[0]     = 1;
@@ -238,6 +254,8 @@ void HDF5Wrapper::write_object(
     Attribute att = data_set.createAttribute( "Attribute", str_type,
         att_space );
     att.write( str_type, attribute );
+
+    close();
 }
 
 // Writes double to HDF5
@@ -246,7 +264,7 @@ void HDF5Wrapper::write_object(
     double data,
     H5std_string var_path,
     H5std_string attribute) {
-
+    reopen();
     // size of "array"
     hsize_t h5_size[1];
     h5_size[0]     = 1;
@@ -268,6 +286,8 @@ void HDF5Wrapper::write_object(
     Attribute att = data_set.createAttribute( "Attribute", str_type,
         att_space );
     att.write( str_type, attribute );
+
+    close();
 }
 
 // Writes 1D int array to HDF5
@@ -277,7 +297,7 @@ void HDF5Wrapper::write_object(
     int size,
     H5std_string var_path,
     H5std_string attribute) {
-
+    reopen();
     // size of array
     hsize_t h5_size[1];
     h5_size[0]     = size;
@@ -299,6 +319,8 @@ void HDF5Wrapper::write_object(
     Attribute att = data_set.createAttribute( "Attribute", str_type,
         att_space );
     att.write( str_type, attribute );
+
+    close();
 }
 
 // Writes N-D int array to HDF5
@@ -309,7 +331,7 @@ void HDF5Wrapper::write_object(
     int *dims,
     H5std_string var_path,
     H5std_string attribute) {
-
+    reopen();
     // size of array
     hsize_t *h5_size = get_hsize_t(size, dims);
 
@@ -332,6 +354,8 @@ void HDF5Wrapper::write_object(
     att.write( str_type, attribute );
 
     delete h5_size;
+
+    close();
 }
 
 // Writes 1D double array to HDF5
@@ -341,7 +365,7 @@ void HDF5Wrapper::write_object(
     int size,
     H5std_string var_path,
     H5std_string attribute) {
-
+    reopen();
     // size of array
     hsize_t h5_size[1];
     h5_size[0]     = size;
@@ -363,6 +387,8 @@ void HDF5Wrapper::write_object(
     Attribute att = data_set.createAttribute( "Attribute", str_type,
         att_space );
     att.write( str_type, attribute );
+
+    close();
 }
 
 // Writes N-D double array to HDF5
@@ -373,7 +399,7 @@ void HDF5Wrapper::write_object(
     int *dims,
     H5std_string var_path,
     H5std_string attribute) {
-
+    reopen();
     // size of array
     hsize_t *h5_size = get_hsize_t(size, dims);
 
@@ -396,6 +422,8 @@ void HDF5Wrapper::write_object(
     att.write( str_type, attribute );
 
     delete h5_size;
+
+    close();
 }
 
 // Writes 1D complex double array to HDF5
@@ -405,7 +433,7 @@ void HDF5Wrapper::write_object(
     int size,
     H5std_string var_path,
     H5std_string attribute) {
-
+    reopen();
     // size of array
     hsize_t h5_size[1];
     h5_size[0] = size;
@@ -427,6 +455,8 @@ void HDF5Wrapper::write_object(
     Attribute att = data_set.createAttribute( "Attribute", str_type,
         att_space );
     att.write( str_type, attribute );
+
+    close();
 }
 
 // Writes N-D complex double array to HDF5
@@ -437,7 +467,7 @@ void HDF5Wrapper::write_object(
     int * dims,
     H5std_string var_path,
     H5std_string attribute) {
-
+    reopen();
     // size of array
     hsize_t *h5_size = get_hsize_t(size, dims);
 
@@ -461,6 +491,8 @@ void HDF5Wrapper::write_object(
     att.write( str_type, attribute );
 
     delete h5_size;
+
+    close();
 }
 
 void HDF5Wrapper::write_object(
@@ -468,6 +500,7 @@ void HDF5Wrapper::write_object(
     int size,
     H5std_string var_path,
     int write_idx) {
+    reopen();
     // create object
     if (write_idx==0) {
         // size of array
@@ -558,6 +591,8 @@ void HDF5Wrapper::write_object(
         delete filespace;
         delete memspace;
     }
+
+    close();
 }
 
 void HDF5Wrapper::write_object(
@@ -566,6 +601,7 @@ void HDF5Wrapper::write_object(
     H5std_string var_path,
     H5std_string attribute,
     int write_idx) {
+    reopen();
     // create object
     if (write_idx==0) {
         // size of array
@@ -663,6 +699,8 @@ void HDF5Wrapper::write_object(
         delete filespace;
         delete memspace;
     }
+
+    close();
 }
 
 
@@ -670,6 +708,7 @@ void HDF5Wrapper::write_object(
     double data,
     H5std_string var_path,
     int write_idx) {
+    reopen();
     // create object
     if (write_idx==0) {
         // size of array
@@ -754,6 +793,8 @@ void HDF5Wrapper::write_object(
         delete filespace;
         delete memspace;
     }
+
+    close();
 }
 
 void HDF5Wrapper::write_object(
@@ -761,6 +802,7 @@ void HDF5Wrapper::write_object(
     H5std_string var_path,
     H5std_string attribute,
     int write_idx) {
+    reopen();
     // create object
     if (write_idx==0) {
         // size of array
@@ -852,10 +894,15 @@ void HDF5Wrapper::write_object(
         delete filespace;
         delete memspace;
     }
+
+    close();
 }
 
 void HDF5Wrapper::create_group(H5std_string group_path) {
+    reopen();
     Group new_group(data_file->createGroup(group_path));
+
+    close();
 }
 
 // writes out header for Parameters and builds the various
@@ -863,6 +910,7 @@ void HDF5Wrapper::create_group(H5std_string group_path) {
 void HDF5Wrapper::write_header(Parameters & p){
     int num_dims = p.get_num_dims();
     int num_pulses = p.get_num_pulses();
+    header = true;
 
     // set up group
     create_group("/Parameters");
@@ -903,6 +951,9 @@ void HDF5Wrapper::write_header(Parameters & p){
         "The fundamental angular frequency of the pulse. Corresponds to the energy of the photons in atomic units.");
     write_object(p.get_e_max(), num_pulses, "/Parameters/e_max",
         "The maximum amplitude of the pulse in atomic units.");
+
+    header = false;
+    close();
 }
 
 // TDOD: set up restart
@@ -916,7 +967,7 @@ void HDF5Wrapper::read_restart(Parameters & p) {
 }
 
 // TODO: more of this restart stuff
-void HDF5Wrapper::read_restart(Parameters & p, std::string file_name){
+void HDF5Wrapper::read_restart(Parameters & p, std::string f_name){
     std::string err_str;
     // Check if restart can use current file
     if (p.get_restart() == 1 ) {
@@ -927,33 +978,45 @@ void HDF5Wrapper::read_restart(Parameters & p, std::string file_name){
 
 // constructor
 // file_name needs ending ".h5"
-HDF5Wrapper::HDF5Wrapper(std::string file_name, Parameters & p) {
+HDF5Wrapper::HDF5Wrapper(std::string f_name, Parameters & p) {
+    file_name = f_name;
+    header    = false;
     if (p.get_restart() == 1) {
         read_restart(p,file_name);
     } else {
         data_file = new H5File( file_name, H5F_ACC_TRUNC);
+        file_open = true;
         write_header(p);
     }
     define_complex();
+    close();
 }
 
 // constructor
 // file_name needs ending ".h5"
-HDF5Wrapper::HDF5Wrapper(std::string file_name) {
+HDF5Wrapper::HDF5Wrapper(std::string f_name) {
+    file_name = f_name;
+    header    = false;
     data_file = new H5File( file_name, H5F_ACC_TRUNC);
+    file_open = true;
     define_complex();
+    close();
 }
 
 // constructor
 // file_name needs ending ".h5"
 HDF5Wrapper::HDF5Wrapper( Parameters & p) {
+    header    = false;
+    file_name = "TDSE.h5";
     if (p.get_restart() == 1) {
         read_restart(p);
     } else {
-        data_file = new H5File( "TDSE.h5", H5F_ACC_TRUNC);
+        data_file = new H5File( file_name, H5F_ACC_TRUNC);
+        file_open = true;
         write_header(p);
     }
     define_complex();
+    close();
 }
 
 void HDF5Wrapper::define_complex() {
@@ -962,10 +1025,29 @@ void HDF5Wrapper::define_complex() {
     complex_data_type->insertMember( "i", sizeof(double), PredType::NATIVE_DOUBLE);
 }
 
+void HDF5Wrapper::reopen() {
+    if (!header && !file_open) {
+        data_file = new H5File( file_name, H5F_ACC_RDWR);
+        file_open = true;
+    }
+}
+
+void HDF5Wrapper::close() {
+    if (!header && file_open) {
+        data_file->close();
+        delete data_file;
+        file_open = false;
+    }
+}
+
+void HDF5Wrapper::set_header(bool h) {
+    header = h;
+}
+
 // destructor
 HDF5Wrapper::~HDF5Wrapper(){
     std::cout << "Deleting HDF5Wrapper\n";
-    delete data_file;
+    close();
     for (int i=0; i<extendable_dataset_double.size(); i++) {
         delete extendable_dataset_double[i];
     }

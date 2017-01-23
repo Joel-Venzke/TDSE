@@ -105,7 +105,8 @@ void Wavefunction::checkpoint(HDF5Wrapper& data_file, int write_idx,
 void Wavefunction::checkpoint_psi(HDF5Wrapper& data_file,
     H5std_string var_path, int write_idx) {
 
-    std::cout << "Checkpointing Wavefunction: " << var_path << "\n";
+    std::cout << "Checkpointing Wavefunction: " << var_path;
+    std::cout << " " << write_idx << "\n";
 
     data_file.write_object(psi->data(), num_psi, var_path, write_idx);
 }
