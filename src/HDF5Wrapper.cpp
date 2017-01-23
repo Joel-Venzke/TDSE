@@ -854,6 +854,10 @@ void HDF5Wrapper::write_object(
     }
 }
 
+void HDF5Wrapper::create_group(H5std_string group_path) {
+    Group new_group(data_file->createGroup(group_path));
+}
+
 // writes out header for Parameters and builds the various
 // groups that will be used by other classes
 void HDF5Wrapper::write_header(Parameters & p){
@@ -861,9 +865,9 @@ void HDF5Wrapper::write_header(Parameters & p){
     int num_pulses = p.get_num_pulses();
 
     // set up group
-    Group param_group( data_file->createGroup( "/Parameters" ));
-    Group pulse_group( data_file->createGroup( "/Pulse" ));
-    Group wavefunction_group( data_file->createGroup( "/Wavefunction" ));
+    create_group("/Parameters");
+    create_group("/Pulse" );
+    create_group("/Wavefunction" );
 
     // write out header values
     write_object(num_dims,"/Parameters/num_dims",
@@ -930,6 +934,14 @@ HDF5Wrapper::HDF5Wrapper(std::string file_name, Parameters & p) {
         data_file = new H5File( file_name, H5F_ACC_TRUNC);
         write_header(p);
     }
+    define_complex();
+}
+
+// constructor
+// file_name needs ending ".h5"
+HDF5Wrapper::HDF5Wrapper(std::string file_name) {
+    data_file = new H5File( file_name, H5F_ACC_TRUNC);
+    define_complex();
 }
 
 // constructor
@@ -941,6 +953,10 @@ HDF5Wrapper::HDF5Wrapper( Parameters & p) {
         data_file = new H5File( "TDSE.h5", H5F_ACC_TRUNC);
         write_header(p);
     }
+    define_complex();
+}
+
+void HDF5Wrapper::define_complex() {
     complex_data_type = new CompType(sizeof(dcomp(1.0,1.0)));
     complex_data_type->insertMember( "r", 0, PredType::NATIVE_DOUBLE);
     complex_data_type->insertMember( "i", sizeof(double), PredType::NATIVE_DOUBLE);

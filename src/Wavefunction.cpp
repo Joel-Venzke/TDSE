@@ -67,7 +67,7 @@ void Wavefunction::checkpoint(HDF5Wrapper& data_file, int write_idx,
             data_file.write_object(x_value[i], num_x[i],
                 "/Wavefunction/"+str,
                 "The coordinates of the "+std::to_string(i)+
-                "dimension");
+                " dimension");
         }
 
         // write psi_1 and psi_2 if still allocated
@@ -100,6 +100,14 @@ void Wavefunction::checkpoint(HDF5Wrapper& data_file, int write_idx,
         data_file.write_object(time, "/Wavefunction/psi_time",
             write_idx);
     }
+}
+
+void Wavefunction::checkpoint_psi(HDF5Wrapper& data_file,
+    H5std_string var_path) {
+
+    std::cout << "Checkpointing Wavefunction: " << var_path << "\n";
+
+    data_file.write_object(psi->data(), num_psi, var_path);
 }
 
 void Wavefunction::create_grid() {
@@ -157,10 +165,14 @@ void Wavefunction::create_psi() {
     double x2;        // x value squared
 
     // allocate data
-    psi_1 = new dcomp[num_psi_12];
-    psi_2 = new dcomp[num_psi_12];
+    if (! psi_12_alloc) {
+        psi_1 = new dcomp[num_psi_12];
+        psi_2 = new dcomp[num_psi_12];
+        psi_12_alloc = true;
 
-    sigma  = 0.50;
+    }
+
+    sigma  = 1.0;
 
     sigma2 = sigma*sigma;
     // TODO: needs to be changed for more than one dim
@@ -173,9 +185,6 @@ void Wavefunction::create_psi() {
         psi_1[i] = dcomp(exp(-1*x2/(2*sigma2)),0.0);
         psi_2[i] = dcomp(exp(-1*x2/(2*sigma2)),0.0);
     }
-
-    // psi_1 and psi_2 are allocated
-    psi_12_alloc = true;
 
     // get size of psi
     num_psi = num_psi_12*num_psi_12;
@@ -295,6 +304,11 @@ double Wavefunction::norm(dcomp *data, int length, double dx) {
     }
     total  *= dx/2.0;
     return total;
+}
+
+void Wavefunction::reset_psi() {
+    create_psi();
+    cleanup();
 }
 
 int* Wavefunction::get_num_x() {

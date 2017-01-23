@@ -19,13 +19,17 @@ private:
     std::vector<std::string> extendable_string_double;
 
     hsize_t* get_hsize_t(int size, int *dims);
+    void     define_complex();
 public:
     // Constructor
     HDF5Wrapper(Parameters& p);
     HDF5Wrapper(std::string file_name, Parameters& p);
+    HDF5Wrapper(std::string file_name);
 
     // destructor
     ~HDF5Wrapper();
+
+    void create_group(H5std_string group_path);
 
     // write single entry
     void write_object(int data, H5std_string var_path);

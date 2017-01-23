@@ -30,7 +30,8 @@ public:
     Hamiltonian(Wavefunction &w, Pulse &pulse, HDF5Wrapper& data_file,
         Parameters &p);
 
-    Eigen::SparseMatrix<dcomp>* get_time_hamiltonian(double time);
+    Eigen::SparseMatrix<dcomp>* get_total_hamiltonian(double time);
+    Eigen::SparseMatrix<dcomp>* get_time_independent();
 
     ~Hamiltonian();
 };

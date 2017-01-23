@@ -41,12 +41,15 @@ public:
     // IO
     void checkpoint(HDF5Wrapper& data_file, int write_idx,
         double time);
+    void checkpoint_psi(HDF5Wrapper& data_file,
+        H5std_string var_path);
 
     // tools
     void normalize();
     void normalize(dcomp *data, int length, double dx);
     double norm();
     double norm(dcomp *data, int length, double dx);
+    void reset_psi();
 
     int* get_num_x();
     int  get_num_psi();

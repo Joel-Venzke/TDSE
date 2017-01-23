@@ -16,11 +16,13 @@ time_y    = np.max(x)*0.9
 # calculate color bounds
 max_val   = np.max(psi_value[:].real)
 min_val   = np.min(psi_value[:].real)
-print "min: ", min_val
-print "max: ", max_val
+print "min plot: ", min_val
+print "max plot: ", max_val
 
 # shape into a 3d array with time as the first axis
 p_sqrt   = np.sqrt(psi_value.shape[1])
+print "dim size:", p_sqrt, "Should be integer"
+p_sqrt          = int(p_sqrt)
 psi_value.shape = (psi_value.shape[0],p_sqrt,p_sqrt)
 
 # set up initial figure with color bar

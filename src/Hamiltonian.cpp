@@ -3,6 +3,7 @@
 #include <vector>
 #include <Eigen/Sparse>
 #include <math.h>
+#include <stdlib.h>
 
 #define dcomp std::complex<double>
 
@@ -16,8 +17,8 @@ Hamiltonian::Hamiltonian(Wavefunction &w, Pulse &pulse,
     delta_x    = w.get_delta_x();
     x_value    = w.get_x_value();
     z          = 2.0;
-    alpha      = 0.01;
-    beta       = 0.05;
+    alpha      = 1.0;
+    beta       = 1.0;
     beta2      = beta*beta;
 
     // total_hamlitonian = new Eigen::SparseMatrix<dcomp>(num_psi,num_psi);
@@ -32,7 +33,7 @@ Hamiltonian::Hamiltonian(Wavefunction &w, Pulse &pulse,
 void Hamiltonian::create_time_independent(){
     double dx2  = delta_x[0]*delta_x[0];     // dx squared
     double diff; // distance between x_1 and x_2
-    dcomp off_diagonal(1.0/(2.0*dx2),0.0);  // off diagonal terms
+    dcomp off_diagonal(-1.0/(2.0*dx2),0.0);  // off diagonal terms
     dcomp diagonal(0.0,0.0);                // diagonal terms
     time_independent = new Eigen::SparseMatrix<dcomp>(num_psi,num_psi);
     int idx_1; // index for psi_1
@@ -51,14 +52,14 @@ void Hamiltonian::create_time_independent(){
         if (i>=0 and i<num_psi) {
             idx_1    = i/num_psi_12;
             idx_2    = i%num_psi_12;
-            diff     = x_value[0][idx_1]-x_value[0][idx_2];
+            diff     = std::abs(x_value[0][idx_1]-x_value[0][idx_2]);
 
             // kinetic term
-            diagonal =  dcomp(-2.0/dx2,0.0);
+            diagonal =  dcomp(2.0/dx2,0.0);
             // nuclei electron 1
-            diagonal -= dcomp(z/(x_value[0][idx_1]+alpha),0.0);
+            diagonal -= dcomp(z/(std::abs(x_value[0][idx_1])+alpha),0.0);
             // nuclei electron 2
-            diagonal -= dcomp(z/(x_value[0][idx_2]+alpha),0.0);
+            diagonal -= dcomp(z/(std::abs(x_value[0][idx_2])+alpha),0.0);
             // e-e correlation
             diagonal += dcomp(1/sqrt(diff*diff+beta2),0.0);
 
@@ -75,13 +76,15 @@ void Hamiltonian::create_time_independent(){
     // reduce to correct size
     time_independent->makeCompressed();
 
-    // for (int k=0; k<time_independent->outerSize(); ++k) {
-    //     for (Eigen::SparseMatrix<dcomp>::InnerIterator it(*time_independent,k); it; ++it)
-    //     {
-    //         std::cout << it.row() << " " << it.col() << " ";
-    //         std::cout << it.value() << "\n";
-    //     }
-    // }
+    for (int k=0; k<time_independent->outerSize(); ++k) {
+        for (Eigen::SparseMatrix<dcomp>::InnerIterator it(*time_independent,k); it; ++it)
+        {
+            if ((it.value().real()<-10e10)||(it.value().real()>10e10)) {
+                std::cout << it.row() << " " << it.col() << " ";
+                std::cout << it.value() << "\n";
+            }
+        }
+    }
 }
 
 void Hamiltonian::create_time_dependent(){
@@ -130,9 +133,16 @@ void Hamiltonian::create_total_hamlitonian(){
     total_hamlitonian->makeCompressed();
 }
 
-Eigen::SparseMatrix<dcomp>* Hamiltonian::get_time_hamiltonian(double time) {
+Eigen::SparseMatrix<dcomp>* Hamiltonian::get_total_hamiltonian(
+    double time) {
     total_hamlitonian[0] = time*time_dependent[0];
     total_hamlitonian[0] = total_hamlitonian[0]+time_independent[0];
+    total_hamlitonian->makeCompressed();
+    return total_hamlitonian;
+}
+
+Eigen::SparseMatrix<dcomp>* Hamiltonian::get_time_independent() {
+    total_hamlitonian[0] = time_independent[0];
     total_hamlitonian->makeCompressed();
     return total_hamlitonian;
 }
