@@ -29,6 +29,8 @@
 *.app
 TDSE
 
+# run files
+*.o*
 
 # build system files
 Makefile

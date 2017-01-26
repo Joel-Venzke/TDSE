@@ -49,6 +49,9 @@ Parameters::Parameters(std::string file_name) {
     // read data from file
     json data  = file_to_json(file_name);
 
+    std::cout << "input file: "<< file_name <<"\n";
+    std::cout << std::flush;
+
     // get numeric information
     delta_t    = data["delta_t"];
     num_dims   = data["dimensions"].size();
