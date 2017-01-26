@@ -10,6 +10,8 @@
 
 int main(int argc, char** argv) {
     // initialize all of the classes
+    Eigen::initParallel();
+    std::cout << "Using " << Eigen::nbThreads( ) << " threads\n";
     Parameters parameters("input.json");
     HDF5Wrapper data_file(parameters);
     Pulse pulse(data_file, parameters);
@@ -17,8 +19,6 @@ int main(int argc, char** argv) {
     Hamiltonian hamiltonian(wavefunction,pulse,data_file,parameters);
     Simulation s(hamiltonian,wavefunction,pulse,data_file,parameters);
 
-    Eigen::initParallel();
-    std::cout << "Using " << Eigen::nbThreads( ) << " threads\n";
     // get ground states
     switch (parameters.get_state_solver_idx()) {
         case 0: // File
