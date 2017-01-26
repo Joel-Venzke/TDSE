@@ -64,13 +64,35 @@ Parameters::Parameters(std::string file_name) {
     }
 
     // get simulation behavior;
-    restart    = data["restart"];
-    target     = data["target"];
+    restart         = data["restart"];
+    target          = data["target"];
+    alpha           = data["alpha"];
+    beta            = data["beta"];
+    write_frequency = data["write_frequency"];
+    sigma           = data["sigma"];
+    tol             = data["tol"];
+    state_solver    = data["state_solver"];
+    num_states      = data["states"].size();
+
+    state_energy    = new double[num_states];
+
+    for (int i=0; i<num_states; i++) {
+        state_energy[i] = data["states"][i]["energy"];
+    }
 
     // index is used throughout code for efficiency
     // and ease of writing to hdf5
     if (target=="He") {
         target_idx = 0;
+        z          = 2.0; // He atomic number
+    }
+
+    if (state_solver == "File") {
+        state_solver_idx = 0;
+    } else if ( state_solver == "ITP" ) {
+        state_solver_idx = 1;
+    } else if ( state_solver == "Power" ) {
+        state_solver_idx = 2;
     }
 
     // get pulse information
@@ -207,6 +229,17 @@ void Parameters::validate(){
         err_str += "\" \nvalid targets are \"He\"";
     }
 
+    if (state_solver=="file") {
+        error_found = true;
+        err_str += "\nInvalid state solver: \"";
+        err_str += "States from file is not supported yet\"";
+    } else if (state_solver!="ITP" && state_solver!="Power") {
+        error_found = true;
+        err_str += "\nInvalid state solver: \"";
+        err_str += state_solver;
+        err_str += "\" \nvalid solvers are \"ITP\" and \"Power\"\n";
+    }
+
     // exit here to get all errors in one run
     if (error_found) {
         end_run(err_str);
@@ -242,6 +275,46 @@ std::string Parameters::get_target() {
 
 int Parameters::get_target_idx(){
     return target_idx;
+}
+
+double Parameters::get_z() {
+    return z;
+}
+
+double Parameters::get_alpha() {
+    return alpha;
+}
+
+double Parameters::get_beta() {
+    return beta;
+}
+
+int Parameters::get_write_frequency() {
+    return write_frequency;
+}
+
+double Parameters::get_sigma() {
+    return sigma;
+}
+
+int Parameters::get_num_states() {
+    return num_states;
+}
+
+double* Parameters::get_state_energy() {
+    return state_energy;
+}
+
+double Parameters::get_tol() {
+    return tol;
+}
+
+int Parameters::get_state_solver_idx() {
+    return state_solver_idx;
+}
+
+std::string Parameters::get_state_solver() {
+    return state_solver;
 }
 
 int Parameters::get_num_pulses() {

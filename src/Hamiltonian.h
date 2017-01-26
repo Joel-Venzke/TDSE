@@ -16,6 +16,7 @@ private:
     double alpha;        // soft core atomic
     double beta;         // soft core ee
     double beta2;         // soft core ee
+    double *a_field;
     double *delta_x;
     double **x_value;
     Eigen::SparseMatrix<dcomp>* time_independent;
@@ -30,7 +31,7 @@ public:
     Hamiltonian(Wavefunction &w, Pulse &pulse, HDF5Wrapper& data_file,
         Parameters &p);
 
-    Eigen::SparseMatrix<dcomp>* get_total_hamiltonian(double time);
+    Eigen::SparseMatrix<dcomp>* get_total_hamiltonian(int time_idx);
     Eigen::SparseMatrix<dcomp>* get_time_independent();
 
     ~Hamiltonian();

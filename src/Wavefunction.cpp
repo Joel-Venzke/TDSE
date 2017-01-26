@@ -27,6 +27,7 @@ Wavefunction::Wavefunction(HDF5Wrapper& data_file, Parameters & p) {
     num_dims     = p.get_num_dims();
     dim_size     = p.get_dim_size();
     delta_x      = p.get_delta_x();
+    sigma        = p.get_sigma();
     num_psi_12   = 1;
 
     // validation
@@ -161,7 +162,6 @@ void Wavefunction::create_grid() {
 
 // builds psi from 2 Gaussian psi (one for each electron)
 void Wavefunction::create_psi() {
-    double sigma;     // variance for Gaussian in psi
     double sigma2;    // variance squared for Gaussian in psi
     double x2;        // x value squared
 
@@ -172,8 +172,6 @@ void Wavefunction::create_psi() {
         psi_12_alloc = true;
 
     }
-
-    sigma  = 1.0;
 
     sigma2 = sigma*sigma;
     // TODO: needs to be changed for more than one dim
@@ -208,7 +206,6 @@ void Wavefunction::create_psi() {
 }
 
 void Wavefunction::create_psi(double offset) {
-    double sigma;     // variance for Gaussian in psi
     double sigma2;    // variance squared for Gaussian in psi
     double x1;        // x value squared
     double x2;        // x value squared
@@ -218,8 +215,6 @@ void Wavefunction::create_psi(double offset) {
         psi_1 = new dcomp[num_psi_12];
         psi_2 = new dcomp[num_psi_12];
     }
-
-    sigma  = 0.50;
 
     sigma2 = sigma*sigma;
     // TODO: needs to be changed for more than one dim
@@ -278,7 +273,7 @@ void Wavefunction::normalize(dcomp *data, int length, double dx) {
     double total = norm(data, length, dx);
 
     // square root to get normalization factor
-    total = sqrt(total);
+    total = sqrt(total)/2.0;
 
     // normalize data
     for (int i=0; i<length; i++) {
@@ -305,6 +300,10 @@ double Wavefunction::norm(dcomp *data, int length, double dx) {
     }
     total  *= dx/2.0;
     return total;
+}
+
+double Wavefunction::get_energy(Eigen::SparseMatrix<dcomp> *h){
+    return (psi->dot(h[0]*psi[0])/psi->squaredNorm()).real();
 }
 
 void Wavefunction::reset_psi() {

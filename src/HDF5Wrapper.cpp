@@ -500,7 +500,9 @@ void HDF5Wrapper::write_object(
     int size,
     H5std_string var_path,
     int write_idx) {
+
     reopen();
+
     // create object
     if (write_idx==0) {
         // size of array
@@ -533,29 +535,10 @@ void HDF5Wrapper::write_object(
         // write data
         data_set->write(data, complex_data_type[0]);
 
-        // save for later use
-        // TODO: make into hash table
-        extendable_dataset_complex.push_back(data_set);
-        extendable_string_complex.push_back(var_path);
     } else {
-        // find the index of the dataset
-        // TODO: make into hash table
-        int idx = 0;
-        int idx_max = extendable_string_complex.size();
-        while (extendable_string_complex[idx]!=var_path) {
-            idx++;
-
-            // throw error if dataset is not created yet
-            if (idx >= idx_max) {
-                std::string str = var_path;
-                str += " not found when writing time step ";
-                str += std::to_string(write_idx);
-                end_run(str);
-            }
-        }
-
         // get data set pointer from array
-        DataSet *data_set = extendable_dataset_complex[idx];
+        DataSet *data_set = new DataSet(
+            data_file->openDataSet(var_path));
 
         // new dimension of dataset
         hsize_t h5_size[2];
@@ -601,7 +584,9 @@ void HDF5Wrapper::write_object(
     H5std_string var_path,
     H5std_string attribute,
     int write_idx) {
+
     reopen();
+
     // create object
     if (write_idx==0) {
         // size of array
@@ -634,11 +619,6 @@ void HDF5Wrapper::write_object(
         // write data
         data_set->write(data, complex_data_type[0]);
 
-        // save for later use
-        // TODO: make into hash table
-        extendable_dataset_complex.push_back(data_set);
-        extendable_string_complex.push_back(var_path);
-
         // write attribute
         StrType str_type(0, H5T_VARIABLE);
         DataSpace att_space(H5S_SCALAR);
@@ -646,24 +626,9 @@ void HDF5Wrapper::write_object(
             str_type, att_space );
         att.write( str_type, attribute );
     } else {
-        // find the index of the dataset
-        // TODO: make into hash table
-        int idx = 0;
-        int idx_max = extendable_string_complex.size();
-        while (extendable_string_complex[idx]!=var_path) {
-            idx++;
-
-            // throw error if dataset is not created yet
-            if (idx >= idx_max) {
-                std::string str = var_path;
-                str += " not found when writing time step ";
-                str += std::to_string(write_idx);
-                end_run(str);
-            }
-        }
-
         // get data set pointer from array
-        DataSet *data_set = extendable_dataset_complex[idx];
+        DataSet *data_set = new DataSet(
+            data_file->openDataSet(var_path));
 
         // new dimension of dataset
         hsize_t h5_size[2];
@@ -708,7 +673,9 @@ void HDF5Wrapper::write_object(
     double data,
     H5std_string var_path,
     int write_idx) {
+
     reopen();
+
     // create object
     if (write_idx==0) {
         // size of array
@@ -737,30 +704,10 @@ void HDF5Wrapper::write_object(
 
         // write data
         data_set->write(&data, PredType::NATIVE_DOUBLE);
-
-        // save for later use
-        // TODO: make into hash table
-        extendable_dataset_double.push_back(data_set);
-        extendable_string_double.push_back(var_path);
     } else {
-        // find the index of the dataset
-        // TODO: make into hash table
-        int idx = 0;
-        int idx_max = extendable_string_double.size();
-        while (extendable_string_double[idx]!=var_path) {
-            idx++;
-
-            // throw error if dataset is not created yet
-            if (idx >= idx_max) {
-                std::string str = var_path;
-                str += " not found when writing time step ";
-                str += std::to_string(write_idx);
-                end_run(str);
-            }
-        }
-
         // get data set pointer from array
-        DataSet *data_set = extendable_dataset_double[idx];
+        DataSet *data_set = new DataSet(
+            data_file->openDataSet(var_path));
 
         // new dimension of dataset
         hsize_t h5_size[1];
@@ -802,7 +749,9 @@ void HDF5Wrapper::write_object(
     H5std_string var_path,
     H5std_string attribute,
     int write_idx) {
+
     reopen();
+
     // create object
     if (write_idx==0) {
         // size of array
@@ -832,11 +781,6 @@ void HDF5Wrapper::write_object(
         // write data
         data_set->write(&data, PredType::NATIVE_DOUBLE);
 
-        // save for later use
-        // TODO: make into hash table
-        extendable_dataset_double.push_back(data_set);
-        extendable_string_double.push_back(var_path);
-
         // write attribute
         StrType str_type(0, H5T_VARIABLE);
         DataSpace att_space(H5S_SCALAR);
@@ -844,24 +788,9 @@ void HDF5Wrapper::write_object(
             str_type, att_space );
         att.write( str_type, attribute );
     } else {
-        // find the index of the dataset
-        // TODO: make into hash table
-        int idx = 0;
-        int idx_max = extendable_string_double.size();
-        while (extendable_string_double[idx]!=var_path) {
-            idx++;
-
-            // throw error if dataset is not created yet
-            if (idx >= idx_max) {
-                std::string str = var_path;
-                str += " not found when writing time step ";
-                str += std::to_string(write_idx);
-                end_run(str);
-            }
-        }
-
         // get data set pointer from array
-        DataSet *data_set = extendable_dataset_double[idx];
+        DataSet *data_set = new DataSet(
+            data_file->openDataSet(var_path));
 
         // new dimension of dataset
         hsize_t h5_size[1];
@@ -900,6 +829,7 @@ void HDF5Wrapper::write_object(
 
 void HDF5Wrapper::create_group(H5std_string group_path) {
     reopen();
+
     Group new_group(data_file->createGroup(group_path));
 
     close();
@@ -928,6 +858,21 @@ void HDF5Wrapper::write_header(Parameters & p){
         "The size of the time step in atomic units.");
     write_object(p.get_target_idx(), "/Parameters/target_idx",
         "The index of the target. He:0 ");
+    write_object(p.get_z(), "/Parameters/z",
+        "Atomic number used in Hamiltonian ");
+    write_object(p.get_alpha(), "/Parameters/alpha",
+        "Soft core used in atomic term of Hamiltonian");
+    write_object(p.get_beta(), "/Parameters/beta",
+        "Soft core used in e-e term of Hamiltonian");
+    write_object(p.get_write_frequency(), "/Parameters/write_frequency",
+        "How often are checkpoints done");
+    write_object(p.get_sigma(), "/Parameters/sigma",
+        "STD of wavefunction guess");
+    write_object(p.get_tol(), "/Parameters/tol",
+        "Error tolerance in psi");
+    write_object(p.get_state_solver_idx(),
+        "/Parameters/state_solver_idx",
+        "Index of solver: File:0, ITP:1, Power:2");
     write_object(num_pulses, "/Parameters/num_pulses",
         "The number of pulses from the input file");
     write_object(p.get_pulse_shape_idx(), num_pulses,
@@ -1048,10 +993,4 @@ void HDF5Wrapper::set_header(bool h) {
 HDF5Wrapper::~HDF5Wrapper(){
     std::cout << "Deleting HDF5Wrapper\n";
     close();
-    for (int i=0; i<extendable_dataset_double.size(); i++) {
-        delete extendable_dataset_double[i];
-    }
-    for (int i=0; i<extendable_dataset_complex.size(); i++) {
-        delete extendable_dataset_complex[i];
-    }
 }

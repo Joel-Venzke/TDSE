@@ -15,11 +15,6 @@ private:
     bool                     file_open;
     bool                     header;
     CompType                 *complex_data_type;
-    // saves datasets for expendable variables
-    std::vector<DataSet*>    extendable_dataset_complex;
-    std::vector<std::string> extendable_string_complex;
-    std::vector<DataSet*>    extendable_dataset_double;
-    std::vector<std::string> extendable_string_double;
 
     hsize_t* get_hsize_t(int size, int *dims);
     void     define_complex();

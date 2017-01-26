@@ -3,7 +3,7 @@
 #include "Parameters.h"
 #include <complex>
 #include "HDF5Wrapper.h"
-#include <Eigen/Dense>
+#include <Eigen/Sparse>
 
 
 #define dcomp std::complex<double>
@@ -25,6 +25,7 @@ private:
     bool   psi_alloc;
     // false if its not the first time checkpointing the wavefunction
     bool   first_pass;
+    double sigma;
 
     // hidden from user for safety
     void create_grid();
@@ -49,6 +50,7 @@ public:
     void normalize(dcomp *data, int length, double dx);
     double norm();
     double norm(dcomp *data, int length, double dx);
+    double get_energy(Eigen::SparseMatrix<dcomp> *h);
     void reset_psi();
 
     int* get_num_x();

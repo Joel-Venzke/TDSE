@@ -16,10 +16,11 @@ Hamiltonian::Hamiltonian(Wavefunction &w, Pulse &pulse,
     num_psi_12 = w.get_num_psi_12();
     delta_x    = w.get_delta_x();
     x_value    = w.get_x_value();
-    z          = 2.0;
-    alpha      = 1.0;
-    beta       = 1.0;
+    z          = p.get_z();
+    alpha      = p.get_alpha();
+    beta       = p.get_beta();
     beta2      = beta*beta;
+    a_field    = pulse.get_a_field();
 
     // total_hamlitonian = new Eigen::SparseMatrix<dcomp>(num_psi,num_psi);
     // set up time independent
@@ -75,41 +76,32 @@ void Hamiltonian::create_time_independent(){
 
     // reduce to correct size
     time_independent->makeCompressed();
-
-    for (int k=0; k<time_independent->outerSize(); ++k) {
-        for (Eigen::SparseMatrix<dcomp>::InnerIterator it(*time_independent,k); it; ++it)
-        {
-            if ((it.value().real()<-10e10)||(it.value().real()>10e10)) {
-                std::cout << it.row() << " " << it.col() << " ";
-                std::cout << it.value() << "\n";
-            }
-        }
-    }
 }
 
 void Hamiltonian::create_time_dependent(){
+    double c = 1/7.2973525664e-3;
+    std::cout << c << "\n";
+    dcomp off_diagonal(1.0/(2.0*delta_x[0]*c),0.0);
     time_dependent = new Eigen::SparseMatrix<dcomp>(num_psi,num_psi);
     time_dependent->reserve(Eigen::VectorXi::Constant(num_psi,5));
     for (int i=0; i<num_psi; i++) {
         if (i-num_x[0]>=0 and i-num_x[0]<num_psi) {
-            time_dependent->insert(i-num_x[0],i) = dcomp(-1.0,0.0);
+            time_dependent->insert(i-num_x[0],i) = -1.0*off_diagonal;
         }
         if (i-1>=0 and i-1<num_psi) {
-            time_dependent->insert(i-1,i) = dcomp(-1.0,0.0);
-        }
-        if (i>=0 and i<num_psi) {
-            time_dependent->insert(i,i) = dcomp(2.0,0.0);
+            time_dependent->insert(i-1,i) = -1.0*off_diagonal;
         }
         if (i+1>=0 and i+1<num_psi) {
-            time_dependent->insert(i+1,i) = dcomp(-1.0,0.0);
+            time_dependent->insert(i+1,i) = off_diagonal;
         }
         if (i+num_x[0]>=0 and i+num_x[0]<num_psi) {
-            time_dependent->insert(i+num_x[0],i) = dcomp(-1.0,0.0);
+            time_dependent->insert(i+num_x[0],i) = off_diagonal;
         }
     }
     time_dependent->makeCompressed();
 }
 
+// just fill the non zero with random values so the memory is allocated
 void Hamiltonian::create_total_hamlitonian(){
     total_hamlitonian = new Eigen::SparseMatrix<dcomp>(num_psi,num_psi);
     total_hamlitonian->reserve(Eigen::VectorXi::Constant(num_psi,5));
@@ -134,17 +126,15 @@ void Hamiltonian::create_total_hamlitonian(){
 }
 
 Eigen::SparseMatrix<dcomp>* Hamiltonian::get_total_hamiltonian(
-    double time) {
-    total_hamlitonian[0] = time*time_dependent[0];
+    int time_idx) {
+    total_hamlitonian[0] = a_field[time_idx]*time_dependent[0];
     total_hamlitonian[0] = total_hamlitonian[0]+time_independent[0];
     total_hamlitonian->makeCompressed();
     return total_hamlitonian;
 }
 
 Eigen::SparseMatrix<dcomp>* Hamiltonian::get_time_independent() {
-    total_hamlitonian[0] = time_independent[0];
-    total_hamlitonian->makeCompressed();
-    return total_hamlitonian;
+    return time_independent;
 }
 
 

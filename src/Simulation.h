@@ -29,7 +29,9 @@ public:
         HDF5Wrapper& data_file, Parameters &p);
 
     void imag_time_prop(int num_states);
+    void power_method(int num_states);
     void propagate();
 
     void modified_gram_schmidt(std::vector<Eigen::VectorXcd> &states);
+    void checkpoint_state(HDF5Wrapper& data_file, int write_idx);
 };
