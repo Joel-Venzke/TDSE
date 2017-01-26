@@ -52,7 +52,8 @@ Wavefunction::Wavefunction(HDF5Wrapper& data_file, Parameters & p) {
 
 void Wavefunction::checkpoint(HDF5Wrapper& data_file, int write_idx,
     double time) {
-    std::cout << "Checkpointing Wavefunction: " << write_idx << "\n";
+    std::cout << "Checkpointing Wavefunction: " << write_idx;
+    std::cout << "\n" << std::flush;
     std::string str;
 
     // only write out at start

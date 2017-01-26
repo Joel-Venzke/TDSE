@@ -27,7 +27,8 @@ psi_value.shape = (psi_value.shape[0],p_sqrt,p_sqrt)
 
 # set up initial figure with color bar
 fig = plt.figure()
-plt.pcolor(x, x, psi_value[-1].real, cmap='viridis',vmin=min_val, vmax=max_val)
+plt.imshow(psi_value[-1].real, cmap='viridis', vmin=-1*max_val, vmax=max_val,
+               origin='lower', extent=[x[0],x[-1],x[0],x[-1]])
 # color bar doesn't change during the video so only set it here
 plt.colorbar()
 plt.xlabel("Electron 2 a.u.")

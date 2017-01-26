@@ -211,8 +211,6 @@ void Simulation::power_method(int num_states) {
         // make sure all states are orthonormal for mgs
         states.push_back(psi[0]/psi->norm());
         // save this psi to ${target}.h5
-        std::cout<< "Energy: " << wavefunction->get_energy(
-            hamiltonian->get_time_independent()) << "\n";
         checkpoint_state(states_file,iter);
         // new Gaussian guess
         wavefunction->reset_psi();
@@ -248,8 +246,8 @@ bool Simulation::check_convergance(
     dcomp energy_error = psi_1.dot(h[0]*psi_1)/psi_1.squaredNorm();
     energy_error -= psi_2.dot(h[0]*psi_2)/psi_2.squaredNorm();
     std::cout << "Wavefunction Error: " << wave_error;
-    std::cout << ", Energy Error: " << energy_error.real();
-    std::cout << " with tolerance " << tol << "\n" << std::flush;
+    std::cout << "\nEnergy Error: " << energy_error.real();
+    std::cout << "\nTolerance: " << tol << "\n" << std::flush;
     return wave_error<tol and energy_error.real()<tol;
 }
 

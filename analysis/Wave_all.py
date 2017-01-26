@@ -30,7 +30,8 @@ for i, psi in enumerate(psi_value):
     # set up initial figure with color bar
     max_val   = np.max(abs(psi.real))
     min_val   = -1*max_val
-    plt.pcolor(x, x, psi.real, cmap='bwr',vmin=min_val, vmax=max_val)
+    plt.imshow(psi.real, cmap='bwr', vmin=-1*max_val, vmax=max_val,
+               origin='lower', extent=[x[0],x[-1],x[0],x[-1]])
     # color bar doesn't change during the video so only set it here
     plt.colorbar()
     plt.xlabel("Electron 2 a.u.")
