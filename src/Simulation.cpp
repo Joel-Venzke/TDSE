@@ -30,8 +30,7 @@ void Simulation::propagate() {
     // factor = i*(-i*dx/2)
     dcomp  factor            = dcomp(0.0,1.0)*dcomp(dt/2,0.0);
     // solver for Ax=b
-    Eigen::ConjugateGradient<Eigen::SparseMatrix<dcomp>,
-        Eigen::Lower|Eigen::Upper> solver;
+    Eigen::SparseLU<Eigen::SparseMatrix<dcomp>> solver;
     // time independent Hamiltonian
     Eigen::SparseMatrix<dcomp>* h = hamiltonian->get_time_independent();
     // left matrix in Ax=Cb it would be A
@@ -81,9 +80,7 @@ void Simulation::imag_time_prop(int num_states) {
     // factor = i*(-i*dx/2)
     dcomp  factor            = dcomp(dt/2,0.0);
     // solver for Ax=b
-    //Eigen::SparseLU<Eigen::SparseMatrix<dcomp>> solver;
-    Eigen::ConjugateGradient<Eigen::SparseMatrix<dcomp>,
-        Eigen::Lower|Eigen::Upper> solver;
+    Eigen::SparseLU<Eigen::SparseMatrix<dcomp>> solver;
     // time independent Hamiltonian
     Eigen::SparseMatrix<dcomp>* h = hamiltonian->get_time_independent();
     // left matrix in Ax=Cb it would be A
@@ -162,8 +159,7 @@ void Simulation::power_method(int num_states) {
     // energy guesses
     double* state_energy     = parameters->get_state_energy();
     // solver for Ax=b
-    Eigen::ConjugateGradient<Eigen::SparseMatrix<dcomp>,
-        Eigen::Lower|Eigen::Upper>  solver;
+    Eigen::SparseLU<Eigen::SparseMatrix<dcomp>> solver;
     // time independent Hamiltonian
     Eigen::SparseMatrix<dcomp>* h = hamiltonian->get_time_independent();
     // left matrix in Ax=Cb it would be A
