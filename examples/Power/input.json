@@ -1,7 +1,7 @@
 {
   "delta_t": 0.01,
   "dimensions": [
-    {"dim_size": 100.0,
+    {"dim_size": 50.0,
     "delta_x":   0.1}],
   "restart": 0,
   "target":  "He",
@@ -15,18 +15,7 @@
     {"energy": -1.55846},
     {"energy": -1.26802},
     {"energy": -1.23394},
-    {"energy": -1.22477},
-    {"energy": -1.21812},
-    {"energy": -1.19341},
-    {"energy": -1.18186},
-    {"energy": -1.18275},
-    {"energy": -1.17626},
-    {"energy": -1.15693},
-    {"energy": -1.15731},
-    {"energy": -1.14552},
-    {"energy": -1.13623},
-    {"energy": -1.1089},
-    {"energy": -1.10816}],
+    {"energy": -1.22477}],
   "tol":        1e-10,
   "pulses": [
     {"pulse_shape":   "sin2",
