@@ -1,5 +1,5 @@
 # what flags you want to pass to the C compiler & linker
-AM_CXXFLAGS =-Wall -std=c++11 -O2
+AM_CXXFLAGS =-Wall -std=c++11 -O3
 AM_LDFLAGS =
 
 # this lists the binaries to produce, the (non-PHONY, binary) targets in
