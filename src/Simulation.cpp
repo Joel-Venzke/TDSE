@@ -80,7 +80,8 @@ void Simulation::imag_time_prop(int num_states) {
     // factor = i*(-i*dx/2)
     dcomp  factor            = dcomp(dt/2,0.0);
     // solver for Ax=b
-    Eigen::SparseLU<Eigen::SparseMatrix<dcomp>> solver;
+    //Eigen::SparseLU<Eigen::SparseMatrix<dcomp>> solver;
+    Eigen::ConjugateGradient<Eigen::SparseMatrix<dcomp>, Eigen::Lower|Eigen::Upper> solver;
     // time independent Hamiltonian
     Eigen::SparseMatrix<dcomp>* h = hamiltonian->get_time_independent();
     // left matrix in Ax=Cb it would be A
