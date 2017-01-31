@@ -32,7 +32,8 @@ void Simulation::propagate() {
     // solver for Ax=b
     Eigen::SparseLU<Eigen::SparseMatrix<dcomp>> solver;
     // time independent Hamiltonian
-    Eigen::SparseMatrix<dcomp>* h = hamiltonian->get_time_independent();
+    Eigen::SparseMatrix<dcomp>* h =
+        hamiltonian->get_time_independent();
     // left matrix in Ax=Cb it would be A
     Eigen::SparseMatrix<dcomp> left    = *h;
     // right matrix in Ax=Cb it would be C
@@ -40,8 +41,10 @@ void Simulation::propagate() {
 
     solver.analyzePattern(left);
     // loop over number of states wanted
-    for (int i=1; i<time_length; i++) {
-        h = hamiltonian->get_total_hamiltonian(i);
+    // for (int i=1; i<time_length; i++) {
+    //     h = hamiltonian->get_total_hamiltonian(i);
+    for (int i=1; i<250; i++) {
+        h = hamiltonian->get_total_hamiltonian(0);
         left    = (idenity[0]+factor*h[0]);
         left.makeCompressed();
         right   = (idenity[0]-factor*h[0]);
@@ -52,9 +55,9 @@ void Simulation::propagate() {
 
         // only checkpoint so often
         if (i%write_frequency==0) {
+            std::cout << "On step: " << i << " of " << time_length;
             // write a checkpoint
-            wavefunction->checkpoint(*file,i/write_frequency,
-                time[i]);
+            wavefunction->checkpoint(*file, time[i]);
         }
     }
 
@@ -82,7 +85,8 @@ void Simulation::imag_time_prop(int num_states) {
     // solver for Ax=b
     Eigen::SparseLU<Eigen::SparseMatrix<dcomp>> solver;
     // time independent Hamiltonian
-    Eigen::SparseMatrix<dcomp>* h = hamiltonian->get_time_independent();
+    Eigen::SparseMatrix<dcomp>* h =
+        hamiltonian->get_time_independent();
     // left matrix in Ax=Cb it would be A
     Eigen::SparseMatrix<dcomp> left    = *h;
     // right matrix in Ax=Cb it would be C
@@ -119,8 +123,7 @@ void Simulation::imag_time_prop(int num_states) {
                 converged = check_convergance(psi[0],psi_old,
                     parameters->get_tol());
                 // write a checkpoint
-                wavefunction->checkpoint(*file,i/write_frequency,
-                    i/write_frequency);
+                wavefunction->checkpoint(*file,0.0);
             }
             // increment counter
             i++;
@@ -161,7 +164,8 @@ void Simulation::power_method(int num_states) {
     // solver for Ax=b
     Eigen::SparseLU<Eigen::SparseMatrix<dcomp>> solver;
     // time independent Hamiltonian
-    Eigen::SparseMatrix<dcomp>* h = hamiltonian->get_time_independent();
+    Eigen::SparseMatrix<dcomp>* h =
+        hamiltonian->get_time_independent();
     // left matrix in Ax=Cb it would be A
     Eigen::SparseMatrix<dcomp> left    = *h;
     // file for converged states
@@ -202,8 +206,7 @@ void Simulation::power_method(int num_states) {
                 std::cout << "Energy: ";
                 std::cout << wavefunction->get_energy(h) << "\n";
                 // write a checkpoint
-                wavefunction->checkpoint(*file,i/write_frequency,
-                    i/write_frequency);
+                wavefunction->checkpoint(*file,0.0);
             }
             // increment counter
             i++;
@@ -237,7 +240,8 @@ bool Simulation::check_convergance(
     Eigen::VectorXcd &psi_1,
     Eigen::VectorXcd &psi_2,
     double tol) {
-    Eigen::SparseMatrix<dcomp>* h = hamiltonian->get_time_independent();
+    Eigen::SparseMatrix<dcomp>* h = hamiltonian->
+        get_time_independent();
     Eigen::VectorXcd diff = psi_1-psi_2;
     double wave_error = diff.norm();
     diff = psi_1+psi_2;

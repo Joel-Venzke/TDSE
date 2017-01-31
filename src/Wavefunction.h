@@ -27,6 +27,8 @@ private:
     bool   first_pass;
     double sigma;
 
+    int    write_counter;
+
     // hidden from user for safety
     void create_grid();
     void create_psi();
@@ -40,8 +42,7 @@ public:
     ~Wavefunction();
 
     // IO
-    void checkpoint(HDF5Wrapper& data_file, int write_idx,
-        double time);
+    void checkpoint(HDF5Wrapper& data_file, double time);
     void checkpoint_psi(HDF5Wrapper& data_file,
         H5std_string var_path, int write_idx);
 

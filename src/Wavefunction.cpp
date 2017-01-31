@@ -21,14 +21,15 @@ Wavefunction::Wavefunction(HDF5Wrapper& data_file, Parameters & p) {
     std::cout << "Creating Wavefunction\n";
 
     // initialize values
-    psi_12_alloc = false;
-    psi_alloc    = false;
-    first_pass   = true;
-    num_dims     = p.get_num_dims();
-    dim_size     = p.get_dim_size();
-    delta_x      = p.get_delta_x();
-    sigma        = p.get_sigma();
-    num_psi_12   = 1;
+    psi_12_alloc  = false;
+    psi_alloc     = false;
+    first_pass    = true;
+    num_dims      = p.get_num_dims();
+    dim_size      = p.get_dim_size();
+    delta_x       = p.get_delta_x();
+    sigma         = p.get_sigma();
+    num_psi_12    = 1;
+    write_counter = 0;
 
     // validation
     if (num_dims>1) {
@@ -42,7 +43,7 @@ Wavefunction::Wavefunction(HDF5Wrapper& data_file, Parameters & p) {
     create_psi();
 
     // write out data
-    checkpoint(data_file, 0, 0.0);
+    checkpoint(data_file, 0.0);
 
     // delete psi_1 and psi_2
     cleanup();
@@ -50,9 +51,8 @@ Wavefunction::Wavefunction(HDF5Wrapper& data_file, Parameters & p) {
     std::cout << "Wavefunction created\n";
 }
 
-void Wavefunction::checkpoint(HDF5Wrapper& data_file, int write_idx,
-    double time) {
-    std::cout << "Checkpointing Wavefunction: " << write_idx;
+void Wavefunction::checkpoint(HDF5Wrapper& data_file, double time) {
+    std::cout << "Checkpointing Wavefunction: " << write_counter;
     std::cout << "\n" << std::flush;
     std::string str;
 
@@ -85,23 +85,27 @@ void Wavefunction::checkpoint(HDF5Wrapper& data_file, int write_idx,
         // write data and attribute
         data_file.write_object(psi->data(), num_psi,
             "/Wavefunction/psi",
-            "Wavefunction for the two electron system", write_idx);
+            "Wavefunction for the two electron system",
+            write_counter);
 
         // write time and attribute
         data_file.write_object(time, "/Wavefunction/psi_time",
-            "Time step that psi was written to disk", write_idx);
+            "Time step that psi was written to disk", write_counter);
 
         // allow for future passes to write psi only
         first_pass = false;
     } else {
         // write whenever this function is called
         data_file.write_object(psi->data(), num_psi,
-            "/Wavefunction/psi", write_idx);
+            "/Wavefunction/psi", write_counter);
 
         // write time
         data_file.write_object(time, "/Wavefunction/psi_time",
-            write_idx);
+            write_counter);
     }
+
+    // keep track of what index we are on
+    write_counter++;
 }
 
 void Wavefunction::checkpoint_psi(HDF5Wrapper& data_file,
