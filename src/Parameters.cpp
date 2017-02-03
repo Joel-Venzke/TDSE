@@ -72,6 +72,7 @@ Parameters::Parameters(std::string file_name) {
     alpha           = data["alpha"];
     beta            = data["beta"];
     write_frequency = data["write_frequency"];
+    gobbler         = data["gobbler"];
     sigma           = data["sigma"];
     tol             = data["tol"];
     state_solver    = data["state_solver"];
@@ -294,6 +295,10 @@ double Parameters::get_beta() {
 
 int Parameters::get_write_frequency() {
     return write_frequency;
+}
+
+double Parameters::get_gobbler() {
+    return gobbler;
 }
 
 double Parameters::get_sigma() {

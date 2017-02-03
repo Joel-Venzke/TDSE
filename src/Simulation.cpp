@@ -53,9 +53,12 @@ void Simulation::propagate() {
 
         psi[0] = solver.solve(right*psi[0]);
 
+        wavefunction->gobble_psi();
+
         // only checkpoint so often
         if (i%write_frequency==0) {
             std::cout << "On step: " << i << " of " << time_length;
+            std::cout << "Norm: " << wavefunction->norm();
             // write a checkpoint
             wavefunction->checkpoint(*file, time[i]);
         }
@@ -115,6 +118,7 @@ void Simulation::imag_time_prop(int num_states) {
             modified_gram_schmidt(states);
 
             // normalize with respect to space (include dt)
+            wavefunction->gobble_psi();
             wavefunction->normalize();
 
             // only checkpoint so often
@@ -194,6 +198,7 @@ void Simulation::power_method(int num_states) {
             if (gram_schmit) modified_gram_schmidt(states);
 
             // normalize with respect to space (include dt)
+            wavefunction->gobble_psi();
             wavefunction->normalize();
             // psi[0] = psi[0]/psi->norm();
 

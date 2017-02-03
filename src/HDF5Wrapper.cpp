@@ -866,6 +866,8 @@ void HDF5Wrapper::write_header(Parameters & p){
         "Soft core used in e-e term of Hamiltonian");
     write_object(p.get_write_frequency(), "/Parameters/write_frequency",
         "How often are checkpoints done");
+    write_object(p.get_gobbler(), "/Parameters/gobbler",
+        "The point at which the gobbler turns on at, (1=100 and 0.9=90)");
     write_object(p.get_sigma(), "/Parameters/sigma",
         "STD of wavefunction guess");
     write_object(p.get_tol(), "/Parameters/tol",

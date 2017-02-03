@@ -58,11 +58,11 @@ void Hamiltonian::create_time_independent(){
             // kinetic term
             diagonal =  dcomp(2.0/dx2,0.0);
             // nuclei electron 1
-            diagonal -= dcomp(z/(std::abs(x_value[0][idx_1])+alpha),0.0);
+            diagonal -= dcomp(z/sqrt(x_value[0][idx_1]*x_value[0][idx_1]+alpha),0.0);
             // nuclei electron 2
-            diagonal -= dcomp(z/(std::abs(x_value[0][idx_2])+alpha),0.0);
+            diagonal -= dcomp(z/sqrt(x_value[0][idx_2]*x_value[0][idx_2]+alpha),0.0);
             // e-e correlation
-            diagonal += dcomp(1/sqrt(diff*diff+beta2),0.0);
+            diagonal += dcomp(1/sqrt(diff*diff+alpha),0.0);
 
             time_independent->insert(i,i) = diagonal;
         }

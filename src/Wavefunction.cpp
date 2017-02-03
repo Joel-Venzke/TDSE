@@ -31,6 +31,9 @@ Wavefunction::Wavefunction(HDF5Wrapper& data_file, Parameters & p) {
     num_psi_12    = 1;
     write_counter = 0;
 
+    offset        = dim_size[0]/2.0*p.get_gobbler();
+    width         = pi/(2.0*(dim_size[0]/2.0-offset));
+
     // validation
     if (num_dims>1) {
         end_run("Only 1D is currently supported");
@@ -80,6 +83,13 @@ void Wavefunction::checkpoint(HDF5Wrapper& data_file, double time) {
             data_file.write_object(psi_2, num_psi_12,
                 "/Wavefunction/psi_2",
                 "Wavefunction of second electron");
+
+            data_file.write_object(psi_1_gobbler, num_psi_12,
+                "/Wavefunction/psi_1_gobbler",
+                "Wavefunction of second electron");
+            data_file.write_object(psi_2_gobbler, num_psi_12,
+                "/Wavefunction/psi_2_gobbler",
+                "Boundary potential of second electron");
         }
 
         // write data and attribute
@@ -88,9 +98,17 @@ void Wavefunction::checkpoint(HDF5Wrapper& data_file, double time) {
             "Wavefunction for the two electron system",
             write_counter);
 
+        data_file.write_object(psi_gobbler->data(), num_psi,
+            "/Wavefunction/psi_gobbler",
+            "boundary potential for the two electron system");
+
         // write time and attribute
         data_file.write_object(time, "/Wavefunction/psi_time",
             "Time step that psi was written to disk", write_counter);
+
+        // write time and attribute
+        data_file.write_object(norm(), "/Wavefunction/norm",
+            "Norm of wavefunction", write_counter);
 
         // allow for future passes to write psi only
         first_pass = false;
@@ -101,6 +119,9 @@ void Wavefunction::checkpoint(HDF5Wrapper& data_file, double time) {
 
         // write time
         data_file.write_object(time, "/Wavefunction/psi_time",
+            write_counter);
+
+        data_file.write_object(norm(), "/Wavefunction/norm",
             write_counter);
     }
 
@@ -168,12 +189,15 @@ void Wavefunction::create_grid() {
 // builds psi from 2 Gaussian psi (one for each electron)
 void Wavefunction::create_psi() {
     double sigma2;    // variance squared for Gaussian in psi
+    double x;        // x value squared
     double x2;        // x value squared
 
     // allocate data
     if (! psi_12_alloc) {
         psi_1 = new dcomp[num_psi_12];
         psi_2 = new dcomp[num_psi_12];
+        psi_1_gobbler = new dcomp[num_psi_12];
+        psi_2_gobbler = new dcomp[num_psi_12];
         psi_12_alloc = true;
 
     }
@@ -182,67 +206,31 @@ void Wavefunction::create_psi() {
     // TODO: needs to be changed for more than one dim
     for (int i=0; i<num_psi_12; i++) {
         // get x value squared
-        x2 = x_value[0][i];
-        x2 *= x2;
+        x  = x_value[0][i];
+        x2 = x*x;
 
         // Gaussian centered around 0.0 with variation sigma
         psi_1[i] = dcomp(exp(-1*x2/(2*sigma2)),0.0);
         psi_2[i] = dcomp(exp(-1*x2/(2*sigma2)),0.0);
-    }
 
-    // get size of psi
-    num_psi = num_psi_12*num_psi_12;
-
-    // allocate psi
-    if (! psi_alloc) {
-        psi = new Eigen::VectorXcd(num_psi);
-        psi_alloc = true;
-    }
-
-    // tensor product of psi_1 and psi_2
-    for (int i=0; i<num_psi_12; i++) { // e_2 dim
-        for (int j=0; j<num_psi_12; j++) { // e_1 dim
-            psi[0](i*num_psi_12+j) = psi_1[i]*psi_2[j];
+        if (std::abs(x)-offset>0) {
+            psi_1_gobbler[i] =
+                std::pow(cos((std::abs(x)-offset)*width),1.0/8.0);
+            psi_2_gobbler[i] =
+                std::pow(cos((std::abs(x)-offset)*width),1.0/8.0);
+        } else {
+            psi_1_gobbler[i] = dcomp(1.0,0.0);
+            psi_2_gobbler[i] = dcomp(1.0,0.0);
         }
     }
 
-    // normalize all psi
-    normalize();
-}
-
-void Wavefunction::create_psi(double offset) {
-    double sigma2;    // variance squared for Gaussian in psi
-    double x1;        // x value squared
-    double x2;        // x value squared
-
-    // allocate data
-    if (! psi_12_alloc) {
-        psi_1 = new dcomp[num_psi_12];
-        psi_2 = new dcomp[num_psi_12];
-    }
-
-    sigma2 = sigma*sigma;
-    // TODO: needs to be changed for more than one dim
-    for (int i=0; i<num_psi_12; i++) {
-        // get x value squared
-        x1 = x_value[0][i];
-        x1 *= x1;
-        x2 = (x_value[0][i]-offset);
-        x2 *= x2;
-
-        // Gaussian centered around 0.0 with variation sigma
-        psi_1[i] = dcomp(exp(-1*x1/(2*sigma2)),0.0);
-        psi_2[i] = dcomp(exp(-1*x2/(2*sigma2)),0.0);
-    }
-    // psi_1 and psi_2 are allocated
-    psi_12_alloc = true;
-
     // get size of psi
     num_psi = num_psi_12*num_psi_12;
 
     // allocate psi
     if (! psi_alloc) {
-        psi = new Eigen::VectorXcd(num_psi);
+        psi         = new Eigen::VectorXcd(num_psi);
+        psi_gobbler = new Eigen::VectorXcd(num_psi);
         psi_alloc = true;
     }
 
@@ -250,6 +238,9 @@ void Wavefunction::create_psi(double offset) {
     for (int i=0; i<num_psi_12; i++) { // e_2 dim
         for (int j=0; j<num_psi_12; j++) { // e_1 dim
             psi[0](i*num_psi_12+j) = psi_1[i]*psi_2[j];
+
+            psi_gobbler[0](i*num_psi_12+j) =
+                psi_1_gobbler[i]*psi_2_gobbler[j];
         }
     }
 
@@ -260,7 +251,9 @@ void Wavefunction::create_psi(double offset) {
 // delete psi_1 and psi_2 since they are not used later
 void Wavefunction::cleanup() {
     delete psi_1;
+    delete psi_1_gobbler;
     delete psi_2;
+    delete psi_2_gobbler;
     psi_12_alloc = false;
 }
 
@@ -271,6 +264,12 @@ void Wavefunction::normalize() {
         normalize(psi_2, num_psi_12, delta_x[0]);
     }
     normalize(psi->data(), num_psi, delta_x[0]);
+}
+
+void Wavefunction::gobble_psi() {
+    for (int i=0; i<num_psi; i++) {
+        psi[0][i] *= psi_gobbler[0][i];
+    }
 }
 
 // normalizes the array provided
@@ -352,8 +351,8 @@ Wavefunction::~Wavefunction(){
     }
     delete[] x_value;
     if (psi_12_alloc) {
-        delete psi_1;
-        delete psi_2;
+        cleanup();
     }
     delete psi;
+    delete psi_gobbler;
 }

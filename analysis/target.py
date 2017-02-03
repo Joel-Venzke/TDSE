@@ -35,7 +35,7 @@ for i, psi in enumerate(psi_value):
     plt.colorbar()
     plt.xlabel("Electron 2 a.u.")
     plt.ylabel("Electron 1 a.u.")
-    plt.title("Wave Function - State "+str(i))
+    plt.title("Wave Function - Energy "+str(energy[i]))
     fig.savefig("figs/He_bwr_state_"+str(i).zfill(3)+".jpg")
 
     plt.clf()

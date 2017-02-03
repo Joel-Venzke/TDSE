@@ -19,6 +19,7 @@ private:
     double      alpha;          // atomic soft core
     double      beta;           // e-e soft core
     int         write_frequency;// how many steps between checkpoints
+    double      gobbler;        // percent (1=100% and .9=90%) gobbler turns on at
     double      sigma;          // std of wave function guess
     int         num_states;     // number of ground states
     double      tol;            // tolerance in error
@@ -62,6 +63,7 @@ public:
     double       get_alpha();
     double       get_beta();
     int          get_write_frequency();
+    double       get_gobbler();
     double       get_sigma();
     int          get_num_states();
     double*      get_state_energy();
