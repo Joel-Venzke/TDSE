@@ -122,7 +122,7 @@ void Simulation::imag_time_prop(int num_states) {
             modified_gram_schmidt(states);
 
             // normalize with respect to space (include dt)
-            // wavefunction->gobble_psi();
+            wavefunction->gobble_psi();
             wavefunction->normalize();
 
             // only checkpoint so often
@@ -208,7 +208,7 @@ void Simulation::power_method(int num_states) {
             if (gram_schmit) modified_gram_schmidt(states);
 
             // normalize with respect to space (include dt)
-            // wavefunction->gobble_psi();
+            wavefunction->gobble_psi();
             wavefunction->normalize();
             // psi[0] = psi[0]/psi->norm();
 
@@ -226,7 +226,7 @@ void Simulation::power_method(int num_states) {
             // increment counter
             i++;
         }
-	std::cout << "Time: " << ((float)clock() - t)/CLOCKS_PER_SEC << "\n";
+        std::cout << "Time: " << ((float)clock() - t)/CLOCKS_PER_SEC << "\n";
         // make sure all states are orthonormal for mgs
         states.push_back(psi[0]/psi->norm());
         // save this psi to ${target}.h5
