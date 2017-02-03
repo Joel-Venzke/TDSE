@@ -122,7 +122,7 @@ void Simulation::imag_time_prop(int num_states) {
             modified_gram_schmidt(states);
 
             // normalize with respect to space (include dt)
-            wavefunction->gobble_psi();
+            // wavefunction->gobble_psi();
             wavefunction->normalize();
 
             // only checkpoint so often
@@ -208,7 +208,7 @@ void Simulation::power_method(int num_states) {
             if (gram_schmit) modified_gram_schmidt(states);
 
             // normalize with respect to space (include dt)
-            wavefunction->gobble_psi();
+            // wavefunction->gobble_psi();
             wavefunction->normalize();
             // psi[0] = psi[0]/psi->norm();
 
@@ -268,7 +268,7 @@ bool Simulation::check_convergance(
     std::cout << "Wavefunction Error: " << wave_error;
     std::cout << "\nEnergy Error: " << energy_error.real();
     std::cout << "\nTolerance: " << tol << "\n" << std::flush;
-    return wave_error<tol and energy_error.real()<tol;
+    return wave_error<tol and std::abs(energy_error.real())<tol;
 }
 
 // for details see:

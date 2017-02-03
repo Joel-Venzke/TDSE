@@ -39,7 +39,7 @@ void Hamiltonian::create_time_independent(){
     time_independent = new Eigen::SparseMatrix<dcomp>(num_psi,num_psi);
     int idx_1; // index for psi_1
     int idx_2; // index for psi_2
-
+    std::cout << alpha << "\n";
     // reserve right amount of memory to save storage
     time_independent->reserve(Eigen::VectorXi::Constant(num_psi,5));
 
