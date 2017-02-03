@@ -2,6 +2,7 @@
 #include "Simulation.h"
 #include <Eigen/Sparse>
 #include <Eigen/SparseLU>
+#include <time.h>
 
 Simulation::Simulation(Hamiltonian &h, Wavefunction &w,
     Pulse &pulse_in, HDF5Wrapper& data_file, Parameters &p) {
@@ -69,6 +70,8 @@ void Simulation::propagate() {
 void Simulation::imag_time_prop(int num_states) {
     std::cout << "Calculating the lowest "<< num_states;
     std::cout <<" eigenvectors using ITP\n" << std::flush;
+
+    clock_t t;
     // if we are converged
     bool converged           = false;
     // write index for checkpoints
@@ -109,6 +112,7 @@ void Simulation::imag_time_prop(int num_states) {
 
     // loop over number of states wanted
     for (int iter=0; iter<num_states; iter++) {
+        t = clock();
         while (!converged) {
             // copy old state for convergence
             psi_old = psi[0];
@@ -132,6 +136,7 @@ void Simulation::imag_time_prop(int num_states) {
             // increment counter
             i++;
         }
+	std::cout << "Time: " << clock() - t;
         // make sure all states are orthonormal for mgs
         states.push_back(psi[0]/psi->norm());
         // save this psi to ${target}.h5
@@ -150,6 +155,7 @@ void Simulation::imag_time_prop(int num_states) {
 void Simulation::power_method(int num_states) {
     std::cout << "Calculating the lowest "<< num_states;
     std::cout <<" eigenvectors using power method\n" << std::flush;
+    clock_t t;
     // if we are converged
     bool converged           = false;
     bool gram_schmit         = false;
@@ -188,6 +194,7 @@ void Simulation::power_method(int num_states) {
             gram_schmit = true;
         }
 
+        t = clock();
         // loop until error is small enough
         while (!converged) {
             // copy old state for convergence
@@ -216,6 +223,7 @@ void Simulation::power_method(int num_states) {
             // increment counter
             i++;
         }
+	std::cout << "Time: " << clock() - t;
         // make sure all states are orthonormal for mgs
         states.push_back(psi[0]/psi->norm());
         // save this psi to ${target}.h5
