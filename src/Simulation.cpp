@@ -130,13 +130,16 @@ void Simulation::imag_time_prop(int num_states) {
                 // check convergence criteria
                 converged = check_convergance(psi[0],psi_old,
                     parameters->get_tol());
+                // save this psi to ${target}.h5
+                std::cout << "Energy: ";
+                std::cout << wavefunction->get_energy(h) << "\n";
                 // write a checkpoint
                 wavefunction->checkpoint(*file,0.0);
             }
             // increment counter
             i++;
         }
-	std::cout << "Time: " << clock() - t;
+	std::cout << "Time: " << ((float)clock() - t)/CLOCKS_PER_SEC << "\n";
         // make sure all states are orthonormal for mgs
         states.push_back(psi[0]/psi->norm());
         // save this psi to ${target}.h5
@@ -223,7 +226,7 @@ void Simulation::power_method(int num_states) {
             // increment counter
             i++;
         }
-	std::cout << "Time: " << clock() - t;
+	std::cout << "Time: " << ((float)clock() - t)/CLOCKS_PER_SEC << "\n";
         // make sure all states are orthonormal for mgs
         states.push_back(psi[0]/psi->norm());
         // save this psi to ${target}.h5
