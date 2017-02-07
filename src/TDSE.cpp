@@ -31,7 +31,9 @@ int main(int argc, char** argv) {
             break;
     }
 
-    //s.propagate();
+    if (parameters.get_propagate()==1) {
+        s.propagate();
+    }
 
     return 0;
 }

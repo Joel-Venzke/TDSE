@@ -27,6 +27,8 @@ private:
     int         state_solver_idx; // index of state solver
     double      *state_energy;  // theoretical eigenvalues for each state
 
+    int         propagate;   // 0: no propagation 1: propagation
+
     // pulse data
     int         num_pulses;       // number of pulses
     std::string *pulse_shape;     // pulse shape {"sin2","linear"}
@@ -70,6 +72,8 @@ public:
     double       get_tol();
     int          get_state_solver_idx();
     std::string  get_state_solver();
+
+    int          get_propagate();
 
     int          get_num_pulses();
     std::string* get_pulse_shape();

@@ -21,7 +21,7 @@ Simulation::Simulation(Hamiltonian &h, Wavefunction &w,
 }
 
 void Simulation::propagate() {
-    std::cout << "Propagating in time\n" << std::flush;
+    std::cout << "\nPropagating in time";
     // how often do we write data
     int write_frequency      = parameters->get_write_frequency();
     // pointer to actual psi in wavefunction object
@@ -40,11 +40,12 @@ void Simulation::propagate() {
     // right matrix in Ax=Cb it would be C
     Eigen::SparseMatrix<dcomp> right   = left;
 
+    std::cout << "Total writes: " << time_length/write_frequency;
+    std::cout << "\nSetting up solver\n" << std::flush;
     solver.analyzePattern(left);
-    // loop over number of states wanted
-    // for (int i=1; i<time_length; i++) {
-    //     h = hamiltonian->get_total_hamiltonian(i);
-    for (int i=1; i<250; i++) {
+
+    std::cout << "Starting propagation\n" << std::flush;
+    for (int i=1; i<time_length; i++) {
         h = hamiltonian->get_total_hamiltonian(0);
         left    = (idenity[0]+factor*h[0]);
         left.makeCompressed();
@@ -59,16 +60,17 @@ void Simulation::propagate() {
         // only checkpoint so often
         if (i%write_frequency==0) {
             std::cout << "On step: " << i << " of " << time_length;
-            std::cout << "Norm: " << wavefunction->norm();
+            std::cout << "\nNorm: " << wavefunction->norm() << "\n";
             // write a checkpoint
             wavefunction->checkpoint(*file, time[i]);
         }
     }
+    wavefunction->checkpoint(*file, time[time_length-1]);
 
 }
 
 void Simulation::imag_time_prop(int num_states) {
-    std::cout << "Calculating the lowest "<< num_states;
+    std::cout << "\nCalculating the lowest "<< num_states;
     std::cout <<" eigenvectors using ITP\n" << std::flush;
 
     clock_t t;
@@ -157,7 +159,7 @@ void Simulation::imag_time_prop(int num_states) {
 }
 
 void Simulation::power_method(int num_states) {
-    std::cout << "Calculating the lowest "<< num_states;
+    std::cout << "\nCalculating the lowest "<< num_states;
     std::cout <<" eigenvectors using power method\n" << std::flush;
     clock_t t;
     // if we are converged

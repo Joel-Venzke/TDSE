@@ -99,6 +99,8 @@ Parameters::Parameters(std::string file_name) {
         state_solver_idx = 2;
     }
 
+    propagate = data["propagate"];
+
     // get pulse information
     num_pulses = data["pulses"].size();
 
@@ -323,6 +325,10 @@ int Parameters::get_state_solver_idx() {
 
 std::string Parameters::get_state_solver() {
     return state_solver;
+}
+
+int Parameters::get_propagate() {
+    return propagate;
 }
 
 int Parameters::get_num_pulses() {
