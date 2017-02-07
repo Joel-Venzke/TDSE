@@ -22,6 +22,7 @@ Simulation::Simulation(Hamiltonian &h, Wavefunction &w,
 
 void Simulation::propagate() {
     std::cout << "\nPropagating in time";
+    clock_t t;
     // how often do we write data
     int write_frequency      = parameters->get_write_frequency();
     // pointer to actual psi in wavefunction object
@@ -46,14 +47,26 @@ void Simulation::propagate() {
 
     std::cout << "Starting propagation\n" << std::flush;
     for (int i=1; i<time_length; i++) {
+        t = clock();
         h = hamiltonian->get_total_hamiltonian(0);
+        std::cout << "Hamiltonian time: " << ((float)clock() - t)/CLOCKS_PER_SEC << "\n";
+        t = clock();
         left    = (idenity[0]+factor*h[0]);
         left.makeCompressed();
+        std::cout << "Left time: " << ((float)clock() - t)/CLOCKS_PER_SEC << "\n";
+        t = clock();
         right   = (idenity[0]-factor*h[0]);
         right.makeCompressed();
+        std::cout << "Right time: " << ((float)clock() - t)/CLOCKS_PER_SEC << "\n";
+        t = clock();
+
         solver.factorize(left);
+        std::cout << "Factorize time: " << ((float)clock() - t)/CLOCKS_PER_SEC << "\n";
+        t = clock();
 
         psi[0] = solver.solve(right*psi[0]);
+        std::cout << "Solve time: " << ((float)clock() - t)/CLOCKS_PER_SEC << "\n";
+        t = clock();
 
         wavefunction->gobble_psi();
 
@@ -142,7 +155,7 @@ void Simulation::imag_time_prop(int num_states) {
             // increment counter
             i++;
         }
-	std::cout << "Time: " << ((float)clock() - t)/CLOCKS_PER_SEC << "\n";
+	    std::cout << "Time: " << ((float)clock() - t)/CLOCKS_PER_SEC << "\n";
         // make sure all states are orthonormal for mgs
         states.push_back(psi[0]/psi->norm());
         // save this psi to ${target}.h5
