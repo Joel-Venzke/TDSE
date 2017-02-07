@@ -47,29 +47,27 @@ void Simulation::propagate() {
 
     std::cout << "Starting propagation\n" << std::flush;
     for (int i=1; i<time_length; i++) {
+        std::cout << "Iteration: " << i << "\n";
         t = clock();
         h = hamiltonian->get_total_hamiltonian(i);
-        std::cout << "Hamiltonian time: " << ((float)clock() - t)/CLOCKS_PER_SEC << "\n";
-        std::cout << std::flush;
-        t = clock();
         left    = (idenity[0]+factor*h[0]);
         left.makeCompressed();
-        std::cout << "Left time: " << ((float)clock() - t)/CLOCKS_PER_SEC << "\n";
-        std::cout << std::flush;
-        t = clock();
         right   = (idenity[0]-factor*h[0]);
         right.makeCompressed();
-        std::cout << "Right time: " << ((float)clock() - t)/CLOCKS_PER_SEC << "\n";
+        std::cout << "Build matrices time: ";
+        std::cout << ((float)clock() - t)/CLOCKS_PER_SEC << "\n";
         std::cout << std::flush;
         t = clock();
 
         solver.factorize(left);
-        std::cout << "Factorize time: " << ((float)clock() - t)/CLOCKS_PER_SEC << "\n";
+        std::cout << "Factorize time: ";
+        std::cout << ((float)clock() - t)/CLOCKS_PER_SEC << "\n";
         std::cout << std::flush;
         t = clock();
 
         psi[0] = solver.solve(right*psi[0]);
-        std::cout << "Solve time: " << ((float)clock() - t)/CLOCKS_PER_SEC << "\n";
+        std::cout << "Solve time: ";
+        std::cout << ((float)clock() - t)/CLOCKS_PER_SEC << "\n";
         std::cout << std::flush;
         t = clock();
 
