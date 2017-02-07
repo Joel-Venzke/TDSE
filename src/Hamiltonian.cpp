@@ -125,7 +125,7 @@ void Hamiltonian::create_total_hamlitonian(){
 Eigen::SparseMatrix<dcomp>* Hamiltonian::get_total_hamiltonian(
     int time_idx) {
     total_hamlitonian[0] = a_field[time_idx]*time_dependent[0];
-    total_hamlitonian[0] = total_hamlitonian[0]+time_independent[0];
+    total_hamlitonian[0] += time_independent[0];
     total_hamlitonian->makeCompressed();
     return total_hamlitonian;
 }
