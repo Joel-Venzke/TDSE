@@ -56,7 +56,7 @@ for psi, time in zip(psi_value,psi_time):
 
 print "Making animation"
 # animate
-im_ani = animation.ArtistAnimation(fig, ims, interval=10, repeat_delay=3000,
+im_ani = animation.ArtistAnimation(fig, ims, interval=100, repeat_delay=3000,
     blit=False)
 
 print "Saving...this can take a while"

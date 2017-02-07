@@ -112,6 +112,7 @@ void Simulation::imag_time_prop(int num_states) {
 
     // loop over number of states wanted
     for (int iter=0; iter<num_states; iter++) {
+        modified_gram_schmidt(states);
         t = clock();
         while (!converged) {
             // copy old state for convergence
@@ -134,7 +135,7 @@ void Simulation::imag_time_prop(int num_states) {
                 std::cout << "Energy: ";
                 std::cout << wavefunction->get_energy(h) << "\n";
                 // write a checkpoint
-                wavefunction->checkpoint(*file,0.0);
+                // wavefunction->checkpoint(*file,i/write_frequency);
             }
             // increment counter
             i++;
@@ -193,8 +194,13 @@ void Simulation::power_method(int num_states) {
 
         // do this outside the loop since left never changes
         solver.compute(left);
-        if (iter>0 and state_energy[iter]==state_energy[iter-1]) {
+        if (iter>0 and
+            std::abs(state_energy[iter]-state_energy[iter-1])<1e-10) {
+            std::cout << "Starting Gram Schmit\n";
             gram_schmit = true;
+            // This is needed because the Power method converges
+            // extremely quickly
+            modified_gram_schmidt(states);
         }
 
         t = clock();
@@ -221,7 +227,7 @@ void Simulation::power_method(int num_states) {
                 std::cout << "Energy: ";
                 std::cout << wavefunction->get_energy(h) << "\n";
                 // write a checkpoint
-                wavefunction->checkpoint(*file,0.0);
+                // wavefunction->checkpoint(*file,i/write_frequency);
             }
             // increment counter
             i++;
