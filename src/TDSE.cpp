@@ -10,9 +10,6 @@
 
 int main(int argc, char** argv) {
     // initialize all of the classes
-    std::cout.precision(17);
-    Eigen::initParallel();
-    std::cout << "Using " << Eigen::nbThreads( ) << " threads\n";
     Parameters parameters("input.json");
     HDF5Wrapper data_file(parameters);
     Pulse pulse(data_file, parameters);

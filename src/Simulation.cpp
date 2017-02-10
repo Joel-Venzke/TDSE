@@ -57,7 +57,6 @@ void Simulation::propagate() {
     std::cout << "Total writes: " << time_length/write_frequency;
     std::cout << "\nSetting up solver\n" << std::flush;
     solver.analyzePattern(left);
-
     std::cout << "Starting propagation\n" << std::flush;
     for (i=1; i<time_length; i++) {
         std::cout << "Iteration: " << i << " of ";
