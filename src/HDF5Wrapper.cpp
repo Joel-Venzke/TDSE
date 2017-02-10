@@ -993,6 +993,6 @@ void HDF5Wrapper::set_header(bool h) {
 
 // destructor
 HDF5Wrapper::~HDF5Wrapper(){
-    std::cout << "Deleting HDF5Wrapper: " << file_name;
+    std::cout << "Deleting HDF5Wrapper: " << file_name << "\n";
     close();
 }

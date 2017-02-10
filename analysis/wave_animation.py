@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+from matplotlib.colors import LogNorm
 import h5py
 
 # read data
@@ -16,11 +17,9 @@ time_y    = np.max(x)*0.9
 # calculate color bounds
 max_val = 0
 for psi in psi_value:
-    tmp = np.max(np.abs(psi.real))
+    tmp = np.max(np.absolute(psi))
     if (tmp>max_val):
         max_val = tmp
-min_val = max_val*-1.0
-print "min plot: ", min_val
 print "max plot: ", max_val
 
 # shape into a 3d array with time as the first axis
@@ -32,8 +31,9 @@ psi = psi_value[0]
 psi.shape = (p_sqrt,p_sqrt)
 # set up initial figure with color bar
 fig = plt.figure()
-plt.imshow(psi.real, cmap='bwr', vmin=-1*max_val, vmax=max_val,
-               origin='lower', extent=[x[0],x[-1],x[0],x[-1]])
+plt.imshow(np.absolute(psi), cmap='viridis', origin='lower',
+    extent=[x[0],x[-1],x[0],x[-1]],
+    norm=LogNorm(vmin=1e-10, vmax=max_val))
 # color bar doesn't change during the video so only set it here
 plt.colorbar()
 plt.xlabel("Electron 2 a.u.")
@@ -45,14 +45,15 @@ i=0
 # for psi, time in zip(psi_value[:4],psi_time[:4]):
 for psi, time in zip(psi_value,psi_time):
     print i, time
+    if i!=0:
+        psi.shape = (p_sqrt,p_sqrt)
+        # add frames
+        ims.append((plt.imshow(np.absolute(psi), cmap='viridis', origin='lower',
+                                extent=[x[0],x[-1],x[0],x[-1]],
+                                norm=LogNorm(vmin=1e-10, vmax=max_val)),
+            plt.text(time_x, time_y, "Time: "+str(time)+" a.u.",
+                color='black'),))
     i+=1
-    psi.shape = (p_sqrt,p_sqrt)
-    # add frames
-    ims.append((plt.imshow(psi.real, cmap='bwr', vmin=-1*max_val,
-                            vmax=max_val, origin='lower',
-                            extent=[x[0],x[-1],x[0],x[-1]]),
-        plt.text(time_x, time_y, "Time: "+str(time)+" a.u.",
-            color='black'),))
 
 print "Making animation"
 # animate

@@ -83,16 +83,16 @@ void Hamiltonian::create_time_dependent(){
     time_dependent->reserve(Eigen::VectorXi::Constant(num_psi,5));
     for (int i=0; i<num_psi; i++) {
         if (i-num_x[0]>=0 and i-num_x[0]<num_psi) {
-            time_dependent->insert(i-num_x[0],i) = -1.0*off_diagonal;
+            time_dependent->insert(i-num_x[0],i) = off_diagonal;
         }
         if (i-1>=0 and i-1<num_psi) {
-            time_dependent->insert(i-1,i) = -1.0*off_diagonal;
+            time_dependent->insert(i-1,i) = off_diagonal;
         }
         if (i+1>=0 and i+1<num_psi) {
-            time_dependent->insert(i+1,i) = off_diagonal;
+            time_dependent->insert(i+1,i) = -1.0*off_diagonal;
         }
         if (i+num_x[0]>=0 and i+num_x[0]<num_psi) {
-            time_dependent->insert(i+num_x[0],i) = off_diagonal;
+            time_dependent->insert(i+num_x[0],i) = -1.0*off_diagonal;
         }
     }
     time_dependent->makeCompressed();

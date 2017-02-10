@@ -21,7 +21,7 @@ Simulation::Simulation(Hamiltonian &h, Wavefunction &w,
 }
 
 void Simulation::propagate() {
-    std::cout << "\nPropagating in time";
+    std::cout << "\nPropagating in time\n";
     clock_t t;
     // how often do we write data
     int write_frequency      = parameters->get_write_frequency();
@@ -30,7 +30,7 @@ void Simulation::propagate() {
     // time step
     double dt                = parameters->get_delta_t();
     // factor = i*(-i*dx/2)
-    dcomp  factor            = dcomp(0.0,1.0)*dcomp(dt/2,0.0);
+    dcomp  factor            = dcomp(0.0,1.0)*dcomp(dt/2.0,0.0);
     // solver for Ax=b
     Eigen::SparseLU<Eigen::SparseMatrix<dcomp>> solver;
     // time independent Hamiltonian
@@ -54,22 +54,8 @@ void Simulation::propagate() {
         left.makeCompressed();
         right   = (idenity[0]-factor*h[0]);
         right.makeCompressed();
-        std::cout << "Build matrices time: ";
-        std::cout << ((float)clock() - t)/CLOCKS_PER_SEC << "\n";
-        std::cout << std::flush;
-        t = clock();
-
         solver.factorize(left);
-        std::cout << "Factorize time: ";
-        std::cout << ((float)clock() - t)/CLOCKS_PER_SEC << "\n";
-        std::cout << std::flush;
-        t = clock();
-
         psi[0] = solver.solve(right*psi[0]);
-        std::cout << "Solve time: ";
-        std::cout << ((float)clock() - t)/CLOCKS_PER_SEC << "\n";
-        std::cout << std::flush;
-        t = clock();
 
         wavefunction->gobble_psi();
 
@@ -80,6 +66,9 @@ void Simulation::propagate() {
             // write a checkpoint
             wavefunction->checkpoint(*file, time[i]);
         }
+        std::cout << "Time-step: ";
+        std::cout << ((float)clock() - t)/CLOCKS_PER_SEC << "\n";
+        std::cout << std::flush;
     }
     wavefunction->checkpoint(*file, time[time_length-1]);
 
