@@ -1,13 +1,16 @@
 {
-  "delta_t": 0.2, 
+  "delta_t": 0.01,
   "dimensions": [
-    {"dim_size": 1.0,
-    "delta_x":   0.01},
-    {"dim_size": 2.05,
-    "delta_x":   0.5}],
+    {"dim_size": 100.0,
+    "delta_x":   0.1}],
   "restart": 0,
   "target":  "He",
+  "alpha":   1.0,
+  "beta":    1.0,
   "gobbler": 0.9,
+  "sigma":   2.0,
+  "num_states": 4,
+  "tol":        1e-4,
   "pulses": [
     {"pulse_shape":   "sin2",
       "cycles_on":      3.0,
@@ -32,5 +35,6 @@
       "cycles_delay":   1.0,
       "cep":            0.0,
       "energy":         5.338e-3,
-      "e_max":          1.0}]
+      "e_max":          1.0}],
+  "write_frequency": 1000
 }

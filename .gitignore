@@ -29,6 +29,8 @@
 *.app
 TDSE
 
+# run files
+*.o*
 
 # build system files
 Makefile
@@ -40,9 +42,15 @@ build
 #hdf5
 *.h5
 
-# automake 
+# videos
+*.mp4
+
+# automake
 autom4te.cache/
 .deps/
+Makefile.in
+configure
+aclocal.m4
 
 # ipython
 .ipynb_checkpoints/
@@ -53,3 +61,12 @@ autom4te.cache/
 *.fls
 *.log
 *.synctex.gz
+
+# other
+.nfs*
+
+# mac things
+*.DS_Store
+
+# plots and such
+figs/

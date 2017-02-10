@@ -47,28 +47,59 @@ Parameters::Parameters(std::string file_name) {
     std::cout << "Reading input file: "<< file_name <<"\n";
     std::cout << std::flush;
     // read data from file
-	json data  = file_to_json(file_name);
+    json data  = file_to_json(file_name);
+
+    std::cout << "input file: "<< file_name <<"\n";
+    std::cout << std::flush;
 
     // get numeric information
-    delta_t    = data["delta_t"]; 
+    delta_t    = data["delta_t"];
     num_dims   = data["dimensions"].size();
     dim_size   = new double[num_dims];
     delta_x    = new double[num_dims];
-    for (int i = 0; i < num_dims; ++i)
-    {
+    for (int i = 0; i < num_dims; ++i) {
         dim_size[i]  = data["dimensions"][i]["dim_size"];
         delta_x[i]   = data["dimensions"][i]["delta_x"];
+
+        // this should be small
+        std::cout << "Dim-" << i << " dx/dt^2 = ";
+        std::cout << delta_x[i]/delta_t*delta_t << "\n";
     }
 
     // get simulation behavior;
-    restart    = data["restart"];
-    target     = data["target"];
+    restart         = data["restart"];
+    target          = data["target"];
+    alpha           = data["alpha"];
+    beta            = data["beta"];
+    write_frequency = data["write_frequency"];
+    gobbler         = data["gobbler"];
+    sigma           = data["sigma"];
+    tol             = data["tol"];
+    state_solver    = data["state_solver"];
+    num_states      = data["states"].size();
 
-    // index is used throughout code for efficiency 
-    // and ease of writing to hdf5 
+    state_energy    = new double[num_states];
+
+    for (int i=0; i<num_states; i++) {
+        state_energy[i] = data["states"][i]["energy"];
+    }
+
+    // index is used throughout code for efficiency
+    // and ease of writing to hdf5
     if (target=="He") {
         target_idx = 0;
+        z          = 2.0; // He atomic number
     }
+
+    if (state_solver == "File") {
+        state_solver_idx = 0;
+    } else if ( state_solver == "ITP" ) {
+        state_solver_idx = 1;
+    } else if ( state_solver == "Power" ) {
+        state_solver_idx = 2;
+    }
+
+    propagate = data["propagate"];
 
     // get pulse information
     num_pulses = data["pulses"].size();
@@ -85,8 +116,7 @@ Parameters::Parameters(std::string file_name) {
     e_max           = new double[num_pulses];
 
     // read data
-    for (int i = 0; i < num_pulses; ++i)
-    {
+    for (int i = 0; i < num_pulses; ++i) {
         pulse_shape[i]    = data["pulses"][i]["pulse_shape"];
         // index used similar target_idx
         if (pulse_shape[i]=="sin2") {
@@ -182,7 +212,7 @@ void Parameters::validate(){
             err_str += std::to_string(cycles_off[i])+"\"\n";
             err_str += "cycles_off should be >= 0\n";
         }
-        
+
         // exclude delay because it is zero anyways
         // pulses must exist so we don't run supper long time scales
         double p_length = cycles_on[i] + cycles_off[i] +
@@ -205,6 +235,17 @@ void Parameters::validate(){
         err_str += "\" \nvalid targets are \"He\"";
     }
 
+    if (state_solver=="file") {
+        error_found = true;
+        err_str += "\nInvalid state solver: \"";
+        err_str += "States from file is not supported yet\"";
+    } else if (state_solver!="ITP" && state_solver!="Power") {
+        error_found = true;
+        err_str += "\nInvalid state solver: \"";
+        err_str += state_solver;
+        err_str += "\" \nvalid solvers are \"ITP\" and \"Power\"\n";
+    }
+
     // exit here to get all errors in one run
     if (error_found) {
         end_run(err_str);
@@ -215,7 +256,7 @@ void Parameters::validate(){
 
 // getters
 double Parameters::get_delta_t() {
-	return delta_t;
+    return delta_t;
 }
 
 int Parameters::get_num_dims(){
@@ -240,6 +281,54 @@ std::string Parameters::get_target() {
 
 int Parameters::get_target_idx(){
     return target_idx;
+}
+
+double Parameters::get_z() {
+    return z;
+}
+
+double Parameters::get_alpha() {
+    return alpha;
+}
+
+double Parameters::get_beta() {
+    return beta;
+}
+
+int Parameters::get_write_frequency() {
+    return write_frequency;
+}
+
+double Parameters::get_gobbler() {
+    return gobbler;
+}
+
+double Parameters::get_sigma() {
+    return sigma;
+}
+
+int Parameters::get_num_states() {
+    return num_states;
+}
+
+double* Parameters::get_state_energy() {
+    return state_energy;
+}
+
+double Parameters::get_tol() {
+    return tol;
+}
+
+int Parameters::get_state_solver_idx() {
+    return state_solver_idx;
+}
+
+std::string Parameters::get_state_solver() {
+    return state_solver;
+}
+
+int Parameters::get_propagate() {
+    return propagate;
 }
 
 int Parameters::get_num_pulses() {
