@@ -44,7 +44,7 @@ void Simulation::propagate() {
     // loop over number of states wanted
     // for (int i=1; i<time_length; i++) {
     //     h = hamiltonian->get_total_hamiltonian(i);
-    for (int i=1; i<250; i++) {
+    for (int i=1; i<time_length; i++) {
         h = hamiltonian->get_total_hamiltonian(0);
         left    = (idenity[0]+factor*h[0]);
         left.makeCompressed();

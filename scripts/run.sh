@@ -1,5 +1,5 @@
 #!/usr/bin/bash
-#PBS -l nodes=1:ppn=32
+#PBS -l nodes=1:ppn=1
 #PBS -N Venzke
 #PBS -j oe
 
@@ -17,7 +17,6 @@ cd $PBS_O_WORKDIR
 
 
 export OMP_NUM_THREADS=1
-time ${RUN_FILE}>run_01.log
+pwd
+time ${RUN_FILE}>run.log
 
-export OMP_NUM_THREADS=32
-time ${RUN_FILE}>run_32.log
