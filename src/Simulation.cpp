@@ -23,10 +23,23 @@ Simulation::Simulation(Hamiltonian &h, Wavefunction &w,
 void Simulation::propagate() {
     std::cout << "\nPropagating in time\n";
     clock_t t;
+    // if we are converged
+    bool converged           = false;
+    // error in norm
+    double error             = 1.0;
+    // error tolerance
+    double tol               = parameters->get_tol();
+    // iteration
+    int i                    = 1;
+
+    int num_psi              = wavefunction->get_num_psi();
+
+    double *dx               = wavefunction->get_delta_x();
     // how often do we write data
     int write_frequency      = parameters->get_write_frequency();
     // pointer to actual psi in wavefunction object
     psi                      = wavefunction->get_psi();
+    Eigen::VectorXcd psi_old = *psi;
     // time step
     double dt                = parameters->get_delta_t();
     // factor = i*(-i*dx/2)
@@ -46,8 +59,9 @@ void Simulation::propagate() {
     solver.analyzePattern(left);
 
     std::cout << "Starting propagation\n" << std::flush;
-    for (int i=1; i<time_length; i++) {
-        std::cout << "Iteration: " << i << "\n";
+    for (i=1; i<time_length; i++) {
+        std::cout << "Iteration: " << i << " of ";
+        std::cout << time_length  << "\n";
         t = clock();
         h = hamiltonian->get_total_hamiltonian(i);
         left    = (idenity[0]+factor*h[0]);
@@ -61,7 +75,6 @@ void Simulation::propagate() {
 
         // only checkpoint so often
         if (i%write_frequency==0) {
-            std::cout << "On step: " << i << " of " << time_length;
             std::cout << "\nNorm: " << wavefunction->norm() << "\n";
             // write a checkpoint
             wavefunction->checkpoint(*file, time[i]);
@@ -70,7 +83,37 @@ void Simulation::propagate() {
         std::cout << ((float)clock() - t)/CLOCKS_PER_SEC << "\n";
         std::cout << std::flush;
     }
-    wavefunction->checkpoint(*file, time[time_length-1]);
+
+    std::cout << "Propagating until norm stops changing\n";
+
+    h = hamiltonian->get_time_independent();
+    left    = (idenity[0]+factor*h[0]);
+    left.makeCompressed();
+    right   = (idenity[0]-factor*h[0]);
+    right.makeCompressed();
+    solver.factorize(left);
+
+    while (!converged) {
+        // copy old state for convergence
+        psi_old = psi[0];
+        psi[0] = solver.solve(right*psi_old);
+
+        wavefunction->gobble_psi();
+        if (i%write_frequency==0) {
+            wavefunction->checkpoint(*file, time[i]);
+            error = wavefunction->norm();
+            error -= wavefunction->norm(psi_old.data(),
+                        num_psi, dx[0]);
+            error = std::abs(error);
+            std::cout << "Norm error: " << error << "\n";
+            if (error<tol) {
+                converged = true;
+            }
+            // write a checkpoint
+            wavefunction->checkpoint(*file, i*dx[0]);
+        }
+        i++;
+    }
 
 }
 
