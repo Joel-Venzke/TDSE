@@ -13,7 +13,7 @@ The TDSE code discussed here was developed by Joel Venzke while working on his P
 
 \section{Build System} % (fold)
 \label{sec:build_system}
-Currently using autoconfig, but that may change. See ``build.\$\{SYSTEM\}'' files for building examples on various systems. 
+Currently using autoconfig, but that may change. See ``build.\$\{SYSTEM\}'' files for building examples on various systems.
 % section build_system (end)
 
 \section{Classes} % (fold)
@@ -35,7 +35,7 @@ Writing multidimensional arrays is difficult in HDF5. To avoid the added headach
 \begin{equation}
 	array[x+y*nx] = array[x][y]
 \end{equation}
-and 
+and
 \begin{equation}
 	array[x+y*nx+z*nx*ny] = array[x][y][z]
 \end{equation}
@@ -46,6 +46,16 @@ and so on.
 \label{sub:pulse}
 Pulse handles creating and storing various parts of the pulse. Much of the functionality is private rather than public to prevent accessing data that is not allocated. Since storing each individual pulse is only useful until it is printed to a file, it is deallocated inside the constructor. The result is a much more efficient use of memory, and protection from accessing garbage arrays. See Section~\ref{sec:input} on how to define pulses.
 % subsection pulse (end)
+
+\subsection{Hamiltonian} % (fold)
+\label{sub:hamiltonian}
+\begin{equation}
+	\hat H = \frac{\hat{p_1}^2}{2} + \frac{\hat{p_2}^2}{2} - \frac{\vec{A} \cdot (\hat{p_1}+\hat{p_2})}{c} - \frac{Z}{x_1} - \frac{Z}{x_2} + v_{ee}
+\end{equation}
+\begin{equation}
+	v_{ee} = 
+\end{equation}
+% subsection hamiltonian (end)
 
 % section classes (end)
 
@@ -115,7 +125,7 @@ Each pulse requires the following input parameters.
 \begin{itemize}
 	\item pulse\_shape
 	\begin{itemize}
-		\item The shape of the pulse envelope. Currently supports $sin^2$ envelopes. 
+		\item The shape of the pulse envelope. Currently supports $sin^2$ envelopes.
 	\end{itemize}
     \item cycles\_on
     \begin{itemize}
@@ -131,11 +141,11 @@ Each pulse requires the following input parameters.
     \end{itemize}
     \item cycles\_delay
     \begin{itemize}
-    	\item The number of cycles before the pulse starts to turn on. 
+    	\item The number of cycles before the pulse starts to turn on.
     \end{itemize}
     \item cep
     \begin{itemize}
-    	\item The carrying phase envelope of the pulse. It is defined at the time the pulse starts to turn on. 
+    	\item The carrying phase envelope of the pulse. It is defined at the time the pulse starts to turn on.
     \end{itemize}
     \item energy
     \begin{itemize}
@@ -153,7 +163,7 @@ Each pulse requires the following input parameters.
 Input files are in json format. Here is an example input file:
 \begin{verbatim}
 {
-  "delta_t": 0.2, 
+  "delta_t": 0.2,
   "dimensions": [
     {"dim_size": 1.0,
     "delta_x":   0.01},

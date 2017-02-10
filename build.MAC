@@ -1,6 +1,9 @@
 #/bin/bash
-export LDFLAGS="-I/usr/include -I/usr/local/opt/szip/include -L/usr/local/Cellar/hdf5/1.8.17/lib /usr/local/Cellar/hdf5/1.8.17/lib/libhdf5_hl_cpp.a /usr/local/Cellar/hdf5/1.8.17/lib/libhdf5_cpp.a /usr/local/Cellar/hdf5/1.8.17/lib/libhdf5_hl.a /usr/local/Cellar/hdf5/1.8.17/lib/libhdf5.a -L/usr/lib -L/usr/local/opt/szip/lib -lsz -lz -ldl -lm -L/usr/lib -lnetcdf_c++"
 
-./configure 
-make 
+# remove anachonda from path so it uses the right hdf5 distro
+export PATH=$(echo "$PATH" | sed -e 's/:\/Users\/jvenzke\/anaconda\/bin//')
+
+export LDFLAGS=""
+./configure CXX=h5c++ CC=h5cc
+make
 make install
