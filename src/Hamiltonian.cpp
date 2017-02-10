@@ -78,21 +78,21 @@ void Hamiltonian::create_time_independent(){
 
 void Hamiltonian::create_time_dependent(){
     double c = 1/7.2973525664e-3;
-    dcomp off_diagonal(1.0/(2.0*delta_x[0]*c),0.0);
+    dcomp off_diagonal(0.0,1.0/(2.0*delta_x[0]*c));
     time_dependent = new Eigen::SparseMatrix<dcomp>(num_psi,num_psi);
     time_dependent->reserve(Eigen::VectorXi::Constant(num_psi,5));
     for (int i=0; i<num_psi; i++) {
         if (i-num_x[0]>=0 and i-num_x[0]<num_psi) {
-            time_dependent->insert(i-num_x[0],i) = off_diagonal;
+            time_dependent->insert(i-num_x[0],i) = -1.0*off_diagonal;
         }
         if (i-1>=0 and i-1<num_psi) {
-            time_dependent->insert(i-1,i) = off_diagonal;
+            time_dependent->insert(i-1,i) = -1.0*off_diagonal;
         }
         if (i+1>=0 and i+1<num_psi) {
-            time_dependent->insert(i+1,i) = -1.0*off_diagonal;
+            time_dependent->insert(i+1,i) = off_diagonal;
         }
         if (i+num_x[0]>=0 and i+num_x[0]<num_psi) {
-            time_dependent->insert(i+num_x[0],i) = -1.0*off_diagonal;
+            time_dependent->insert(i+num_x[0],i) = off_diagonal;
         }
     }
     time_dependent->makeCompressed();
