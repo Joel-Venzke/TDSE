@@ -22,7 +22,6 @@ Hamiltonian::Hamiltonian(Wavefunction &w, Pulse &pulse,
     beta2      = beta*beta;
     a_field    = pulse.get_a_field();
 
-    // total_hamlitonian = new Eigen::SparseMatrix<dcomp>(num_psi,num_psi);
     // set up time independent
     create_time_independent();
     create_time_dependent();
@@ -39,7 +38,6 @@ void Hamiltonian::create_time_independent(){
     time_independent = new Eigen::SparseMatrix<dcomp>(num_psi,num_psi);
     int idx_1; // index for psi_1
     int idx_2; // index for psi_2
-    std::cout << alpha << "\n";
     // reserve right amount of memory to save storage
     time_independent->reserve(Eigen::VectorXi::Constant(num_psi,5));
 
@@ -80,8 +78,7 @@ void Hamiltonian::create_time_independent(){
 
 void Hamiltonian::create_time_dependent(){
     double c = 1/7.2973525664e-3;
-    std::cout << c << "\n";
-    dcomp off_diagonal(1.0/(2.0*delta_x[0]*c),0.0);
+    dcomp off_diagonal(0.0,1.0/(2.0*delta_x[0]*c));
     time_dependent = new Eigen::SparseMatrix<dcomp>(num_psi,num_psi);
     time_dependent->reserve(Eigen::VectorXi::Constant(num_psi,5));
     for (int i=0; i<num_psi; i++) {
@@ -128,7 +125,7 @@ void Hamiltonian::create_total_hamlitonian(){
 Eigen::SparseMatrix<dcomp>* Hamiltonian::get_total_hamiltonian(
     int time_idx) {
     total_hamlitonian[0] = a_field[time_idx]*time_dependent[0];
-    total_hamlitonian[0] = total_hamlitonian[0]+time_independent[0];
+    total_hamlitonian[0] += time_independent[0];
     total_hamlitonian->makeCompressed();
     return total_hamlitonian;
 }

@@ -277,7 +277,7 @@ void Wavefunction::normalize(dcomp *data, int length, double dx) {
     double total = norm(data, length, dx);
 
     // square root to get normalization factor
-    total = sqrt(total)/2.0;
+    total = sqrt(total);
 
     // normalize data
     for (int i=0; i<length; i++) {

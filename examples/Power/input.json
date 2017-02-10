@@ -1,5 +1,5 @@
 {
-  "delta_t": 0.01,
+  "delta_t": 0.005,
   "dimensions": [
     {"dim_size": 50.0,
     "delta_x":   0.1}],
@@ -9,33 +9,19 @@
   "beta":    1.0,
   "gobbler": 0.9,
   "sigma":   2.0,
-  "write_frequency": 5,
+  "write_frequency": 50,
   "state_solver":    "Power",
+  "propagate": 1,
   "states": [
-    {"energy": -2.23854987704789},
-    {"energy": -1.81643328372337},
-    {"energy": -1.70499317411346},
-    {"energy": -1.64386980052036},
-    {"energy": -1.62906886920433},
-    {"energy": -1.58274029693447},
-    {"energy": -1.56677899534066},
-    {"energy": -1.54943808977265},
-    {"energy": -1.54943808977265},
-    {"energy": -1.54943808977265},
-    {"energy": -1.54943808977265},
-    {"energy": -1.54943808977265},
-    {"energy": -1.54943808977265},
-    {"energy": -1.54943808977265},
-    {"energy": -1.54943808977265}],
+    {"energy": -2.238}],
   "tol":        1e-10,
   "pulses": [
     {"pulse_shape":   "sin2",
-      "cycles_on":      0.5,
+      "cycles_on":      1.0,
       "cycles_plateau": 0.0,
-      "cycles_off":     0.5,
+      "cycles_off":     1.0,
       "cycles_delay":   0.0,
       "cep":            0.0,
-      "energy":         5.338e-3,
-      "e_max":          1.0}]
+      "energy":         0.057,
+      "e_max":          12.83}]
 }
-
