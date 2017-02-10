@@ -49,6 +49,8 @@ build
 autom4te.cache/
 .deps/
 Makefile.in
+configure
+aclocal.m4
 
 # ipython
 .ipynb_checkpoints/
