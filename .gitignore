@@ -68,5 +68,8 @@ aclocal.m4
 # mac things
 *.DS_Store
 
+# vim
+*~
+
 # plots and such
 figs/

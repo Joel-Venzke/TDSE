@@ -37,6 +37,6 @@ for i, psi in enumerate(psi_value):
     plt.xlabel("Electron 2 a.u.")
     plt.ylabel("Electron 1 a.u.")
     plt.title("Wave Function")
-    fig.savefig("figs/Wave_"+str(i)+".jpg")
+    fig.savefig("figs/Wave_"+str(i)+".png")
     plt.clf()
     plt.clf()
