@@ -7,9 +7,11 @@
 #include "Wavefunction.h"
 #include "HDF5Wrapper.h"
 #include <Eigen/Core>
+#include <petscsnes.h>
 
 int main(int argc, char** argv) {
     // initialize all of the classes
+    // PetscInitialize(&argc,&argv,(char*)0,"Testing a program!");
     Parameters parameters("input.json");
     HDF5Wrapper data_file(parameters);
     Pulse pulse(data_file, parameters);
@@ -33,5 +35,6 @@ int main(int argc, char** argv) {
         s.propagate();
     }
 
+    // PetscFinalize();
     return 0;
 }
