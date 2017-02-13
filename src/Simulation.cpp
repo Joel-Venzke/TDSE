@@ -27,13 +27,11 @@ void Simulation::propagate() {
     bool converged           = false;
     // error in norm
     double error             = 1.0;
-    // error tolerance
-    double tol               = parameters->get_tol();
     // iteration
     int i                    = 1;
-
+    // size of psi
     int num_psi              = wavefunction->get_num_psi();
-
+    // steps in each direction
     double *dx               = wavefunction->get_delta_x();
     // how often do we write data
     int write_frequency      = parameters->get_write_frequency();
@@ -101,11 +99,12 @@ void Simulation::propagate() {
         if (i%write_frequency==0) {
             wavefunction->checkpoint(*file, time[i]);
             error = wavefunction->norm();
+            std::cout << "Norm: " << error << "\n";
             error -= wavefunction->norm(psi_old.data(),
                         num_psi, dx[0]);
             error = std::abs(error);
             std::cout << "Norm error: " << error << "\n";
-            if (error<tol) {
+            if (error<1e-14) {
                 converged = true;
             }
             // write a checkpoint
