@@ -7,7 +7,7 @@
 #include "Wavefunction.h"
 #include "HDF5Wrapper.h"
 #include <Eigen/Core>
-#include <petscsnes.h>
+// #include <petscsnes.h>
 
 int main(int argc, char** argv) {
     // initialize all of the classes
