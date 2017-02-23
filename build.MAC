@@ -1,9 +1,8 @@
-#/bin/bash
+#!/bin/bash
 
 # remove anachonda from path so it uses the right hdf5 distro
 export PATH=$(echo "$PATH" | sed -e 's/:\/Users\/jvenzke\/anaconda\/bin//')
+export PATH=$(echo "$PATH" | sed -e 's/\/Users\/jvenzke\/anaconda\/bin://')
 
-export LDFLAGS=""
-./configure CXX=h5c++ CC=h5cc
+cd src
 make
-make install

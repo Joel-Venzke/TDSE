@@ -9,9 +9,9 @@
   "beta":    1.0,
   "gobbler": 0.9,
   "sigma":   2.0,
-  "write_frequency": 50,
+  "write_frequency": 1,
   "state_solver":    "Power",
-  "propagate": 1,
+  "propagate": 0,
   "states": [
     {"energy": -2.238}],
   "tol":        1e-10,

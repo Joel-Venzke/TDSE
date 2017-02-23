@@ -237,11 +237,14 @@ void Simulation::power_method(int num_states) {
     for (int iter=0; iter<num_states; iter++) {
         // left side of power method
         left    = (h[0]-(idenity[0]*state_energy[iter]));
+        std::cout << "Looking for state with Energy: ";
         std::cout << state_energy[iter] << "\n";
         left.makeCompressed();
 
         // do this outside the loop since left never changes
+        std::cout << "Setting up solver" << "\n" << std::flush;
         solver.compute(left);
+        std::cout << "Solver set up" << "\n" << std::flush;
         if (iter>0 and
             std::abs(state_energy[iter]-state_energy[iter-1])<1e-10) {
             std::cout << "Starting Gram Schmit\n";
@@ -274,6 +277,7 @@ void Simulation::power_method(int num_states) {
                 // save this psi to ${target}.h5
                 std::cout << "Energy: ";
                 std::cout << wavefunction->get_energy(h) << "\n";
+                std::cout << std::flush;
                 // write a checkpoint
                 // wavefunction->checkpoint(*file,i/write_frequency);
             }

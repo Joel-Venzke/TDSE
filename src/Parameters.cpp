@@ -3,11 +3,11 @@
 #include "json.cpp"
 #include "Parameters.h"
 #include <cstdlib>     // exit
-#include "H5Cpp.h"     // hdf5
+// #include "H5Cpp.h"     // hdf5
 
 // for convenience
 using json = nlohmann::json;
-using namespace H5;
+// using namespace H5;
 
 
 /*
