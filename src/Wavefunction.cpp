@@ -41,11 +41,14 @@ Wavefunction::Wavefunction(HDF5Wrapper& data_file, Parameters & p) {
 
     // allocate grid
     create_grid();
+    std::cout << "grid built\n";
 
     // allocate psi_1, psi_2, and psi
     create_psi();
 
     // write out data
+    checkpoint(data_file, 0.0);
+    checkpoint(data_file, 0.0);
     checkpoint(data_file, 0.0);
 
     // delete psi_1 and psi_2
@@ -58,9 +61,25 @@ void Wavefunction::checkpoint(HDF5Wrapper& data_file, double time) {
     std::cout << "Checkpointing Wavefunction: " << write_counter;
     std::cout << "\n" << std::flush;
     std::string str;
+    PetscViewer    H5viewer;
+    PetscInt ierr;
+
+    // open file
+    // ierr = PetscViewerHDF5Open(PETSC_COMM_WORLD,"g.h5",FILE_MODE_APPEND,&H5viewer);
+    // PetscViewerSetFromOptions(H5viewer);
+    // PetscViewerHDF5PushGroup(H5viewer, "Wavefunction");
+    // PetscViewerHDF5SetTimestep(H5viewer,write_counter);
+    // VecView(psi,H5viewer);
+    // PetscViewerDestroy(&H5viewer);
 
     // only write out at start
     if (first_pass) {
+        ierr = PetscViewerHDF5Open(PETSC_COMM_WORLD,"g.h5",FILE_MODE_WRITE,&H5viewer);
+        PetscViewerSetFromOptions(H5viewer);
+        PetscViewerHDF5PushGroup(H5viewer, "Wavefunction");
+        PetscViewerHDF5SetTimestep(H5viewer,write_counter);
+        VecView(psi,H5viewer);
+        PetscViewerDestroy(&H5viewer);
         // size of each dim
         data_file.write_object(num_x, num_dims, "/Wavefunction/num_x",
             "The number of physical dimension in the simulation");
@@ -93,37 +112,45 @@ void Wavefunction::checkpoint(HDF5Wrapper& data_file, double time) {
         }
 
         // write data and attribute
-        data_file.write_object(psi->data(), num_psi,
-            "/Wavefunction/psi",
-            "Wavefunction for the two electron system",
-            write_counter);
+        // data_file.write_object(psi->data(), num_psi,
+        //     "/Wavefunction/psi",
+        //     "Wavefunction for the two electron system",
+        //     write_counter);
 
-        data_file.write_object(psi_gobbler->data(), num_psi,
-            "/Wavefunction/psi_gobbler",
-            "boundary potential for the two electron system");
+        // data_file.write_object(psi_gobbler->data(), num_psi,
+        //     "/Wavefunction/psi_gobbler",
+        //     "boundary potential for the two electron system");
 
         // write time and attribute
         data_file.write_object(time, "/Wavefunction/psi_time",
             "Time step that psi was written to disk", write_counter);
 
-        // write time and attribute
-        data_file.write_object(norm(), "/Wavefunction/norm",
-            "Norm of wavefunction", write_counter);
+        // // write time and attribute
+        // data_file.write_object(norm(), "/Wavefunction/norm",
+        //     "Norm of wavefunction", write_counter);
 
         // allow for future passes to write psi only
         first_pass = false;
     } else {
-        // write whenever this function is called
-        data_file.write_object(psi->data(), num_psi,
-            "/Wavefunction/psi", write_counter);
-
-        // write time
-        data_file.write_object(time, "/Wavefunction/psi_time",
-            write_counter);
-
-        data_file.write_object(norm(), "/Wavefunction/norm",
-            write_counter);
+        ierr = PetscViewerHDF5Open(PETSC_COMM_WORLD,"g.h5",FILE_MODE_APPEND,&H5viewer);
+        PetscViewerSetFromOptions(H5viewer);
+        PetscViewerHDF5PushGroup(H5viewer, "Wavefunction");
+        PetscViewerHDF5SetTimestep(H5viewer,write_counter);
+        VecView(psi,H5viewer);
+        PetscViewerDestroy(&H5viewer);
     }
+    // } else {
+    //     // write whenever this function is called
+    //     data_file.write_object(psi->data(), num_psi,
+    //         "/Wavefunction/psi", write_counter);
+
+    //     // write time
+    //     data_file.write_object(time, "/Wavefunction/psi_time",
+    //         write_counter);
+
+    //     data_file.write_object(norm(), "/Wavefunction/norm",
+    //         write_counter);
+    // }
 
     // keep track of what index we are on
     write_counter++;
@@ -135,7 +162,7 @@ void Wavefunction::checkpoint_psi(HDF5Wrapper& data_file,
     std::cout << "Checkpointing Wavefunction: " << var_path;
     std::cout << " " << write_idx << "\n";
 
-    data_file.write_object(psi->data(), num_psi, var_path, write_idx);
+    // data_file.write_object(psi->data(), num_psi, var_path, write_idx);
 }
 
 void Wavefunction::create_grid() {
@@ -189,8 +216,13 @@ void Wavefunction::create_grid() {
 // builds psi from 2 Gaussian psi (one for each electron)
 void Wavefunction::create_psi() {
     double sigma2;    // variance squared for Gaussian in psi
-    double x;        // x value squared
+    double x;         // x value squared
     double x2;        // x value squared
+    int rank;
+    PetscInt idx, ierr;
+    PetscScalar val;
+    PetscViewer    H5viewer;
+    MPI_Comm_rank (PETSC_COMM_WORLD, &rank ) ;
 
     // allocate data
     if (! psi_12_alloc) {
@@ -229,23 +261,36 @@ void Wavefunction::create_psi() {
 
     // allocate psi
     if (! psi_alloc) {
-        psi         = new Eigen::VectorXcd(num_psi);
-        psi_gobbler = new Eigen::VectorXcd(num_psi);
+        VecCreate(PETSC_COMM_WORLD,&psi);
+        VecSetSizes(psi,PETSC_DECIDE,num_psi);
+        VecSetFromOptions(psi);
+        ierr = PetscObjectSetName((PetscObject)psi,"psi");
         psi_alloc = true;
     }
 
     // tensor product of psi_1 and psi_2
-    for (int i=0; i<num_psi_12; i++) { // e_2 dim
-        for (int j=0; j<num_psi_12; j++) { // e_1 dim
-            psi[0](i*num_psi_12+j) = psi_1[i]*psi_2[j];
+    if (rank == 0) {
+        for (int i=0; i<num_psi_12; i++) { // e_2 dim
+            for (int j=0; j<num_psi_12; j++) { // e_1 dim
+                idx = i*num_psi_12+j;
+                val = psi_1[i]*psi_2[j];
+                VecSetValues(psi, 1, &idx, &val, INSERT_VALUES);
 
-            psi_gobbler[0](i*num_psi_12+j) =
-                psi_1_gobbler[i]*psi_2_gobbler[j];
+                // psi_gobbler[0](i*num_psi_12+j) =
+                //     psi_1_gobbler[i]*psi_2_gobbler[j];
+            }
         }
     }
+    VecAssemblyBegin ( psi ) ;
+    VecAssemblyEnd ( psi ) ;
 
+    // ierr = PetscViewerHDF5Open(PETSC_COMM_WORLD,"gauss.h5",FILE_MODE_APPEND,&H5viewer);
+    // PetscViewerSetFromOptions(H5viewer);
+    // PetscViewerHDF5PushGroup(H5viewer, "Wavefunction");
+    // VecView(psi,H5viewer);
+    // PetscViewerDestroy(&H5viewer);
     // normalize all psi
-    normalize();
+    // normalize();
 }
 
 // delete psi_1 and psi_2 since they are not used later
@@ -263,13 +308,13 @@ void Wavefunction::normalize() {
         normalize(psi_1, num_psi_12, delta_x[0]);
         normalize(psi_2, num_psi_12, delta_x[0]);
     }
-    normalize(psi->data(), num_psi, delta_x[0]);
+    // normalize(psi->data(), num_psi, delta_x[0]);
 }
 
 void Wavefunction::gobble_psi() {
-    for (int i=0; i<num_psi; i++) {
-        psi[0][i] *= psi_gobbler[0][i];
-    }
+    // for (int i=0; i<num_psi; i++) {
+    //     psi[0][i] *= psi_gobbler[0][i];
+    // }
 }
 
 // normalizes the array provided
@@ -288,7 +333,8 @@ void Wavefunction::normalize(dcomp *data, int length, double dx) {
 
 // returns norm of psi
 double Wavefunction::norm() {
-    return norm(psi->data(), num_psi, delta_x[0]);
+    return 2.0;
+    // return norm(psi->data(), num_psi, delta_x[0]);
 }
 
 // returns norm of array using trapezoidal rule
@@ -306,9 +352,9 @@ double Wavefunction::norm(dcomp *data, int length, double dx) {
     return total;
 }
 
-double Wavefunction::get_energy(Eigen::SparseMatrix<dcomp> *h){
-    return (psi->dot(h[0]*psi[0])/psi->squaredNorm()).real();
-}
+// double Wavefunction::get_energy(Eigen::SparseMatrix<dcomp> *h){
+//     return (psi->dot(h[0]*psi[0])/psi->squaredNorm()).real();
+// }
 
 void Wavefunction::reset_psi() {
     create_psi();
@@ -327,9 +373,9 @@ int Wavefunction::get_num_psi_12() {
     return num_psi_12;
 }
 
-Eigen::VectorXcd* Wavefunction::get_psi() {
-    return psi;
-}
+// Eigen::VectorXcd* Wavefunction::get_psi() {
+//     return psi;
+// }
 
 double*  Wavefunction::get_delta_x() {
     return delta_x;
@@ -353,6 +399,4 @@ Wavefunction::~Wavefunction(){
     if (psi_12_alloc) {
         cleanup();
     }
-    delete psi;
-    delete psi_gobbler;
 }

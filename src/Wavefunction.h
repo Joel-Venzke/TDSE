@@ -3,8 +3,8 @@
 #include "Parameters.h"
 #include <complex>
 #include "HDF5Wrapper.h"
-#include <Eigen/Sparse>
-
+#include <petsc.h>
+#include <petscviewerhdf5.h>
 
 #define dcomp std::complex<double>
 
@@ -22,8 +22,8 @@ private:
     dcomp  *psi_1_gobbler;  // boundary for electron 1
     dcomp  *psi_2;          // wavefunction for electron 2
     dcomp  *psi_2_gobbler;  // boundary for electron 2
-    Eigen::VectorXcd  *psi; // wavefunction for 2 electron system
-    Eigen::VectorXcd  *psi_gobbler;// boundary for 2 electron system
+    Vec    psi;            // wavefunction for 2 electron system
+    Vec    psi_gobbler;    // boundary for 2 electron system
     // true if psi_1 and psi_2 are allocated
     bool   psi_12_alloc;
     bool   psi_alloc;
@@ -56,14 +56,14 @@ public:
     void normalize(dcomp *data, int length, double dx);
     double norm();
     double norm(dcomp *data, int length, double dx);
-    double get_energy(Eigen::SparseMatrix<dcomp> *h);
+    // double get_energy(Eigen::SparseMatrix<dcomp> *h);
     void reset_psi();
     void gobble_psi();
 
     int* get_num_x();
     int  get_num_psi();
     int  get_num_psi_12();
-    Eigen::VectorXcd* get_psi();
+    // Eigen::VectorXcd* get_psi();
     double*  get_delta_x();
     double** get_x_value();
 
