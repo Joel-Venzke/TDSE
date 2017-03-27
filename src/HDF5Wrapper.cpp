@@ -105,17 +105,14 @@ void HDF5Wrapper::write_object(
     int *dims,
     H5std_string var_path) {
     reopen();
+
     // size of array
     hsize_t *h5_size = get_hsize_t(size, dims);
-
     // make DataSpace for array
     DataSpace h5_space(size,h5_size);
-
     // build the header for the data entry
     DataSet data_set = data_file->createDataSet(
-                            var_path,
-                            PredType::NATIVE_INT, h5_space);
-
+        var_path, PredType::NATIVE_INT, h5_space);
     // write data to file
     data_set.write(data, PredType::NATIVE_INT);
 

@@ -255,11 +255,11 @@ void Parameters::validate(){
 }
 
 // getters
-double Parameters::get_delta_t() {
+PetscReal Parameters::get_delta_t() {
     return delta_t;
 }
 
-int Parameters::get_num_dims(){
+PetscInt Parameters::get_num_dims(){
     return num_dims;
 }
 
@@ -271,7 +271,7 @@ double* Parameters::get_delta_x(){
     return delta_x;
 }
 
-int Parameters::get_restart() {
+PetscInt Parameters::get_restart() {
     return restart;
 }
 
@@ -279,35 +279,35 @@ std::string Parameters::get_target() {
     return target;
 }
 
-int Parameters::get_target_idx(){
+PetscInt Parameters::get_target_idx(){
     return target_idx;
 }
 
-double Parameters::get_z() {
+PetscReal Parameters::get_z() {
     return z;
 }
 
-double Parameters::get_alpha() {
+PetscReal Parameters::get_alpha() {
     return alpha;
 }
 
-double Parameters::get_beta() {
+PetscReal Parameters::get_beta() {
     return beta;
 }
 
-int Parameters::get_write_frequency() {
+PetscInt Parameters::get_write_frequency() {
     return write_frequency;
 }
 
-double Parameters::get_gobbler() {
+PetscReal Parameters::get_gobbler() {
     return gobbler;
 }
 
-double Parameters::get_sigma() {
+PetscReal Parameters::get_sigma() {
     return sigma;
 }
 
-int Parameters::get_num_states() {
+PetscInt Parameters::get_num_states() {
     return num_states;
 }
 
@@ -315,11 +315,11 @@ double* Parameters::get_state_energy() {
     return state_energy;
 }
 
-double Parameters::get_tol() {
+PetscReal Parameters::get_tol() {
     return tol;
 }
 
-int Parameters::get_state_solver_idx() {
+PetscInt Parameters::get_state_solver_idx() {
     return state_solver_idx;
 }
 
@@ -327,11 +327,11 @@ std::string Parameters::get_state_solver() {
     return state_solver;
 }
 
-int Parameters::get_propagate() {
+PetscInt Parameters::get_propagate() {
     return propagate;
 }
 
-int Parameters::get_num_pulses() {
+PetscInt Parameters::get_num_pulses() {
     return num_pulses;
 }
 
@@ -370,3 +370,55 @@ double* Parameters::get_e_max() {
 double* Parameters::get_cycles_delay() {
     return cycles_delay;
 }
+
+// // write out header values
+//     write_object(num_dims,"/Parameters/num_dims",
+//         "Number of dimension in simulation");
+//     write_object(p.get_dim_size(),num_dims, "/Parameters/dim_size",
+//         "The length of that dimension in atomic units.");
+//     write_object(p.get_delta_x(),num_dims, "/Parameters/delta_x",
+//         "The step sizes in that dimension in atomic units.");
+//     write_object(p.get_delta_t(), "/Parameters/delta_t",
+//         "The size of the time step in atomic units.");
+//     write_object(p.get_target_idx(), "/Parameters/target_idx",
+//         "The index of the target. He:0 ");
+//     write_object(p.get_z(), "/Parameters/z",
+//         "Atomic number used in Hamiltonian ");
+//     write_object(p.get_alpha(), "/Parameters/alpha",
+//         "Soft core used in atomic term of Hamiltonian");
+//     write_object(p.get_beta(), "/Parameters/beta",
+//         "Soft core used in e-e term of Hamiltonian");
+//     write_object(p.get_write_frequency(), "/Parameters/write_frequency",
+//         "How often are checkpoints done");
+//     write_object(p.get_gobbler(), "/Parameters/gobbler",
+//         "The point at which the gobbler turns on at, (1=100 and 0.9=90)");
+//     write_object(p.get_sigma(), "/Parameters/sigma",
+//         "STD of wavefunction guess");
+//     write_object(p.get_tol(), "/Parameters/tol",
+//         "Error tolerance in psi");
+//     write_object(p.get_state_solver_idx(),
+//         "/Parameters/state_solver_idx",
+//         "Index of solver: File:0, ITP:1, Power:2");
+//     write_object(num_pulses, "/Parameters/num_pulses",
+//         "The number of pulses from the input file");
+//     write_object(p.get_pulse_shape_idx(), num_pulses,
+//         "/Parameters/pulse_shape_idx",
+//         "The index of the pulse shape. Sin2:0");
+//     write_object(p.get_cycles_on(), num_pulses,
+//         "/Parameters/cycles_on",
+//         "Number of cycles the pulse ramps on for");
+//     write_object(p.get_cycles_plateau(), num_pulses,
+//         "/Parameters/cycles_plateau",
+//         "Number of cycles the pulse stays at max amplitude for");
+//     write_object(p.get_cycles_off(), num_pulses,
+//         "/Parameters/cycles_off",
+//         "Number of cycles the pulse ramps off for");
+//     write_object(p.get_cycles_delay(), num_pulses,
+//         "/Parameters/cycles_delay",
+//         "Number of cycles before the pulse starts");
+//     write_object(p.get_cep(), num_pulses, "/Parameters/cep",
+//         "The carrying phase envelope of the pulse. It is defined at the time the pulse starts to turn on.");
+//     write_object(p.get_energy(), num_pulses, "/Parameters/energy",
+//         "The fundamental angular frequency of the pulse. Corresponds to the energy of the photons in atomic units.");
+//     write_object(p.get_e_max(), num_pulses, "/Parameters/e_max",
+//         "The maximum amplitude of the pulse in atomic units.");

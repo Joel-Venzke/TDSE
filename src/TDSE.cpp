@@ -2,9 +2,9 @@
 #include <iostream>
 // #include "Hamiltonian.h"
 #include "Parameters.h"
-#include "Pulse.h"
+// #include "Pulse.h"
 // #include "Simulation.h"
-#include "Wavefunction.h"
+// #include "Wavefunction.h"
 #include "HDF5Wrapper.h"
 #include <petsc.h>
 
@@ -24,9 +24,9 @@ int main(int argc, char** argv) {
 
     Parameters parameters("input.json");
     HDF5Wrapper data_file(parameters);
-    Pulse pulse(data_file, parameters);
-    Wavefunction wavefunction(data_file,parameters);
-    // Hamiltonian hamiltonian(wavefunction,pulse,data_file,parameters);
+    // Pulse pulse(data_file, parameters);
+    // Wavefunction wavefunction(data_file,parameters);
+    // // Hamiltonian hamiltonian(wavefunction,pulse,data_file,parameters);
     // // Simulation s(hamiltonian,wavefunction,pulse,data_file,parameters);
 
     ierr = PetscLogStagePop();

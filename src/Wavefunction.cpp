@@ -63,6 +63,9 @@ void Wavefunction::checkpoint(HDF5Wrapper& data_file, double time) {
     std::string str;
     PetscViewer    H5viewer;
     PetscInt ierr;
+    const char   *tmp;
+    std::string  name;
+    std::string  group_name = "/Wavefunction/";
 
     // open file
     // ierr = PetscViewerHDF5Open(PETSC_COMM_WORLD,"g.h5",FILE_MODE_APPEND,&H5viewer);
@@ -74,12 +77,28 @@ void Wavefunction::checkpoint(HDF5Wrapper& data_file, double time) {
 
     // only write out at start
     if (first_pass) {
-        ierr = PetscViewerHDF5Open(PETSC_COMM_WORLD,"g.h5",FILE_MODE_WRITE,&H5viewer);
+        // open file
+        ierr = PetscViewerHDF5Open(PETSC_COMM_WORLD,
+            "g.h5",FILE_MODE_WRITE,&H5viewer);
         PetscViewerSetFromOptions(H5viewer);
-        PetscViewerHDF5PushGroup(H5viewer, "Wavefunction");
+        // move into group
+        PetscViewerHDF5PushGroup(H5viewer, group_name.c_str());
+        // set time step
         PetscViewerHDF5SetTimestep(H5viewer,write_counter);
-        VecView(psi,H5viewer);
+        // write vector
+        PetscObjectView((PetscObject)psi,H5viewer);
+        // get object name
+        PetscObjectGetName((PetscObject)psi,&tmp);
+        name = tmp;
+        PetscViewerHDF5WriteAttribute(H5viewer, (group_name+name).c_str(), "Attribute",
+            PETSC_STRING, "Wavefunction for the two electron system");
+        PetscViewerHDF5WriteAttribute(H5viewer, (group_name+name).c_str(), "Def",
+            PETSC_STRING, "Wavefunction for the two electron system");
+        // close file
         PetscViewerDestroy(&H5viewer);
+        // templating notes
+        // http://en.cppreference.com/w/cpp/language/partial_specialization
+
         // size of each dim
         data_file.write_object(num_x, num_dims, "/Wavefunction/num_x",
             "The number of physical dimension in the simulation");
@@ -220,7 +239,7 @@ void Wavefunction::create_psi() {
     double x2;        // x value squared
     int rank;
     PetscInt idx, ierr;
-    PetscScalar val;
+    PetscComplex val;
     PetscViewer    H5viewer;
     MPI_Comm_rank (PETSC_COMM_WORLD, &rank ) ;
 
