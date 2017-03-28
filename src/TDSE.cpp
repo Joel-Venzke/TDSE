@@ -1,43 +1,31 @@
 // #include "config.h"
 #include <iostream>
-// #include "Hamiltonian.h"
+#include "PETSCWrapper.h"
+#include "ViewWrapper.h"
 #include "Parameters.h"
-// #include "Pulse.h"
-// #include "Simulation.h"
-// #include "Wavefunction.h"
 #include "HDF5Wrapper.h"
+#include "Pulse.h"
+// #include "Wavefunction.h"
+// #include "Hamiltonian.h"
+// #include "Simulation.h"
 #include <petsc.h>
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
+    PETSCWrapper Pwrap(argc,argv);
+    Pwrap.PushStage("Set up");
+
     // initialize all of the classes
-    PetscErrorCode ierr;
-    PetscLogStage stage;
-    ierr = PetscInitialize(&argc,&argv,(char*)0,"TDSE");
-    CHKERRQ(ierr);
-    ierr = PetscInitializeFortran();
-    CHKERRQ(ierr);
-
-    ierr = PetscLogStageRegister("Set up", &stage);
-    CHKERRQ(ierr);
-    ierr = PetscLogStagePush(stage);
-    CHKERRQ(ierr);
-
-    Parameters parameters("input.json");
+    ViewWrapper viewer_file("TDSE.h5");
+    Parameters parameters(viewer_file, "input.json");
     HDF5Wrapper data_file(parameters);
-    // Pulse pulse(data_file, parameters);
+    Pulse pulse(data_file, parameters);
     // Wavefunction wavefunction(data_file,parameters);
-    // // Hamiltonian hamiltonian(wavefunction,pulse,data_file,parameters);
-    // // Simulation s(hamiltonian,wavefunction,pulse,data_file,parameters);
+    // Hamiltonian hamiltonian(wavefunction,pulse,data_file,parameters);
+    // Simulation s(hamiltonian,wavefunction,pulse,data_file,parameters);
+    Pwrap.PopStage();
 
-    ierr = PetscLogStagePop();
-    CHKERRQ(ierr);
-    ierr = PetscBarrier(NULL); CHKERRQ(ierr);
-    CHKERRQ(ierr);
-
-    ierr = PetscLogStageRegister("Eigen State", &stage);
-    CHKERRQ(ierr);
-    ierr = PetscLogStagePush(stage);
-    CHKERRQ(ierr);
+    Pwrap.PushStage("Eigen State");
     // // get ground states
     // switch (parameters.get_state_solver_idx()) {
     //     case 0: // File
@@ -49,24 +37,12 @@ int main(int argc, char** argv) {
     //         s.power_method(parameters.get_num_states());
     //         break;
     // }
-    ierr = PetscLogStagePop();
-    CHKERRQ(ierr);
-    ierr = PetscBarrier(NULL); CHKERRQ(ierr);
-    CHKERRQ(ierr);
+    Pwrap.PopStage();
 
-    ierr = PetscLogStageRegister("Propagation", &stage);
-    CHKERRQ(ierr);
-    ierr = PetscLogStagePush(stage);
-    CHKERRQ(ierr);
+    Pwrap.PushStage("Propagation");
     // if (parameters.get_propagate()==1) {
     //     s.propagate();
     // }
-    ierr = PetscLogStagePop();
-    CHKERRQ(ierr);
-    ierr = PetscBarrier(NULL); CHKERRQ(ierr);
-    CHKERRQ(ierr);
-
-    ierr = PetscFinalize(); CHKERRQ(ierr);
-    CHKERRQ(ierr);
+    Pwrap.PopStage();
     return 0;
 }

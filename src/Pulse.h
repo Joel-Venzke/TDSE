@@ -6,6 +6,7 @@
 class Pulse {
 private:
     const double pi = 3.1415926535897;
+    int          rank;
     int          num_pulses;       // number of pulses
     double       delta_t;          // time step
     int          max_pulse_length; // length of longest pulse;
@@ -17,7 +18,7 @@ private:
     double       *cycles_total;    // cycles in pulse
     double       *cep;             // carrier envelope phase
     double       *energy;          // photon energy
-    double       *e_max;           // max amplitude
+    double       *field_max;       // max amplitude
     double       *time;            // stores the time at each point
     double       **pulse_value;    // pulse value
     double       **pulse_envelope; // envelope function of pulse

@@ -4,6 +4,7 @@
 // #include "hdf5.h"
 #include <complex>
 #include <vector>
+#include <petsc.h>
 
 #define dcomp std::complex<double>
 
@@ -11,6 +12,7 @@ using namespace H5;
 
 class HDF5Wrapper {
 private:
+    PetscInt  rank;
     H5File                   *data_file;
     std::string              file_name;
     bool                     file_open;

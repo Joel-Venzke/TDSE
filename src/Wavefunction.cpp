@@ -77,6 +77,9 @@ void Wavefunction::checkpoint(HDF5Wrapper& data_file, double time) {
 
     // only write out at start
     if (first_pass) {
+
+        PetscErrorCode  PetscViewerHDF5GetGroup(PetscViewer viewer, const char **name)
+
         // open file
         ierr = PetscViewerHDF5Open(PETSC_COMM_WORLD,
             "g.h5",FILE_MODE_WRITE,&H5viewer);

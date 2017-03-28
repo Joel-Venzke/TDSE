@@ -6,7 +6,6 @@
   "restart": 0,
   "target":  "He",
   "alpha":   1.0,
-  "beta":    1.0,
   "gobbler": 0.9,
   "sigma":   2.0,
   "write_frequency": 1,
@@ -23,5 +22,5 @@
       "cycles_delay":   0.0,
       "cep":            0.0,
       "energy":         0.057,
-      "e_max":          12.83}]
+      "field_max":      12.83}]
 }

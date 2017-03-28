@@ -2,14 +2,18 @@
 #include <math.h>    // ceil()
 
 Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p) {
+    MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
     int pulse_length = 0;
 
-    std::cout << "Creating pulses\n" << std::flush;
+    if (rank==0)
+    {
+        std::cout << "Creating pulses\n" << std::flush;
+    }
 
     // get number of pulses and dt from Parameters
     pulse_alloc      = false;
-    num_pulses       = p.get_num_pulses();
-    delta_t          = p.get_delta_t();
+    num_pulses       = p.GetNumPulses();
+    delta_t          = p.GetDeltaT();
     max_pulse_length = 0; // stores longest pulse
 
     // allocate arrays
@@ -21,20 +25,20 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p) {
     cycles_total    = new double[num_pulses];
     cep             = new double[num_pulses];
     energy          = new double[num_pulses];
-    e_max           = new double[num_pulses];
+    field_max       = new double[num_pulses];
 
     // get data from Parameters
     for (int i = 0; i < num_pulses; ++i) {
-        pulse_shape_idx[i] = p.get_pulse_shape_idx()[i];
-        cycles_on[i]       = p.get_cycles_on()[i];
-        cycles_plateau[i]  = p.get_cycles_plateau()[i];
-        cycles_off[i]      = p.get_cycles_off()[i];
-        cycles_delay[i]    = p.get_cycles_delay()[i];
+        pulse_shape_idx[i] = p.GetPulseShapeIdx()[i];
+        cycles_on[i]       = p.GetCyclesOn()[i];
+        cycles_plateau[i]  = p.GetCyclesPlateau()[i];
+        cycles_off[i]      = p.GetCyclesOff()[i];
+        cycles_delay[i]    = p.GetCyclesDelay()[i];
         cycles_total[i]    = cycles_delay[i]+cycles_on[i]+
                              cycles_plateau[i]+cycles_off[i];
-        cep[i]             = p.get_cep()[i];
-        energy[i]          = p.get_energy()[i];
-        e_max[i]           = p.get_e_max()[i];
+        cep[i]             = p.GetCep()[i];
+        energy[i]          = p.GetEnergy()[i];
+        field_max[i]       = p.GetFieldMax()[i];
 
         // calculate length (number of array cells) of each pulse
         pulse_length       = ceil(2.0*pi*cycles_total[i]/
@@ -54,11 +58,17 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p) {
 
     deallocate_pulses();
 
-    std::cout << "Pulses created\n" << std::flush;
+    if (rank==0)
+    {
+        std::cout << "Pulses created\n" << std::flush;
+    }
 }
 
 Pulse::~Pulse() {
-    std::cout << "Deleting Pulse\n" << std::flush;
+    if (rank==0)
+    {
+        std::cout << "Deleting Pulse\n" << std::flush;
+    }
     delete pulse_shape_idx;
     delete cycles_on;
     delete cycles_plateau;
@@ -67,7 +77,7 @@ Pulse::~Pulse() {
     delete cycles_total;
     delete cep;
     delete energy;
-    delete e_max;
+    delete field_max;
     delete time;
     if (pulse_alloc) {
         for (int i = 0; i < num_pulses; ++i) {
@@ -123,13 +133,13 @@ void Pulse::initialize_pulse(int n){
         } else if (i < plateau_start) { // pulse ramping on
             s1 = sin(energy[n]*delta_t*(i-on_start)/
                     (4.0*cycles_on[n]));
-            pulse_envelope[n][i] = e_max[n]*s1*s1;
+            pulse_envelope[n][i] = field_max[n]*s1*s1;
         } else if (i < off_start) { // pulse at max
-            pulse_envelope[n][i] = e_max[n];
+            pulse_envelope[n][i] = field_max[n];
         } else if (i < off_end) { // pulse ramping off
             s1 = sin(energy[n]*delta_t*(i-off_start)/
                     (4.0*cycles_off[n]));
-            pulse_envelope[n][i] = e_max[n]*(1-(s1*s1));
+            pulse_envelope[n][i] = field_max[n]*(1-(s1*s1));
         } else { // pulse is off
             pulse_envelope[n][i] = 0.0;
         }
