@@ -454,6 +454,7 @@ double* Parameters::GetFieldMax()
     return field_max;
 }
 
-double* Parameters::GetCyclesDelay() {
+double* Parameters::GetCyclesDelay()
+{
     return cycles_delay;
 }
