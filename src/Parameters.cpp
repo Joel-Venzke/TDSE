@@ -2,21 +2,17 @@
 #include <string>
 // #include "H5Cpp.h"
 
-/*
- * Reads file and returns a string
- */
+/* Reads file and returns a string */
 std::string FileToString(std::string file_name)
 {
-  // TODO(jove7731): check if file exists
+  /* TODO(jove7731): check if file exists */
   std::ifstream t(file_name);
   std::string str((std::istreambuf_iterator<char>(t)),
                   std::istreambuf_iterator<char>());
   return str;
 }
 
-/*
- * Reads file and returns a json object
- */
+/* Reads file and returns a json object */
 json FileToJson(std::string file_name)
 {
   auto j = json::parse(FileToString(file_name));
@@ -54,14 +50,14 @@ Parameters::Parameters(ViewWrapper& data_file, std::string file_name)
   json data = FileToJson(file_name);
 
   /* get numeric information */
-  delta_t = data["delta_t"];
+  delta_t  = data["delta_t"];
   num_dims = data["dimensions"].size();
   dim_size = new double[num_dims];
-  delta_x = new double[num_dims];
+  delta_x  = new double[num_dims];
   for (int i = 0; i < num_dims; ++i)
   {
     dim_size[i] = data["dimensions"][i]["dim_size"];
-    delta_x[i] = data["dimensions"][i]["delta_x"];
+    delta_x[i]  = data["dimensions"][i]["delta_x"];
 
     /* this should be small */
     if (rank == 0)
@@ -72,15 +68,15 @@ Parameters::Parameters(ViewWrapper& data_file, std::string file_name)
   }
 
   /* get simulation behavior */
-  restart = data["restart"];
-  target = data["target"];
-  alpha = data["alpha"];
+  restart         = data["restart"];
+  target          = data["target"];
+  alpha           = data["alpha"];
   write_frequency = data["write_frequency"];
-  gobbler = data["gobbler"];
-  sigma = data["sigma"];
-  tol = data["tol"];
-  state_solver = data["state_solver"];
-  num_states = data["states"].size();
+  gobbler         = data["gobbler"];
+  sigma           = data["sigma"];
+  tol             = data["tol"];
+  state_solver    = data["state_solver"];
+  num_states      = data["states"].size();
 
   state_energy = new double[num_states];
 
@@ -89,12 +85,11 @@ Parameters::Parameters(ViewWrapper& data_file, std::string file_name)
     state_energy[i] = data["states"][i]["energy"];
   }
 
-  /* index is used throughout code for efficiency */
-  /* and ease of writing to hdf5 */
+  /* index is used throughout code for efficiency and ease of writing to hdf5 */
   if (target == "He")
   {
     target_idx = 0;
-    z = 2.0; /* He atomic number */
+    z          = 2.0; /* He atomic number */
   }
 
   if (state_solver == "File")
@@ -116,15 +111,15 @@ Parameters::Parameters(ViewWrapper& data_file, std::string file_name)
   num_pulses = data["pulses"].size();
 
   /* allocate memory */
-  pulse_shape = new std::string[num_pulses];
+  pulse_shape     = new std::string[num_pulses];
   pulse_shape_idx = new int[num_pulses];
-  cycles_on = new double[num_pulses];
-  cycles_plateau = new double[num_pulses];
-  cycles_off = new double[num_pulses];
-  cycles_delay = new double[num_pulses];
-  cep = new double[num_pulses];
-  energy = new double[num_pulses];
-  field_max = new double[num_pulses];
+  cycles_on       = new double[num_pulses];
+  cycles_plateau  = new double[num_pulses];
+  cycles_off      = new double[num_pulses];
+  cycles_delay    = new double[num_pulses];
+  cep             = new double[num_pulses];
+  energy          = new double[num_pulses];
+  field_max       = new double[num_pulses];
 
   /* read data */
   for (int i = 0; i < num_pulses; ++i)
@@ -141,13 +136,13 @@ Parameters::Parameters(ViewWrapper& data_file, std::string file_name)
       pulse_shape_idx[i] = 1;
     }
 
-    cycles_on[i] = data["pulses"][i]["cycles_on"];
+    cycles_on[i]      = data["pulses"][i]["cycles_on"];
     cycles_plateau[i] = data["pulses"][i]["cycles_plateau"];
-    cycles_off[i] = data["pulses"][i]["cycles_off"];
-    cycles_delay[i] = data["pulses"][i]["cycles_delay"];
-    cep[i] = data["pulses"][i]["cep"];
-    energy[i] = data["pulses"][i]["energy"];
-    field_max[i] = data["pulses"][i]["field_max"];
+    cycles_off[i]     = data["pulses"][i]["cycles_off"];
+    cycles_delay[i]   = data["pulses"][i]["cycles_delay"];
+    cep[i]            = data["pulses"][i]["cep"];
+    energy[i]         = data["pulses"][i]["energy"];
+    field_max[i]      = data["pulses"][i]["field_max"];
   }
 
   /* ensure input is good */
@@ -266,8 +261,8 @@ void Parameters::Validate()
       err_str += "cycles_off should be >= 0\n";
     }
 
-    /* exclude delay because it is zero anyways */
-    /* pulses must exist so we don't run supper long time scales */
+    /* exclude delay because it is zero anyways pulses must exist so we don't
+     * run supper long time scales */
     double p_length = cycles_on[i] + cycles_off[i] + cycles_plateau[i];
     if (p_length <= 0)
     {

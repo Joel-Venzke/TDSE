@@ -12,8 +12,8 @@ class ViewWrapper
   bool file_open;        /* true if file is open */
   PetscInt ierr;         /* error code */
  public:
-  /* Constructor */
-  /* does not open file */
+  /* Constructor
+   * does not open file */
   ViewWrapper(std::string f_name);
 
   /* no file set use open to set file */
@@ -25,10 +25,10 @@ class ViewWrapper
   /* set the file name for this object */
   void SetFileName(std::string f_name);
 
-  /* Opens file in various modes */
-  /* r: read only                */
-  /* w: write only (new file)    */
-  /* a: append write only        */
+  /* Opens file in various modes
+   * r: read only
+   * w: write only (new file)
+   * a: append write only        */
   void Open(std::string mode = "w");
 
   /* closes file */

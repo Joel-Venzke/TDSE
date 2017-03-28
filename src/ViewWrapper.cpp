@@ -16,7 +16,7 @@ ViewWrapper::ViewWrapper()
 {
   /* initialize bools to false */
   file_name_set = false;
-  file_open = false;
+  file_open     = false;
 }
 
 /* destructor */
@@ -37,16 +37,16 @@ void ViewWrapper::SetFileName(std::string f_name)
     EndRun("File name already set to " + file_name);
   }
 
-  file_name = f_name;
+  file_name     = f_name;
   file_name_set = true;
 }
 
-/* Opens file in various modes         */
-/* r: read only                        */
-/* w: write only (new file)            */
-/* a: append write only                */
-/* u: update read and write (new file) */
-/* ua: update read and write           */
+/* Opens file in various modes
+ * r: read only
+ * w: write only (new file)
+ * a: append write only
+ * u: update read and write (new file)
+ * ua: update read and write           */
 void ViewWrapper::Open(std::string mode)
 {
   if (!file_name_set)
@@ -110,7 +110,7 @@ void ViewWrapper::PushGroup(std::string group_path)
 const char *ViewWrapper::GetGroup()
 {
   const char *name = nullptr;
-  ierr = PetscViewerHDF5GetGroup(data_file, &name);
+  ierr             = PetscViewerHDF5GetGroup(data_file, &name);
   return name;
 }
 
@@ -118,7 +118,7 @@ const char *ViewWrapper::GetGroup()
 void ViewWrapper::PopGroup()
 {
   const char *name = nullptr;
-  ierr = PetscViewerHDF5GetGroup(data_file, &name);
+  ierr             = PetscViewerHDF5GetGroup(data_file, &name);
   if (name == NULL)
   {
     EndRun("No group left to pop");
