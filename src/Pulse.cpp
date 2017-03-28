@@ -12,34 +12,34 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p)
   }
 
   // get number of pulses and dt from Parameters
-  pulse_alloc = false;
-  num_pulses = p.GetNumPulses();
-  delta_t = p.GetDeltaT();
+  pulse_alloc      = false;
+  num_pulses       = p.GetNumPulses();
+  delta_t          = p.GetDeltaT();
   max_pulse_length = 0;  // stores longest pulse
 
   // allocate arrays
   pulse_shape_idx = new int[num_pulses];
-  cycles_on = new double[num_pulses];
-  cycles_plateau = new double[num_pulses];
-  cycles_off = new double[num_pulses];
-  cycles_delay = new double[num_pulses];
-  cycles_total = new double[num_pulses];
-  cep = new double[num_pulses];
-  energy = new double[num_pulses];
-  field_max = new double[num_pulses];
+  cycles_on       = new double[num_pulses];
+  cycles_plateau  = new double[num_pulses];
+  cycles_off      = new double[num_pulses];
+  cycles_delay    = new double[num_pulses];
+  cycles_total    = new double[num_pulses];
+  cep             = new double[num_pulses];
+  energy          = new double[num_pulses];
+  field_max       = new double[num_pulses];
 
   // get data from Parameters
   for (int i = 0; i < num_pulses; ++i)
   {
     pulse_shape_idx[i] = p.GetPulseShapeIdx()[i];
-    cycles_on[i] = p.GetCyclesOn()[i];
-    cycles_plateau[i] = p.GetCyclesPlateau()[i];
-    cycles_off[i] = p.GetCyclesOff()[i];
-    cycles_delay[i] = p.GetCyclesDelay()[i];
+    cycles_on[i]       = p.GetCyclesOn()[i];
+    cycles_plateau[i]  = p.GetCyclesPlateau()[i];
+    cycles_off[i]      = p.GetCyclesOff()[i];
+    cycles_delay[i]    = p.GetCyclesDelay()[i];
     cycles_total[i] =
         cycles_delay[i] + cycles_on[i] + cycles_plateau[i] + cycles_off[i];
-    cep[i] = p.GetCep()[i];
-    energy[i] = p.GetEnergy()[i];
+    cep[i]       = p.GetCep()[i];
+    energy[i]    = p.GetEnergy()[i];
     field_max[i] = p.GetFieldMax()[i];
 
     // calculate length (number of array cells) of each pulse
@@ -134,7 +134,7 @@ void Pulse::initialize_pulse(int n)
   if (!pulse_alloc)
   {
     pulse_envelope[n] = new double[max_pulse_length];
-    pulse_value[n] = new double[max_pulse_length];
+    pulse_value[n]    = new double[max_pulse_length];
   }
   for (int i = 0; i < max_pulse_length; ++i)
   {
@@ -174,7 +174,7 @@ void Pulse::initialize_pulse()
   // set up the input pulses
   if (!pulse_alloc)
   {
-    pulse_value = new double*[num_pulses];
+    pulse_value    = new double*[num_pulses];
     pulse_envelope = new double*[num_pulses];
   }
   for (int i = 0; i < num_pulses; ++i)
@@ -206,11 +206,12 @@ void Pulse::initialize_a_field()
 // write out the state of the pulse
 void Pulse::checkpoint(HDF5Wrapper& data_file)
 {
+  data_file.CreateGroup("/Pulse");
   // write time, a_field, and a_field_envelope to hdf5
-  data_file.write_object(time, max_pulse_length, "/Pulse/time",
-                         "The time for each index of the pulse in a.u.");
+  data_file.WriteObject(time, max_pulse_length, "/Pulse/time",
+                        "The time for each index of the pulse in a.u.");
 
-  data_file.write_object(
+  data_file.WriteObject(
       a_field, max_pulse_length, "/Pulse/a_field",
       "The value of the A field at each point in time in a.u.");
 
@@ -219,15 +220,14 @@ void Pulse::checkpoint(HDF5Wrapper& data_file)
     // write each pulse both value and envelope
     for (int i = 0; i < num_pulses; ++i)
     {
-      data_file.write_object(pulse_envelope[i], max_pulse_length,
-                             "/Pulse/Pulse_envelope_" + std::to_string(i),
-                             "The envelope function for the " +
-                                 std::to_string(i) +
-                                 " pulse in the input file");
-      data_file.write_object(pulse_value[i], max_pulse_length,
-                             "/Pulse/Pulse_value_" + std::to_string(i),
-                             "The pulse value for the " + std::to_string(i) +
-                                 " pulse in the input file");
+      data_file.WriteObject(pulse_envelope[i], max_pulse_length,
+                            "/Pulse/Pulse_envelope_" + std::to_string(i),
+                            "The envelope function for the " +
+                                std::to_string(i) + " pulse in the input file");
+      data_file.WriteObject(pulse_value[i], max_pulse_length,
+                            "/Pulse/Pulse_value_" + std::to_string(i),
+                            "The pulse value for the " + std::to_string(i) +
+                                " pulse in the input file");
     }
   }
 }
