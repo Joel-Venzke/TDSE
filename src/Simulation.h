@@ -1,37 +1,37 @@
 #pragma once
-#include "Parameters.h"
-#include "Wavefunction.h"
+#include <iostream>
 #include "HDF5Wrapper.h"
 #include "Hamiltonian.h"
+#include "Parameters.h"
 #include "Pulse.h"
-#include <iostream>
+#include "Wavefunction.h"
 
-class Simulation {
-private:
-    Hamiltonian                *hamiltonian;
-    Wavefunction               *wavefunction;
-    Pulse                      *pulse;
-    Parameters                 *parameters;
-    HDF5Wrapper                *file;
-    Eigen::SparseMatrix<dcomp> *idenity;
-    Eigen::VectorXcd           *psi;
-    double                     *time;
-    int                        time_length;
+class Simulation
+{
+ private:
+  Hamiltonian *hamiltonian;
+  Wavefunction *wavefunction;
+  Pulse *pulse;
+  Parameters *parameters;
+  HDF5Wrapper *file;
+  Eigen::SparseMatrix<dcomp> *idenity;
+  Eigen::VectorXcd *psi;
+  double *time;
+  int time_length;
 
-    bool check_convergance(
-        Eigen::VectorXcd &psi_1,
-        Eigen::VectorXcd &psi_2,
-        double tol);
-    void create_idenity();
-public:
-    // Constructor
-    Simulation(Hamiltonian &h, Wavefunction &w, Pulse &pulse_in,
-        HDF5Wrapper& data_file, Parameters &p);
+  bool check_convergance(Eigen::VectorXcd &psi_1, Eigen::VectorXcd &psi_2,
+                         double tol);
+  void create_idenity();
 
-    void imag_time_prop(int num_states);
-    void power_method(int num_states);
-    void propagate();
+ public:
+  // Constructor
+  Simulation(Hamiltonian &h, Wavefunction &w, Pulse &pulse_in,
+             HDF5Wrapper &data_file, Parameters &p);
 
-    void modified_gram_schmidt(std::vector<Eigen::VectorXcd> &states);
-    void checkpoint_state(HDF5Wrapper& data_file, int write_idx);
+  void imag_time_prop(int num_states);
+  void power_method(int num_states);
+  void propagate();
+
+  void modified_gram_schmidt(std::vector<Eigen::VectorXcd> &states);
+  void checkpoint_state(HDF5Wrapper &data_file, int write_idx);
 };

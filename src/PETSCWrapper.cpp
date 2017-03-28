@@ -2,22 +2,21 @@
 
 PETSCWrapper::PETSCWrapper(int argc, char** argv)
 {
-    ierr = PetscInitialize(&argc,&argv,(char*)0,"TDSE");
-    ierr = PetscInitializeFortran();
+  ierr = PetscInitialize(&argc, &argv, (char*)0, "TDSE");
+  ierr = PetscInitializeFortran();
 }
 
 // Destructor
-PETSCWrapper::~PETSCWrapper()
+PETSCWrapper::~PETSCWrapper() { ierr = PetscFinalize(); }
+
+void PETSCWrapper::PushStage(std::string stage_name)
 {
-    ierr = PetscFinalize();
+  ierr = PetscLogStageRegister(stage_name.c_str(), &stage);
+  ierr = PetscLogStagePush(stage);
 }
 
-void PETSCWrapper::PushStage(std::string stage_name) {
-    ierr = PetscLogStageRegister(stage_name.c_str(), &stage);
-    ierr = PetscLogStagePush(stage);
-}
-
-void PETSCWrapper::PopStage() {
-    ierr = PetscLogStagePop();
-    ierr = PetscBarrier(NULL);
+void PETSCWrapper::PopStage()
+{
+  ierr = PetscLogStagePop();
+  ierr = PetscBarrier(NULL);
 }
