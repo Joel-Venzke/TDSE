@@ -5,7 +5,7 @@
 #include "Parameters.h"
 #include "Pulse.h"
 #include "ViewWrapper.h"
-// #include "Wavefunction.h"
+#include "Wavefunction.h"
 // #include "Hamiltonian.h"
 // #include "Simulation.h"
 #include <petsc.h>
@@ -18,11 +18,11 @@ int main(int argc, char** argv)
   /* initialize all of the classes */
   ViewWrapper viewer_file("TDSE.h5");
   Parameters parameters(viewer_file, "input.json");
-  HDF5Wrapper data_file(parameters);
-  Pulse pulse(data_file, parameters);
-  // Wavefunction wavefunction(data_file,parameters);
-  // Hamiltonian hamiltonian(wavefunction,pulse,data_file,parameters);
-  // Simulation s(hamiltonian,wavefunction,pulse,data_file,parameters);
+  HDF5Wrapper h5_file(parameters);
+  Pulse pulse(h5_file, parameters);
+  Wavefunction wavefunction(h5_file, parameters);
+  // Hamiltonian hamiltonian(wavefunction,pulse,h5_file,parameters);
+  // Simulation s(hamiltonian,wavefunction,pulse,h5_file,parameters);
   p_wrap.PopStage();
 
   p_wrap.PushStage("Eigen State");
