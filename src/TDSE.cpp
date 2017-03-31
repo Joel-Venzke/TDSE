@@ -1,12 +1,12 @@
 // #include "config.h"
 #include <iostream>
 #include "HDF5Wrapper.h"
+#include "Hamiltonian.h"
 #include "PETSCWrapper.h"
 #include "Parameters.h"
 #include "Pulse.h"
 #include "ViewWrapper.h"
 #include "Wavefunction.h"
-// #include "Hamiltonian.h"
 // #include "Simulation.h"
 #include <petsc.h>
 
@@ -21,7 +21,7 @@ int main(int argc, char** argv)
   HDF5Wrapper h5_file(parameters);
   Pulse pulse(h5_file, parameters);
   Wavefunction wavefunction(h5_file, viewer_file, parameters);
-  // Hamiltonian hamiltonian(wavefunction,pulse,h5_file,parameters);
+  Hamiltonian hamiltonian(wavefunction, pulse, h5_file, parameters);
   // Simulation s(hamiltonian,wavefunction,pulse,h5_file,parameters);
   p_wrap.PopStage();
 
