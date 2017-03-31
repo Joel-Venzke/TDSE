@@ -31,7 +31,7 @@ hsize_t *HDF5Wrapper::GetHsizeT(int size, int *dims)
 /* Writes int to HDF5 takes int and var_path as inputs */
 void HDF5Wrapper::WriteObject(int data, H5std_string var_path)
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     Open();
     /* size of "array" */
@@ -55,7 +55,7 @@ void HDF5Wrapper::WriteObject(int data, H5std_string var_path)
 /* Writes double to HDF5 takes double and var_path as inputs */
 void HDF5Wrapper::WriteObject(double data, H5std_string var_path)
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     Open();
     /* size of "array" */
@@ -80,7 +80,7 @@ void HDF5Wrapper::WriteObject(double data, H5std_string var_path)
  * inputs */
 void HDF5Wrapper::WriteObject(int *data, int size, H5std_string var_path)
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     Open();
     /* size of array */
@@ -106,7 +106,7 @@ void HDF5Wrapper::WriteObject(int *data, int size, H5std_string var_path)
 void HDF5Wrapper::WriteObject(int *data, int size, int *dims,
                               H5std_string var_path)
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     Open();
 
@@ -130,7 +130,7 @@ void HDF5Wrapper::WriteObject(int *data, int size, int *dims,
  * var_path as inputs */
 void HDF5Wrapper::WriteObject(double *data, int size, H5std_string var_path)
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     Open();
     /* size of array */
@@ -156,7 +156,7 @@ void HDF5Wrapper::WriteObject(double *data, int size, H5std_string var_path)
 void HDF5Wrapper::WriteObject(double *data, int size, int *dims,
                               H5std_string var_path)
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     Open();
     /* size of array */
@@ -182,7 +182,7 @@ void HDF5Wrapper::WriteObject(double *data, int size, int *dims,
  * size, and var_path as inputs */
 void HDF5Wrapper::WriteObject(dcomp *data, int size, H5std_string var_path)
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     Open();
     /* size of array */
@@ -206,7 +206,7 @@ void HDF5Wrapper::WriteObject(dcomp *data, int size, H5std_string var_path)
 void HDF5Wrapper::WriteObject(dcomp *data, int size, int *dims,
                               H5std_string var_path)
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     Open();
     /* size of array */
@@ -232,7 +232,7 @@ void HDF5Wrapper::WriteObject(dcomp *data, int size, int *dims,
 void HDF5Wrapper::WriteObject(int data, H5std_string var_path,
                               H5std_string attribute)
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     Open();
     /* size of "array" */
@@ -264,7 +264,7 @@ void HDF5Wrapper::WriteObject(int data, H5std_string var_path,
 void HDF5Wrapper::WriteObject(double data, H5std_string var_path,
                               H5std_string attribute)
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     Open();
     /* size of "array" */
@@ -297,7 +297,7 @@ void HDF5Wrapper::WriteObject(double data, H5std_string var_path,
 void HDF5Wrapper::WriteObject(int *data, int size, H5std_string var_path,
                               H5std_string attribute)
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     Open();
     /* size of array */
@@ -330,7 +330,7 @@ void HDF5Wrapper::WriteObject(int *data, int size, H5std_string var_path,
 void HDF5Wrapper::WriteObject(int *data, int size, int *dims,
                               H5std_string var_path, H5std_string attribute)
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     Open();
     /* size of array */
@@ -364,7 +364,7 @@ void HDF5Wrapper::WriteObject(int *data, int size, int *dims,
 void HDF5Wrapper::WriteObject(double *data, int size, H5std_string var_path,
                               H5std_string attribute)
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     Open();
     /* size of array */
@@ -397,7 +397,7 @@ void HDF5Wrapper::WriteObject(double *data, int size, H5std_string var_path,
 void HDF5Wrapper::WriteObject(double *data, int size, int *dims,
                               H5std_string var_path, H5std_string attribute)
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     Open();
     /* size of array */
@@ -431,7 +431,7 @@ void HDF5Wrapper::WriteObject(double *data, int size, int *dims,
 void HDF5Wrapper::WriteObject(dcomp *data, int size, H5std_string var_path,
                               H5std_string attribute)
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     Open();
     /* size of array */
@@ -464,7 +464,7 @@ void HDF5Wrapper::WriteObject(dcomp *data, int size, H5std_string var_path,
 void HDF5Wrapper::WriteObject(dcomp *data, int size, int *dims,
                               H5std_string var_path, H5std_string attribute)
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     Open();
     /* size of array */
@@ -496,7 +496,7 @@ void HDF5Wrapper::WriteObject(dcomp *data, int size, int *dims,
 void HDF5Wrapper::WriteObject(dcomp *data, int size, H5std_string var_path,
                               int write_idx)
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     Open();
 
@@ -578,7 +578,7 @@ void HDF5Wrapper::WriteObject(dcomp *data, int size, H5std_string var_path,
 void HDF5Wrapper::WriteObject(dcomp *data, int size, H5std_string var_path,
                               H5std_string attribute, int write_idx)
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     Open();
 
@@ -665,7 +665,7 @@ void HDF5Wrapper::WriteObject(dcomp *data, int size, H5std_string var_path,
 
 void HDF5Wrapper::WriteObject(double data, H5std_string var_path, int write_idx)
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     Open();
 
@@ -742,7 +742,7 @@ void HDF5Wrapper::WriteObject(double data, H5std_string var_path, int write_idx)
 void HDF5Wrapper::WriteObject(double data, H5std_string var_path,
                               H5std_string attribute, int write_idx)
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     Open();
 
@@ -825,7 +825,7 @@ void HDF5Wrapper::WriteObject(double data, H5std_string var_path,
 
 void HDF5Wrapper::CreateGroup(H5std_string group_path)
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     Open();
 
@@ -839,18 +839,20 @@ void HDF5Wrapper::CreateGroup(H5std_string group_path)
  * used by other classes */
 void HDF5Wrapper::WriteHeader(Parameters &p)
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     int num_dims   = p.GetNumDims();
     int num_pulses = p.GetNumPulses();
     header         = true;
 
+    CreateGroup("/Parameters");
+
     /* write out header values */
     WriteObject(num_dims, "/Parameters/num_dims",
                 "Number of dimension in simulation");
-    WriteObject(p.GetDimSize(), num_dims, "/Parameters/dim_size",
+    WriteObject(p.dim_size.get(), num_dims, "/Parameters/dim_size",
                 "The length of that dimension in atomic units.");
-    WriteObject(p.GetDeltaX(), num_dims, "/Parameters/delta_x",
+    WriteObject(p.delta_x.get(), num_dims, "/Parameters/delta_x",
                 "The step sizes in that dimension in atomic units.");
     WriteObject(p.GetDeltaT(), "/Parameters/delta_t",
                 "The size of the time step in atomic units.");
@@ -871,23 +873,25 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
                 "Index of solver: File:0, ITP:1, Power:2");
     WriteObject(num_pulses, "/Parameters/num_pulses",
                 "The number of pulses from the input file");
-    WriteObject(p.GetPulseShapeIdx(), num_pulses, "/Parameters/pulse_shape_idx",
+    WriteObject(p.pulse_shape_idx.get(), num_pulses,
+                "/Parameters/pulse_shape_idx",
                 "The index of the pulse shape. Sin2:0");
-    WriteObject(p.GetCyclesOn(), num_pulses, "/Parameters/cycles_on",
+    WriteObject(p.cycles_on.get(), num_pulses, "/Parameters/cycles_on",
                 "Number of cycles the pulse ramps on for");
-    WriteObject(p.GetCyclesPlateau(), num_pulses, "/Parameters/cycles_plateau",
+    WriteObject(p.cycles_plateau.get(), num_pulses,
+                "/Parameters/cycles_plateau",
                 "Number of cycles the pulse stays at max amplitude for");
-    WriteObject(p.GetCyclesOff(), num_pulses, "/Parameters/cycles_off",
+    WriteObject(p.cycles_off.get(), num_pulses, "/Parameters/cycles_off",
                 "Number of cycles the pulse ramps off for");
-    WriteObject(p.GetCyclesDelay(), num_pulses, "/Parameters/cycles_delay",
+    WriteObject(p.cycles_delay.get(), num_pulses, "/Parameters/cycles_delay",
                 "Number of cycles before the pulse starts");
-    WriteObject(p.GetCep(), num_pulses, "/Parameters/cep",
+    WriteObject(p.cep.get(), num_pulses, "/Parameters/cep",
                 "The carrying phase envelope of the pulse. It is defined at "
                 "the time the pulse starts to turn on.");
-    WriteObject(p.GetEnergy(), num_pulses, "/Parameters/energy",
+    WriteObject(p.energy.get(), num_pulses, "/Parameters/energy",
                 "The fundamental angular frequency of the pulse. Corresponds "
                 "to the energy of the photons in atomic units.");
-    WriteObject(p.GetFieldMax(), num_pulses, "/Parameters/field_max",
+    WriteObject(p.field_max.get(), num_pulses, "/Parameters/field_max",
                 "The maximum amplitude of the pulse in atomic units.");
 
     header = false;
@@ -898,7 +902,7 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
 /* TDOD: set up restart */
 void HDF5Wrapper::ReadRestart(Parameters &p)
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     std::string err_str;
     /* Check if restart can use current file */
@@ -913,7 +917,7 @@ void HDF5Wrapper::ReadRestart(Parameters &p)
 /* TODO(jove7731): more of this restart stuff */
 void HDF5Wrapper::ReadRestart(Parameters &p, std::string f_name)
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     std::string err_str;
     /* Check if restart can use current file */
@@ -928,8 +932,7 @@ void HDF5Wrapper::ReadRestart(Parameters &p, std::string f_name)
 /* constructor file_name needs ending ".h5" */
 HDF5Wrapper::HDF5Wrapper(std::string f_name, Parameters &p)
 {
-  MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     file_name = f_name;
     header    = false;
@@ -951,8 +954,7 @@ HDF5Wrapper::HDF5Wrapper(std::string f_name, Parameters &p)
 /* constructor file_name needs ending ".h5" */
 HDF5Wrapper::HDF5Wrapper(std::string f_name)
 {
-  MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     file_name = f_name;
     header    = false;
@@ -966,8 +968,7 @@ HDF5Wrapper::HDF5Wrapper(std::string f_name)
 /* constructor file_name needs ending ".h5" */
 HDF5Wrapper::HDF5Wrapper(Parameters &p)
 {
-  MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     header    = false;
     file_name = "TDSE.h5";
@@ -977,7 +978,7 @@ HDF5Wrapper::HDF5Wrapper(Parameters &p)
     }
     else
     {
-      data_file = new H5::H5File(file_name, H5F_ACC_RDWR);
+      data_file = new H5::H5File(file_name, H5F_ACC_TRUNC);
       file_open = true;
       WriteHeader(p);
     }
@@ -988,7 +989,7 @@ HDF5Wrapper::HDF5Wrapper(Parameters &p)
 
 void HDF5Wrapper::DefineComplex()
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     complex_data_type = new H5::CompType(sizeof(dcomp(1.0, 1.0)));
     complex_data_type->insertMember("r", 0, H5::PredType::NATIVE_DOUBLE);
@@ -999,7 +1000,7 @@ void HDF5Wrapper::DefineComplex()
 
 void HDF5Wrapper::Open()
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     if (!header && !file_open)
     {
@@ -1011,7 +1012,7 @@ void HDF5Wrapper::Open()
 
 void HDF5Wrapper::Close()
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     if (!header && file_open)
     {
@@ -1024,7 +1025,7 @@ void HDF5Wrapper::Close()
 
 void HDF5Wrapper::SetHeader(bool h)
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     header = h;
   }
@@ -1033,7 +1034,7 @@ void HDF5Wrapper::SetHeader(bool h)
 /* destructor */
 HDF5Wrapper::~HDF5Wrapper()
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     std::cout << "Deleting HDF5Wrapper: " << file_name << "\n";
     Close();

@@ -1,18 +1,21 @@
 #include "Parameters.h"
 #include <string>
-// #include "H5Cpp.h"
 
-/* Reads file and returns a string */
+/*
+ * Reads file and returns a string
+ */
 std::string FileToString(std::string file_name)
 {
-  /* TODO(jove7731): check if file exists */
+  // TODO(jove7731): check if file exists
   std::ifstream t(file_name);
   std::string str((std::istreambuf_iterator<char>(t)),
                   std::istreambuf_iterator<char>());
   return str;
 }
 
-/* Reads file and returns a json object */
+/*
+ * Reads file and returns a json object
+ */
 json FileToJson(std::string file_name)
 {
   auto j = json::parse(FileToString(file_name));
@@ -34,16 +37,16 @@ void Parameters::EndRun(std::string str, int exit_val)
 }
 
 /* Constructor */
-Parameters::Parameters(ViewWrapper& data_file, std::string file_name)
-{
-  MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+Parameters::Parameters(std::string file_name) { Setup(file_name); }
 
-  if (rank == 0)
+/* basically the default constructor */
+void Parameters::Setup(std::string file_name)
+{
+  if (world.rank() == 0)
   {
-    std::cout << "Reading input file: " << file_name << "\n";
-    std::cout << std::flush;
-    std::cout << "input file: " << file_name << "\n";
-    std::cout << std::flush;
+    std::cout << "Reading input file: " << file_name << "\n"
+              << "input file: " << file_name << "\n"
+              << std::flush;
   }
 
   /* read data from file */
@@ -52,18 +55,19 @@ Parameters::Parameters(ViewWrapper& data_file, std::string file_name)
   /* get numeric information */
   delta_t  = data["delta_t"];
   num_dims = data["dimensions"].size();
-  dim_size = new double[num_dims];
-  delta_x  = new double[num_dims];
+  dim_size = std::make_unique<double[]>(num_dims);
+  delta_x  = std::make_unique<double[]>(num_dims);
+
   for (int i = 0; i < num_dims; ++i)
   {
     dim_size[i] = data["dimensions"][i]["dim_size"];
     delta_x[i]  = data["dimensions"][i]["delta_x"];
 
     /* this should be small */
-    if (rank == 0)
+    if (world.rank() == 0)
     {
-      std::cout << "Dim-" << i << " dx/dt^2 = ";
-      std::cout << delta_x[i] / delta_t * delta_t << "\n";
+      std::cout << "Dim-" << i
+                << " dx/dt^2 = " << delta_x[i] / delta_t * delta_t << "\n";
     }
   }
 
@@ -78,14 +82,15 @@ Parameters::Parameters(ViewWrapper& data_file, std::string file_name)
   state_solver    = data["state_solver"];
   num_states      = data["states"].size();
 
-  state_energy = new double[num_states];
+  this->state_energy = std::make_unique<double[]>(num_states);
 
   for (int i = 0; i < num_states; i++)
   {
     state_energy[i] = data["states"][i]["energy"];
   }
 
-  /* index is used throughout code for efficiency and ease of writing to hdf5 */
+  /* index is used throughout code for efficiency */
+  /* and ease of writing to hdf5 */
   if (target == "He")
   {
     target_idx = 0;
@@ -111,15 +116,15 @@ Parameters::Parameters(ViewWrapper& data_file, std::string file_name)
   num_pulses = data["pulses"].size();
 
   /* allocate memory */
-  pulse_shape     = new std::string[num_pulses];
-  pulse_shape_idx = new int[num_pulses];
-  cycles_on       = new double[num_pulses];
-  cycles_plateau  = new double[num_pulses];
-  cycles_off      = new double[num_pulses];
-  cycles_delay    = new double[num_pulses];
-  cep             = new double[num_pulses];
-  energy          = new double[num_pulses];
-  field_max       = new double[num_pulses];
+  pulse_shape     = std::make_unique<std::string[]>(num_pulses);
+  pulse_shape_idx = std::make_unique<int[]>(num_pulses);
+  cycles_on       = std::make_unique<double[]>(num_pulses);
+  cycles_plateau  = std::make_unique<double[]>(num_pulses);
+  cycles_off      = std::make_unique<double[]>(num_pulses);
+  cycles_delay    = std::make_unique<double[]>(num_pulses);
+  cep             = std::make_unique<double[]>(num_pulses);
+  energy          = std::make_unique<double[]>(num_pulses);
+  field_max       = std::make_unique<double[]>(num_pulses);
 
   /* read data */
   for (int i = 0; i < num_pulses; ++i)
@@ -146,54 +151,18 @@ Parameters::Parameters(ViewWrapper& data_file, std::string file_name)
   }
 
   /* ensure input is good */
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     Validate();
   }
 
-  Checkpoint(data_file);
-
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     std::cout << "Reading input complete\n" << std::flush;
   }
 }
 
-Parameters::~Parameters()
-{
-  if (rank == 0)
-  {
-    std::cout << "Deleting Parameters\n" << std::flush;
-  }
-  delete dim_size;
-  delete delta_x;
-  delete[] pulse_shape;
-  delete pulse_shape_idx;
-  delete cycles_on;
-  delete cycles_plateau;
-  delete cycles_off;
-  delete cycles_delay;
-  delete cep;
-  delete energy;
-  delete field_max;
-}
-
-void Parameters::Checkpoint(ViewWrapper& data_file)
-{
-  /* print something so the HDF5 file is in the write format*/
-  Vec tmp;
-  VecCreate(PETSC_COMM_WORLD, &tmp);
-  VecSetSizes(tmp, PETSC_DECIDE, 1);
-  VecSetFromOptions(tmp);
-  ierr = PetscObjectSetName((PetscObject)tmp, "tmp");
-  MPI_Barrier(PETSC_COMM_WORLD);
-  data_file.Open();
-  data_file.PushGroup("/Parameters");
-  data_file.WriteObject((PetscObject)tmp);
-  data_file.PopGroup();
-  data_file.Close();
-  MPI_Barrier(PETSC_COMM_WORLD);
-}
+Parameters::~Parameters() {}
 
 /* checks important input parameters for errors */
 void Parameters::Validate()
@@ -261,8 +230,8 @@ void Parameters::Validate()
       err_str += "cycles_off should be >= 0\n";
     }
 
-    /* exclude delay because it is zero anyways pulses must exist so we don't
-     * run supper long time scales */
+    /* exclude delay because it is zero anyways */
+    /* pulses must exist so we don't run supper long time scales */
     double p_length = cycles_on[i] + cycles_off[i] + cycles_plateau[i];
     if (p_length <= 0)
     {
@@ -311,58 +280,34 @@ void Parameters::Validate()
 }
 
 /* getters */
-PetscReal Parameters::GetDeltaT() { return delta_t; }
+double Parameters::GetDeltaT() { return delta_t; }
 
-PetscInt Parameters::GetNumDims() { return num_dims; }
+int Parameters::GetNumDims() { return num_dims; }
 
-double* Parameters::GetDimSize() { return dim_size; }
-
-double* Parameters::GetDeltaX() { return delta_x; }
-
-PetscInt Parameters::GetRestart() { return restart; }
+int Parameters::GetRestart() { return restart; }
 
 std::string Parameters::GetTarget() { return target; }
 
-PetscInt Parameters::GetTargetIdx() { return target_idx; }
+int Parameters::GetTargetIdx() { return target_idx; }
 
-PetscReal Parameters::GetZ() { return z; }
+double Parameters::GetZ() { return z; }
 
-PetscReal Parameters::GetAlpha() { return alpha; }
+double Parameters::GetAlpha() { return alpha; }
 
-PetscInt Parameters::GetWriteFrequency() { return write_frequency; }
+int Parameters::GetWriteFrequency() { return write_frequency; }
 
-PetscReal Parameters::GetGobbler() { return gobbler; }
+double Parameters::GetGobbler() { return gobbler; }
 
-PetscReal Parameters::GetSigma() { return sigma; }
+double Parameters::GetSigma() { return sigma; }
 
-PetscInt Parameters::GetNumStates() { return num_states; }
+int Parameters::GetNumStates() { return num_states; }
 
-double* Parameters::GetStateEnergy() { return state_energy; }
+double Parameters::GetTol() { return tol; }
 
-PetscReal Parameters::GetTol() { return tol; }
-
-PetscInt Parameters::GetStateSolverIdx() { return state_solver_idx; }
+int Parameters::GetStateSolverIdx() { return state_solver_idx; }
 
 std::string Parameters::GetStateSolver() { return state_solver; }
 
-PetscInt Parameters::GetPropagate() { return propagate; }
+int Parameters::GetPropagate() { return propagate; }
 
-PetscInt Parameters::GetNumPulses() { return num_pulses; }
-
-std::string* Parameters::GetPulseShape() { return pulse_shape; }
-
-int* Parameters::GetPulseShapeIdx() { return pulse_shape_idx; }
-
-double* Parameters::GetCyclesOn() { return cycles_on; }
-
-double* Parameters::GetCyclesPlateau() { return cycles_plateau; }
-
-double* Parameters::GetCyclesOff() { return cycles_off; }
-
-double* Parameters::GetCep() { return cep; }
-
-double* Parameters::GetEnergy() { return energy; }
-
-double* Parameters::GetFieldMax() { return field_max; }
-
-double* Parameters::GetCyclesDelay() { return cycles_delay; }
+int Parameters::GetNumPulses() { return num_pulses; }

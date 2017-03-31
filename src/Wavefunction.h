@@ -1,16 +1,23 @@
 #pragma once
 #include <petsc.h>
 #include <petscviewerhdf5.h>
+#include <boost/mpi.hpp>
+#include <boost/mpi/group.hpp>
+#include <boost/optional/optional_io.hpp>
 #include <complex>
 #include <iostream>
 #include "HDF5Wrapper.h"
 #include "Parameters.h"
+#include "ViewWrapper.h"
+
+namespace mpi = boost::mpi;
 
 #define dcomp std::complex<double>
 
 class Wavefunction
 {
  private:
+  mpi::communicator world;
   const double pi = 3.1415926535897;
   int num_dims;         /* number of dimensions */
   double *dim_size;     /* sizes of each dimension in a.u. */
@@ -24,7 +31,7 @@ class Wavefunction
   dcomp *psi_2;         /* wavefunction for electron 2 */
   dcomp *psi_2_gobbler; /* boundary for electron 2 */
   Vec psi;              /* wavefunction for 2 electron system */
-  Vec psi_gobbler;      /* boundary for 2 electron system */
+  dcomp *psi_gobbler;   /* boundary for 2 electron system */
   bool psi_12_alloc;    /* true if psi_1 and psi_2 are allocated */
   bool psi_alloc;
   /* false if its not the first time checkpointing the wavefunction */
@@ -36,39 +43,38 @@ class Wavefunction
   int write_counter;
 
   /* hidden from user for safety */
-  void create_grid();
-  void create_psi();
-  void cleanup();
+  void CreateGrid();
+  void CreatePsi();
+  void Cleanup();
 
  public:
   /* Constructor */
-  Wavefunction(HDF5Wrapper &data_file, Parameters &p);
+  Wavefunction(HDF5Wrapper &h5_file, ViewWrapper &view_file, Parameters &p);
 
   /* destructor */
   ~Wavefunction();
 
   /* IO */
-  void checkpoint(HDF5Wrapper &data_file, double time);
-  void checkpoint_psi(HDF5Wrapper &data_file, H5std_string var_path,
-                      int write_idx);
+  void Checkpoint(HDF5Wrapper &data_file, ViewWrapper &view_file, double time);
+  void CheckpointPsi(ViewWrapper &view_file, int write_idx);
 
   /* tools */
-  void normalize();
-  void normalize(dcomp *data, int length, double dx);
-  double norm();
-  double norm(dcomp *data, int length, double dx);
+  void Normalize();
+  void Normalize(Vec &data, double dx);
+  double Norm();
+  double Norm(Vec &data, double dx);
   // double get_energy(Eigen::SparseMatrix<dcomp> *h);
   void reset_psi();
-  void gobble_psi();
+  void GobblePsi();
 
-  int *get_num_x();
-  int get_num_psi();
-  int get_num_psi_12();
-  // Eigen::VectorXcd* get_psi();
-  double *get_delta_x();
-  double **get_x_value();
+  int *GetNumX();
+  int GetNumPsi();
+  int GetNumPsi12();
+  Vec *GetPsi();
+  double *GetDeltaX();
+  double **GetXValue();
 
   /* error handling */
-  void end_run(std::string str);
-  void end_run(std::string str, int exit_val);
+  void EndRun(std::string str);
+  void EndRun(std::string str, int exit_val);
 };

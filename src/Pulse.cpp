@@ -31,16 +31,16 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p)
   /* get data from Parameters */
   for (int i = 0; i < num_pulses; ++i)
   {
-    pulse_shape_idx[i] = p.GetPulseShapeIdx()[i];
-    cycles_on[i]       = p.GetCyclesOn()[i];
-    cycles_plateau[i]  = p.GetCyclesPlateau()[i];
-    cycles_off[i]      = p.GetCyclesOff()[i];
-    cycles_delay[i]    = p.GetCyclesDelay()[i];
+    pulse_shape_idx[i] = p.pulse_shape_idx.get()[i];
+    cycles_on[i]       = p.cycles_on.get()[i];
+    cycles_plateau[i]  = p.cycles_plateau.get()[i];
+    cycles_off[i]      = p.cycles_off.get()[i];
+    cycles_delay[i]    = p.cycles_delay.get()[i];
     cycles_total[i] =
         cycles_delay[i] + cycles_on[i] + cycles_plateau[i] + cycles_off[i];
-    cep[i]       = p.GetCep()[i];
-    energy[i]    = p.GetEnergy()[i];
-    field_max[i] = p.GetFieldMax()[i];
+    cep[i]       = p.cep.get()[i];
+    energy[i]    = p.energy.get()[i];
+    field_max[i] = p.field_max.get()[i];
 
     /* calculate length (number of array cells) of each pulse */
     pulse_length = ceil(2.0 * pi * cycles_total[i] / (energy[i] * delta_t)) + 1;

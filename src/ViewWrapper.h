@@ -7,11 +7,11 @@ class ViewWrapper
 {
  private:
   PetscViewer data_file; /* viewer object */
-  std::string file_name; /* file name */
   bool file_name_set;    /* true if file name has been set */
   bool file_open;        /* true if file is open */
   PetscInt ierr;         /* error code */
  public:
+  std::string file_name; /* file name */
   /* Constructor
    * does not open file */
   ViewWrapper(std::string f_name);

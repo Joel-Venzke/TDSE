@@ -14,6 +14,7 @@ ViewWrapper::ViewWrapper(std::string f_name)
 /* no file set use open to set file */
 ViewWrapper::ViewWrapper()
 {
+  // file_name = "";
   /* initialize bools to false */
   file_name_set = false;
   file_open     = false;
@@ -97,7 +98,8 @@ void ViewWrapper::Close()
 {
   if (file_open)
   {
-    ierr = PetscViewerDestroy(&data_file);
+    ierr      = PetscViewerDestroy(&data_file);
+    file_open = false;
   }
 }
 
@@ -137,7 +139,6 @@ void ViewWrapper::WriteAttribute(std::string var_name, std::string name,
                                  PetscReal value)
 {
   std::string group_path = GetGroup();
-  std::cout << group_path << "\n";
   PetscViewerHDF5WriteAttribute(data_file, (group_path + var_name).c_str(),
                                 name.c_str(), PETSC_DOUBLE, &value);
 }
@@ -146,7 +147,6 @@ void ViewWrapper::WriteAttribute(std::string var_name, std::string name,
                                  std::string value)
 {
   std::string group_path = GetGroup();
-  std::cout << group_path << "\n";
   PetscViewerHDF5WriteAttribute(data_file, (group_path + var_name).c_str(),
                                 name.c_str(), PETSC_STRING, value.c_str());
 }

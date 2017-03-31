@@ -3,15 +3,20 @@
 #include "Parameters.h"
 // #include "hdf5.h"
 #include <petsc.h>
+#include <boost/mpi.hpp>
+#include <boost/mpi/group.hpp>
+#include <boost/optional/optional_io.hpp>
 #include <complex>
 #include <vector>
+
+namespace mpi = boost::mpi;
 
 #define dcomp std::complex<double>
 
 class HDF5Wrapper
 {
  private:
-  PetscInt rank;
+  mpi::communicator world;
   H5::H5File *data_file;
   std::string file_name;
   bool file_open;

@@ -17,10 +17,10 @@ int main(int argc, char** argv)
 
   /* initialize all of the classes */
   ViewWrapper viewer_file("TDSE.h5");
-  Parameters parameters(viewer_file, "input.json");
+  Parameters parameters("input.json");
   HDF5Wrapper h5_file(parameters);
   Pulse pulse(h5_file, parameters);
-  Wavefunction wavefunction(h5_file, parameters);
+  Wavefunction wavefunction(h5_file, viewer_file, parameters);
   // Hamiltonian hamiltonian(wavefunction,pulse,h5_file,parameters);
   // Simulation s(hamiltonian,wavefunction,pulse,h5_file,parameters);
   p_wrap.PopStage();
