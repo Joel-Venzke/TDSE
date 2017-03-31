@@ -31,7 +31,7 @@ class Wavefunction
   dcomp *psi_2;         /* wavefunction for electron 2 */
   dcomp *psi_2_gobbler; /* boundary for electron 2 */
   Vec psi;              /* wavefunction for 2 electron system */
-  dcomp *psi_gobbler;   /* boundary for 2 electron system */
+  Vec psi_gobbler;      /* boundary for 2 electron system */
   bool psi_12_alloc;    /* true if psi_1 and psi_2 are allocated */
   bool psi_alloc;
   /* false if its not the first time checkpointing the wavefunction */

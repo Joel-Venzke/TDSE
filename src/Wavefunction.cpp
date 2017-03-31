@@ -53,8 +53,6 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
 
   /* write out data */
   Checkpoint(h5_file, viewer_file, 0.0);
-  Checkpoint(h5_file, viewer_file, 0.0);
-  Checkpoint(h5_file, viewer_file, 0.0);
 
   /* delete psi_1 and psi_2 */
   Cleanup();
@@ -78,10 +76,11 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   if (first_pass)
   {
     viewer_file.Open("a");
-    /* set time step */
-    viewer_file.SetTime(write_counter);
     /* move into group */
     viewer_file.PushGroup(group_name);
+    viewer_file.WriteObject((PetscObject)psi_gobbler);
+    /* set time step */
+    viewer_file.SetTime(write_counter);
     /* write vector */
     viewer_file.WriteObject((PetscObject)psi);
     /* get object name */
@@ -89,6 +88,9 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
     name = tmp;
     viewer_file.WriteAttribute(name, "Attribute",
                                "Wavefunction for the two electron system");
+    PetscObjectGetName((PetscObject)psi_gobbler, &tmp);
+    name = tmp;
+    viewer_file.WriteAttribute(name, "Attribute", "boundary potential for psi");
     /* close file */
     viewer_file.Close();
 
@@ -282,7 +284,10 @@ void Wavefunction::CreatePsi()
     VecSetSizes(psi, PETSC_DECIDE, num_psi);
     VecSetFromOptions(psi);
     ierr = PetscObjectSetName((PetscObject)psi, "psi");
-    // psi_gobbler = new dcomp[num_psi_12];
+    VecCreate(PETSC_COMM_WORLD, &psi_gobbler);
+    VecSetSizes(psi_gobbler, PETSC_DECIDE, num_psi);
+    VecSetFromOptions(psi_gobbler);
+    ierr      = PetscObjectSetName((PetscObject)psi_gobbler, "psi_gobbler");
     psi_alloc = true;
   }
 
@@ -294,17 +299,25 @@ void Wavefunction::CreatePsi()
       idx = i * num_psi_12 + j;
       if (rank == 0)
       {
+        /* set psi */
         val = psi_1[i] * psi_2[j];
         VecSetValues(psi, 1, &idx, &val, INSERT_VALUES);
+
+        /* set psi */
+        val = psi_1_gobbler[i] * psi_2_gobbler[j];
+        VecSetValues(psi_gobbler, 1, &idx, &val, INSERT_VALUES);
       }
-      // psi_gobbler[i * num_psi_12 + j] = psi_1_gobbler[i] * psi_2_gobbler[j];
     }
   }
   VecAssemblyBegin(psi);
+  VecAssemblyBegin(psi_gobbler);
   VecAssemblyEnd(psi);
 
   /* normalize all psi */
   Normalize();
+
+  /* psi_gobbler not used in Normalize */
+  VecAssemblyEnd(psi_gobbler);
 }
 
 /* delete psi_1 and psi_2 since they are not used later */
@@ -321,13 +334,7 @@ void Wavefunction::Cleanup()
 /* normalize psi_1, psi_2, and psi */
 void Wavefunction::Normalize() { Normalize(psi, delta_x[0]); }
 
-void Wavefunction::GobblePsi()
-{
-  // for (int i = 0; i < num_psi; i++)
-  // {
-  //   psi[0][i] *= psi_gobbler[0][i];
-  // }
-}
+void Wavefunction::GobblePsi() { VecPointwiseMult(psi, psi_gobbler, psi); }
 
 /* normalizes the array provided */
 void Wavefunction::Normalize(Vec& data, double dx)
