@@ -31,6 +31,7 @@ class Wavefunction
   dcomp *psi_2;         /* wavefunction for electron 2 */
   dcomp *psi_2_gobbler; /* boundary for electron 2 */
   Vec psi;              /* wavefunction for 2 electron system */
+  Vec psi_tmp;          /* wavefunction for 2 electron system */
   Vec psi_gobbler;      /* boundary for 2 electron system */
   bool psi_12_alloc;    /* true if psi_1 and psi_2 are allocated */
   bool psi_alloc;
@@ -63,7 +64,8 @@ class Wavefunction
   void Normalize(Vec &data, double dx);
   double Norm();
   double Norm(Vec &data, double dx);
-  // double get_energy(Eigen::SparseMatrix<dcomp> *h);
+  double GetEnergy(Mat *h);
+  double GetEnergy(Mat *h, Vec &p);
   void reset_psi();
   void GobblePsi();
 

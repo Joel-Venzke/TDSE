@@ -284,10 +284,16 @@ void Wavefunction::CreatePsi()
     VecSetSizes(psi, PETSC_DECIDE, num_psi);
     VecSetFromOptions(psi);
     ierr = PetscObjectSetName((PetscObject)psi, "psi");
+
+    VecCreate(PETSC_COMM_WORLD, &psi_tmp);
+    VecSetSizes(psi_tmp, PETSC_DECIDE, num_psi);
+    VecSetFromOptions(psi_tmp);
+
     VecCreate(PETSC_COMM_WORLD, &psi_gobbler);
     VecSetSizes(psi_gobbler, PETSC_DECIDE, num_psi);
     VecSetFromOptions(psi_gobbler);
-    ierr      = PetscObjectSetName((PetscObject)psi_gobbler, "psi_gobbler");
+    ierr = PetscObjectSetName((PetscObject)psi_gobbler, "psi_gobbler");
+
     psi_alloc = true;
   }
 
@@ -354,10 +360,15 @@ double Wavefunction::Norm(Vec& data, double dx)
   return total * dx;
 }
 
-// double Wavefunction::get_energy(Eigen::SparseMatrix<dcomp>* h)
-// {
-//   return (psi->dot(h[0] * psi[0]) / psi->squaredNorm()).real();
-// }
+double Wavefunction::GetEnergy(Mat* h) { return GetEnergy(h, psi); }
+
+double Wavefunction::GetEnergy(Mat* h, Vec& p)
+{
+  PetscComplex energy;
+  MatMult(*h, p, psi_tmp);
+  VecDot(p, psi_tmp, &energy);
+  return energy.real();
+}
 
 void Wavefunction::reset_psi()
 {
@@ -393,4 +404,7 @@ Wavefunction::~Wavefunction()
   {
     Cleanup();
   }
+  VecDestroy(&psi);
+  VecDestroy(&psi_tmp);
+  VecDestroy(&psi_gobbler);
 }

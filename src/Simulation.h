@@ -1,4 +1,8 @@
 #pragma once
+#include <time.h>
+#include <boost/mpi.hpp>
+#include <boost/mpi/group.hpp>
+#include <boost/optional/optional_io.hpp>
 #include <iostream>
 #include "HDF5Wrapper.h"
 #include "Hamiltonian.h"
@@ -9,29 +13,28 @@
 class Simulation
 {
  private:
+  mpi::communicator world;
   Hamiltonian *hamiltonian;
   Wavefunction *wavefunction;
   Pulse *pulse;
   Parameters *parameters;
-  HDF5Wrapper *file;
-  Eigen::SparseMatrix<dcomp> *idenity;
-  Eigen::VectorXcd *psi;
+  HDF5Wrapper *h5_file;
+  ViewWrapper *viewer_file;
+  Vec *psi;
   double *time;
   int time_length;
 
-  bool check_convergance(Eigen::VectorXcd &psi_1, Eigen::VectorXcd &psi_2,
-                         double tol);
-  void create_idenity();
+  /* destroys psi_old*/
+  bool CheckConvergance(Vec &psi_1, Vec &psi_2, double tol);
 
  public:
   // Constructor
   Simulation(Hamiltonian &h, Wavefunction &w, Pulse &pulse_in,
-             HDF5Wrapper &data_file, Parameters &p);
+             HDF5Wrapper &h_file, ViewWrapper &v_file, Parameters &p);
 
-  void imag_time_prop(int num_states);
-  void power_method(int num_states);
-  void propagate();
+  void PowerMethod(int num_states);
+  void Propagate();
 
-  void modified_gram_schmidt(std::vector<Eigen::VectorXcd> &states);
-  void checkpoint_state(HDF5Wrapper &data_file, int write_idx);
+  // void modified_gram_schmidt(std::vector<Eigen::VectorXcd> &states);
+  void CheckpointState(HDF5Wrapper &h_file, ViewWrapper &v_file, int write_idx);
 };

@@ -4,6 +4,7 @@
 /* Does not open file */
 ViewWrapper::ViewWrapper(std::string f_name)
 {
+  file_name_set = false;
   /* set file name */
   SetFileName(f_name);
 
@@ -14,7 +15,7 @@ ViewWrapper::ViewWrapper(std::string f_name)
 /* no file set use open to set file */
 ViewWrapper::ViewWrapper()
 {
-  // file_name = "";
+  file_name = "";
   /* initialize bools to false */
   file_name_set = false;
   file_open     = false;

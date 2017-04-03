@@ -205,4 +205,7 @@ Mat* Hamiltonian::GetTimeIndependent() { return &time_independent; }
 Hamiltonian::~Hamiltonian()
 {
   if (world.rank() == 0) std::cout << "Deleting Hamiltonian\n";
+  MatDestroy(&time_independent);
+  MatDestroy(&time_dependent);
+  MatDestroy(&total_hamlitonian);
 }
