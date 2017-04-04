@@ -25,10 +25,7 @@ ViewWrapper::ViewWrapper()
 ViewWrapper::~ViewWrapper()
 {
   /* close file if open */
-  if (file_open)
-  {
-    Close();
-  }
+  Close();
 }
 
 /* set the file name for this object */

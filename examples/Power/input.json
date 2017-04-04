@@ -1,14 +1,14 @@
 {
   "delta_t": 0.005,
   "dimensions": [
-    {"dim_size": 100.0,
+    {"dim_size": 20.0,
     "delta_x":   0.1}],
   "restart": 0,
   "target":  "He",
   "alpha":   1.0,
   "gobbler": 0.9,
   "sigma":   2.0,
-  "write_frequency": 100,
+  "write_frequency": 20,
   "state_solver":    "Power",
   "propagate": 0,
   "states": [
