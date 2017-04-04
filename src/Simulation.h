@@ -26,6 +26,7 @@ class Simulation
 
   /* destroys psi_old*/
   bool CheckConvergance(Vec &psi_1, Vec &psi_2, double tol);
+  void ModifiedGramSchmidt(std::vector<Vec> &states);
 
  public:
   // Constructor
@@ -35,6 +36,5 @@ class Simulation
   void PowerMethod(int num_states);
   void Propagate();
 
-  // void modified_gram_schmidt(std::vector<Eigen::VectorXcd> &states);
   void CheckpointState(HDF5Wrapper &h_file, ViewWrapper &v_file, int write_idx);
 };

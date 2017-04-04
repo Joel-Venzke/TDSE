@@ -130,6 +130,7 @@ void Simulation::PowerMethod(int num_states)
   int write_frequency = parameters->GetWriteFrequency();
   /* keeps track of last psi */
   Vec psi_old;
+  Vec psi_tmp;
   /* matrix on left side of Ax=b */
   Mat left;
   MatDuplicate(*(hamiltonian->GetTimeIndependent()), MAT_DO_NOT_COPY_VALUES,
@@ -143,81 +144,56 @@ void Simulation::PowerMethod(int num_states)
   int its;
   KSP ksp;
   KSPCreate(PETSC_COMM_WORLD, &ksp);
-  KSPSetFromOptions(ksp);
   /* file for converged states */
-  if (world.rank() == 0) std::cout << "file one" << std::flush;
   ViewWrapper v_states_file(parameters->GetTarget() + ".h5");
   v_states_file.Open();
   v_states_file.Close();
   HDF5Wrapper h_states_file(parameters->GetTarget() + ".h5");
+  double energy, norm;
 
   /* pointer to actual psi in wavefunction object */
   psi = wavefunction->GetPsi();
   VecDuplicate(*psi, &psi_old);
 
   /* loop over number of states wanted */
-  for (int iter = 0; iter < 1; iter++)
+  for (int iter = 0; iter < num_states; iter++)
   {
     /* left side of power method */
     MatCopy(*(hamiltonian->GetTimeIndependent()), left, SAME_NONZERO_PATTERN);
-    MatShift(left, state_energy[iter]);
-    MatView(left, PETSC_VIEWER_STDOUT_WORLD);
-    std::cout << "Looking for state with Energy: ";
-    std::cout << state_energy[iter] << "\n";
+    MatShift(left, -1.0 * state_energy[iter]);
+    // MatView(*(hamiltonian->GetTimeIndependent()), PETSC_VIEWER_STDOUT_WORLD);
+    if (world.rank() == 0)
+      std::cout << "Looking for state with Energy: " << state_energy[iter]
+                << "\n";
 
     /* do this outside the loop since left never changes */
-    std::cout << "Setting up solver"
-              << "\n"
-              << std::flush;
+    if (world.rank() == 0)
+      std::cout << "Setting up solver"
+                << "\n"
+                << std::flush;
     KSPSetOperators(ksp, left, left);
+    KSPSetFromOptions(ksp);
 
-    // flg_ilu     = PETSC_FALSE;
-    // flg_superlu = PETSC_FALSE;
-    // PetscOptionsGetBool(NULL, NULL, "-use_superlu_lu", &flg_superlu,
-    // NULL); PetscOptionsGetBool(NULL, NULL, "-use_superlu_ilu", &flg_ilu,
-    // NULL); if (flg_superlu || flg_ilu)
-    // {
-    //   KSPSetType(ksp, KSPPREONLY);
-    //   KSPGetPC(ksp, &pc);
-    //   if (flg_superlu)
-    //   {
-    //     PCSetType(pc, PCLU);
-    //   }
-    //   else if (flg_ilu)
-    //   {
-    //     PCSetType(pc, PCILU);
-    //   }
-    //   if (world.size() == 1)
-    //   {
-    //     PCFactorSetMatSolverPackage(pc, MATSOLVERSUPERLU);
-    //   }
-    //   else
-    //   {
-    //     PCFactorSetMatSolverPackage(pc, MATSOLVERSUPERLU_DIST);
-    //   }
-    //   PCFactorSetUpMatSolverPackage(pc); /* call MatGetFactor() to create
-    //   F
-    //   */ PCFactorGetMatrix(pc, &F); if (world.size() == 1)
-    //   {
-    //     MatSuperluSetILUDropTol(F, 1.e-8);
-    //   }
-    std::cout << "Solver set up"
-              << "\n"
-              << std::flush;
-    // if (iter > 0 and
-    //     std::abs(state_energy[iter] - state_energy[iter - 1]) < 1e-10)
-    // {
-    //   std::cout << "Starting Gram Schmit\n";
-    //   gram_schmit = true;
-    //   /* This is needed because the Power method converges */
-    //   /* extremely quickly */
-    //   modified_gram_schmidt(states);
-    // }
+    if (world.rank() == 0)
+      std::cout << "Solver set up"
+                << "\n"
+                << std::flush;
+    if (iter > 0 and
+        std::abs(state_energy[iter] - state_energy[iter - 1]) < 1e-10)
+    {
+      if (world.rank() == 0) std::cout << "Starting Gram Schmit\n";
+
+      gram_schmit = true;
+
+      /* This is needed because the Power method converges */
+      /* extremely quickly */
+      ModifiedGramSchmidt(states);
+    }
 
     if (world.rank() == 0) t = clock();
     /* loop until error is small enough */
-    // while (!converged)
-    while (i < 5)
+    while (!converged)
+    // while (i < 50)
     {
       /* copy old state for convergence */
       VecCopy(*psi, psi_old);
@@ -227,32 +203,32 @@ void Simulation::PowerMethod(int num_states)
       {
         if (reason < 0)
         {
-          printf("Divergence.\n");
+          printf("Divergence!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+          printf("Divergence!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
         }
         else
         {
           KSPGetIterationNumber(ksp, &its);
-          printf("Convergence in %d iterations.\n", (int)its);
+          std::cout << "Converged: " << its << "\n";
         }
       }
 
       /* used to get higher states */
-      // if (gram_schmit) modified_gram_schmidt(states);
+      if (gram_schmit) ModifiedGramSchmidt(states);
 
       wavefunction->Normalize();
-
       /* only checkpoint so often */
       if (i % write_frequency == 0)
       {
         /* check convergence criteria */
         converged = CheckConvergance(psi[0], psi_old, parameters->GetTol());
         /* save this psi to ${target}.h5 */
-        std::cout << "Energy: "
-                  << wavefunction->GetEnergy(hamiltonian->GetTimeIndependent())
-                  << "\n"
-                  << std::flush;
+        energy = wavefunction->GetEnergy(hamiltonian->GetTimeIndependent());
+        if (world.rank() == 0)
+          std::cout << "Energy: " << energy << "\n" << std::flush;
         // /* write a checkpoint */
-        wavefunction->Checkpoint(*h5_file, *viewer_file, i / write_frequency);
+        // wavefunction->Checkpoint(*h5_file, *viewer_file, i /
+        // write_frequency);
       }
       /* increment counter */
       i++;
@@ -261,14 +237,17 @@ void Simulation::PowerMethod(int num_states)
     if (world.rank() == 0)
       std::cout << "Time: " << ((float)clock() - t) / CLOCKS_PER_SEC << "\n";
     /* make sure all states are orthonormal for mgs */
-    // states.push_back(psi[0] / psi->norm());
+    VecNormalize(*psi, &norm);
+    VecDuplicate(*psi, &psi_tmp);
+    VecCopy(*psi, psi_tmp);
+    states.push_back(psi_tmp);
     // /* save this psi to ${target}.h5 */
-    // checkpoint_state(states_file, iter);
-    //  new Gaussian guess
-    // wavefunction->reset_psi();
-    // /* reset for next state */
-    // converged = false;
-    // std::cout << "\n";
+    CheckpointState(h_states_file, v_states_file, iter);
+    /* new Gaussian guess */
+    wavefunction->ResetPsi();
+    /* reset for next state */
+    converged = false;
+    std::cout << "\n";
   }
   // psi[0] = states[states.size() - 1];
   // wavefunction->normalize();
@@ -283,18 +262,18 @@ bool Simulation::CheckConvergance(Vec &psi_1, Vec &psi_2, double tol)
   double wave_error_2 = 0.0;
   double energy_error = 0.0;
 
+  energy_error =
+      wavefunction->GetEnergy(h, psi_1) - wavefunction->GetEnergy(h, psi_2);
+
   /* psi_2 - psi_1 */
   VecAXPY(psi_2, -1.0, psi_1);
   VecNorm(psi_2, NORM_2, &wave_error);
 
   /* we want psi_2+psi_1 so we need to add 2*psi_1 */
   VecAXPY(psi_2, 2.0, psi_1);
-  VecNorm(psi_2, NORM_2, &wave_error);
+  VecNorm(psi_2, NORM_2, &wave_error_2);
 
   if (wave_error_2 < wave_error) wave_error = wave_error_2;
-
-  energy_error = wavefunction->GetEnergy(h, psi_1);
-  energy_error -= wavefunction->GetEnergy(h, psi_2);
 
   if (world.rank() == 0)
     std::cout << "Wavefunction Error: " << wave_error
@@ -310,15 +289,16 @@ bool Simulation::CheckConvergance(Vec &psi_1, Vec &psi_2, double tol)
  * Assumes all states are orthornormal and applies modified gram-schmit to
  * psi
  */
-// void Simulation::modified_gram_schmidt(std::vector<Eigen::VectorXcd>
-// &states)
-// {
-//   int size = states.size();
-//   for (int i = 0; i < size; i++)
-//   {
-//     psi[0] = psi[0] - psi->dot(states[i]) * states[i];
-//   }
-// }
+void Simulation::ModifiedGramSchmidt(std::vector<Vec> &states)
+{
+  int size = states.size();
+  dcomp coef;
+  for (int i = 0; i < size; i++)
+  {
+    VecDot(*psi, states[i], &coef);
+    VecAXPY(*psi, -1.0 * coef, states[i]);
+  }
+}
 
 void Simulation::CheckpointState(HDF5Wrapper &h_file, ViewWrapper &v_file,
                                  int write_idx)

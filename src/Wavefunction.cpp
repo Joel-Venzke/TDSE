@@ -164,8 +164,10 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
 void Wavefunction::CheckpointPsi(ViewWrapper& viewer_file, int write_idx)
 {
   // if (world.rank() == 0)
-  std::cout << "Checkpointing Wavefunction in " << viewer_file.file_name << ": "
-            << " " << write_idx << "\n";
+  if (world.rank() == 0)
+    std::cout << "Checkpointing Wavefunction in " << viewer_file.file_name
+              << ": "
+              << " " << write_idx << "\n";
   viewer_file.Open("a");
   /* set time step */
   viewer_file.SetTime(write_idx);
@@ -365,12 +367,13 @@ double Wavefunction::GetEnergy(Mat* h) { return GetEnergy(h, psi); }
 double Wavefunction::GetEnergy(Mat* h, Vec& p)
 {
   PetscComplex energy;
+  VecDot(p, p, &energy);
   MatMult(*h, p, psi_tmp);
   VecDot(p, psi_tmp, &energy);
-  return energy.real();
+  return energy.real() * (delta_x[0] * delta_x[0]);
 }
 
-void Wavefunction::reset_psi()
+void Wavefunction::ResetPsi()
 {
   CreatePsi();
   Cleanup();

@@ -66,7 +66,7 @@ class Wavefunction
   double Norm(Vec &data, double dx);
   double GetEnergy(Mat *h);
   double GetEnergy(Mat *h, Vec &p);
-  void reset_psi();
+  void ResetPsi();
   void GobblePsi();
 
   int *GetNumX();

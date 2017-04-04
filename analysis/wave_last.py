@@ -5,7 +5,7 @@ import h5py
 
 # read data
 f = h5py.File("TDSE.h5","r")
-psi_value = f["Wavefunction"]["psi"][1]
+psi_value = f["Wavefunction"]["psi"][-1]
 x         = f["Wavefunction"]["x_value_0"][:]
 
 # # calculate location for time to be printed
