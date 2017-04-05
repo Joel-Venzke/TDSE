@@ -2,12 +2,21 @@
 
 PETSCWrapper::PETSCWrapper(int argc, char** argv)
 {
-  ierr = PetscInitialize(&argc, &argv, (char*)0, "TDSE");
-  ierr = PetscInitializeFortran();
+  ierr  = PetscInitialize(&argc, &argv, (char*)0, "TDSE");
+  ierr  = PetscInitializeFortran();
+  setup = true;
 }
 
+PETSCWrapper::PETSCWrapper() { setup = false; }
+
 // Destructor
-PETSCWrapper::~PETSCWrapper() { ierr = PetscFinalize(); }
+PETSCWrapper::~PETSCWrapper()
+{
+  if (setup)
+  {
+    ierr = PetscFinalize();
+  }
+}
 
 void PETSCWrapper::PushStage(std::string stage_name)
 {

@@ -19,6 +19,7 @@ class Wavefunction
  private:
   mpi::communicator world;
   const double pi = 3.1415926535897;
+  PetscInt ierr;
   int num_dims;         /* number of dimensions */
   double *dim_size;     /* sizes of each dimension in a.u. */
   double *delta_x;      /* step sizes of each dimension in a.u. */

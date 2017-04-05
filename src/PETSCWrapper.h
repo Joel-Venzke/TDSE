@@ -4,12 +4,13 @@
 class PETSCWrapper
 {
  private:
-  PetscInt rank;
   PetscInt ierr;
   PetscLogStage stage;
+  bool setup; /* keep from calling petsc finalize*/
 
  public:
   // Constructor
+  PETSCWrapper();
   PETSCWrapper(int argc, char** argv);
 
   // Destructor

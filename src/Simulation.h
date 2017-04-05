@@ -6,6 +6,7 @@
 #include <iostream>
 #include "HDF5Wrapper.h"
 #include "Hamiltonian.h"
+#include "PETSCWrapper.h"
 #include "Parameters.h"
 #include "Pulse.h"
 #include "Wavefunction.h"
@@ -14,6 +15,7 @@ class Simulation
 {
  private:
   mpi::communicator world;
+  PETSCWrapper p_wrap;
   Hamiltonian *hamiltonian;
   Wavefunction *wavefunction;
   Pulse *pulse;

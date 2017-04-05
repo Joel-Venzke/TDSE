@@ -241,6 +241,7 @@ void Simulation::PowerMethod(int num_states, int return_state_idx)
       /* increment counter */
       i++;
     }
+
     /* make sure all states are orthonormal for mgs */
     VecNormalize(*psi, &norm);
     VecDuplicate(*psi, &psi_tmp);

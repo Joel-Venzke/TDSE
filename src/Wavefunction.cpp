@@ -67,7 +67,6 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
     std::cout << "Checkpointing Wavefunction: " << write_counter << "\n"
               << std::flush;
   std::string str;
-  PetscInt ierr;
   const char* tmp;
   std::string name;
   std::string group_name = "/Wavefunction/";
@@ -236,7 +235,7 @@ void Wavefunction::CreatePsi()
   double x;      /* x value squared */
   double x2;     /* x value squared */
   int rank;
-  PetscInt idx, ierr;
+  PetscInt idx;
   PetscComplex val;
   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
