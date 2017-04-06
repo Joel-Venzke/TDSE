@@ -39,9 +39,10 @@ int main(int argc, char** argv)
   p_wrap.PopStage();
 
   p_wrap.PushStage("Propagation");
-  // if (parameters.get_propagate()==1) {
-  //   s.propagate();
-  // }
+  if (parameters.GetPropagate() == 1)
+  {
+    s.Propagate();
+  }
   p_wrap.PopStage();
   return 0;
 }

@@ -1,7 +1,7 @@
 {
   "delta_t": 0.005,
   "dimensions": [
-    {"dim_size": 20.0,
+    {"dim_size": 50.0,
     "delta_x":   0.1}],
   "restart": 0,
   "target":  "He",
@@ -10,9 +10,8 @@
   "sigma":   2.0,
   "write_frequency": 20,
   "state_solver":    "Power",
-  "propagate": 0,
+  "propagate": 1,
   "states": [
-    {"energy": -2.23855},
     {"energy": -2.23855}],
   "tol":        1e-10,
   "pulses": [
@@ -22,6 +21,6 @@
       "cycles_off":     1.0,
       "cycles_delay":   0.0,
       "cep":            0.0,
-      "energy":         0.057,
+      "energy":         1.5,
       "field_max":      12.83}]
 }
