@@ -44,9 +44,7 @@ void Parameters::Setup(std::string file_name)
 {
   if (world.rank() == 0)
   {
-    std::cout << "Reading input file: " << file_name << "\n"
-              << "input file: " << file_name << "\n"
-              << std::flush;
+    std::cout << "Reading input file: " << file_name << "\n" << std::flush;
   }
 
   /* read data from file */
@@ -63,25 +61,19 @@ void Parameters::Setup(std::string file_name)
   {
     dim_size[i] = data["dimensions"][i]["dim_size"];
     delta_x[i]  = data["dimensions"][i]["delta_x"];
-
-    /* this should be small */
-    if (world.rank() == 0)
-    {
-      std::cout << "Dim-" << i
-                << " dx/dt^2 = " << delta_x[i] / delta_t * delta_t << "\n";
-    }
   }
 
   /* get simulation behavior */
-  restart         = data["restart"];
-  target          = data["target"];
-  alpha           = data["alpha"];
-  write_frequency = data["write_frequency"];
-  gobbler         = data["gobbler"];
-  sigma           = data["sigma"];
-  tol             = data["tol"];
-  state_solver    = data["state_solver"];
-  num_states      = data["states"].size();
+  restart                     = data["restart"];
+  target                      = data["target"];
+  alpha                       = data["alpha"];
+  write_frequency_propagation = data["write_frequency_propagation"];
+  write_frequency_eigin_state = data["write_frequency_eigin_state"];
+  gobbler                     = data["gobbler"];
+  sigma                       = data["sigma"];
+  tol                         = data["tol"];
+  state_solver                = data["state_solver"];
+  num_states                  = data["states"].size();
 
   this->state_energy = std::make_unique<double[]>(num_states);
 
@@ -316,7 +308,15 @@ double Parameters::GetZ() { return z; }
 
 double Parameters::GetAlpha() { return alpha; }
 
-int Parameters::GetWriteFrequency() { return write_frequency; }
+int Parameters::GetWriteFrequencyPropagation()
+{
+  return write_frequency_propagation;
+}
+
+int Parameters::GetWriteFrequencyEigenState()
+{
+  return write_frequency_eigin_state;
+}
 
 double Parameters::GetGobbler() { return gobbler; }
 

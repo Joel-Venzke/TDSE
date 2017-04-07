@@ -23,8 +23,7 @@ void Simulation::Propagate()
   /* if we are converged */
   bool converged = false;
   /* error in norm */
-  double error = 1.0;
-  double norm  = 1.0;
+  double norm = 1.0;
   /* iteration */
   int i = 1;
   /* size of psi */
@@ -32,18 +31,18 @@ void Simulation::Propagate()
   /* steps in each direction */
   double *dx = wavefunction->GetDeltaX();
   /* how often do we write data */
-  int write_frequency = parameters->GetWriteFrequency();
+  int write_frequency = parameters->GetWriteFrequencyPropagation();
   /* pointer to actual psi in wavefunction object */
   psi = wavefunction->GetPsi();
   Vec psi_right;
-  // Vec psi_tmp;
+  Vec psi_old;
   /* Allocate space for psi_old */
   VecDuplicate(*psi, &psi_right);
-  // VecDuplicate(*psi, &psi_tmp);
+  VecDuplicate(*psi, &psi_old);
   /* time step */
-  double dt = parameters->GetDeltaT();
+  double delta_t = parameters->GetDeltaT();
   /* factor = i*(-i*dx/2) */
-  dcomp factor = dcomp(0.0, 1.0) * dcomp(dt / 2.0, 0.0);
+  dcomp factor = dcomp(0.0, 1.0) * dcomp(delta_t / 2.0, 0.0);
   KSP ksp; /* solver for Ax=b */
   /* Create the solver */
   KSPCreate(PETSC_COMM_WORLD, &ksp);
@@ -106,7 +105,8 @@ void Simulation::Propagate()
     {
       norm = wavefunction->Norm();
       if (world.rank() == 0)
-        std::cout << "\nIteration: " << i << " of " << time_length << "\n"
+        std::cout << "\nIteration: " << i << "\nPulse ends: " << time_length
+                  << "\n"
                   << "Average time for time-step: "
                   << ((float)clock() - t) / (CLOCKS_PER_SEC * write_frequency)
                   << "\nNorm: " << norm << "\n"
@@ -116,15 +116,6 @@ void Simulation::Propagate()
       t = clock();
     }
   }
-
-  // std::cout << "Propagating until norm stops changing\n";
-
-  // h    = hamiltonian->get_time_independent();
-  // left = (idenity[0] + factor * h[0]);
-  // left.makeCompressed();
-  // right = (idenity[0] - factor * h[0]);
-  // right.makeCompressed();
-  // solver.factorize(left);
 
   // while (!converged)
   // {
@@ -150,9 +141,84 @@ void Simulation::Propagate()
   //   }
   //   i++;
   // }
+
+  if (world.rank() == 0)
+    std::cout << "\nPropagating until norm stops changing\n";
+
+  h = hamiltonian->GetTimeIndependent();
+
+  MatCopy(*h, left, SAME_NONZERO_PATTERN);
+  MatScale(left, factor);
+  MatShift(left, 1.0);
+
+  MatCopy(*h, right, SAME_NONZERO_PATTERN);
+  MatScale(right, -1.0 * factor);
+  MatShift(right, 1.0);
+
+  KSPSetOperators(ksp, left, left);
+  KSPSetTolerances(ksp, 1.e-15, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
+  KSPSetFromOptions(ksp);
+
+  if (world.rank() == 0)
+    std::cout << "i: " << i << " time_length: " << time_length << "\n";
+  // while (!converged)
+  // {
+  for (i = time_length; i < time_length + 2000; i++)
+  {
+    /* copy old state for convergence */
+    VecCopy(*psi, psi_old);
+    /* Get psi_right side */
+    MatMult(right, *psi, psi_right);
+
+    /* Solve Ax=b */
+    KSPSolve(ksp, psi_right, *psi);
+
+    /* Check for Divergence*/
+    KSPGetConvergedReason(ksp, &reason);
+    if (world.rank() == 0)
+    {
+      if (reason < 0)
+      {
+        printf("Divergence!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+        printf("Divergence!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+      }
+    }
+
+    wavefunction->GobblePsi();
+
+    /* only checkpoint so often */
+    if (i % write_frequency == 0)
+    {
+      norm = wavefunction->Norm();
+      if (world.rank() == 0)
+        std::cout << "\nIteration: " << i << "\nPulse ended: " << time_length
+                  << "\n"
+                  << "Average time for time-step: "
+                  << ((float)clock() - t) / (CLOCKS_PER_SEC * write_frequency)
+                  << "\nNorm: " << norm << "\n"
+                  << std::flush;
+
+      norm -= wavefunction->Norm(psi_old, dx[0]);
+      norm = std::abs(norm);
+      if (world.rank() == 0) std::cout << "Norm error: " << norm << "\n";
+      if (norm < 1e-14)
+      {
+        converged = true;
+        if (world.rank() == 0) std::cout << "Converged!!!";
+      }
+      /* write a checkpoint */
+      wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
+      t = clock();
+    }
+  }
+
   wavefunction->Checkpoint(*h5_file, *viewer_file, time[time_length - 1]);
 
   VecDestroy(&psi_right);
+  VecDestroy(&psi_old);
+  MatDestroy(&left);
+  MatDestroy(&right);
+  KSPDestroy(&ksp);
 }
 
 void Simulation::PowerMethod(int num_states, int return_state_idx)
@@ -167,7 +233,8 @@ void Simulation::PowerMethod(int num_states, int return_state_idx)
    * iteration*/
   int i = 1;
   int write_frequency =
-      parameters->GetWriteFrequency(); /* how often do we write data */
+      parameters
+          ->GetWriteFrequencyEigenState(); /* how often do we write data */
   double *state_energy = parameters->state_energy.get(); /* energy guesses */
   double energy; /* stores energy for IO */
   double norm;   /* stores norm for IO */

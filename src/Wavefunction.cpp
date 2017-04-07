@@ -46,7 +46,6 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
 
   /* allocate grid */
   CreateGrid();
-  if (world.rank() == 0) std::cout << "grid built\n";
 
   /* allocate psi_1, psi_2, and psi */
   CreatePsi();
@@ -107,10 +106,28 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
     }
 
     /* write psi_1 and psi_2 if still allocated */
-    h5_file.WriteObject(psi_build[0][0], num_x[0], "/Wavefunction/psi_1",
-                        "Wavefunction of first electron");
-    h5_file.WriteObject(psi_build[1][0], num_x[0], "/Wavefunction/psi_2",
-                        "Wavefunction of second electron");
+    // if (psi_alloc_build)
+    // {
+    //   for (int elec_idx = 0; elec_idx < num_electrons; elec_idx++)
+    //   {
+    //     for (int dim_idx = 0; dim_idx < num_dims; dim_idx++)
+    //     {
+    //       h5_file.WriteObject(
+    //           psi_build[elec_idx][dim_idx], num_x[dim_idx],
+    //           "/Wavefunction/psi_build_dim_" + std::to_string(dim_idx),
+    //           "Guess for then nth dimension of the wavefunction. "
+    //           "Order is electron 0 the electron 1",
+    //           elec_idx);
+    //       h5_file.WriteObject(
+    //           psi_gobbler_build[elec_idx][dim_idx], num_x[dim_idx],
+    //           "/Wavefunction/psi_gobbler_build_dim_" +
+    //           std::to_string(dim_idx), "Guess for then nth dimension of the
+    //           boundary potential "
+    //           "(gobbler). Order is electron 0 the electron 1",
+    //           elec_idx);
+    //     }
+    //   }
+    // }
 
     // h5_file.WriteObject(psi_1_gobbler, num_psi_build,
     //                     "/Wavefunction/psi_1_gobbler",
@@ -121,7 +138,8 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
 
     // h5_file.WriteObject(psi_gobbler->data(), num_psi,
     //                     "/Wavefunction/psi_gobbler",
-    //                     "boundary potential for the two electron system");
+    //                     "boundary potential for the two electron
+    //                     system");
 
     // /* write time and attribute */
     h5_file.WriteObject(time, "/Wavefunction/psi_time",

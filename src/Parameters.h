@@ -27,15 +27,18 @@ class Parameters
   /* restart mode */
   /* 0 no restart, 1 restart from file */
   int restart;
-  std::string target;  /* type of target {"He"} */
-  int target_idx;      /* index of target */
-  double z;            /* atomic number */
-  double alpha;        /* atomic soft core */
-  int write_frequency; /* how many steps between checkpoints */
-  double gobbler;      /* percent (1=100% and .9=90%) gobbler turns on at */
-  double sigma;        /* std of wave function guess */
-  int num_states;      /* number of ground states */
-  double tol;          /* tolerance in error */
+  std::string target;              /* type of target {"He"} */
+  int target_idx;                  /* index of target */
+  double z;                        /* atomic number */
+  double alpha;                    /* atomic soft core */
+  int write_frequency_propagation; /* how many steps between checkpoints during
+                                      propagation */
+  int write_frequency_eigin_state; /* how many steps between checkpoints during
+                                      eigen state calculations */
+  double gobbler; /* percent (1=100% and .9=90%) gobbler turns on at */
+  double sigma;   /* std of wave function guess */
+  int num_states; /* number of ground states */
+  double tol;     /* tolerance in error */
   std::string state_solver; /* name of the solver used to get states */
   int state_solver_idx;     /* index of state solver */
 
@@ -81,7 +84,8 @@ class Parameters
   int GetTargetIdx();
   double GetZ();
   double GetAlpha();
-  int GetWriteFrequency();
+  int GetWriteFrequencyPropagation();
+  int GetWriteFrequencyEigenState();
   double GetGobbler();
   double GetSigma();
   int GetNumStates();

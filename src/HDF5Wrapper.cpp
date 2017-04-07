@@ -862,8 +862,13 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
                 "Atomic number used in Hamiltonian ");
     WriteObject(p.GetAlpha(), "/Parameters/alpha",
                 "Soft core used in atomic term of Hamiltonian");
-    WriteObject(p.GetWriteFrequency(), "/Parameters/write_frequency",
-                "How often are checkpoints done");
+    WriteObject(p.GetWriteFrequencyPropagation(),
+                "/Parameters/write_frequency_propagation",
+                "How often are checkpoints done during propagation");
+    WriteObject(
+        p.GetWriteFrequencyEigenState(),
+        "/Parameters/write_frequency_eigin_state",
+        "How often are checkpoints done during eigen state calculations");
     WriteObject(
         p.GetGobbler(), "/Parameters/gobbler",
         "The point at which the gobbler turns on at, (1=100 and 0.9=90)");

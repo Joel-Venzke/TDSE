@@ -15,7 +15,6 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
   z             = p.GetZ();
   alpha         = p.GetAlpha();
   a_field       = pulse.GetAField();
-  std::cout << num_psi << " " << num_psi_build;
 
   /* set up time independent */
   CreateTimeIndependent();
