@@ -53,10 +53,11 @@ void Parameters::Setup(std::string file_name)
   json data = FileToJson(file_name);
 
   /* get numeric information */
-  delta_t  = data["delta_t"];
-  num_dims = data["dimensions"].size();
-  dim_size = std::make_unique<double[]>(num_dims);
-  delta_x  = std::make_unique<double[]>(num_dims);
+  delta_t       = data["delta_t"];
+  num_dims      = data["dimensions"].size();
+  num_electrons = data["num_electrons"];
+  dim_size      = std::make_unique<double[]>(num_dims);
+  delta_x       = std::make_unique<double[]>(num_dims);
 
   for (int i = 0; i < num_dims; ++i)
   {
@@ -244,6 +245,25 @@ void Parameters::Validate()
     }
   }
 
+  if (num_dims > 1 and num_electrons == 2)
+  {
+    error_found = true;
+    err_str += "\n2 active electron calculations only work in 1D \"";
+  }
+
+  if (num_electrons > 2)
+  {
+    error_found = true;
+    err_str +=
+        "\nOne does not simply calculate more than 2 electrons exactly \"";
+  }
+
+  if (num_electrons != 2)
+  {
+    error_found = true;
+    err_str += "\nOnly 2 electron simulation are supported currently\"";
+  }
+
   /* target */
   if (target != "He")
   {
@@ -283,6 +303,8 @@ void Parameters::Validate()
 double Parameters::GetDeltaT() { return delta_t; }
 
 int Parameters::GetNumDims() { return num_dims; }
+
+int Parameters::GetNumElectrons() { return num_electrons; }
 
 int Parameters::GetRestart() { return restart; }
 

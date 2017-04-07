@@ -19,7 +19,7 @@ class Hamiltonian
   int num_dims;
   int *num_x;
   int num_psi;
-  int num_psi_12;
+  int num_psi_build;
   double z;      // atomic number
   double alpha;  // soft core atomic
   double *a_field;

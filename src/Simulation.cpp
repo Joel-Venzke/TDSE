@@ -83,6 +83,7 @@ void Simulation::Propagate()
     MatMult(right, *psi, psi_right);
 
     KSPSetOperators(ksp, left, left);
+    KSPSetTolerances(ksp, 1.e-15, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
     KSPSetFromOptions(ksp);
     /* Solve Ax=b */
     KSPSolve(ksp, psi_right, *psi);

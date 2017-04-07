@@ -19,8 +19,9 @@ class Parameters
   mpi::communicator world;
 
   /* numeric data */
-  int num_dims;   /* number of dimensions */
-  double delta_t; /* size of time step */
+  int num_dims;      /* number of dimensions */
+  int num_electrons; /* number of dimensions */
+  double delta_t;    /* size of time step */
 
   /* simulation behavior */
   /* restart mode */
@@ -72,6 +73,7 @@ class Parameters
 
   /* getters */
   int GetNumDims();
+  int GetNumElectrons();
   double GetDeltaT();
 
   int GetRestart();

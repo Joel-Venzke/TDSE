@@ -6,15 +6,16 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
                          Parameters& p)
 {
   if (world.rank() == 0) std::cout << "Creating Hamiltonian\n";
-  num_dims   = p.GetNumDims();
-  num_x      = w.GetNumX();
-  num_psi    = w.GetNumPsi();
-  num_psi_12 = w.GetNumPsi12();
-  delta_x    = w.GetDeltaX();
-  x_value    = w.GetXValue();
-  z          = p.GetZ();
-  alpha      = p.GetAlpha();
-  a_field    = pulse.GetAField();
+  num_dims      = p.GetNumDims();
+  num_x         = w.GetNumX();
+  num_psi       = w.GetNumPsi();
+  num_psi_build = w.GetNumPsiBuild();
+  delta_x       = w.GetDeltaX();
+  x_value       = w.GetXValue();
+  z             = p.GetZ();
+  alpha         = p.GetAlpha();
+  a_field       = pulse.GetAField();
+  std::cout << num_psi << " " << num_psi_build;
 
   /* set up time independent */
   CreateTimeIndependent();
@@ -56,8 +57,8 @@ void Hamiltonian::CreateTimeIndependent()
       }
       if (i >= 0 and i < num_psi)
       {
-        idx_1 = i / num_psi_12;
-        idx_2 = i % num_psi_12;
+        idx_1 = i / num_psi_build;
+        idx_2 = i % num_psi_build;
         diff  = std::abs(x_value[0][idx_1] - x_value[0][idx_2]);
 
         /* kinetic term */
