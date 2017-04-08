@@ -249,9 +249,9 @@ void Wavefunction::CreatePsi()
   double sigma2; /* variance squared for Gaussian in psi */
   double x;      /* x value squared */
   double x2;     /* x value squared */
-  int rank;
+  int low;
+  int high;
   PetscComplex val;
-  MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
   sigma2 = sigma * sigma;
 
@@ -327,29 +327,25 @@ void Wavefunction::CreatePsi()
     psi_alloc = true;
   }
 
-  /* tensor product of psi_1 and psi_2 */
-  for (int idx = 0; idx < num_psi; idx++)
-  {
-    if (rank == 0)
-    {
-      /* set psi */
-      val = GetVal(psi_build, idx);
-      VecSetValues(psi, 1, &idx, &val, INSERT_VALUES);
+  VecGetOwnershipRange(psi, &low, &high);
 
-      /* set psi */
-      val = GetVal(psi_gobbler_build, idx);
-      VecSetValues(psi_gobbler, 1, &idx, &val, INSERT_VALUES);
-    }
+  for (int idx = low; idx < high; idx++)
+  {
+    /* set psi */
+    val = GetVal(psi_build, idx);
+    VecSetValues(psi, 1, &idx, &val, INSERT_VALUES);
+
+    /* set psi */
+    val = GetVal(psi_gobbler_build, idx);
+    VecSetValues(psi_gobbler, 1, &idx, &val, INSERT_VALUES);
   }
   VecAssemblyBegin(psi);
-  VecAssemblyBegin(psi_gobbler);
   VecAssemblyEnd(psi);
+  VecAssemblyBegin(psi_gobbler);
+  VecAssemblyEnd(psi_gobbler);
 
   /* normalize all psi */
   Normalize();
-
-  /* psi_gobbler not used in Normalize */
-  VecAssemblyEnd(psi_gobbler);
 }
 
 void Wavefunction::CleanUp()

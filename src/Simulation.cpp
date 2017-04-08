@@ -117,31 +117,6 @@ void Simulation::Propagate()
     }
   }
 
-  // while (!converged)
-  // {
-  //   /* copy old state for convergence */
-  //   psi_old = psi[0];
-  //   psi[0]  = solver.solve(right * psi_old);
-
-  //   wavefunction->gobble_psi();
-  //   if (i % write_frequency == 0)
-  //   {
-  //     wavefunction->checkpoint(*file, time[i]);
-  //     error = wavefunction->norm();
-  //     std::cout << "Norm: " << error << "\n";
-  //     error -= wavefunction->norm(psi_old.data(), num_psi, dx[0]);
-  //     error = std::abs(error);
-  //     std::cout << "Norm error: " << error << "\n";
-  //     if (error < 1e-14)
-  //     {
-  //       converged = true;
-  //     }
-  //     /* write a checkpoint */
-  //     wavefunction->checkpoint(*file, i * dx[0]);
-  //   }
-  //   i++;
-  // }
-
   if (world.rank() == 0)
     std::cout << "\nPropagating until norm stops changing\n";
 
@@ -159,11 +134,9 @@ void Simulation::Propagate()
   KSPSetTolerances(ksp, 1.e-15, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
   KSPSetFromOptions(ksp);
 
-  if (world.rank() == 0)
-    std::cout << "i: " << i << " time_length: " << time_length << "\n";
   // while (!converged)
   // {
-  for (i = time_length; i < time_length + 2000; i++)
+  for (i = time_length; i < time_length + 3000; i++)
   {
     /* copy old state for convergence */
     VecCopy(*psi, psi_old);

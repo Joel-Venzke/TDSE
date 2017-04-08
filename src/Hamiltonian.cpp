@@ -41,16 +41,16 @@ void Hamiltonian::CreateTimeIndependent()
   {
     for (int i = 0; i < num_psi; i++)
     {
-      j_val = i;
+      i_val = i;
       if (i - num_x[0] >= 0 and i - num_x[0] < num_psi)
       {
-        i_val = i - num_x[0];
+        j_val = i - num_x[0];
         MatSetValues(time_independent, 1, &i_val, 1, &j_val, &off_diagonal,
                      INSERT_VALUES);
       }
       if (i - 1 >= 0 and i - 1 < num_psi)
       {
-        i_val = i - 1;
+        j_val = i - 1;
         MatSetValues(time_independent, 1, &i_val, 1, &j_val, &off_diagonal,
                      INSERT_VALUES);
       }
@@ -71,19 +71,19 @@ void Hamiltonian::CreateTimeIndependent()
         /* e-e correlation */
         diagonal += dcomp(1 / sqrt(diff * diff + alpha), 0.0);
 
-        i_val = i;
+        j_val = i;
         MatSetValues(time_independent, 1, &i_val, 1, &j_val, &diagonal,
                      INSERT_VALUES);
       }
       if (i + 1 >= 0 and i + 1 < num_psi)
       {
-        i_val = i + 1;
+        j_val = i + 1;
         MatSetValues(time_independent, 1, &i_val, 1, &j_val, &off_diagonal,
                      INSERT_VALUES);
       }
       if (i + num_x[0] >= 0 and i + num_x[0] < num_psi)
       {
-        i_val = i + num_x[0];
+        j_val = i + num_x[0];
         MatSetValues(time_independent, 1, &i_val, 1, &j_val, &off_diagonal,
                      INSERT_VALUES);
       }
@@ -108,35 +108,36 @@ void Hamiltonian::CreateTimeDependent()
   {
     for (int i = 0; i < num_psi; i++)
     {
-      j_val = i;
+      i_val = i;
       if (i - num_x[0] >= 0 and i - num_x[0] < num_psi)
       {
-        i_val = i - num_x[0];
-        MatSetValues(time_dependent, 1, &i_val, 1, &j_val, &neg_off_diagonal,
+        j_val = i - num_x[0];
+        MatSetValues(time_dependent, 1, &i_val, 1, &j_val, &off_diagonal,
                      INSERT_VALUES);
       }
       if (i - 1 >= 0 and i - 1 < num_psi)
       {
-        i_val = i - 1;
-        MatSetValues(time_dependent, 1, &i_val, 1, &j_val, &neg_off_diagonal,
+        j_val = i - 1;
+        MatSetValues(time_dependent, 1, &i_val, 1, &j_val, &off_diagonal,
                      INSERT_VALUES);
       }
       if (i + 1 >= 0 and i + 1 < num_psi)
       {
-        i_val = i + 1;
-        MatSetValues(time_dependent, 1, &i_val, 1, &j_val, &off_diagonal,
+        j_val = i + 1;
+        MatSetValues(time_dependent, 1, &i_val, 1, &j_val, &neg_off_diagonal,
                      INSERT_VALUES);
       }
       if (i + num_x[0] >= 0 and i + num_x[0] < num_psi)
       {
-        i_val = i + num_x[0];
-        MatSetValues(time_dependent, 1, &i_val, 1, &j_val, &off_diagonal,
+        j_val = i + num_x[0];
+        MatSetValues(time_dependent, 1, &i_val, 1, &j_val, &neg_off_diagonal,
                      INSERT_VALUES);
       }
     }
   }
   MatAssemblyBegin(time_dependent, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(time_dependent, MAT_FINAL_ASSEMBLY);
+  // MatView(time_dependent, PETSC_VIEWER_STDOUT_WORLD);
 }
 
 /* just fill the non zero with random values so the memory is allocated */
@@ -154,34 +155,34 @@ void Hamiltonian::CreateTotalHamlitonian()
   {
     for (int i = 0; i < num_psi; i++)
     {
-      j_val = i;
+      i_val = i;
       if (i - num_x[0] >= 0 and i - num_x[0] < num_psi)
       {
-        i_val = i - num_x[0];
+        j_val = i - num_x[0];
         MatSetValues(total_hamlitonian, 1, &i_val, 1, &j_val, &off_diagonal,
                      INSERT_VALUES);
       }
       if (i - 1 >= 0 and i - 1 < num_psi)
       {
-        i_val = i - 1;
+        j_val = i - 1;
         MatSetValues(total_hamlitonian, 1, &i_val, 1, &j_val, &off_diagonal,
                      INSERT_VALUES);
       }
       if (i >= 0 and i < num_psi)
       {
-        i_val = i;
+        j_val = i;
         MatSetValues(total_hamlitonian, 1, &i_val, 1, &j_val, &diagonal,
                      INSERT_VALUES);
       }
       if (i + 1 >= 0 and i + 1 < num_psi)
       {
-        i_val = i + 1;
+        j_val = i + 1;
         MatSetValues(total_hamlitonian, 1, &i_val, 1, &j_val, &off_diagonal,
                      INSERT_VALUES);
       }
       if (i + num_x[0] >= 0 and i + num_x[0] < num_psi)
       {
-        i_val = i + num_x[0];
+        j_val = i + num_x[0];
         MatSetValues(total_hamlitonian, 1, &i_val, 1, &j_val, &off_diagonal,
                      INSERT_VALUES);
       }
@@ -193,9 +194,9 @@ void Hamiltonian::CreateTotalHamlitonian()
 
 Mat* Hamiltonian::GetTotalHamiltonian(int time_idx)
 {
-  MatCopy(time_dependent, total_hamlitonian, DIFFERENT_NONZERO_PATTERN);
-  MatAYPX(total_hamlitonian, a_field[time_idx], time_independent,
-          DIFFERENT_NONZERO_PATTERN);
+  MatCopy(time_independent, total_hamlitonian, SAME_NONZERO_PATTERN);
+  MatAXPY(total_hamlitonian, a_field[time_idx], time_dependent,
+          SUBSET_NONZERO_PATTERN);
   // MatView(total_hamlitonian, PETSC_VIEWER_STDOUT_SELF);
   return &total_hamlitonian;
 }

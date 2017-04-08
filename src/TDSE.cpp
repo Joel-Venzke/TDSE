@@ -24,7 +24,7 @@ int main(int argc, char** argv)
   Hamiltonian hamiltonian(wavefunction, pulse, h5_file, parameters);
   Simulation s(hamiltonian, wavefunction, pulse, h5_file, viewer_file,
                parameters);
-  p_wrap.PopStage();
+  p_wrap.PopStage(); /* Set up */
 
   p_wrap.PushStage("Eigen State");
   /* get ground states */
@@ -36,13 +36,14 @@ int main(int argc, char** argv)
       s.PowerMethod(parameters.GetNumStates());
       break;
   }
-  p_wrap.PopStage();
+  p_wrap.PopStage(); /* Eigen State */
 
   p_wrap.PushStage("Propagation");
   if (parameters.GetPropagate() == 1)
   {
     s.Propagate();
   }
-  p_wrap.PopStage();
+  p_wrap.PopStage(); /* Propagation */
+
   return 0;
 }
