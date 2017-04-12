@@ -2,10 +2,9 @@
 
 Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p)
 {
-  MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
   int pulse_length = 0;
 
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     std::cout << "Creating pulses\n" << std::flush;
   }
@@ -59,7 +58,7 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p)
 
   DeallocatePulses();
 
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     std::cout << "Pulses created\n" << std::flush;
   }
@@ -67,7 +66,7 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p)
 
 Pulse::~Pulse()
 {
-  if (rank == 0)
+  if (world.rank() == 0)
   {
     std::cout << "Deleting Pulse\n" << std::flush;
   }

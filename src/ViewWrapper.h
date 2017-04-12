@@ -1,9 +1,8 @@
 #pragma once
-#include <petsc.h>
 #include <petscviewerhdf5.h>
-#include <iostream>
+#include "Utils.h"
 
-class ViewWrapper
+class ViewWrapper : protected Utils
 {
  private:
   PetscViewer data_file; /* viewer object */
@@ -54,8 +53,4 @@ class ViewWrapper
 
   /* reads a frame */
   void ReadObject(PetscObject data);
-
-  /* kill run */
-  void EndRun(std::string str);
-  void EndRun(std::string str, int exit_val);
 };

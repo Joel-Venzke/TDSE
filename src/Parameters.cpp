@@ -21,20 +21,6 @@ json FileToJson(std::string file_name)
   return j;
 }
 
-/* prints error message, kills code and returns -1 */
-void Parameters::EndRun(std::string str)
-{
-  std::cout << "\n\nERROR: " << str << "\n" << std::flush;
-  exit(-1);
-}
-
-/* prints error message, kills code and returns exit_val */
-void Parameters::EndRun(std::string str, int exit_val)
-{
-  std::cout << "\n\nERROR: " << str << "\n";
-  exit(exit_val);
-}
-
 /* Constructor */
 Parameters::Parameters(std::string file_name) { Setup(file_name); }
 
@@ -246,13 +232,13 @@ void Parameters::Validate()
   {
     error_found = true;
     err_str +=
-        "\nOne does not simply calculate more than 2 electrons exactly \"";
+        "\nOne does not simply calculate more than 2 electrons exactly \n";
   }
 
   if (num_electrons != 2)
   {
     error_found = true;
-    err_str += "\nOnly 2 electron simulation are supported currently\"";
+    err_str += "\nOnly 2 electron simulation are supported currently\n";
   }
 
   /* target */

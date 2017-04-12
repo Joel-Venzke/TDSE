@@ -1,24 +1,12 @@
 #pragma once
-#include <math.h>
-#include <petsc.h>
-#include <boost/mpi.hpp>
-#include <boost/mpi/group.hpp>
-#include <boost/optional/optional_io.hpp>
-#include <complex>
-#include <iostream>
 #include "HDF5Wrapper.h"
 #include "Parameters.h"
+#include "Utils.h"
 #include "ViewWrapper.h"
 
-namespace mpi = boost::mpi;
-
-typedef std::complex<double> dcomp;
-
-class Wavefunction
+class Wavefunction : protected Utils
 {
  private:
-  mpi::communicator world;
-  const double pi = 3.1415926535897;
   PetscInt ierr;
   int num_dims;               /* number of dimensions */
   int num_electrons;          /* number of electrons in the system */
@@ -77,8 +65,4 @@ class Wavefunction
   Vec *GetPsi();
   double *GetDeltaX();
   double **GetXValue();
-
-  /* error handling */
-  void EndRun(std::string str);
-  void EndRun(std::string str, int exit_val);
 };

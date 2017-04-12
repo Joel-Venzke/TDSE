@@ -1,19 +1,5 @@
 #include "Wavefunction.h"
 
-/* prints error message, kills code and returns -1 */
-void Wavefunction::EndRun(std::string str)
-{
-  std::cout << "\n\nERROR: " << str << "\n" << std::flush;
-  exit(-1);
-}
-
-/* prints error message, kills code and returns exit_val */
-void Wavefunction::EndRun(std::string str, int exit_val)
-{
-  std::cout << "\n\nERROR: " << str << "\n";
-  exit(exit_val);
-}
-
 Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
                            Parameters& p)
 {

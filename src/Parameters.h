@@ -1,24 +1,17 @@
 #pragma once
-#include <boost/mpi.hpp>
-#include <boost/mpi/group.hpp>
-#include <boost/optional/optional_io.hpp>
 #include <cstdlib>
 #include <fstream>
-#include <iostream>
 #include <memory>
 #include <streambuf>
-#include <string>
+#include "Utils.h"
 #include "json.hpp"
 
 /* for convenience */
-using json    = nlohmann::json;
-namespace mpi = boost::mpi;
+using json = nlohmann::json;
 
-class Parameters
+class Parameters : protected Utils
 {
  private:
-  mpi::communicator world;
-
   /* numeric data */
   int num_dims;      /* number of dimensions */
   int num_electrons; /* number of dimensions */
@@ -71,9 +64,6 @@ class Parameters
   ~Parameters();
 
   void Validate();
-
-  void EndRun(std::string str);
-  void EndRun(std::string str, int exit_val);
 
   /* getters */
   int GetNumDims();

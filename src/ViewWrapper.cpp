@@ -157,17 +157,3 @@ void ViewWrapper::WriteObject(PetscObject data)
 
 /* reads a frame */
 void ViewWrapper::ReadObject(PetscObject data) {}
-
-/* end run after printing error string with exit value -1 */
-void ViewWrapper::EndRun(std::string str)
-{
-  std::cout << "\n\nERROR: " << str << "\n" << std::flush;
-  exit(-1);
-}
-
-/* end run after printing error string with exit_val */
-void ViewWrapper::EndRun(std::string str, int exit_val)
-{
-  std::cout << "\n\nERROR: " << str << "\n";
-  exit(exit_val);
-}

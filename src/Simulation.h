@@ -1,20 +1,16 @@
 #pragma once
 #include <time.h>
-#include <boost/mpi.hpp>
-#include <boost/mpi/group.hpp>
-#include <boost/optional/optional_io.hpp>
-#include <iostream>
 #include "HDF5Wrapper.h"
 #include "Hamiltonian.h"
 #include "PETSCWrapper.h"
 #include "Parameters.h"
 #include "Pulse.h"
+#include "Utils.h"
 #include "Wavefunction.h"
 
-class Simulation
+class Simulation : protected Utils
 {
  private:
-  mpi::communicator world;
   PETSCWrapper p_wrap;
   Hamiltonian *hamiltonian;
   Wavefunction *wavefunction;

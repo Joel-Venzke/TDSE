@@ -1,23 +1,13 @@
 #pragma once
-#include <math.h>
-#include <petsc.h>
-#include <stdlib.h>
-#include <boost/mpi.hpp>
-#include <boost/mpi/group.hpp>
-#include <boost/optional/optional_io.hpp>
-#include <iostream>
-#include <vector>
 #include "HDF5Wrapper.h"
 #include "Parameters.h"
 #include "Pulse.h"
+#include "Utils.h"
 #include "Wavefunction.h"
 
-typedef std::complex<double> dcomp;
-
-class Hamiltonian
+class Hamiltonian : protected Utils
 {
  private:
-  mpi::communicator world;
   int num_dims;
   int num_electrons;
   int *num_x;

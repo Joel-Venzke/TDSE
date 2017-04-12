@@ -1,14 +1,11 @@
 #pragma once
-#include <math.h>
-#include <iostream>
 #include "HDF5Wrapper.h"
 #include "Parameters.h"
+#include "Utils.h"
 
-class Pulse
+class Pulse : protected Utils
 {
  private:
-  const double pi = 3.1415926535897;
-  int rank;
   int num_pulses;          /* number of pulses */
   double delta_t;          /* time step */
   int max_pulse_length;    /* length of longest pulse; */

@@ -1,19 +1,5 @@
 #include "HDF5Wrapper.h"
 
-/* end run after printing error string with exit value -1 */
-void HDF5Wrapper::EndRun(std::string str)
-{
-  std::cout << "\n\nERROR: " << str << "\n" << std::flush;
-  exit(-1);
-}
-
-/* end run after printing error string with exit_val */
-void HDF5Wrapper::EndRun(std::string str, int exit_val)
-{
-  std::cout << "\n\nERROR: " << str << "\n";
-  exit(exit_val);
-}
-
 hsize_t *HDF5Wrapper::GetHsizeT(int size, int *dims)
 {
   /* size of array */

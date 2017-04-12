@@ -1,22 +1,14 @@
 #pragma once
-#include "H5Cpp.h"
-#include "Parameters.h"
-// #include "hdf5.h"
 #include <petsc.h>
-#include <boost/mpi.hpp>
-#include <boost/mpi/group.hpp>
-#include <boost/optional/optional_io.hpp>
 #include <complex>
 #include <vector>
+#include "H5Cpp.h"
+#include "Parameters.h"
+#include "Utils.h"
 
-namespace mpi = boost::mpi;
-
-typedef std::complex<double> dcomp;
-
-class HDF5Wrapper
+class HDF5Wrapper : protected Utils
 {
  private:
-  mpi::communicator world;
   H5::H5File *data_file;
   std::string file_name;
   bool file_open;
@@ -88,8 +80,4 @@ class HDF5Wrapper
   /* reads restart and validates file */
   void ReadRestart(Parameters &p);
   void ReadRestart(Parameters &p, std::string f_name);
-
-  /* kill run */
-  void EndRun(std::string str);
-  void EndRun(std::string str, int exit_val);
 };
