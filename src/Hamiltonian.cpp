@@ -1,12 +1,11 @@
 #include "Hamiltonian.h"
 
-#define dcomp std::complex<double>
-
 Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
                          Parameters& p)
 {
   if (world.rank() == 0) std::cout << "Creating Hamiltonian\n";
   num_dims      = p.GetNumDims();
+  num_electrons = p.GetNumElectrons();
   num_x         = w.GetNumX();
   num_psi       = w.GetNumPsi();
   num_psi_build = w.GetNumPsiBuild();
@@ -199,6 +198,48 @@ Mat* Hamiltonian::GetTotalHamiltonian(int time_idx)
           SUBSET_NONZERO_PATTERN);
   // MatView(total_hamlitonian, PETSC_VIEWER_STDOUT_SELF);
   return &total_hamlitonian;
+}
+
+dcomp Hamiltonian::GetVal(int idx_i, int idx_j, bool time_dep)
+{
+  std::vector<int> idx_array = GetIndexArray(idx_i, idx_j);
+  if (idx_i == idx_j)
+  {
+    return GetDiagonal(idx_array, time_dep);
+  }
+  else
+  {
+    return GetOffDiagonal(idx_array, time_dep);
+  }
+}
+
+dcomp Hamiltonian::GetOffDiagonal(std::vector<int> idx_array, bool time_dep) {}
+
+dcomp Hamiltonian::GetDiagonal(std::vector<int> idx_array, bool time_dep) {}
+
+/* Returns the an array of alternating i,j components of the local matrix */
+std::vector<int> Hamiltonian::GetIndexArray(int idx_i, int idx_j)
+{
+  int total_dims = num_electrons * num_dims;
+  /* size of each dim */
+  std::vector<int> num(total_dims);
+  /* idx for return */
+  std::vector<int> idx_array(total_dims * 2);
+  for (int elec_idx = 0; elec_idx < num_electrons; elec_idx++)
+  {
+    for (int dim_idx = 0; dim_idx < num_dims; dim_idx++)
+    {
+      num[elec_idx * num_dims + dim_idx] = num_x[dim_idx];
+    }
+  }
+  for (int i = total_dims - 1; i >= 0; --i)
+  {
+    idx_array[2 * i] = idx_i % num[i];
+    idx_i /= num[i];
+    idx_array[2 * i + 1] = idx_j % num[i];
+    idx_j /= num[i];
+  }
+  return idx_array;
 }
 
 Mat* Hamiltonian::GetTimeIndependent() { return &time_independent; }

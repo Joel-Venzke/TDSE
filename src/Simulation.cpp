@@ -26,8 +26,6 @@ void Simulation::Propagate()
   double norm = 1.0;
   /* iteration */
   int i = 1;
-  /* size of psi */
-  int num_psi = wavefunction->GetNumPsi();
   /* steps in each direction */
   double *dx = wavefunction->GetDeltaX();
   /* how often do we write data */
@@ -136,54 +134,55 @@ void Simulation::Propagate()
 
   // while (!converged)
   // {
-  for (i = time_length; i < time_length + 3000; i++)
-  {
-    /* copy old state for convergence */
-    VecCopy(*psi, psi_old);
-    /* Get psi_right side */
-    MatMult(right, *psi, psi_right);
+  // for (i = time_length; i < time_length + 3000; i++)
+  // {
+  //   /* copy old state for convergence */
+  //   VecCopy(*psi, psi_old);
+  //   /* Get psi_right side */
+  //   MatMult(right, *psi, psi_right);
 
-    /* Solve Ax=b */
-    KSPSolve(ksp, psi_right, *psi);
+  //   /* Solve Ax=b */
+  //   KSPSolve(ksp, psi_right, *psi);
 
-    /* Check for Divergence*/
-    KSPGetConvergedReason(ksp, &reason);
-    if (world.rank() == 0)
-    {
-      if (reason < 0)
-      {
-        printf("Divergence!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-        printf("Divergence!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-      }
-    }
+  //   /* Check for Divergence*/
+  //   KSPGetConvergedReason(ksp, &reason);
+  //   if (world.rank() == 0)
+  //   {
+  //     if (reason < 0)
+  //     {
+  //       printf("Divergence!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+  //       printf("Divergence!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+  //     }
+  //   }
 
-    wavefunction->GobblePsi();
+  //   wavefunction->GobblePsi();
 
-    /* only checkpoint so often */
-    if (i % write_frequency == 0)
-    {
-      norm = wavefunction->Norm();
-      if (world.rank() == 0)
-        std::cout << "\nIteration: " << i << "\nPulse ended: " << time_length
-                  << "\n"
-                  << "Average time for time-step: "
-                  << ((float)clock() - t) / (CLOCKS_PER_SEC * write_frequency)
-                  << "\nNorm: " << norm << "\n"
-                  << std::flush;
+  //   /* only checkpoint so often */
+  //   if (i % write_frequency == 0)
+  //   {
+  //     norm = wavefunction->Norm();
+  //     if (world.rank() == 0)
+  //       std::cout << "\nIteration: " << i << "\nPulse ended: " << time_length
+  //                 << "\n"
+  //                 << "Average time for time-step: "
+  //                 << ((float)clock() - t) / (CLOCKS_PER_SEC *
+  //                 write_frequency)
+  //                 << "\nNorm: " << norm << "\n"
+  //                 << std::flush;
 
-      norm -= wavefunction->Norm(psi_old, dx[0]);
-      norm = std::abs(norm);
-      if (world.rank() == 0) std::cout << "Norm error: " << norm << "\n";
-      if (norm < 1e-14)
-      {
-        converged = true;
-        if (world.rank() == 0) std::cout << "Converged!!!";
-      }
-      /* write a checkpoint */
-      wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
-      t = clock();
-    }
-  }
+  //     norm -= wavefunction->Norm(psi_old, dx[0]);
+  //     norm = std::abs(norm);
+  //     if (world.rank() == 0) std::cout << "Norm error: " << norm << "\n";
+  //     if (norm < 1e-14)
+  //     {
+  //       converged = true;
+  //       if (world.rank() == 0) std::cout << "Converged!!!";
+  //     }
+  //     /* write a checkpoint */
+  //     wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
+  //     t = clock();
+  //   }
+  // }
 
   wavefunction->Checkpoint(*h5_file, *viewer_file, time[time_length - 1]);
 

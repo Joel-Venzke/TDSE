@@ -1,7 +1,4 @@
 #include "HDF5Wrapper.h"
-#include <complex>
-
-#define dcomp std::complex<double>
 
 /* end run after printing error string with exit value -1 */
 void HDF5Wrapper::EndRun(std::string str)

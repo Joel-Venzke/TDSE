@@ -1,5 +1,4 @@
 #include "Parameters.h"
-#include <string>
 
 /*
  * Reads file and returns a string

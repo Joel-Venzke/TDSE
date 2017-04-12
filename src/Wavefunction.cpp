@@ -1,9 +1,4 @@
 #include "Wavefunction.h"
-#include <math.h> /* ceil() */
-#include <complex>
-#include <iostream>
-
-#define dcomp std::complex<double>
 
 /* prints error message, kills code and returns -1 */
 void Wavefunction::EndRun(std::string str)
@@ -128,18 +123,6 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
     //     }
     //   }
     // }
-
-    // h5_file.WriteObject(psi_1_gobbler, num_psi_build,
-    //                     "/Wavefunction/psi_1_gobbler",
-    //                     "Wavefunction of second electron");
-    // h5_file.WriteObject(psi_2_gobbler, num_psi_build,
-    //                     "/Wavefunction/psi_2_gobbler",
-    //                     "Boundary potential of second electron");
-
-    // h5_file.WriteObject(psi_gobbler->data(), num_psi,
-    //                     "/Wavefunction/psi_gobbler",
-    //                     "boundary potential for the two electron
-    //                     system");
 
     // /* write time and attribute */
     h5_file.WriteObject(time, "/Wavefunction/psi_time",

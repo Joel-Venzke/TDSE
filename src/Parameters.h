@@ -7,6 +7,7 @@
 #include <iostream>
 #include <memory>
 #include <streambuf>
+#include <string>
 #include "json.hpp"
 
 /* for convenience */

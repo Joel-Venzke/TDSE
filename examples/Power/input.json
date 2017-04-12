@@ -10,11 +10,11 @@
   "gobbler": 0.9,
   "sigma":   2.0,
   "write_frequency_propagation": 200,
-  "write_frequency_eigin_state": 2,
+  "write_frequency_eigin_state": 4,
   "state_solver":    "Power",
   "propagate": 1,
   "states": [
-    {"energy": -20.23855}],
+    {"energy": -2.23855}],
   "tol":        1e-10,
   "pulses": [
     {"pulse_shape":   "sin2",

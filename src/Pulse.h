@@ -1,4 +1,5 @@
 #pragma once
+#include <math.h>
 #include <iostream>
 #include "HDF5Wrapper.h"
 #include "Parameters.h"

@@ -1,5 +1,4 @@
 #include "Pulse.h"
-#include <math.h> /* ceil() */
 
 Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p)
 {

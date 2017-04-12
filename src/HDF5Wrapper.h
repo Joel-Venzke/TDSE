@@ -11,7 +11,7 @@
 
 namespace mpi = boost::mpi;
 
-#define dcomp std::complex<double>
+typedef std::complex<double> dcomp;
 
 class HDF5Wrapper
 {

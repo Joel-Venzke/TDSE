@@ -12,11 +12,14 @@
 #include "Pulse.h"
 #include "Wavefunction.h"
 
+typedef std::complex<double> dcomp;
+
 class Hamiltonian
 {
  private:
   mpi::communicator world;
   int num_dims;
+  int num_electrons;
   int *num_x;
   int num_psi;
   int num_psi_build;
@@ -40,6 +43,11 @@ class Hamiltonian
 
   Mat *GetTotalHamiltonian(int time_idx);
   Mat *GetTimeIndependent();
+
+  dcomp GetVal(int idx_i, int idx_j, bool time_dep);
+  dcomp GetOffDiagonal(std::vector<int> idx_array, bool time_dep);
+  dcomp GetDiagonal(std::vector<int> idx_array, bool time_dep);
+  std::vector<int> GetIndexArray(int idx_i, int idx_j);
 
   ~Hamiltonian();
 };

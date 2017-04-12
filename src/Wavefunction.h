@@ -1,6 +1,6 @@
 #pragma once
+#include <math.h>
 #include <petsc.h>
-// #include <petscviewerhdf5.h>
 #include <boost/mpi.hpp>
 #include <boost/mpi/group.hpp>
 #include <boost/optional/optional_io.hpp>
@@ -12,7 +12,7 @@
 
 namespace mpi = boost::mpi;
 
-#define dcomp std::complex<double>
+typedef std::complex<double> dcomp;
 
 class Wavefunction
 {
