@@ -841,7 +841,7 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
                 "The size of the time step in atomic units.");
     WriteObject(p.GetTargetIdx(), "/Parameters/target_idx",
                 "The index of the target. He:0 ");
-    WriteObject(p.GetZ(), "/Parameters/z",
+    WriteObject(p.z.get(), p.GetNumNuclei(), "/Parameters/z",
                 "Atomic number used in Hamiltonian ");
     WriteObject(p.GetAlpha(), "/Parameters/alpha",
                 "Soft core used in atomic term of Hamiltonian");
@@ -890,31 +890,25 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
 /* TDOD: set up restart */
 void HDF5Wrapper::ReadRestart(Parameters &p)
 {
-  if (world.rank() == 0)
+  std::string err_str;
+  /* Check if restart can use current file */
+  if (p.GetRestart() == 1)
   {
-    std::string err_str;
-    /* Check if restart can use current file */
-    if (p.GetRestart() == 1)
-    {
-      err_str += "Restart not implemented yet \n";
-    }
-    EndRun(err_str);
+    err_str += "Restart not implemented yet \n";
   }
+  EndRun(err_str);
 }
 
 /* TODO(jove7731): more of this restart stuff */
 void HDF5Wrapper::ReadRestart(Parameters &p, std::string f_name)
 {
-  if (world.rank() == 0)
+  std::string err_str;
+  /* Check if restart can use current file */
+  if (p.GetRestart() == 1)
   {
-    std::string err_str;
-    /* Check if restart can use current file */
-    if (p.GetRestart() == 1)
-    {
-      err_str += "Restart not implemented yet \n";
-    }
-    EndRun(err_str);
+    err_str += "Restart not implemented yet \n";
   }
+  EndRun(err_str);
 }
 
 /* constructor file_name needs ending ".h5" */

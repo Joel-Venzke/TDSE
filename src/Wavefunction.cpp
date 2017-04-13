@@ -218,8 +218,7 @@ void Wavefunction::CreatePsi()
   double sigma2; /* variance squared for Gaussian in psi */
   double x;      /* x value squared */
   double x2;     /* x value squared */
-  int low;
-  int high;
+  PetscInt low, high;
   PetscComplex val;
 
   sigma2 = sigma * sigma;
@@ -297,24 +296,26 @@ void Wavefunction::CreatePsi()
   }
 
   VecGetOwnershipRange(psi, &low, &high);
-
   for (int idx = low; idx < high; idx++)
   {
     /* set psi */
     val = GetVal(psi_build, idx);
     VecSetValues(psi, 1, &idx, &val, INSERT_VALUES);
-
+  }
+  VecAssemblyBegin(psi);
+  VecGetOwnershipRange(psi_gobbler, &low, &high);
+  for (int idx = low; idx < high; idx++)
+  {
     /* set psi */
     val = GetVal(psi_gobbler_build, idx);
     VecSetValues(psi_gobbler, 1, &idx, &val, INSERT_VALUES);
   }
-  VecAssemblyBegin(psi);
-  VecAssemblyEnd(psi);
   VecAssemblyBegin(psi_gobbler);
-  VecAssemblyEnd(psi_gobbler);
-
+  VecAssemblyEnd(psi);
   /* normalize all psi */
   Normalize();
+
+  VecAssemblyEnd(psi_gobbler);
 }
 
 void Wavefunction::CleanUp()
@@ -417,8 +418,6 @@ int Wavefunction::GetNumPsi() { return num_psi; }
 int Wavefunction::GetNumPsiBuild() { return num_psi_build; }
 
 Vec* Wavefunction::GetPsi() { return &psi; }
-
-double* Wavefunction::GetDeltaX() { return delta_x; }
 
 double** Wavefunction::GetXValue() { return x_value; }
 

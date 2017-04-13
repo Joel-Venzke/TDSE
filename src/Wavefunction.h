@@ -63,6 +63,5 @@ class Wavefunction : protected Utils
   int GetNumPsi();
   int GetNumPsiBuild();
   Vec *GetPsi();
-  double *GetDeltaX();
   double **GetXValue();
 };

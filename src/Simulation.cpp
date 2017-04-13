@@ -27,7 +27,7 @@ void Simulation::Propagate()
   /* iteration */
   int i = 1;
   /* steps in each direction */
-  double *dx = wavefunction->GetDeltaX();
+  double *delta_x = parameters->delta_x.get();
   /* how often do we write data */
   int write_frequency = parameters->GetWriteFrequencyPropagation();
   /* pointer to actual psi in wavefunction object */
@@ -39,7 +39,7 @@ void Simulation::Propagate()
   VecDuplicate(*psi, &psi_old);
   /* time step */
   double delta_t = parameters->GetDeltaT();
-  /* factor = i*(-i*dx/2) */
+  /* factor = i*(-i*dt/2) */
   dcomp factor = dcomp(0.0, 1.0) * dcomp(delta_t / 2.0, 0.0);
   KSP ksp; /* solver for Ax=b */
   /* Create the solver */

@@ -41,16 +41,19 @@ void Parameters::Setup(std::string file_name)
   num_electrons = data["num_electrons"];
   dim_size      = std::make_unique<double[]>(num_dims);
   delta_x       = std::make_unique<double[]>(num_dims);
+  delta_x_2     = std::make_unique<double[]>(num_dims);
 
   for (int i = 0; i < num_dims; ++i)
   {
-    dim_size[i] = data["dimensions"][i]["dim_size"];
-    delta_x[i]  = data["dimensions"][i]["delta_x"];
+    dim_size[i]  = data["dimensions"][i]["dim_size"];
+    delta_x[i]   = data["dimensions"][i]["delta_x"];
+    delta_x_2[i] = delta_x[i] * delta_x[i];
   }
 
   /* get simulation behavior */
   restart                     = data["restart"];
-  target                      = data["target"];
+  target                      = data["target"]["name"];
+  num_nuclei                  = data["target"]["nuclei"].size();
   alpha                       = data["alpha"];
   write_frequency_propagation = data["write_frequency_propagation"];
   write_frequency_eigin_state = data["write_frequency_eigin_state"];
@@ -60,11 +63,28 @@ void Parameters::Setup(std::string file_name)
   state_solver                = data["state_solver"];
   num_states                  = data["states"].size();
 
-  this->state_energy = std::make_unique<double[]>(num_states);
+  state_energy = std::make_unique<double[]>(num_states);
 
   for (int i = 0; i < num_states; i++)
   {
     state_energy[i] = data["states"][i]["energy"];
+  }
+
+  z        = std::make_unique<double[]>(num_nuclei);
+  location = new double*[num_nuclei];
+  for (int i = 0; i < num_nuclei; ++i)
+  {
+    z[i]        = data["target"]["nuclei"][i]["z"];
+    location[i] = new double[num_dims];
+    if (data["target"]["nuclei"][i]["location"].size() < num_dims)
+    {
+      EndRun("Nuclei " + std::to_string(i) +
+             " location has to small of a dimension");
+    }
+    for (int j = 0; j < num_dims; ++j)
+    {
+      location[i][j] = data["target"]["nuclei"][i]["location"][j];
+    }
   }
 
   /* index is used throughout code for efficiency */
@@ -72,7 +92,6 @@ void Parameters::Setup(std::string file_name)
   if (target == "He")
   {
     target_idx = 0;
-    z          = 2.0; /* He atomic number */
   }
 
   if (state_solver == "File")
@@ -129,10 +148,7 @@ void Parameters::Setup(std::string file_name)
   }
 
   /* ensure input is good */
-  if (world.rank() == 0)
-  {
-    Validate();
-  }
+  Validate();
 
   if (world.rank() == 0)
   {
@@ -145,7 +161,10 @@ Parameters::~Parameters() {}
 /* checks important input parameters for errors */
 void Parameters::Validate()
 {
-  std::cout << "Validating input\n";
+  if (world.rank() == 0)
+  {
+    std::cout << "Validating input\n";
+  }
   std::string err_str;
   bool error_found = false; /* set to true if error is found */
 
@@ -222,10 +241,10 @@ void Parameters::Validate()
     }
   }
 
-  if (num_dims > 1 and num_electrons == 2)
+  if (num_dims > 1 and propagate == 1)
   {
     error_found = true;
-    err_str += "\n2 active electron calculations only work in 1D \"";
+    err_str += "\npropagation only works in 1D \"";
   }
 
   if (num_electrons > 2)
@@ -233,12 +252,6 @@ void Parameters::Validate()
     error_found = true;
     err_str +=
         "\nOne does not simply calculate more than 2 electrons exactly \n";
-  }
-
-  if (num_electrons != 2)
-  {
-    error_found = true;
-    err_str += "\nOnly 2 electron simulation are supported currently\n";
   }
 
   /* target */
@@ -272,7 +285,10 @@ void Parameters::Validate()
   }
   else
   {
-    std::cout << "Input valid\n";
+    if (world.rank() == 0)
+    {
+      std::cout << "Input valid\n";
+    }
   }
 }
 
@@ -289,7 +305,9 @@ std::string Parameters::GetTarget() { return target; }
 
 int Parameters::GetTargetIdx() { return target_idx; }
 
-double Parameters::GetZ() { return z; }
+int Parameters::GetNumNuclei() { return num_nuclei; }
+
+double** Parameters::GetLocation() { return location; }
 
 double Parameters::GetAlpha() { return alpha; }
 

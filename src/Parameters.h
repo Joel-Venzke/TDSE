@@ -23,7 +23,8 @@ class Parameters : protected Utils
   int restart;
   std::string target;              /* type of target {"He"} */
   int target_idx;                  /* index of target */
-  double z;                        /* atomic number */
+  int num_nuclei;                  /* number of nuclei in potential */
+  double** location;               /* location of each nuclei */
   double alpha;                    /* atomic soft core */
   int write_frequency_propagation; /* how many steps between checkpoints during
                                       propagation */
@@ -44,8 +45,10 @@ class Parameters : protected Utils
   void Setup(std::string file_name);
 
  public:
-  std::unique_ptr<double[]> dim_size; /* size of nth dimension in a.u. */
-  std::unique_ptr<double[]> delta_x;  /* size of grid step */
+  std::unique_ptr<double[]> dim_size;  /* size of nth dimension in a.u. */
+  std::unique_ptr<double[]> delta_x;   /* size of grid step */
+  std::unique_ptr<double[]> delta_x_2; /* size of grid step squared */
+  std::unique_ptr<double[]> z;         /* atomic number for each nuclei */
   std::unique_ptr<double[]>
       state_energy; /* theoretical eigenvalues for each state */
   std::unique_ptr<std::string[]>
@@ -73,7 +76,8 @@ class Parameters : protected Utils
   int GetRestart();
   std::string GetTarget();
   int GetTargetIdx();
-  double GetZ();
+  int GetNumNuclei();
+  double** GetLocation();
   double GetAlpha();
   int GetWriteFrequencyPropagation();
   int GetWriteFrequencyEigenState();

@@ -5,7 +5,12 @@
     "delta_x":   0.1}],
   "num_electrons": 2,
   "restart": 0,
-  "target":  "He",
+  "target": {
+    "name":  "He",
+    "nuclei" : [
+      {"z": 2.0,
+      "location": [0.0,0.0,0.0],
+      "SAE": null}]},
   "alpha":   1.0,
   "gobbler": 0.9,
   "sigma":   2.0,
