@@ -12,6 +12,7 @@ class Wavefunction : protected Utils
   int num_electrons;          /* number of electrons in the system */
   double *dim_size;           /* sizes of each dimension in a.u. */
   double *delta_x;            /* step sizes of each dimension in a.u. */
+  double delta_v;             /* step sizes of each dimension in a.u. */
   int *num_x;                 /* number of grid points in each dimension */
   int num_psi_build;          /* number of points in psi_1 and psi_2 */
   int num_psi;                /* number of points in psi */

@@ -13,6 +13,7 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   num_electrons   = p.GetNumElectrons();
   dim_size        = p.dim_size.get();
   delta_x         = p.delta_x.get();
+  delta_v         = 0.0;
   sigma           = p.GetSigma();
   num_psi_build   = 1.0;
   write_counter   = 0;
@@ -21,9 +22,11 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   width  = new double[num_dims];
   for (int i = 0; i < num_dims; ++i)
   {
+    delta_v += delta_x[i];
     offset[i] = dim_size[i] / 2.0 * p.GetGobbler();
     width[i]  = pi / (2.0 * (dim_size[i] / 2.0 - offset[i]));
   }
+  delta_v /= (double)num_dims;
 
   /* allocate grid */
   CreateGrid();
@@ -372,14 +375,14 @@ dcomp Wavefunction::GetVal(dcomp*** data, int idx)
 }
 
 /* normalize psi_1, psi_2, and psi */
-void Wavefunction::Normalize() { Normalize(psi, delta_x[0]); }
+void Wavefunction::Normalize() { Normalize(psi, delta_v); }
 
 void Wavefunction::GobblePsi() { VecPointwiseMult(psi, psi_gobbler, psi); }
 
 /* normalizes the array provided */
-void Wavefunction::Normalize(Vec& data, double dx)
+void Wavefunction::Normalize(Vec& data, double dv)
 {
-  PetscReal total = Norm(data, dx);
+  PetscReal total = Norm(data, dv);
   VecScale(data, 1.0 / total);
 }
 
@@ -387,11 +390,11 @@ void Wavefunction::Normalize(Vec& data, double dx)
 double Wavefunction::Norm() { return Norm(psi, delta_x[0]); }
 
 /* returns norm of array using trapezoidal rule */
-double Wavefunction::Norm(Vec& data, double dx)
+double Wavefunction::Norm(Vec& data, double dv)
 {
   double total = 0;
   VecNorm(data, NORM_2, &total);
-  return total * dx;
+  return total * dv;
 }
 
 double Wavefunction::GetEnergy(Mat* h) { return GetEnergy(h, psi); }

@@ -6,4 +6,5 @@
 
 # Hamiltonian
 
-* Set up N-dim N-elec hamiltonian
+* Set up propagation
+* double check indexes

@@ -103,6 +103,7 @@ void Hamiltonian::CreateTimeIndependent()
   }
   MatAssemblyBegin(time_independent, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(time_independent, MAT_FINAL_ASSEMBLY);
+  MatView(time_independent, PETSC_VIEWER_STDOUT_SELF);
 }
 
 void Hamiltonian::CreateTimeDependent()
@@ -178,8 +179,7 @@ dcomp Hamiltonian::GetVal(int idx_i, int idx_j, bool time_dep)
 {
   std::vector<int> idx_array  = GetIndexArray(idx_i, idx_j);
   std::vector<int> diff_array = GetDiffArray(idx_array);
-  bool one_off_diagonal       = false; /* if this is an off diagonal value*/
-  bool not_off_diagonal       = false; /* if this is an off diagonal value*/
+  int sum                     = 0;
 
   if (idx_i == idx_j)
   {
@@ -188,25 +188,18 @@ dcomp Hamiltonian::GetVal(int idx_i, int idx_j, bool time_dep)
 
   for (int i = 0; i < num_dims * num_electrons; ++i)
   {
-    if (diff_array[i] == -1 || diff_array[i] == 1)
-    {
-      if (one_off_diagonal)
-      {
-        not_off_diagonal = true;
-      }
-      one_off_diagonal = true;
-    }
-    else if (diff_array[i] != 0)
-    {
-      not_off_diagonal = true;
-    }
+    sum += std::abs(diff_array[i]);
   }
 
-  if (one_off_diagonal and !not_off_diagonal)
+  if (sum == 1)
   {
     return GetOffDiagonal(idx_array, diff_array, time_dep);
   }
-
+  // for (int i = 0; i < num_dims * num_electrons; ++i)
+  // {
+  //   std::cout << idx_array[i * 2] << " " << idx_array[i * 2 + 1] << " "
+  //             << num_x[i] << "\n";
+  // }
   return dcomp(0.0, 0.0);
 }
 
@@ -246,18 +239,12 @@ dcomp Hamiltonian::GetOffDiagonal(std::vector<int>& idx_array,
 dcomp Hamiltonian::GetDiagonal(std::vector<int>& idx_array, bool time_dep)
 {
   dcomp diagonal(0.0, 0.0);
-  double diff; /* distance between x_1 and x_2 */
-  int idx_1;   /* index for psi_1 */
-  int idx_2;   /* index for psi_2 */
-  idx_1 = idx_array[0];
-  idx_2 = idx_array[2];
-  diff  = std::abs(x_value[0][idx_1] - x_value[0][idx_2]);
-
   /* kinetic term */
   diagonal += GetKineticTerm();
   /* nuclei term */
   diagonal += GetNucleiTerm(idx_array);
   /* e-e correlation */
+  // std::cout << GetKineticTerm() << " " << GetNucleiTerm(idx_array) << "\n";
   diagonal += GetElectronElectronTerm(idx_array);
   return diagonal;
 }
@@ -314,7 +301,8 @@ double Hamiltonian::SoftCoreDistance(double* location,
   double diff     = 0.0;
   for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
   {
-    diff = location[dim_idx] - x_value[dim_idx][idx_array[2 * elec_idx]];
+    diff = location[dim_idx] -
+           x_value[dim_idx][idx_array[2 * (dim_idx + elec_idx * num_dims)]];
     distance += diff * diff;
   }
   return sqrt(distance);

@@ -93,6 +93,10 @@ void Parameters::Setup(std::string file_name)
   {
     target_idx = 0;
   }
+  if (target == "H")
+  {
+    target_idx = 1;
+  }
 
   if (state_solver == "File")
   {
@@ -255,12 +259,12 @@ void Parameters::Validate()
   }
 
   /* target */
-  if (target != "He")
+  if (target != "He" and target != "H")
   {
     error_found = true;
     err_str += "\nInvalid target: \"";
     err_str += target;
-    err_str += "\" \nvalid targets are \"He\"";
+    err_str += "\" \nvalid targets are \"He\" and \"H\"";
   }
 
   /* state_solver issues*/
