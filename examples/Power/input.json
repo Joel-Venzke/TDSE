@@ -1,9 +1,11 @@
 {
   "delta_t": 0.005,
   "dimensions": [
-    {"dim_size": 20.0,
+    {"dim_size": 50.0,
     "delta_x":   0.1},
-    {"dim_size": 20.0,
+    {"dim_size": 50.0,
+    "delta_x":   0.1},
+    {"dim_size": 50.0,
     "delta_x":   0.1}],
   "num_electrons": 1,
   "restart": 0,
@@ -17,16 +19,11 @@
   "gobbler": 0.9,
   "sigma":   2.0,
   "write_frequency_propagation": 200,
-  "write_frequency_eigin_state": 4,
+  "write_frequency_eigin_state": 10,
   "state_solver":    "Power",
   "propagate": 0,
   "states": [
-    {"energy": -0.501},
-    {"energy": -0.20},
-    {"energy": -0.20},
-    {"energy": -0.20},
-    {"energy": -0.20},
-    {"energy": -0.20}],
+    {"energy": -0.5}],
   "tol":        1e-10,
   "pulses": [
     {"pulse_shape":   "sin2",

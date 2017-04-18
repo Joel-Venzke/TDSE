@@ -21,6 +21,7 @@ Copy a `build.${SYSTEM}` file that is similar to your system to `build`. Then ma
 
 #USAGE
 The code can be used by using `TDSE` in the ${TDSE_DIR}/bin/
+mpiexec -n 4 ../../bin/TDSE  -eigen_ksp_type preonly -eigen_pc_type lu -eigen_pc_factor_mat_solver_package superlu_dist -log_view -options_left
 
 
 #NOTES

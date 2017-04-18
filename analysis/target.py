@@ -14,6 +14,7 @@ energy    = target["Energy"]
 psi_time  = f["Wavefunction"]["psi_time"][:]
 x         = f["Wavefunction"]["x_value_0"][:]
 y         = f["Wavefunction"]["x_value_1"][:]
+shape         = f["Wavefunction"]["num_x"][:]
 
 
 # shape into a 3d array with time as the first axis
@@ -26,14 +27,13 @@ fig = plt.figure()
 for i, psi in enumerate(psi_value):
     print("plotting", i)
     psi = psi[:,0]+1j*psi[:,1]
-    psi.shape = (p_sqrt,p_sqrt)
-    # psi.shape = (201,501)
+    psi.shape = tuple(shape)
     # set up initial figure with color bar
     max_val   = np.max(abs(psi.real))
     min_val   = -1*max_val
     plt.clf()
     plt.imshow(psi.real, cmap='bwr', vmin=-1*max_val, vmax=max_val,
-               origin='lower', extent=[x[0],x[-1],y[0],y[-1]])
+               origin='lower', extent=[y[0],y[-1],x[0],x[-1]])
     # color bar doesn't change during the video so only set it here
     plt.colorbar()
     plt.xlabel("Electron 2 a.u.")
@@ -43,7 +43,7 @@ for i, psi in enumerate(psi_value):
 
     plt.clf()
     plt.imshow(np.abs(psi.real), cmap='viridis', origin='lower',
-        extent=[x[0],x[-1],y[0],y[-1]],
+        extent=[y[0],y[-1],x[0],x[-1]],
         norm=LogNorm(vmin=1e-10, vmax=np.abs(psi.real).max()))
     # plt.pcolor(x, x, abs(psi.real),
     #     norm=LogNorm(vmin=1e-16,

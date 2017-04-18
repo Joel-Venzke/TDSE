@@ -29,135 +29,146 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
 
 void Hamiltonian::CreateTimeIndependent()
 {
-  double dx2 = delta_x[0] * delta_x[0];        /* dx squared */
-  dcomp off_diagonal(-1.0 / (2.0 * dx2), 0.0); /* off diagonal terms */
-  dcomp diagonal(0.0, 0.0);                    /* diagonal terms */
-  dcomp val(0.0, 0.0);                         /* diagonal terms */
-  int i_val;                                   /* i index for matrix */
-  int j_val;                                   /* j index for matrix */
-  int counter;
+  double dx2 = delta_x[0] * delta_x[0]; /* dx squared */
+  dcomp val(0.0, 0.0);                  /* diagonal terms */
+  int j_val;                            /* j index for matrix */
+  int offset;                           /* offset of diagonal */
+  int start, end;                       /* start end rows */
   /* reserve right amount of memory to save storage */
   MatCreateAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, num_psi, num_psi,
-               5, NULL, 5, NULL, &time_independent);
+               num_dims * num_electrons * 2 + 1, NULL,
+               num_dims * num_electrons * 2 + 1, NULL, &time_independent);
   if (world.rank() == 0)
   {
-    for (int i = 0; i < num_psi; i++)
+    // MatGetOwnershipRange(time_independent, &start, &end);
+    // for (int i_val = start; i_val < end; i_val++)
+    for (int i_val = 0; i_val < num_psi; i_val++)
     {
-      i_val = i;
-      // counter = 0;
-      // for (int j = 0; j < num_psi; j++)
-      // {
-      //   j_val = j;
-      //   val   = GetVal(i_val, j_val, false);
-      //   if (val != dcomp(0.0, 0.0))
-      //   {
-      //     MatSetValues(time_independent, 1, &i_val, 1, &j_val, &val,
-      //                  INSERT_VALUES);
-      //     counter++;
-      //   }
-      // }
-      // std::cout << i_val << " of " << num_psi << " with counter: " << counter
-      //           << "\n";
-      if (i - num_x[0] >= 0 and i - num_x[0] < num_psi)
+      /* Diagonal element */
+      j_val = i_val;
+      val   = GetVal(i_val, j_val, false);
+      if (val != dcomp(0.0, 0.0))
       {
-        j_val        = i - num_x[0];
-        off_diagonal = GetVal(i_val, j_val, false);
-        if (off_diagonal != dcomp(0.0, 0.0))
-          MatSetValues(time_independent, 1, &i_val, 1, &j_val, &off_diagonal,
-                       INSERT_VALUES);
+        MatSetValues(time_independent, 1, &i_val, 1, &j_val, &val,
+                     INSERT_VALUES);
       }
-      if (i - 1 >= 0 and i - 1 < num_psi)
-      {
-        j_val        = i - 1;
-        off_diagonal = GetVal(i_val, j_val, false);
-        if (off_diagonal != dcomp(0.0, 0.0))
-          MatSetValues(time_independent, 1, &i_val, 1, &j_val, &off_diagonal,
-                       INSERT_VALUES);
-      }
-      if (i >= 0 and i < num_psi)
-      {
-        j_val = i;
 
-        diagonal = GetVal(i_val, j_val, false);
-        if (diagonal != dcomp(0.0, 0.0))
-          MatSetValues(time_independent, 1, &i_val, 1, &j_val, &diagonal,
-                       INSERT_VALUES);
-      }
-      if (i + 1 >= 0 and i + 1 < num_psi)
+      /* Loop over off diagonal elements */
+      for (int elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
       {
-        j_val        = i + 1;
-        off_diagonal = GetVal(i_val, j_val, false);
-        if (off_diagonal != dcomp(0.0, 0.0))
-          MatSetValues(time_independent, 1, &i_val, 1, &j_val, &off_diagonal,
-                       INSERT_VALUES);
-      }
-      if (i + num_x[0] >= 0 and i + num_x[0] < num_psi)
-      {
-        j_val        = i + num_x[0];
-        off_diagonal = GetVal(i_val, j_val, false);
-        if (off_diagonal != dcomp(0.0, 0.0))
-          MatSetValues(time_independent, 1, &i_val, 1, &j_val, &off_diagonal,
-                       INSERT_VALUES);
+        for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+        {
+          offset = GetOffset(elec_idx, dim_idx);
+          if (i_val - offset >= 0 and i_val - offset < num_psi)
+          {
+            j_val = i_val - offset;
+            val   = GetVal(i_val, j_val, false);
+            if (val != dcomp(0.0, 0.0))
+            {
+              MatSetValues(time_independent, 1, &i_val, 1, &j_val, &val,
+                           INSERT_VALUES);
+            }
+          }
+          if (i_val + offset >= 0 and i_val + offset < num_psi)
+          {
+            j_val = i_val + offset;
+            val   = GetVal(i_val, j_val, false);
+            if (val != dcomp(0.0, 0.0))
+            {
+              MatSetValues(time_independent, 1, &i_val, 1, &j_val, &val,
+                           INSERT_VALUES);
+            }
+          }
+        }
       }
     }
   }
   MatAssemblyBegin(time_independent, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(time_independent, MAT_FINAL_ASSEMBLY);
-  MatView(time_independent, PETSC_VIEWER_STDOUT_SELF);
 }
 
 void Hamiltonian::CreateTimeDependent()
 {
-  dcomp off_diagonal(0.0, 1.0 / (2.0 * delta_x[0] * c));
-  dcomp neg_off_diagonal = -1.0 * off_diagonal;
   dcomp val(0.0, 0.0); /* diagonal terms */
-  int i_val;           /* i index for matrix */
   int j_val;           /* j index for matrix */
+  int offset;          /* offset of diagonal */
+  int start, end;      /* start end rows */
 
   MatCreateAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, num_psi, num_psi,
-               4, NULL, 4, NULL, &time_dependent);
+               num_dims * num_electrons * 2, NULL, num_dims * num_electrons * 2,
+               NULL, &time_dependent);
 
-  if (world.rank() == 0)
+  MatGetOwnershipRange(time_dependent, &start, &end);
+  for (int i_val = start; i_val < end; i_val++)
   {
-    for (int i = 0; i < num_psi; i++)
+    /* Loop over off diagonal elements */
+    for (int elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
     {
-      i_val = i;
-      if (i - num_x[0] >= 0 and i - num_x[0] < num_psi)
+      for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
       {
-        j_val = i - num_x[0];
-        val   = GetVal(i_val, j_val, true);
-        if (val != dcomp(0.0, 0.0))
-          MatSetValues(time_dependent, 1, &i_val, 1, &j_val, &val,
-                       INSERT_VALUES);
-      }
-      if (i - 1 >= 0 and i - 1 < num_psi)
-      {
-        j_val = i - 1;
-        val   = GetVal(i_val, j_val, true);
-        if (val != dcomp(0.0, 0.0))
-          MatSetValues(time_dependent, 1, &i_val, 1, &j_val, &val,
-                       INSERT_VALUES);
-      }
-      if (i + 1 >= 0 and i + 1 < num_psi)
-      {
-        j_val = i + 1;
-        val   = GetVal(i_val, j_val, true);
-        if (val != dcomp(0.0, 0.0))
-          MatSetValues(time_dependent, 1, &i_val, 1, &j_val, &val,
-                       INSERT_VALUES);
-      }
-      if (i + num_x[0] >= 0 and i + num_x[0] < num_psi)
-      {
-        j_val = i + num_x[0];
-        val   = GetVal(i_val, j_val, true);
-        if (val != dcomp(0.0, 0.0))
-          MatSetValues(time_dependent, 1, &i_val, 1, &j_val, &val,
-                       INSERT_VALUES);
+        offset = 1;
+        for (int e_idx = 0; e_idx < elec_idx + 1; ++e_idx)
+        {
+          for (int d_idx = 0; d_idx < dim_idx; ++d_idx)
+          {
+            offset *= num_x[d_idx];
+          }
+        }
+        if (i_val - offset >= 0 and i_val - offset < num_psi)
+        {
+          j_val = i_val - offset;
+          val   = GetVal(i_val, j_val, true);
+          if (val != dcomp(0.0, 0.0))
+            MatSetValues(time_dependent, 1, &i_val, 1, &j_val, &val,
+                         INSERT_VALUES);
+        }
+        if (i_val + offset >= 0 and i_val + offset < num_psi)
+        {
+          j_val = i_val + offset;
+          val   = GetVal(i_val, j_val, true);
+          if (val != dcomp(0.0, 0.0))
+            MatSetValues(time_dependent, 1, &i_val, 1, &j_val, &val,
+                         INSERT_VALUES);
+        }
       }
     }
+    // if (i - num_x[0] >= 0 and i - num_x[0] < num_psi)
+    // {
+    //   j_val = i - num_x[0];
+    //   val   = GetVal(i_val, j_val, true);
+    //   if (val != dcomp(0.0, 0.0))
+    //     MatSetValues(time_dependent, 1, &i_val, 1, &j_val, &val,
+    //                  INSERT_VALUES);
+    // }
+    // if (i - 1 >= 0 and i - 1 < num_psi)
+    // {
+    //   j_val = i - 1;
+    //   val   = GetVal(i_val, j_val, true);
+    //   if (val != dcomp(0.0, 0.0))
+    //     MatSetValues(time_dependent, 1, &i_val, 1, &j_val, &val,
+    //                  INSERT_VALUES);
+    // }
+    // if (i + 1 >= 0 and i + 1 < num_psi)
+    // {
+    //   j_val = i + 1;
+    //   val   = GetVal(i_val, j_val, true);
+    //   if (val != dcomp(0.0, 0.0))
+    //     MatSetValues(time_dependent, 1, &i_val, 1, &j_val, &val,
+    //                  INSERT_VALUES);
+    // }
+    // if (i + num_x[0] >= 0 and i + num_x[0] < num_psi)
+    // {
+    //   j_val = i + num_x[0];
+    //   val   = GetVal(i_val, j_val, true);
+    //   if (val != dcomp(0.0, 0.0))
+    //     MatSetValues(time_dependent, 1, &i_val, 1, &j_val, &val,
+    //                  INSERT_VALUES);
+    // }
   }
   MatAssemblyBegin(time_dependent, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(time_dependent, MAT_FINAL_ASSEMBLY);
+  // MatView(time_dependent, PETSC_VIEWER_STDOUT_SELF);
+  // EndRun("dslk");
 }
 
 /* just allocate the total Hamiltonian */
@@ -195,11 +206,6 @@ dcomp Hamiltonian::GetVal(int idx_i, int idx_j, bool time_dep)
   {
     return GetOffDiagonal(idx_array, diff_array, time_dep);
   }
-  // for (int i = 0; i < num_dims * num_electrons; ++i)
-  // {
-  //   std::cout << idx_array[i * 2] << " " << idx_array[i * 2 + 1] << " "
-  //             << num_x[i] << "\n";
-  // }
   return dcomp(0.0, 0.0);
 }
 
@@ -320,6 +326,28 @@ double Hamiltonian::SoftCoreDistance(std::vector<int>& idx_array,
     distance += diff * diff;
   }
   return sqrt(distance);
+}
+
+int Hamiltonian::GetOffset(int elec_idx, int dim_idx)
+{
+  int offset = 1;
+  if (elec_idx > 0)
+  {
+    for (int iter = 0; iter < elec_idx; ++iter)
+    {
+      offset *= num_psi_build;
+    }
+  }
+  if (dim_idx > 0)
+  {
+    for (int iter = 0; iter < dim_idx; ++iter)
+    {
+      /* first offset is num_x[num_dims-1] and then next is
+       * num_x[num_dims-1]*num_x[num_dims-2] and so on*/
+      offset *= num_x[num_dims - 1 - iter];
+    }
+  }
+  return offset;
 }
 
 /* Returns the an array of alternating i,j components of the local matrix */

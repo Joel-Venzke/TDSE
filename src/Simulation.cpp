@@ -199,6 +199,7 @@ void Simulation::PowerMethod(int num_states, int return_state_idx)
     std::cout << "\nCalculating the lowest " << num_states
               << " eigenvectors using power method\n"
               << std::flush;
+  clock_t t;
   bool converged   = false; /* if we are converged */
   bool gram_schmit = false; /* if we using gram_schmit */
   /* write index for checkpoints, Starts at 1 to avoid writing on first
@@ -271,7 +272,7 @@ void Simulation::PowerMethod(int num_states, int return_state_idx)
        * extremely quickly */
       ModifiedGramSchmidt(states);
     }
-
+    t = clock();
     /* loop until error is small enough */
     while (!converged)
     {
@@ -310,6 +311,12 @@ void Simulation::PowerMethod(int num_states, int return_state_idx)
         // /* write a checkpoint */
         // wavefunction->Checkpoint(*h5_file, *viewer_file, i /
         // write_frequency);
+        if (world.rank() == 0)
+          std::cout << "Time: "
+                    << ((float)clock() - t) / (CLOCKS_PER_SEC * write_frequency)
+                    << "\n"
+                    << std::flush;
+        t = clock();
       }
       /* increment counter */
       i++;

@@ -45,6 +45,7 @@ class Hamiltonian : protected Utils
   dcomp GetKineticTerm();
   dcomp GetNucleiTerm(std::vector<int> &idx_array);
   dcomp GetElectronElectronTerm(std::vector<int> &idx_array);
+  int GetOffset(int elec_idx, int dim_idx);
   double SoftCoreDistance(double *location, std::vector<int> &idx_array,
                           int elec_idx);
   double SoftCoreDistance(std::vector<int> &idx_array, int elec_idx_1,

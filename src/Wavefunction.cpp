@@ -394,7 +394,8 @@ double Wavefunction::Norm(Vec& data, double dv)
 {
   double total = 0;
   VecNorm(data, NORM_2, &total);
-  return total * dv;
+  // return total * dv;
+  return total;
 }
 
 double Wavefunction::GetEnergy(Mat* h) { return GetEnergy(h, psi); }
@@ -402,10 +403,9 @@ double Wavefunction::GetEnergy(Mat* h) { return GetEnergy(h, psi); }
 double Wavefunction::GetEnergy(Mat* h, Vec& p)
 {
   PetscComplex energy;
-  VecDot(p, p, &energy);
   MatMult(*h, p, psi_tmp);
   VecDot(p, psi_tmp, &energy);
-  return energy.real() * (delta_x[0] * delta_x[0]);
+  return energy.real();
 }
 
 void Wavefunction::ResetPsi()

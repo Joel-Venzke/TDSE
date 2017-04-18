@@ -251,11 +251,18 @@ void Parameters::Validate()
     err_str += "\npropagation only works in 1D \"";
   }
 
-  if (num_electrons > 2)
+  if (num_electrons > 3)
   {
     error_found = true;
     err_str +=
-        "\nOne does not simply calculate more than 2 electrons exactly \n";
+        "\nOne does not simply calculate more than 3 electrons exactly\n";
+  }
+
+  if (num_dims > 3)
+  {
+    error_found = true;
+    err_str += "\nCome on we live in a 3D world!\n";
+    err_str += "You provided more than 3 spacial dimensions\n";
   }
 
   /* target */
