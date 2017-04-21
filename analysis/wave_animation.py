@@ -1,8 +1,8 @@
+import h5py
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib.colors import LogNorm
-import h5py
 
 # read data
 f = h5py.File("TDSE.h5","r")
@@ -62,5 +62,7 @@ im_ani = animation.ArtistAnimation(fig, ims, interval=100, repeat_delay=3000,
 
 print "Saving...this can take a while"
 #save
-im_ani.save('figs/Wavefunction.mp4', bitrate=-1, codec="libx264",
-    extra_args=['-pix_fmt', 'yuv420p'])
+im_ani.save('Wavefunction.mp4', fps=30)
+#im_ani.save('figs/Wavefunction.mp4', codec="libx264",
+#    extra_args=['--verbose-debug','-pix_fmt', 'yuv420p'])
+

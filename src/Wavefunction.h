@@ -1,73 +1,68 @@
 #pragma once
-#include <iostream>
-#include "Parameters.h"
-#include <complex>
 #include "HDF5Wrapper.h"
-#include <Eigen/Sparse>
+#include "Parameters.h"
+#include "Utils.h"
+#include "ViewWrapper.h"
 
+class Wavefunction : protected Utils
+{
+ private:
+  PetscInt ierr;
+  int num_dims;               /* number of dimensions */
+  int num_electrons;          /* number of electrons in the system */
+  double *dim_size;           /* sizes of each dimension in a.u. */
+  double *delta_x;            /* step sizes of each dimension in a.u. */
+  double delta_v;             /* step sizes of each dimension in a.u. */
+  int *num_x;                 /* number of grid points in each dimension */
+  int num_psi_build;          /* number of points in psi_1 and psi_2 */
+  int num_psi;                /* number of points in psi */
+  double **x_value;           /* location of grid point in each dimension */
+  dcomp ***psi_build;         /* used for allocating new wave functions */
+  dcomp ***psi_gobbler_build; /* used for allocating new wave functions */
+  Vec psi;                    /* wavefunction for 2 electron system */
+  Vec psi_tmp;                /* wavefunction for 2 electron system */
+  Vec psi_gobbler;            /* boundary for 2 electron system */
+  bool psi_alloc_build;
+  bool psi_alloc;
+  /* false if its not the first time checkpointing the wavefunction */
+  bool first_pass;
+  double sigma;   /* std of gaussian guess */
+  double *offset; /* distance that starts gobbler */
+  double *width;  /* width of gobbler */
 
-#define dcomp std::complex<double>
+  int write_counter;
 
-class Wavefunction {
-private:
-    const double pi = 3.1415926535897;
-    int    num_dims;        // number of dimensions
-    double *dim_size;       // sizes of each dimension in a.u.
-    double *delta_x;        // step sizes of each dimension in a.u.
-    int    *num_x;          // number of grid points in each dimension
-    int    num_psi_12;      // number of points in psi_1 and psi_2
-    int    num_psi;         // number of points in psi
-    double **x_value;       // location of grid point in each dimension
-    dcomp  *psi_1;          // wavefunction for electron 1
-    dcomp  *psi_1_gobbler;  // boundary for electron 1
-    dcomp  *psi_2;          // wavefunction for electron 2
-    dcomp  *psi_2_gobbler;  // boundary for electron 2
-    Eigen::VectorXcd  *psi; // wavefunction for 2 electron system
-    Eigen::VectorXcd  *psi_gobbler;// boundary for 2 electron system
-    // true if psi_1 and psi_2 are allocated
-    bool   psi_12_alloc;
-    bool   psi_alloc;
-    // false if its not the first time checkpointing the wavefunction
-    bool   first_pass;
-    double sigma;  // std of gaussian guess
-    double offset; // distance that starts gobbler
-    double width;  // width of gobbler
+  /* hidden from user for safety */
+  void CreateGrid();
+  void CreatePsi();
+  void CleanUp();
 
-    int    write_counter;
+  dcomp GetVal(dcomp ***data, int idx);
 
-    // hidden from user for safety
-    void create_grid();
-    void create_psi();
-    void cleanup();
-public:
-    // Constructor
-    Wavefunction(HDF5Wrapper& data_file, Parameters& p);
+ public:
+  /* Constructor */
+  Wavefunction(HDF5Wrapper &h5_file, ViewWrapper &view_file, Parameters &p);
 
-    // destructor
-    ~Wavefunction();
+  /* destructor */
+  ~Wavefunction();
 
-    // IO
-    void checkpoint(HDF5Wrapper& data_file, double time);
-    void checkpoint_psi(HDF5Wrapper& data_file,
-        H5std_string var_path, int write_idx);
+  /* IO */
+  void Checkpoint(HDF5Wrapper &data_file, ViewWrapper &view_file, double time);
+  void CheckpointPsi(ViewWrapper &view_file, int write_idx);
 
-    // tools
-    void normalize();
-    void normalize(dcomp *data, int length, double dx);
-    double norm();
-    double norm(dcomp *data, int length, double dx);
-    double get_energy(Eigen::SparseMatrix<dcomp> *h);
-    void reset_psi();
-    void gobble_psi();
+  /* tools */
+  void Normalize();
+  void Normalize(Vec &data, double dx);
+  double Norm();
+  double Norm(Vec &data, double dx);
+  double GetEnergy(Mat *h);
+  double GetEnergy(Mat *h, Vec &p);
+  void ResetPsi();
+  void GobblePsi();
 
-    int* get_num_x();
-    int  get_num_psi();
-    int  get_num_psi_12();
-    Eigen::VectorXcd* get_psi();
-    double*  get_delta_x();
-    double** get_x_value();
-
-    // error handling
-    void end_run(std::string str);
-    void end_run(std::string str, int exit_val);
+  int *GetNumX();
+  int GetNumPsi();
+  int GetNumPsiBuild();
+  Vec *GetPsi();
+  double **GetXValue();
 };

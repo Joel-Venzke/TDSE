@@ -1,358 +1,443 @@
-#include <iostream>
 #include "Wavefunction.h"
-#include <complex>
-#include <math.h>    // ceil()
 
-#define dcomp std::complex<double>
+Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
+                           Parameters& p)
+{
+  if (world.rank() == 0) std::cout << "Creating Wavefunction\n";
 
-// prints error message, kills code and returns -1
-void Wavefunction::end_run(std::string str) {
-    std::cout << "\n\nERROR: " << str << "\n" << std::flush;
-    exit(-1);
+  /* initialize values */
+  psi_alloc_build = false;
+  psi_alloc       = false;
+  first_pass      = true;
+  num_dims        = p.GetNumDims();
+  num_electrons   = p.GetNumElectrons();
+  dim_size        = p.dim_size.get();
+  delta_x         = p.delta_x.get();
+  delta_v         = 0.0;
+  sigma           = p.GetSigma();
+  num_psi_build   = 1.0;
+  write_counter   = 0;
+
+  offset = new double[num_dims];
+  width  = new double[num_dims];
+  for (int i = 0; i < num_dims; ++i)
+  {
+    delta_v += delta_x[i];
+    offset[i] = dim_size[i] / 2.0 * p.GetGobbler();
+    width[i]  = pi / (2.0 * (dim_size[i] / 2.0 - offset[i]));
+  }
+  delta_v /= (double)num_dims;
+
+  /* allocate grid */
+  CreateGrid();
+
+  /* allocate psi_1, psi_2, and psi */
+  CreatePsi();
+
+  /* write out data */
+  Checkpoint(h5_file, viewer_file, -1.0);
+
+  /* delete psi_1 and psi_2 */
+  CleanUp();
+
+  if (world.rank() == 0) std::cout << "Wavefunction created\n";
 }
 
-// prints error message, kills code and returns exit_val
-void Wavefunction::end_run(std::string str, int exit_val) {
-    std::cout << "\n\nERROR: " << str << "\n";
-    exit(exit_val);
-}
+void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
+                              double time)
+{
+  if (world.rank() == 0)
+    std::cout << "Checkpointing Wavefunction: " << write_counter << "\n"
+              << std::flush;
+  std::string str;
+  const char* tmp;
+  std::string name;
+  std::string group_name = "/Wavefunction/";
 
-Wavefunction::Wavefunction(HDF5Wrapper& data_file, Parameters & p) {
-    std::cout << "Creating Wavefunction\n";
+  /* only write out at start */
+  if (first_pass)
+  {
+    viewer_file.Open("a");
+    /* move into group */
+    viewer_file.PushGroup(group_name);
+    viewer_file.WriteObject((PetscObject)psi_gobbler);
+    /* set time step */
+    viewer_file.SetTime(write_counter);
+    /* write vector */
+    viewer_file.WriteObject((PetscObject)psi);
+    /* get object name */
+    PetscObjectGetName((PetscObject)psi, &tmp);
+    name = tmp;
+    viewer_file.WriteAttribute(name, "Attribute",
+                               "Wavefunction for the two electron system");
+    PetscObjectGetName((PetscObject)psi_gobbler, &tmp);
+    name = tmp;
+    viewer_file.WriteAttribute(name, "Attribute", "boundary potential for psi");
+    /* close file */
+    viewer_file.Close();
 
-    // initialize values
-    psi_12_alloc  = false;
-    psi_alloc     = false;
-    first_pass    = true;
-    num_dims      = p.get_num_dims();
-    dim_size      = p.get_dim_size();
-    delta_x       = p.get_delta_x();
-    sigma         = p.get_sigma();
-    num_psi_12    = 1;
-    write_counter = 0;
+    /* size of each dim */
+    h5_file.WriteObject(num_x, num_dims, "/Wavefunction/num_x",
+                        "The number of physical dimension in the simulation");
 
-    offset        = dim_size[0]/2.0*p.get_gobbler();
-    width         = pi/(2.0*(dim_size[0]/2.0-offset));
-
-    // validation
-    if (num_dims>1) {
-        end_run("Only 1D is currently supported");
+    /* write each dims x values */
+    for (int i = 0; i < num_dims; i++)
+    {
+      str = "x_value_" + std::to_string(i);
+      h5_file.WriteObject(
+          x_value[i], num_x[i], "/Wavefunction/" + str,
+          "The coordinates of the " + std::to_string(i) + " dimension");
     }
 
-    // allocate grid
-    create_grid();
+    /* write psi_1 and psi_2 if still allocated */
+    // if (psi_alloc_build)
+    // {
+    //   for (int elec_idx = 0; elec_idx < num_electrons; elec_idx++)
+    //   {
+    //     for (int dim_idx = 0; dim_idx < num_dims; dim_idx++)
+    //     {
+    //       h5_file.WriteObject(
+    //           psi_build[elec_idx][dim_idx], num_x[dim_idx],
+    //           "/Wavefunction/psi_build_dim_" + std::to_string(dim_idx),
+    //           "Guess for then nth dimension of the wavefunction. "
+    //           "Order is electron 0 the electron 1",
+    //           elec_idx);
+    //       h5_file.WriteObject(
+    //           psi_gobbler_build[elec_idx][dim_idx], num_x[dim_idx],
+    //           "/Wavefunction/psi_gobbler_build_dim_" +
+    //           std::to_string(dim_idx), "Guess for then nth dimension of the
+    //           boundary potential "
+    //           "(gobbler). Order is electron 0 the electron 1",
+    //           elec_idx);
+    //     }
+    //   }
+    // }
 
-    // allocate psi_1, psi_2, and psi
-    create_psi();
+    // /* write time and attribute */
+    h5_file.WriteObject(time, "/Wavefunction/psi_time",
+                        "Time step that psi was written to disk",
+                        write_counter);
 
-    // write out data
-    checkpoint(data_file, 0.0);
+    /* write time and attribute */
+    h5_file.WriteObject(Norm(), "/Wavefunction/norm", "Norm of wavefunction",
+                        write_counter);
 
-    // delete psi_1 and psi_2
-    cleanup();
+    /* allow for future passes to write psi only */
+    first_pass = false;
+  }
+  else
+  {
+    viewer_file.Open("a");
+    /* set time step */
+    viewer_file.SetTime(write_counter);
+    /* move into group */
+    viewer_file.PushGroup(group_name);
+    /* write vector */
+    viewer_file.WriteObject((PetscObject)psi);
+    /* close file */
+    viewer_file.Close();
 
-    std::cout << "Wavefunction created\n";
+    /* write time */
+    h5_file.WriteObject(time, "/Wavefunction/psi_time", write_counter);
+
+    h5_file.WriteObject(Norm(), "/Wavefunction/norm", write_counter);
+  }
+
+  /* keep track of what index we are on */
+  write_counter++;
 }
 
-void Wavefunction::checkpoint(HDF5Wrapper& data_file, double time) {
-    std::cout << "Checkpointing Wavefunction: " << write_counter;
-    std::cout << "\n" << std::flush;
-    std::string str;
+void Wavefunction::CheckpointPsi(ViewWrapper& viewer_file, int write_idx)
+{
+  // if (world.rank() == 0)
+  if (world.rank() == 0)
+    std::cout << "Checkpointing Wavefunction in " << viewer_file.file_name
+              << ": "
+              << " " << write_idx << "\n";
+  viewer_file.Open("a");
+  /* set time step */
+  viewer_file.SetTime(write_idx);
+  /* write vector */
+  viewer_file.WriteObject((PetscObject)psi);
+  /* close file */
+  viewer_file.Close();
+}
 
-    // only write out at start
-    if (first_pass) {
-        // size of each dim
-        data_file.write_object(num_x, num_dims, "/Wavefunction/num_x",
-            "The number of physical dimension in the simulation");
+void Wavefunction::CreateGrid()
+{
+  int center;       /* idx of the 0.0 in the grid */
+  double current_x; /* used for setting grid */
 
-        // write each dims x values
-        for (int i=0; i<num_dims; i++) {
-            str = "x_value_";
-            str += std::to_string(i);
-            data_file.write_object(x_value[i], num_x[i],
-                "/Wavefunction/"+str,
-                "The coordinates of the "+std::to_string(i)+
-                " dimension");
+  /* allocation */
+  num_x   = new int[num_dims];
+  x_value = new double*[num_dims];
+
+  /* initialize for loop */
+  num_psi_build = 1.0;
+
+  /* build grid */
+  for (int i = 0; i < num_dims; i++)
+  {
+    num_x[i] = ceil((dim_size[i]) / delta_x[i]) + 1;
+
+    /* odd number so it is even on both sides */
+    if (num_x[i] % 2 == 0) num_x[i]++;
+
+    /* size of 1d array for psi */
+    num_psi_build *= num_x[i];
+
+    /* find center of grid */
+    center = num_x[i] / 2 + 1;
+
+    /* allocate grid */
+    x_value[i] = new double[num_x[i]];
+
+    /* store center */
+    x_value[i][center] = 0.0;
+
+    /* loop over all others */
+    for (int j = center - 1; j > 0; j--)
+    {
+      /* get x value */
+      current_x = (j - center) * delta_x[i];
+
+      /* double checking index */
+      if (j - 1 < 0 || num_x[i] - j >= num_x[i])
+      {
+        EndRun("Allocation error in grid");
+      }
+
+      /* set negative side */
+      x_value[i][j - 1] = current_x;
+      /* set positive side */
+      x_value[i][num_x[i] - j] = -1 * current_x;
+    }
+  }
+}
+
+/* builds psi from 2 Gaussian psi (one for each electron) */
+void Wavefunction::CreatePsi()
+{
+  double sigma2; /* variance squared for Gaussian in psi */
+  double x;      /* x value squared */
+  double x2;     /* x value squared */
+  PetscInt low, high;
+  PetscComplex val;
+
+  sigma2 = sigma * sigma;
+
+  if (!psi_alloc_build)
+  {
+    psi_build         = new dcomp**[num_electrons];
+    psi_gobbler_build = new dcomp**[num_electrons];
+
+    for (int elec_idx = 0; elec_idx < num_electrons; elec_idx++)
+    {
+      psi_build[elec_idx]         = new dcomp*[num_dims];
+      psi_gobbler_build[elec_idx] = new dcomp*[num_dims];
+
+      for (int dim_idx = 0; dim_idx < num_dims; dim_idx++)
+      {
+        psi_build[elec_idx][dim_idx]         = new dcomp[num_x[dim_idx]];
+        psi_gobbler_build[elec_idx][dim_idx] = new dcomp[num_x[dim_idx]];
+      }
+    }
+    psi_alloc_build = true;
+  }
+
+  for (int elec_idx = 0; elec_idx < num_electrons; elec_idx++)
+  {
+    for (int dim_idx = 0; dim_idx < num_dims; dim_idx++)
+    {
+      for (int i = 0; i < num_x[dim_idx]; i++)
+      {
+        /* get x value squared */
+        x  = x_value[dim_idx][i];
+        x2 = x * x;
+
+        /* Gaussian centered around 0.0 with variation sigma */
+        psi_build[elec_idx][dim_idx][i] =
+            dcomp(exp(-1 * x2 / (2 * sigma2)), 0.0);
+        if (std::abs(x) - offset[dim_idx] > 0)
+        {
+          psi_gobbler_build[elec_idx][dim_idx][i] = std::pow(
+              cos((std::abs(x) - offset[dim_idx]) * width[dim_idx]), 1.0 / 8.0);
         }
-
-        // write psi_1 and psi_2 if still allocated
-        if (psi_12_alloc) {
-            data_file.write_object(psi_1, num_psi_12,
-                "/Wavefunction/psi_1",
-                "Wavefunction of first electron");
-            data_file.write_object(psi_2, num_psi_12,
-                "/Wavefunction/psi_2",
-                "Wavefunction of second electron");
-
-            data_file.write_object(psi_1_gobbler, num_psi_12,
-                "/Wavefunction/psi_1_gobbler",
-                "Wavefunction of second electron");
-            data_file.write_object(psi_2_gobbler, num_psi_12,
-                "/Wavefunction/psi_2_gobbler",
-                "Boundary potential of second electron");
+        else
+        {
+          psi_gobbler_build[elec_idx][dim_idx][i] = dcomp(1.0, 0.0);
         }
-
-        // write data and attribute
-        data_file.write_object(psi->data(), num_psi,
-            "/Wavefunction/psi",
-            "Wavefunction for the two electron system",
-            write_counter);
-
-        data_file.write_object(psi_gobbler->data(), num_psi,
-            "/Wavefunction/psi_gobbler",
-            "boundary potential for the two electron system");
-
-        // write time and attribute
-        data_file.write_object(time, "/Wavefunction/psi_time",
-            "Time step that psi was written to disk", write_counter);
-
-        // write time and attribute
-        data_file.write_object(norm(), "/Wavefunction/norm",
-            "Norm of wavefunction", write_counter);
-
-        // allow for future passes to write psi only
-        first_pass = false;
-    } else {
-        // write whenever this function is called
-        data_file.write_object(psi->data(), num_psi,
-            "/Wavefunction/psi", write_counter);
-
-        // write time
-        data_file.write_object(time, "/Wavefunction/psi_time",
-            write_counter);
-
-        data_file.write_object(norm(), "/Wavefunction/norm",
-            write_counter);
+      }
     }
+  }
 
-    // keep track of what index we are on
-    write_counter++;
+  /* get size of psi */
+  num_psi = 1.0;
+  for (int elec_idx = 0; elec_idx < num_electrons; elec_idx++)
+  {
+    num_psi *= num_psi_build;
+  }
+
+  /* allocate psi */
+  if (!psi_alloc)
+  {
+    VecCreate(PETSC_COMM_WORLD, &psi);
+    VecSetSizes(psi, PETSC_DECIDE, num_psi);
+    VecSetFromOptions(psi);
+    ierr = PetscObjectSetName((PetscObject)psi, "psi");
+
+    VecCreate(PETSC_COMM_WORLD, &psi_tmp);
+    VecSetSizes(psi_tmp, PETSC_DECIDE, num_psi);
+    VecSetFromOptions(psi_tmp);
+
+    VecCreate(PETSC_COMM_WORLD, &psi_gobbler);
+    VecSetSizes(psi_gobbler, PETSC_DECIDE, num_psi);
+    VecSetFromOptions(psi_gobbler);
+    ierr = PetscObjectSetName((PetscObject)psi_gobbler, "psi_gobbler");
+
+    psi_alloc = true;
+  }
+
+  VecGetOwnershipRange(psi, &low, &high);
+  for (int idx = low; idx < high; idx++)
+  {
+    /* set psi */
+    val = GetVal(psi_build, idx);
+    VecSetValues(psi, 1, &idx, &val, INSERT_VALUES);
+  }
+  VecAssemblyBegin(psi);
+  VecGetOwnershipRange(psi_gobbler, &low, &high);
+  for (int idx = low; idx < high; idx++)
+  {
+    /* set psi */
+    val = GetVal(psi_gobbler_build, idx);
+    VecSetValues(psi_gobbler, 1, &idx, &val, INSERT_VALUES);
+  }
+  VecAssemblyBegin(psi_gobbler);
+  VecAssemblyEnd(psi);
+  /* normalize all psi */
+  Normalize();
+
+  VecAssemblyEnd(psi_gobbler);
 }
 
-void Wavefunction::checkpoint_psi(HDF5Wrapper& data_file,
-    H5std_string var_path, int write_idx) {
-
-    std::cout << "Checkpointing Wavefunction: " << var_path;
-    std::cout << " " << write_idx << "\n";
-
-    data_file.write_object(psi->data(), num_psi, var_path, write_idx);
-}
-
-void Wavefunction::create_grid() {
-    int    center;    // idx of the 0.0 in the grid
-    double current_x; // used for setting grid
-
-    // allocation
-    num_x    = new int[num_dims];
-    x_value  = new double*[num_dims];
-
-    // initialize for loop
-    num_psi_12  = 1.0;
-
-    // build grid
-    for (int i=0; i<num_dims; i++) {
-        num_x[i] =  ceil((dim_size[i])/delta_x[i])+1;
-
-        // odd number so it is even on both sides
-        if (num_x[i]%2==0) num_x[i]++;
-
-        // size of 1d array for psi
-        num_psi_12  *= num_x[i];
-
-        // find center of grid
-        center = num_x[i]/2+1;
-
-        // allocate grid
-        x_value[i] = new double[num_x[i]];
-
-        // store center
-        x_value[i][center] = 0.0;
-
-        // loop over all others
-        for (int j=center-1; j>0; j--) {
-            // get x value
-            current_x = (j-center)*delta_x[i];
-
-            // double checking index
-            if (j-1<0 || num_x[i]-j>=num_x[i]) {
-                end_run("Allocation error in grid");
-            }
-
-            // set negative side
-            x_value[i][j-1] = current_x;
-            // set positive side
-            x_value[i][num_x[i]-j] = -1*current_x;
-        }
+void Wavefunction::CleanUp()
+{
+  if (psi_alloc_build)
+  {
+    for (int elec_idx = 0; elec_idx < num_electrons; elec_idx++)
+    {
+      for (int dim_idx = 0; dim_idx < num_dims; dim_idx++)
+      {
+        delete psi_build[elec_idx][dim_idx];
+        delete psi_gobbler_build[elec_idx][dim_idx];
+      }
+      delete[] psi_build[elec_idx];
+      delete[] psi_gobbler_build[elec_idx];
     }
+    delete[] psi_build;
+    delete[] psi_gobbler_build;
+    psi_alloc_build = false;
+  }
 }
 
-// builds psi from 2 Gaussian psi (one for each electron)
-void Wavefunction::create_psi() {
-    double sigma2;    // variance squared for Gaussian in psi
-    double x;        // x value squared
-    double x2;        // x value squared
-
-    // allocate data
-    if (! psi_12_alloc) {
-        psi_1 = new dcomp[num_psi_12];
-        psi_2 = new dcomp[num_psi_12];
-        psi_1_gobbler = new dcomp[num_psi_12];
-        psi_2_gobbler = new dcomp[num_psi_12];
-        psi_12_alloc = true;
-
+dcomp Wavefunction::GetVal(dcomp*** data, int idx)
+{
+  /* Value to be returned */
+  dcomp ret_val(1.0, 0.0);
+  /* Total number of dims for total system*/
+  int total_dims = num_electrons * num_dims;
+  /* size of each dim */
+  std::vector<int> num(total_dims);
+  /* idx for return */
+  std::vector<int> idx_array(total_dims);
+  for (int elec_idx = 0; elec_idx < num_electrons; elec_idx++)
+  {
+    for (int dim_idx = 0; dim_idx < num_dims; dim_idx++)
+    {
+      num[elec_idx * num_dims + dim_idx] = num_x[dim_idx];
     }
-
-    sigma2 = sigma*sigma;
-    // TODO: needs to be changed for more than one dim
-    for (int i=0; i<num_psi_12; i++) {
-        // get x value squared
-        x  = x_value[0][i];
-        x2 = x*x;
-
-        // Gaussian centered around 0.0 with variation sigma
-        psi_1[i] = dcomp(exp(-1*x2/(2*sigma2)),0.0);
-        psi_2[i] = dcomp(exp(-1*x2/(2*sigma2)),0.0);
-
-        if (std::abs(x)-offset>0) {
-            psi_1_gobbler[i] =
-                std::pow(cos((std::abs(x)-offset)*width),1.0/8.0);
-            psi_2_gobbler[i] =
-                std::pow(cos((std::abs(x)-offset)*width),1.0/8.0);
-        } else {
-            psi_1_gobbler[i] = dcomp(1.0,0.0);
-            psi_2_gobbler[i] = dcomp(1.0,0.0);
-        }
+  }
+  for (int i = total_dims - 1; i >= 0; --i)
+  {
+    idx_array[i] = idx % num[i];
+    idx /= num[i];
+  }
+  for (int elec_idx = 0; elec_idx < num_electrons; elec_idx++)
+  {
+    for (int dim_idx = 0; dim_idx < num_dims; dim_idx++)
+    {
+      ret_val *=
+          data[elec_idx][dim_idx][idx_array[elec_idx * num_dims + dim_idx]];
     }
-
-    // get size of psi
-    num_psi = num_psi_12*num_psi_12;
-
-    // allocate psi
-    if (! psi_alloc) {
-        psi         = new Eigen::VectorXcd(num_psi);
-        psi_gobbler = new Eigen::VectorXcd(num_psi);
-        psi_alloc = true;
-    }
-
-    // tensor product of psi_1 and psi_2
-    for (int i=0; i<num_psi_12; i++) { // e_2 dim
-        for (int j=0; j<num_psi_12; j++) { // e_1 dim
-            psi[0](i*num_psi_12+j) = psi_1[i]*psi_2[j];
-
-            psi_gobbler[0](i*num_psi_12+j) =
-                psi_1_gobbler[i]*psi_2_gobbler[j];
-        }
-    }
-
-    // normalize all psi
-    normalize();
+  }
+  return ret_val;
 }
 
-// delete psi_1 and psi_2 since they are not used later
-void Wavefunction::cleanup() {
-    delete psi_1;
-    delete psi_1_gobbler;
-    delete psi_2;
-    delete psi_2_gobbler;
-    psi_12_alloc = false;
+/* normalize psi_1, psi_2, and psi */
+void Wavefunction::Normalize() { Normalize(psi, delta_v); }
+
+void Wavefunction::GobblePsi() { VecPointwiseMult(psi, psi_gobbler, psi); }
+
+/* normalizes the array provided */
+void Wavefunction::Normalize(Vec& data, double dv)
+{
+  PetscReal total = Norm(data, dv);
+  VecScale(data, 1.0 / total);
 }
 
-// normalize psi_1, psi_2, and psi
-void Wavefunction::normalize() {
-    if (psi_12_alloc) {
-        normalize(psi_1, num_psi_12, delta_x[0]);
-        normalize(psi_2, num_psi_12, delta_x[0]);
-    }
-    normalize(psi->data(), num_psi, delta_x[0]);
+/* returns norm of psi */
+double Wavefunction::Norm() { return Norm(psi, delta_x[0]); }
+
+/* returns norm of array using trapezoidal rule */
+double Wavefunction::Norm(Vec& data, double dv)
+{
+  double total = 0;
+  VecNorm(data, NORM_2, &total);
+  // return total * dv;
+  return total;
 }
 
-void Wavefunction::gobble_psi() {
-    for (int i=0; i<num_psi; i++) {
-        psi[0][i] *= psi_gobbler[0][i];
-    }
+double Wavefunction::GetEnergy(Mat* h) { return GetEnergy(h, psi); }
+
+double Wavefunction::GetEnergy(Mat* h, Vec& p)
+{
+  PetscComplex energy;
+  MatMult(*h, p, psi_tmp);
+  VecDot(p, psi_tmp, &energy);
+  return energy.real();
 }
 
-// normalizes the array provided
-void Wavefunction::normalize(dcomp *data, int length, double dx) {
-    double total = norm(data, length, dx);
-
-    // square root to get normalization factor
-    total = sqrt(total);
-
-    // normalize data
-    for (int i=0; i<length; i++) {
-        data[i].real(data[i].real()/total);
-        data[i].imag(data[i].imag()/total);
-    }
+void Wavefunction::ResetPsi()
+{
+  CreatePsi();
+  CleanUp();
 }
 
-// returns norm of psi
-double Wavefunction::norm() {
-    return norm(psi->data(), num_psi, delta_x[0]);
-}
+int* Wavefunction::GetNumX() { return num_x; }
 
-// returns norm of array using trapezoidal rule
-double Wavefunction::norm(dcomp *data, int length, double dx) {
-    double total = 0;
-    // lower end
-    total += (std::conj(data[0])*data[0]).real();
-    // higher end
-    total += (std::conj(data[length-1])*data[length-1]).real();
-    // middle points
-    for (int i=1; i<length-1; i++) {
-        total += 2.0*(std::conj(data[i])*data[i]).real();
-    }
-    total  *= dx/2.0;
-    return total;
-}
+int Wavefunction::GetNumPsi() { return num_psi; }
 
-double Wavefunction::get_energy(Eigen::SparseMatrix<dcomp> *h){
-    return (psi->dot(h[0]*psi[0])/psi->squaredNorm()).real();
-}
+int Wavefunction::GetNumPsiBuild() { return num_psi_build; }
 
-void Wavefunction::reset_psi() {
-    create_psi();
-    cleanup();
-}
+Vec* Wavefunction::GetPsi() { return &psi; }
 
-int* Wavefunction::get_num_x() {
-    return num_x;
-}
+double** Wavefunction::GetXValue() { return x_value; }
 
-int Wavefunction::get_num_psi() {
-    return num_psi;
-}
-
-int Wavefunction::get_num_psi_12() {
-    return num_psi_12;
-}
-
-Eigen::VectorXcd* Wavefunction::get_psi() {
-    return psi;
-}
-
-double*  Wavefunction::get_delta_x() {
-    return delta_x;
-}
-
-double** Wavefunction::get_x_value() {
-    return x_value;
-}
-
-// destructor
-Wavefunction::~Wavefunction(){
-    std::cout << "Deleting Wavefunction\n";
-    // do not delete dim_size or delta_x
-    // since they belong to the Parameter class
-    // and will be freed there
-    delete num_x;
-    for (int i=0; i<num_dims; i++) {
-        delete x_value[i];
-    }
-    delete[] x_value;
-    if (psi_12_alloc) {
-        cleanup();
-    }
-    delete psi;
-    delete psi_gobbler;
+/* destructor */
+Wavefunction::~Wavefunction()
+{
+  if (world.rank() == 0) std::cout << "Deleting Wavefunction\n";
+  /* do not delete dim_size or delta_x since they belong to the Parameter
+   * class and will be freed there*/
+  delete num_x;
+  for (int i = 0; i < num_dims; i++)
+  {
+    delete x_value[i];
+  }
+  delete[] x_value;
+  CleanUp();
+  VecDestroy(&psi);
+  VecDestroy(&psi_tmp);
+  VecDestroy(&psi_gobbler);
 }

@@ -36,6 +36,7 @@ TDSE
 Makefile
 config.status
 config.log
+config.h.in
 autom4te.cache/requests
 build
 
@@ -67,6 +68,9 @@ aclocal.m4
 
 # mac things
 *.DS_Store
+
+# vim
+*~
 
 # plots and such
 figs/
