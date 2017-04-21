@@ -1,348 +1,407 @@
-#include <iostream>
 #include "Simulation.h"
-#include <Eigen/Sparse>
-#include <Eigen/SparseLU>
-#include <time.h>
 
-Simulation::Simulation(Hamiltonian &h, Wavefunction &w,
-    Pulse &pulse_in, HDF5Wrapper& data_file, Parameters &p) {
-    std::cout << "Creating Simulation\n";
-    hamiltonian  = &h;
-    wavefunction = &w;
-    pulse        = &pulse_in;
-    file         = &data_file;
-    parameters   = &p;
-    time         = pulse_in.get_time();
-    time_length  = pulse_in.get_max_pulse_length();
+Simulation::Simulation(Hamiltonian &h, Wavefunction &w, Pulse &pulse_in,
+                       HDF5Wrapper &h_file, ViewWrapper &v_file, Parameters &p)
+{
+  if (world.rank() == 0) std::cout << "Creating Simulation\n";
+  hamiltonian  = &h;
+  wavefunction = &w;
+  pulse        = &pulse_in;
+  h5_file      = &h_file;
+  viewer_file  = &v_file;
+  parameters   = &p;
+  time         = pulse_in.GetTime();
+  time_length  = pulse_in.GetMaxPulseLength();
 
-    create_idenity();
-
-    std::cout << "Simulation Created\n";
+  if (world.rank() == 0) std::cout << "Simulation Created\n";
 }
 
-void Simulation::propagate() {
-    std::cout << "\nPropagating in time\n";
-    clock_t t;
-    // if we are converged
-    bool converged           = false;
-    // error in norm
-    double error             = 1.0;
-    // iteration
-    int i                    = 1;
-    // size of psi
-    int num_psi              = wavefunction->get_num_psi();
-    // steps in each direction
-    double *dx               = wavefunction->get_delta_x();
-    // how often do we write data
-    int write_frequency      = parameters->get_write_frequency();
-    // pointer to actual psi in wavefunction object
-    psi                      = wavefunction->get_psi();
-    Eigen::VectorXcd psi_old = *psi;
-    // time step
-    double dt                = parameters->get_delta_t();
-    // factor = i*(-i*dx/2)
-    dcomp  factor            = dcomp(0.0,1.0)*dcomp(dt/2.0,0.0);
-    // solver for Ax=b
-    Eigen::SparseLU<Eigen::SparseMatrix<dcomp>> solver;
-    // time independent Hamiltonian
-    Eigen::SparseMatrix<dcomp>* h =
-        hamiltonian->get_time_independent();
-    // left matrix in Ax=Cb it would be A
-    Eigen::SparseMatrix<dcomp> left    = *h;
-    // right matrix in Ax=Cb it would be C
-    Eigen::SparseMatrix<dcomp> right   = left;
+void Simulation::Propagate()
+{
+  if (world.rank() == 0) std::cout << "\nPropagating in time\n";
+  clock_t t;
+  /* if we are converged */
+  bool converged = false;
+  /* error in norm */
+  double norm = 1.0;
+  /* iteration */
+  int i = 1;
+  /* steps in each direction */
+  double *delta_x = parameters->delta_x.get();
+  /* how often do we write data */
+  int write_frequency = parameters->GetWriteFrequencyPropagation();
+  /* pointer to actual psi in wavefunction object */
+  psi = wavefunction->GetPsi();
+  Vec psi_right;
+  Vec psi_old;
+  /* Allocate space for psi_old */
+  VecDuplicate(*psi, &psi_right);
+  VecDuplicate(*psi, &psi_old);
+  /* time step */
+  double delta_t = parameters->GetDeltaT();
+  /* factor = i*(-i*dt/2) */
+  dcomp factor = dcomp(0.0, 1.0) * dcomp(delta_t / 2.0, 0.0);
+  KSP ksp; /* solver for Ax=b */
+  /* Create the solver */
+  KSPCreate(PETSC_COMM_WORLD, &ksp);
+  KSPSetOptionsPrefix(ksp, "prop_");
+  KSPConvergedReason reason; /* reason for convergence check */
+  /* time independent Hamiltonian */
+  Mat *h = hamiltonian->GetTimeIndependent();
+  /* left matrix in Ax=Cb it would be A */
+  Mat left;  /* matrix on left side of Ax=b */
+  Mat right; /* matrix on left side of Ax=Cb */
+  MatDuplicate(*(hamiltonian->GetTimeIndependent()), MAT_DO_NOT_COPY_VALUES,
+               &left);
+  MatDuplicate(*(hamiltonian->GetTimeIndependent()), MAT_DO_NOT_COPY_VALUES,
+               &right);
 
-    std::cout << "Total writes: " << time_length/write_frequency;
-    std::cout << "\nSetting up solver\n" << std::flush;
-    solver.analyzePattern(left);
-    std::cout << "Starting propagation\n" << std::flush;
-    for (i=1; i<time_length; i++) {
-        std::cout << "Iteration: " << i << " of ";
-        std::cout << time_length  << "\n";
+  if (world.rank() == 0)
+    std::cout << "Total writes: " << time_length / write_frequency
+              << "\nStarting propagation\n"
+              << std::flush;
+
+  /* Checkpoint file before propagation starts */
+  wavefunction->Checkpoint(*h5_file, *viewer_file, 0.0);
+  t = clock();
+  for (i = 1; i < time_length; i++)
+  {
+    h = hamiltonian->GetTotalHamiltonian(i);
+
+    MatCopy(*h, left, SAME_NONZERO_PATTERN);
+    MatScale(left, factor);
+    MatShift(left, 1.0);
+
+    MatCopy(*h, right, SAME_NONZERO_PATTERN);
+    MatScale(right, -1.0 * factor);
+    MatShift(right, 1.0);
+
+    /* Get psi_right side */
+    MatMult(right, *psi, psi_right);
+
+    KSPSetOperators(ksp, left, left);
+    KSPSetTolerances(ksp, 1.e-15, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
+    KSPSetFromOptions(ksp);
+    /* Solve Ax=b */
+    KSPSolve(ksp, psi_right, *psi);
+
+    /* Check for Divergence*/
+    KSPGetConvergedReason(ksp, &reason);
+    if (world.rank() == 0)
+    {
+      if (reason < 0)
+      {
+        EndRun("Divergence!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+      }
+    }
+
+    wavefunction->GobblePsi();
+
+    /* only checkpoint so often */
+    if (i % write_frequency == 0)
+    {
+      norm = wavefunction->Norm();
+      if (world.rank() == 0)
+        std::cout << "\nIteration: " << i << "\nPulse ends: " << time_length
+                  << "\n"
+                  << "Average time for time-step: "
+                  << ((float)clock() - t) / (CLOCKS_PER_SEC * write_frequency)
+                  << "\nNorm: " << norm << "\n"
+                  << std::flush;
+      /* write a checkpoint */
+      wavefunction->Checkpoint(*h5_file, *viewer_file, time[i]);
+      t = clock();
+    }
+  }
+
+  if (world.rank() == 0)
+    std::cout << "\nPropagating until norm stops changing\n";
+
+  h = hamiltonian->GetTimeIndependent();
+
+  MatCopy(*h, left, SAME_NONZERO_PATTERN);
+  MatScale(left, factor);
+  MatShift(left, 1.0);
+
+  MatCopy(*h, right, SAME_NONZERO_PATTERN);
+  MatScale(right, -1.0 * factor);
+  MatShift(right, 1.0);
+
+  KSPSetOperators(ksp, left, left);
+  KSPSetTolerances(ksp, 1.e-15, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
+  KSPSetFromOptions(ksp);
+
+  // while (!converged)
+  // {
+  // for (i = time_length; i < time_length + 3000; i++)
+  // {
+  //   /* copy old state for convergence */
+  //   VecCopy(*psi, psi_old);
+  //   /* Get psi_right side */
+  //   MatMult(right, *psi, psi_right);
+
+  //   /* Solve Ax=b */
+  //   KSPSolve(ksp, psi_right, *psi);
+
+  //   /* Check for Divergence*/
+  //   KSPGetConvergedReason(ksp, &reason);
+  //   if (world.rank() == 0)
+  //   {
+  //     if (reason < 0)
+  //     {
+  //       EndRun("Divergence!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+  //     }
+  //   }
+
+  //   wavefunction->GobblePsi();
+
+  //   /* only checkpoint so often */
+  //   if (i % write_frequency == 0)
+  //   {
+  //     norm = wavefunction->Norm();
+  //     if (world.rank() == 0)
+  //       std::cout << "\nIteration: " << i << "\nPulse ended: " << time_length
+  //                 << "\n"
+  //                 << "Average time for time-step: "
+  //                 << ((float)clock() - t) / (CLOCKS_PER_SEC *
+  //                 write_frequency)
+  //                 << "\nNorm: " << norm << "\n"
+  //                 << std::flush;
+
+  //     norm -= wavefunction->Norm(psi_old, dx[0]);
+  //     norm = std::abs(norm);
+  //     if (world.rank() == 0) std::cout << "Norm error: " << norm << "\n";
+  //     if (norm < 1e-14)
+  //     {
+  //       converged = true;
+  //       if (world.rank() == 0) std::cout << "Converged!!!";
+  //     }
+  //     /* write a checkpoint */
+  //     wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
+  //     t = clock();
+  //   }
+  // }
+
+  wavefunction->Checkpoint(*h5_file, *viewer_file, time[time_length - 1]);
+
+  VecDestroy(&psi_right);
+  VecDestroy(&psi_old);
+  MatDestroy(&left);
+  MatDestroy(&right);
+  KSPDestroy(&ksp);
+}
+
+void Simulation::PowerMethod(int num_states, int return_state_idx)
+{
+  if (world.rank() == 0)
+    std::cout << "\nCalculating the lowest " << num_states
+              << " eigenvectors using power method\n"
+              << std::flush;
+  clock_t t;
+  bool converged   = false; /* if we are converged */
+  bool gram_schmit = false; /* if we using gram_schmit */
+  /* write index for checkpoints, Starts at 1 to avoid writing on first
+   * iteration*/
+  int i = 1;
+  int write_frequency =
+      parameters
+          ->GetWriteFrequencyEigenState(); /* how often do we write data */
+  double *state_energy = parameters->state_energy.get(); /* energy guesses */
+  double energy; /* stores energy for IO */
+  double norm;   /* stores norm for IO */
+
+  /* Files for */
+  ViewWrapper v_states_file(parameters->GetTarget() + ".h5"); /* PETSC viewer */
+  /* create file so that the format works with PETSC */
+  v_states_file.Open();
+  v_states_file.Close();
+  HDF5Wrapper h_states_file(parameters->GetTarget() + ".h5"); /* HDF5 viewer */
+
+  std::vector<Vec> states; /* vector of currently converged states */
+  Vec psi_old;             /* keeps track of last psi */
+  Vec psi_tmp;             /* Used to place copies in states */
+  Mat left;                /* matrix on left side of Ax=b */
+
+  KSP ksp;                   /* solver for Ax=b */
+  KSPConvergedReason reason; /* reason for convergence check */
+
+  /* allocate mem for left */
+  MatDuplicate(*(hamiltonian->GetTimeIndependent()), MAT_DO_NOT_COPY_VALUES,
+               &left);
+
+  /* Create the solver */
+  KSPCreate(PETSC_COMM_WORLD, &ksp);
+  KSPSetOptionsPrefix(ksp, "eigen_");
+
+  /* pointer to actual psi in wavefunction object */
+  psi = wavefunction->GetPsi();
+
+  /* Allocate space for psi_old */
+  VecDuplicate(*psi, &psi_old);
+
+  /* loop over number of states wanted */
+  for (int iter = 0; iter < num_states; iter++)
+  {
+    /* Get Hamiltonian */
+    MatCopy(*(hamiltonian->GetTimeIndependent()), left, SAME_NONZERO_PATTERN);
+    /* Shift by eigen value */
+    MatShift(left, -1.0 * state_energy[iter]);
+
+    /* Tell user the guess */
+    if (world.rank() == 0)
+      std::cout << "Looking for state with Energy Guess: " << state_energy[iter]
+                << "\n";
+
+    /* Put matrix in solver
+     * do this outside the loop since left never changes */
+    KSPSetOperators(ksp, left, left);
+    /* Allow command line options */
+    KSPSetFromOptions(ksp);
+
+    /* Do we need to use gram schmidt */
+    if (iter > 0 and
+        std::abs(state_energy[iter] - state_energy[iter - 1]) < 1e-10)
+    {
+      if (world.rank() == 0) std::cout << "Starting Gram Schmit\n";
+
+      gram_schmit = true;
+
+      /* This is needed because the Power method converges
+       * extremely quickly */
+      ModifiedGramSchmidt(states);
+    }
+    t = clock();
+    /* loop until error is small enough */
+    while (!converged)
+    {
+      /* copy old state for convergence */
+      VecCopy(*psi, psi_old);
+
+      /* Solve Ax=b */
+      KSPSolve(ksp, psi_old, *psi);
+
+      /* Check for Divergence*/
+      KSPGetConvergedReason(ksp, &reason);
+      if (world.rank() == 0)
+      {
+        if (reason < 0)
+        {
+          EndRun("Divergence!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+        }
+      }
+
+      /* used to get higher states */
+      if (gram_schmit) ModifiedGramSchmidt(states);
+
+      /* Re normalize wave function */
+      wavefunction->Normalize();
+
+      /* only checkpoint so often */
+      if (i % write_frequency == 0)
+      {
+        /* check convergence criteria */
+        converged = CheckConvergance(psi[0], psi_old, parameters->GetTol());
+        /* save this psi to ${target}.h5 */
+        energy = wavefunction->GetEnergy(hamiltonian->GetTimeIndependent());
+        if (world.rank() == 0)
+          std::cout << "Energy: " << energy << "\n" << std::flush;
+        // /* write a checkpoint */
+        // wavefunction->Checkpoint(*h5_file, *viewer_file, i /
+        // write_frequency);
+        if (world.rank() == 0)
+          std::cout << "Time: "
+                    << ((float)clock() - t) / (CLOCKS_PER_SEC * write_frequency)
+                    << "\n"
+                    << std::flush;
         t = clock();
-        h = hamiltonian->get_total_hamiltonian(i);
-        left    = (idenity[0]+factor*h[0]);
-        left.makeCompressed();
-        right   = (idenity[0]-factor*h[0]);
-        right.makeCompressed();
-        solver.factorize(left);
-        psi[0] = solver.solve(right*psi[0]);
-
-        wavefunction->gobble_psi();
-
-        // only checkpoint so often
-        if (i%write_frequency==0) {
-            std::cout << "\nNorm: " << wavefunction->norm() << "\n";
-            // write a checkpoint
-            wavefunction->checkpoint(*file, time[i]);
-        }
-        std::cout << "Time-step: ";
-        std::cout << ((float)clock() - t)/CLOCKS_PER_SEC << "\n";
-        std::cout << std::flush;
+      }
+      /* increment counter */
+      i++;
     }
 
-    std::cout << "Propagating until norm stops changing\n";
+    /* make sure all states are orthonormal for mgs */
+    VecNormalize(*psi, &norm);
+    VecDuplicate(*psi, &psi_tmp);
+    VecCopy(*psi, psi_tmp);
+    states.push_back(psi_tmp);
 
-    h = hamiltonian->get_time_independent();
-    left    = (idenity[0]+factor*h[0]);
-    left.makeCompressed();
-    right   = (idenity[0]-factor*h[0]);
-    right.makeCompressed();
-    solver.factorize(left);
+    /* save this psi to ${target}.h5 */
+    CheckpointState(h_states_file, v_states_file, iter);
 
-    while (!converged) {
-        // copy old state for convergence
-        psi_old = psi[0];
-        psi[0] = solver.solve(right*psi_old);
+    /* new Gaussian guess */
+    wavefunction->ResetPsi();
 
-        wavefunction->gobble_psi();
-        if (i%write_frequency==0) {
-            wavefunction->checkpoint(*file, time[i]);
-            error = wavefunction->norm();
-            std::cout << "Norm: " << error << "\n";
-            error -= wavefunction->norm(psi_old.data(),
-                        num_psi, dx[0]);
-            error = std::abs(error);
-            std::cout << "Norm error: " << error << "\n";
-            if (error<1e-14) {
-                converged = true;
-            }
-            // write a checkpoint
-            wavefunction->checkpoint(*file, i*dx[0]);
-        }
-        i++;
-    }
+    /* reset for next state */
+    converged = false;
+    if (world.rank() == 0) std::cout << "\n";
+  }
 
+  /* set psi to the return state */
+  VecCopy(states[return_state_idx], *psi);
+  wavefunction->Normalize();
+
+  /* Clean up after ourselves */
+  /* DO NOT delete psi_tmp since it is the same as states[states.size()-1] which
+   * is being deleted already */
+  KSPDestroy(&ksp);
+  MatDestroy(&left);
+  VecDestroy(&psi_old);
+  for (int i = 0; i < states.size(); ++i)
+  {
+    VecDestroy(&states[i]);
+  }
 }
 
-void Simulation::imag_time_prop(int num_states) {
-    std::cout << "\nCalculating the lowest "<< num_states;
-    std::cout <<" eigenvectors using ITP\n" << std::flush;
+bool Simulation::CheckConvergance(Vec &psi_1, Vec &psi_2, double tol)
+{
+  Mat *h              = hamiltonian->GetTimeIndependent();
+  double wave_error   = 0.0;
+  double wave_error_2 = 0.0;
+  double energy_error = 0.0;
 
-    clock_t t;
-    // if we are converged
-    bool converged           = false;
-    // write index for checkpoints
-    int i                    = 1;
-    // how often do we write data
-    int write_frequency      = parameters->get_write_frequency();
-    // pointer to actual psi in wavefunction object
-    psi                      = wavefunction->get_psi();
-    // keeps track of last psi
-    Eigen::VectorXcd psi_old = *psi;
-    // vector of currently converged states
-    std::vector<Eigen::VectorXcd> states;
-    // time step
-    double dt                = parameters->get_delta_t();
-    // factor = i*(-i*dx/2)
-    dcomp  factor            = dcomp(dt/2,0.0);
-    // solver for Ax=b
-    Eigen::SparseLU<Eigen::SparseMatrix<dcomp>> solver;
-    // time independent Hamiltonian
-    Eigen::SparseMatrix<dcomp>* h =
-        hamiltonian->get_time_independent();
-    // left matrix in Ax=Cb it would be A
-    Eigen::SparseMatrix<dcomp> left    = *h;
-    // right matrix in Ax=Cb it would be C
-    Eigen::SparseMatrix<dcomp> right   = left;
-    // file for converged states
-    HDF5Wrapper states_file(parameters->get_target()+".h5");
+  energy_error =
+      wavefunction->GetEnergy(h, psi_1) - wavefunction->GetEnergy(h, psi_2);
 
-    // left side of crank-nicolson
-    left    = (idenity[0]+factor*left);
-    left.makeCompressed();
-    // right side of crank-nicolson
-    right   = (idenity[0]-factor*right);
-    right.makeCompressed();
+  /* psi_2 - psi_1 */
+  VecAXPY(psi_2, -1.0, psi_1);
+  VecNorm(psi_2, NORM_2, &wave_error);
 
-    // do this outside the loop since left never changes
-    solver.compute(left);
+  /* we want psi_2+psi_1 so we need to add 2*psi_1 */
+  VecAXPY(psi_2, 2.0, psi_1);
+  VecNorm(psi_2, NORM_2, &wave_error_2);
 
-    // loop over number of states wanted
-    for (int iter=0; iter<num_states; iter++) {
-        modified_gram_schmidt(states);
-        t = clock();
-        while (!converged) {
-            // copy old state for convergence
-            psi_old = psi[0];
-            psi[0] = solver.solve(right*psi_old);
+  if (wave_error_2 < wave_error) wave_error = wave_error_2;
 
-            // used to get higher states
-            modified_gram_schmidt(states);
+  if (world.rank() == 0)
+    std::cout << "Wavefunction Error: " << wave_error
+              << "\nEnergy Error: " << energy_error << "\nTolerance: " << tol
+              << "\n"
+              << std::flush;
 
-            // normalize with respect to space (include dt)
-            wavefunction->gobble_psi();
-            wavefunction->normalize();
-
-            // only checkpoint so often
-            if (i%write_frequency==0) {
-                // check convergence criteria
-                converged = check_convergance(psi[0],psi_old,
-                    parameters->get_tol());
-                // save this psi to ${target}.h5
-                std::cout << "Energy: ";
-                std::cout << wavefunction->get_energy(h) << "\n";
-                // write a checkpoint
-                // wavefunction->checkpoint(*file,i/write_frequency);
-            }
-            // increment counter
-            i++;
-        }
-	    std::cout << "Time: " << ((float)clock() - t)/CLOCKS_PER_SEC << "\n";
-        // make sure all states are orthonormal for mgs
-        states.push_back(psi[0]/psi->norm());
-        // save this psi to ${target}.h5
-        wavefunction->checkpoint_psi(states_file,
-            "/States",iter);
-        // new Gaussian guess
-        wavefunction->reset_psi();
-        // reset for next state
-        converged = false;
-        std::cout << "\n";
-    }
-    psi[0] = states[states.size()-1];
-    wavefunction->normalize();
+  return wave_error < tol and std::abs(energy_error) < tol;
 }
 
-void Simulation::power_method(int num_states) {
-    std::cout << "\nCalculating the lowest "<< num_states;
-    std::cout <<" eigenvectors using power method\n" << std::flush;
-    clock_t t;
-    // if we are converged
-    bool converged           = false;
-    bool gram_schmit         = false;
-    // write index for checkpoints
-    int i                    = 1;
-    // how often do we write data
-    int write_frequency      = parameters->get_write_frequency();
-    // pointer to actual psi in wavefunction object
-    psi                      = wavefunction->get_psi();
-    // keeps track of last psi
-    Eigen::VectorXcd psi_old = *psi;
-    // vector of currently converged states
-    std::vector<Eigen::VectorXcd> states;
-    // energy guesses
-    double* state_energy     = parameters->get_state_energy();
-    // solver for Ax=b
-    Eigen::SparseLU<Eigen::SparseMatrix<dcomp>> solver;
-    // time independent Hamiltonian
-    Eigen::SparseMatrix<dcomp>* h =
-        hamiltonian->get_time_independent();
-    // left matrix in Ax=Cb it would be A
-    Eigen::SparseMatrix<dcomp> left    = *h;
-    // file for converged states
-    HDF5Wrapper states_file(parameters->get_target()+".h5");
-
-    // loop over number of states wanted
-    for (int iter=0; iter<num_states; iter++) {
-        // left side of power method
-        left    = (h[0]-(idenity[0]*state_energy[iter]));
-        std::cout << state_energy[iter] << "\n";
-        left.makeCompressed();
-
-        // do this outside the loop since left never changes
-        solver.compute(left);
-        if (iter>0 and
-            std::abs(state_energy[iter]-state_energy[iter-1])<1e-10) {
-            std::cout << "Starting Gram Schmit\n";
-            gram_schmit = true;
-            // This is needed because the Power method converges
-            // extremely quickly
-            modified_gram_schmidt(states);
-        }
-
-        t = clock();
-        // loop until error is small enough
-        while (!converged) {
-            // copy old state for convergence
-            psi_old = psi[0];
-            psi[0] = solver.solve(psi_old);
-
-            // used to get higher states
-            if (gram_schmit) modified_gram_schmidt(states);
-
-            // normalize with respect to space (include dt)
-            wavefunction->gobble_psi();
-            wavefunction->normalize();
-            // psi[0] = psi[0]/psi->norm();
-
-            // only checkpoint so often
-            if (i%write_frequency==0) {
-                // check convergence criteria
-                converged = check_convergance(psi[0],psi_old,
-                    parameters->get_tol());
-                // save this psi to ${target}.h5
-                std::cout << "Energy: ";
-                std::cout << wavefunction->get_energy(h) << "\n";
-                // write a checkpoint
-                // wavefunction->checkpoint(*file,i/write_frequency);
-            }
-            // increment counter
-            i++;
-        }
-        std::cout << "Time: " << ((float)clock() - t)/CLOCKS_PER_SEC << "\n";
-        // make sure all states are orthonormal for mgs
-        states.push_back(psi[0]/psi->norm());
-        // save this psi to ${target}.h5
-        checkpoint_state(states_file,iter);
-        // new Gaussian guess
-        wavefunction->reset_psi();
-        // reset for next state
-        converged = false;
-        std::cout << "\n";
-    }
-    psi[0] = states[states.size()-1];
-    wavefunction->normalize();
+/* for details see:
+ * https://ocw.mit.edu/courses/mathematics/18-335j-introduction-to-numerical-methods-fall-2010/lecture-notes/MIT18_335JF10_lec10a_hand.pdf
+ * Assumes all states are orthornormal and applies modified gram-schmit to
+ * psi
+ */
+void Simulation::ModifiedGramSchmidt(std::vector<Vec> &states)
+{
+  int size = states.size();
+  dcomp coef;
+  for (int i = 0; i < size; i++)
+  {
+    VecDot(*psi, states[i], &coef);
+    VecAXPY(*psi, -1.0 * coef, states[i]);
+  }
 }
 
-// creates an identity matrix to use
-void Simulation::create_idenity(){
-    int num_psi = wavefunction->get_num_psi();
-    idenity = new Eigen::SparseMatrix<dcomp>(num_psi,num_psi);
-    idenity->reserve(Eigen::VectorXi::Constant(num_psi,1));
-    for (int i=0; i<num_psi; i++) {
-        idenity->insert(i,i) = dcomp(1.0,0.0);
-    }
-    idenity->makeCompressed();
-}
-
-bool Simulation::check_convergance(
-    Eigen::VectorXcd &psi_1,
-    Eigen::VectorXcd &psi_2,
-    double tol) {
-    Eigen::SparseMatrix<dcomp>* h = hamiltonian->
-        get_time_independent();
-    Eigen::VectorXcd diff = psi_1-psi_2;
-    double wave_error = diff.norm();
-    diff = psi_1+psi_2;
-    double wave_error_2 = diff.norm();
-    if (wave_error_2<wave_error) wave_error = wave_error_2;
-    dcomp energy_error = psi_1.dot(h[0]*psi_1)/psi_1.squaredNorm();
-    energy_error -= psi_2.dot(h[0]*psi_2)/psi_2.squaredNorm();
-    std::cout << "Wavefunction Error: " << wave_error;
-    std::cout << "\nEnergy Error: " << energy_error.real();
-    std::cout << "\nTolerance: " << tol << "\n" << std::flush;
-    return wave_error<tol and std::abs(energy_error.real())<tol;
-}
-
-// for details see:
-// https://ocw.mit.edu/courses/mathematics/18-335j-introduction-to-numerical-methods-fall-2010/lecture-notes/MIT18_335JF10_lec10a_hand.pdf
-// Assumes all states are orthornormal and applies modified
-// gram-schmit to psi
-void Simulation::modified_gram_schmidt(
-    std::vector<Eigen::VectorXcd> &states) {
-    int size    = states.size();
-    for (int i=0; i<size; i++){
-        psi[0] = psi[0]-psi->dot(states[i])*states[i];
-    }
-}
-
-void Simulation::checkpoint_state(HDF5Wrapper& data_file,
-    int write_idx) {
-    wavefunction->normalize();
-    wavefunction->checkpoint_psi(data_file,
-        "/States",write_idx);
-    data_file.write_object(
-        wavefunction->get_energy(hamiltonian->get_time_independent()),
-        "/Energy", "Energy of the corresponding state", write_idx);
+void Simulation::CheckpointState(HDF5Wrapper &h_file, ViewWrapper &v_file,
+                                 int write_idx)
+{
+  wavefunction->Normalize();
+  wavefunction->CheckpointPsi(v_file, write_idx);
+  h_file.WriteObject(wavefunction->GetEnergy(hamiltonian->GetTimeIndependent()),
+                     "/Energy", "Energy of the corresponding state", write_idx);
 }

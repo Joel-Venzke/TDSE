@@ -1,96 +1,83 @@
 #pragma once
-#include "Parameters.h"
-#include "H5Cpp.h"
+#include <petsc.h>
 #include <complex>
 #include <vector>
+#include "H5Cpp.h"
+#include "Parameters.h"
+#include "Utils.h"
 
-#define dcomp std::complex<double>
+class HDF5Wrapper : protected Utils
+{
+ private:
+  H5::H5File *data_file;
+  std::string file_name;
+  bool file_open;
+  bool header;
+  H5::CompType *complex_data_type;
 
-using namespace H5;
+  hsize_t *GetHsizeT(int size, int *dims);
+  void DefineComplex();
 
-class HDF5Wrapper {
-private:
-    H5File                   *data_file;
-    std::string              file_name;
-    bool                     file_open;
-    bool                     header;
-    CompType                 *complex_data_type;
+ public:
+  /* Constructor */
+  HDF5Wrapper(Parameters &p);
+  HDF5Wrapper(std::string f_name, Parameters &p);
+  HDF5Wrapper(std::string f_name);
 
-    hsize_t* get_hsize_t(int size, int *dims);
-    void     define_complex();
-public:
-    // Constructor
-    HDF5Wrapper(Parameters& p);
-    HDF5Wrapper(std::string f_name, Parameters& p);
-    HDF5Wrapper(std::string f_name);
+  /* destructor */
+  ~HDF5Wrapper();
 
-    // destructor
-    ~HDF5Wrapper();
+  void Open();
+  void Close();
 
-    void reopen();
-    void close();
+  void SetHeader(bool h);
 
-    void set_header(bool h);
+  void CreateGroup(H5std_string group_path);
 
-    void create_group(H5std_string group_path);
+  // write single entry
+  void WriteObject(int data, H5std_string var_path);
+  void WriteObject(int data, H5std_string var_path, H5std_string attribute);
 
-    // write single entry
-    void write_object(int data, H5std_string var_path);
-    void write_object(int data, H5std_string var_path,
-        H5std_string attribute);
+  void WriteObject(double data, H5std_string var_path);
+  void WriteObject(double data, H5std_string var_path, H5std_string attribute);
 
-    void write_object(double data, H5std_string var_path);
-    void write_object(double data, H5std_string var_path,
-        H5std_string attribute);
+  void WriteObject(int *data, int size, H5std_string var_path);
+  void WriteObject(int *data, int size, H5std_string var_path,
+                   H5std_string attribute);
 
-    void write_object(int *data, int size, H5std_string var_path);
-    void write_object(int *data, int size, H5std_string var_path,
-        H5std_string attribute);
+  void WriteObject(int *data, int size, int *dims, H5std_string var_path);
+  void WriteObject(int *data, int size, int *dims, H5std_string var_path,
+                   H5std_string attribute);
 
-    void write_object(int *data, int size, int *dims,
-        H5std_string var_path);
-    void write_object(int *data, int size, int *dims,
-        H5std_string var_path, H5std_string attribute);
+  void WriteObject(double *data, int size, H5std_string var_path);
+  void WriteObject(double *data, int size, H5std_string var_path,
+                   H5std_string attribute);
 
-    void write_object(double *data, int size, H5std_string var_path);
-    void write_object(double *data, int size, H5std_string var_path,
-        H5std_string attribute);
+  void WriteObject(double *data, int size, int *dims, H5std_string var_path);
+  void WriteObject(double *data, int size, int *dims, H5std_string var_path,
+                   H5std_string attribute);
 
-    void write_object(double *data, int size, int *dims,
-        H5std_string var_path);
-    void write_object(double *data, int size, int *dims,
-        H5std_string var_path, H5std_string attribute);
+  void WriteObject(dcomp *data, int size, H5std_string var_path);
+  void WriteObject(dcomp *data, int size, H5std_string var_path,
+                   H5std_string attribute);
 
-    void write_object(dcomp *data, int size, H5std_string var_path);
-    void write_object(dcomp *data, int size, H5std_string var_path,
-        H5std_string attribute);
+  void WriteObject(dcomp *data, int size, int *dims, H5std_string var_path);
+  void WriteObject(dcomp *data, int size, int *dims, H5std_string var_path,
+                   H5std_string attribute);
 
-    void write_object(dcomp *data, int size, int *dims,
-        H5std_string var_path);
-    void write_object(dcomp *data, int size, int *dims,
-        H5std_string var_path, H5std_string attribute);
+  /* time series writes */
+  void WriteObject(dcomp *data, int size, H5std_string var_path, int write_idx);
+  void WriteObject(dcomp *data, int size, H5std_string var_path,
+                   H5std_string attribute, int write_idx);
 
-    // time series writes
-    void write_object(dcomp *data, int size, H5std_string var_path,
-                      int write_idx);
-    void write_object(dcomp *data, int size, H5std_string var_path,
-                      H5std_string attribute, int write_idx);
+  void WriteObject(double data, H5std_string var_path, int write_idx);
+  void WriteObject(double data, H5std_string var_path, H5std_string attribute,
+                   int write_idx);
 
-    void write_object(double data, H5std_string var_path,
-                      int write_idx);
-    void write_object(double data, H5std_string var_path,
-                      H5std_string attribute, int write_idx);
+  /* write for parameters */
+  void WriteHeader(Parameters &p);
 
-
-
-    // write for parameters
-    void write_header(Parameters& p);
-
-    // reads restart and validates file
-    void read_restart(Parameters& p);
-    void read_restart(Parameters& p, std::string f_name);
-
-    // kill run
-    void end_run(std::string str);
-    void end_run(std::string str, int exit_val);
+  /* reads restart and validates file */
+  void ReadRestart(Parameters &p);
+  void ReadRestart(Parameters &p, std::string f_name);
 };
