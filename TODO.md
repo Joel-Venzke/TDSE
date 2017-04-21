@@ -6,11 +6,10 @@
 
 * Validate atomic input
 * SAE support
-* set up checks for input parameters
+* set up checks for input parameters in the input.json file
 
 # Hamiltonian
 
-* Set up propagation - linear
 * Set up propagation - circular
 * SAE support
 

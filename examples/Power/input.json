@@ -2,9 +2,9 @@
   "delta_t": 0.005,
   "dimensions": [
     {"dim_size": 100.0,
-    "delta_x":   0.1},
+    "delta_x":   0.2},
     {"dim_size": 100.0,
-    "delta_x":   0.1}],
+    "delta_x":   0.2}],
   "num_electrons": 1,
   "restart": 0,
   "target": {
@@ -13,10 +13,10 @@
       {"z": 1.0,
       "location": [0.0,0.0,0.0],
       "SAE": null}]},
-  "alpha":   1.1,
+  "alpha":   0.8,
   "gobbler": 0.9,
   "sigma":   2.0,
-  "write_frequency_propagation": 200,
+  "write_frequency_propagation": 1000,
   "write_frequency_eigin_state": 1,
   "state_solver":    "Power",
   "propagate": 1,
@@ -33,7 +33,7 @@
       "cycles_off":     0.5,
       "cycles_delay":   0.0,
       "cep":            0.0,
-      "energy":         1.5,
-      "field_max":      12.83}]
+      "energy":         0.057,
+      "field_max":      128.0}]
   }
 }
