@@ -24,7 +24,9 @@ Finally make the needed changes to paths and run `.\build`.
 
 ## Mac
 
-Here is the brew command to install on mac (you need to do a brew edit to make the cxx if statement: `if build.with?("cxx") && (build.without?("mpi") || build.with?("unsupported"))`)
+Here is the brew command to install on mac 
+
+Note: you need to do a brew edit to make the cxx if statement: `if build.with?("cxx") && (build.without?("mpi") || build.with?("unsupported"))`
 
 `brew install hdf5 --c++11 --with-fortran --with-mpi --with-threadsafe --with-unsupported`
 
@@ -38,8 +40,9 @@ Use the `hdf5_build.summitcu` and `petsc_build.summitcu` scripts to compile on s
 
 
 # USAGE
-The code can be used by using `TDSE` in the ${TDSE_DIR}/bin/
-mpiexec -n 4 ../../bin/TDSE  -eigen_ksp_type preonly -eigen_pc_type lu -eigen_pc_factor_mat_solver_package superlu_dist -log_view -options_left
+The code can be used by using the `TDSE` binary. Here is an example run command using 4 processors.
+
+`${TDSE_DIR}/bin/mpiexec -n 4 ../../bin/TDSE  -eigen_ksp_type preonly -eigen_pc_type lu -eigen_pc_factor_mat_solver_package superlu_dist`
 
 # Development 
 
