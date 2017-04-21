@@ -861,6 +861,11 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
                 "Index of solver: File:0, ITP:1, Power:2");
     WriteObject(num_pulses, "/Parameters/num_pulses",
                 "The number of pulses from the input file");
+    WriteObject(p.GetPolarizationIdx(), "/Parameters/polarization_idx",
+                "Polarization of the laser. linear:0, circular:1");
+    WriteObject(p.polarization_vector.get(), num_dims,
+                "/Parameters/polarization_vector",
+                "The vector used to define the polarization direction");
     WriteObject(p.pulse_shape_idx.get(), num_pulses,
                 "/Parameters/pulse_shape_idx",
                 "The index of the pulse shape. Sin2:0");

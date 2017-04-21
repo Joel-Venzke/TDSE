@@ -4,20 +4,21 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
                          Parameters& p)
 {
   if (world.rank() == 0) std::cout << "Creating Hamiltonian\n";
-  num_dims      = p.GetNumDims();
-  num_electrons = p.GetNumElectrons();
-  num_nuclei    = p.GetNumNuclei();
-  num_x         = w.GetNumX();
-  num_psi       = w.GetNumPsi();
-  num_psi_build = w.GetNumPsiBuild();
-  delta_x       = p.delta_x.get();
-  delta_x_2     = p.delta_x_2.get();
-  x_value       = w.GetXValue();
-  z             = p.z.get();
-  location      = p.GetLocation();
-  alpha         = p.GetAlpha();
-  alpha_2       = alpha * alpha;
-  a_field       = pulse.GetAField();
+  num_dims            = p.GetNumDims();
+  num_electrons       = p.GetNumElectrons();
+  num_nuclei          = p.GetNumNuclei();
+  num_x               = w.GetNumX();
+  num_psi             = w.GetNumPsi();
+  num_psi_build       = w.GetNumPsiBuild();
+  delta_x             = p.delta_x.get();
+  delta_x_2           = p.delta_x_2.get();
+  x_value             = w.GetXValue();
+  z                   = p.z.get();
+  location            = p.GetLocation();
+  alpha               = p.GetAlpha();
+  alpha_2             = alpha * alpha;
+  a_field             = pulse.GetAField();
+  polarization_vector = p.polarization_vector.get();
 
   /* set up time independent */
   CreateTimeIndependent();
@@ -29,55 +30,53 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
 
 void Hamiltonian::CreateTimeIndependent()
 {
-  double dx2 = delta_x[0] * delta_x[0]; /* dx squared */
-  dcomp val(0.0, 0.0);                  /* diagonal terms */
-  int j_val;                            /* j index for matrix */
-  int offset;                           /* offset of diagonal */
-  int start, end;                       /* start end rows */
+  dcomp val(0.0, 0.0); /* diagonal terms */
+  int j_val;           /* j index for matrix */
+  int offset;          /* offset of diagonal */
+  int start, end;      /* start end rows */
   /* reserve right amount of memory to save storage */
   MatCreateAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, num_psi, num_psi,
                num_dims * num_electrons * 2 + 1, NULL,
                num_dims * num_electrons * 2 + 1, NULL, &time_independent);
-  if (world.rank() == 0)
+  MatGetOwnershipRange(time_independent, &start, &end);
+  for (int i_val = start; i_val < end; i_val++)
   {
-    // MatGetOwnershipRange(time_independent, &start, &end);
-    // for (int i_val = start; i_val < end; i_val++)
-    for (int i_val = 0; i_val < num_psi; i_val++)
+    /* Diagonal element */
+    j_val = i_val;
+    val   = GetVal(i_val, j_val, false);
+    if (val != dcomp(0.0, 0.0))
     {
-      /* Diagonal element */
-      j_val = i_val;
-      val   = GetVal(i_val, j_val, false);
-      if (val != dcomp(0.0, 0.0))
-      {
-        MatSetValues(time_independent, 1, &i_val, 1, &j_val, &val,
-                     INSERT_VALUES);
-      }
+      MatSetValues(time_independent, 1, &i_val, 1, &j_val, &val, INSERT_VALUES);
+    }
 
-      /* Loop over off diagonal elements */
-      for (int elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
+    /* Loop over off diagonal elements */
+    for (int elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
+    {
+      for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
       {
-        for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+        offset = GetOffset(elec_idx, dim_idx);
+
+        /* Lower diagonal */
+        if (i_val - offset >= 0 and i_val - offset < num_psi)
         {
-          offset = GetOffset(elec_idx, dim_idx);
-          if (i_val - offset >= 0 and i_val - offset < num_psi)
+          j_val = i_val - offset;
+          val   = GetVal(i_val, j_val, false);
+          if (val != dcomp(0.0, 0.0))
           {
-            j_val = i_val - offset;
-            val   = GetVal(i_val, j_val, false);
-            if (val != dcomp(0.0, 0.0))
-            {
-              MatSetValues(time_independent, 1, &i_val, 1, &j_val, &val,
-                           INSERT_VALUES);
-            }
+            MatSetValues(time_independent, 1, &i_val, 1, &j_val, &val,
+                         INSERT_VALUES);
           }
-          if (i_val + offset >= 0 and i_val + offset < num_psi)
+        }
+
+        /* Upper diagonal */
+        if (i_val + offset >= 0 and i_val + offset < num_psi)
+        {
+          j_val = i_val + offset;
+          val   = GetVal(i_val, j_val, false);
+          if (val != dcomp(0.0, 0.0))
           {
-            j_val = i_val + offset;
-            val   = GetVal(i_val, j_val, false);
-            if (val != dcomp(0.0, 0.0))
-            {
-              MatSetValues(time_independent, 1, &i_val, 1, &j_val, &val,
-                           INSERT_VALUES);
-            }
+            MatSetValues(time_independent, 1, &i_val, 1, &j_val, &val,
+                         INSERT_VALUES);
           }
         }
       }
@@ -106,14 +105,9 @@ void Hamiltonian::CreateTimeDependent()
     {
       for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
       {
-        offset = 1;
-        for (int e_idx = 0; e_idx < elec_idx + 1; ++e_idx)
-        {
-          for (int d_idx = 0; d_idx < dim_idx; ++d_idx)
-          {
-            offset *= num_x[d_idx];
-          }
-        }
+        offset = GetOffset(elec_idx, dim_idx);
+
+        /* Lower diagonal */
         if (i_val - offset >= 0 and i_val - offset < num_psi)
         {
           j_val = i_val - offset;
@@ -122,6 +116,8 @@ void Hamiltonian::CreateTimeDependent()
             MatSetValues(time_dependent, 1, &i_val, 1, &j_val, &val,
                          INSERT_VALUES);
         }
+
+        /* Upper diagonal */
         if (i_val + offset >= 0 and i_val + offset < num_psi)
         {
           j_val = i_val + offset;
@@ -132,38 +128,6 @@ void Hamiltonian::CreateTimeDependent()
         }
       }
     }
-    // if (i - num_x[0] >= 0 and i - num_x[0] < num_psi)
-    // {
-    //   j_val = i - num_x[0];
-    //   val   = GetVal(i_val, j_val, true);
-    //   if (val != dcomp(0.0, 0.0))
-    //     MatSetValues(time_dependent, 1, &i_val, 1, &j_val, &val,
-    //                  INSERT_VALUES);
-    // }
-    // if (i - 1 >= 0 and i - 1 < num_psi)
-    // {
-    //   j_val = i - 1;
-    //   val   = GetVal(i_val, j_val, true);
-    //   if (val != dcomp(0.0, 0.0))
-    //     MatSetValues(time_dependent, 1, &i_val, 1, &j_val, &val,
-    //                  INSERT_VALUES);
-    // }
-    // if (i + 1 >= 0 and i + 1 < num_psi)
-    // {
-    //   j_val = i + 1;
-    //   val   = GetVal(i_val, j_val, true);
-    //   if (val != dcomp(0.0, 0.0))
-    //     MatSetValues(time_dependent, 1, &i_val, 1, &j_val, &val,
-    //                  INSERT_VALUES);
-    // }
-    // if (i + num_x[0] >= 0 and i + num_x[0] < num_psi)
-    // {
-    //   j_val = i + num_x[0];
-    //   val   = GetVal(i_val, j_val, true);
-    //   if (val != dcomp(0.0, 0.0))
-    //     MatSetValues(time_dependent, 1, &i_val, 1, &j_val, &val,
-    //                  INSERT_VALUES);
-    // }
   }
   MatAssemblyBegin(time_dependent, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(time_dependent, MAT_FINAL_ASSEMBLY);
@@ -174,11 +138,13 @@ void Hamiltonian::CreateTimeDependent()
 /* just allocate the total Hamiltonian */
 void Hamiltonian::CreateTotalHamlitonian()
 {
+  /* just allocate the memory */
   MatDuplicate(time_independent, MAT_DO_NOT_COPY_VALUES, &total_hamlitonian);
 }
 
 Mat* Hamiltonian::GetTotalHamiltonian(int time_idx)
 {
+  /* This works for the linear case */
   MatCopy(time_independent, total_hamlitonian, SAME_NONZERO_PATTERN);
   MatAXPY(total_hamlitonian, a_field[time_idx], time_dependent,
           SUBSET_NONZERO_PATTERN);
@@ -188,24 +154,31 @@ Mat* Hamiltonian::GetTotalHamiltonian(int time_idx)
 
 dcomp Hamiltonian::GetVal(int idx_i, int idx_j, bool time_dep)
 {
+  /* Get arrays */
   std::vector<int> idx_array  = GetIndexArray(idx_i, idx_j);
   std::vector<int> diff_array = GetDiffArray(idx_array);
   int sum                     = 0;
 
+  /* Diagonal elements */
   if (idx_i == idx_j)
   {
     return GetDiagonal(idx_array, time_dep);
   }
 
+  /* Make sure there is exactly 1 non zero index so we can take care of the off
+   * diagonal zeros */
   for (int i = 0; i < num_dims * num_electrons; ++i)
   {
     sum += std::abs(diff_array[i]);
   }
 
+  /* if non zero off diagonal */
   if (sum == 1)
   {
     return GetOffDiagonal(idx_array, diff_array, time_dep);
   }
+
+  /* Should be a zero in the matrix */
   return dcomp(0.0, 0.0);
 }
 
@@ -217,21 +190,26 @@ dcomp Hamiltonian::GetOffDiagonal(std::vector<int>& idx_array,
   {
     for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
     {
-      if (time_dep)
+      if (time_dep) /* Time dependent matrix */
       {
         /* Upper diagonals */
         if (diff_array[elec_idx * num_dims + dim_idx] == 1)
         {
-          off_diagonal += dcomp(0.0, 1.0 / (2.0 * delta_x[dim_idx] * c));
+          /* Polarization vector for linear polarization */
+          off_diagonal += polarization_vector[dim_idx] *
+                          dcomp(0.0, 1.0 / (2.0 * delta_x[dim_idx] * c));
         }
         /* Lower diagonals */
         else if (diff_array[elec_idx * num_dims + dim_idx] == -1)
         {
-          off_diagonal += dcomp(0.0, -1.0 / (2.0 * delta_x[dim_idx] * c));
+          /* Polarization vector for linear polarization */
+          off_diagonal += polarization_vector[dim_idx] *
+                          dcomp(0.0, -1.0 / (2.0 * delta_x[dim_idx] * c));
         }
       }
-      else
+      else /* Time independent matrix */
       {
+        /* Both upper and lower diagonals are the same */
         if (std::abs(diff_array[elec_idx * num_dims + dim_idx]) == 1)
         {
           off_diagonal += dcomp(-1.0 / (2.0 * delta_x_2[dim_idx]), 0.0);
@@ -250,7 +228,6 @@ dcomp Hamiltonian::GetDiagonal(std::vector<int>& idx_array, bool time_dep)
   /* nuclei term */
   diagonal += GetNucleiTerm(idx_array);
   /* e-e correlation */
-  // std::cout << GetKineticTerm() << " " << GetNucleiTerm(idx_array) << "\n";
   diagonal += GetElectronElectronTerm(idx_array);
   return diagonal;
 }
@@ -277,6 +254,7 @@ dcomp Hamiltonian::GetNucleiTerm(std::vector<int>& idx_array)
     /* loop over each nuclei */
     for (int nuclei_idx = 0; nuclei_idx < num_nuclei; ++nuclei_idx)
     {
+      /* Column term */
       nuclei -= dcomp(z[nuclei_idx] / SoftCoreDistance(location[nuclei_idx],
                                                        idx_array, elec_idx),
                       0.0);
@@ -288,11 +266,15 @@ dcomp Hamiltonian::GetNucleiTerm(std::vector<int>& idx_array)
 dcomp Hamiltonian::GetElectronElectronTerm(std::vector<int>& idx_array)
 {
   dcomp ee_val(0.0, 0.0);
+  /* loop over each correlation
+   * (e_1 with e_2, e_1 with e_3, ... e_2 with e_3, ... ect.) */
   for (int elec_idx_1 = 0; elec_idx_1 < num_electrons; ++elec_idx_1)
   {
+    /* make sure to not double count or calculate self terms */
     for (int elec_idx_2 = elec_idx_1 + 1; elec_idx_2 < num_electrons;
          ++elec_idx_2)
     {
+      /* 1/r like pot */
       ee_val +=
           dcomp(1 / SoftCoreDistance(idx_array, elec_idx_1, elec_idx_2), 0.0);
     }
@@ -305,6 +287,7 @@ double Hamiltonian::SoftCoreDistance(double* location,
 {
   double distance = alpha_2; /* Make sure we include the soft core */
   double diff     = 0.0;
+  /* loop over all dims */
   for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
   {
     diff = location[dim_idx] -
@@ -319,6 +302,7 @@ double Hamiltonian::SoftCoreDistance(std::vector<int>& idx_array,
 {
   double distance = alpha_2; /* Make sure we include the soft core */
   double diff     = 0.0;
+  /* loop over all dims */
   for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
   {
     diff = x_value[dim_idx][idx_array[2 * elec_idx_1]] -
@@ -331,6 +315,9 @@ double Hamiltonian::SoftCoreDistance(std::vector<int>& idx_array,
 int Hamiltonian::GetOffset(int elec_idx, int dim_idx)
 {
   int offset = 1;
+  /* offset gets a factor of
+   * num_psi_build = num_x[num_dims-1] * num_x[num_dims-2] * ... * num_x[0]
+   * for each electron */
   if (elec_idx > 0)
   {
     for (int iter = 0; iter < elec_idx; ++iter)
@@ -358,6 +345,7 @@ std::vector<int> Hamiltonian::GetIndexArray(int idx_i, int idx_j)
   std::vector<int> num(total_dims);
   /* idx for return */
   std::vector<int> idx_array(total_dims * 2);
+  /* used for convenience. Could/should be optimized */
   for (int elec_idx = 0; elec_idx < num_electrons; elec_idx++)
   {
     for (int dim_idx = 0; dim_idx < num_dims; dim_idx++)
@@ -365,6 +353,10 @@ std::vector<int> Hamiltonian::GetIndexArray(int idx_i, int idx_j)
       num[elec_idx * num_dims + dim_idx] = num_x[dim_idx];
     }
   }
+  /* loop over dimensions backwards so psi becomes
+   * psi[x_1,y_1,z_1,x_2,y_2,z_2,...]
+   * where x_1 is the first dimension of the first electron and x_2 is the first
+   * dimension of the second electron and so on */
   for (int i = total_dims - 1; i >= 0; --i)
   {
     idx_array[2 * i] = idx_i % num[i];
@@ -378,6 +370,7 @@ std::vector<int> Hamiltonian::GetIndexArray(int idx_i, int idx_j)
 std::vector<int> Hamiltonian::GetDiffArray(std::vector<int>& idx_array)
 {
   std::vector<int> diff_array(num_dims * num_electrons);
+  /* Calculated difference between i and j indexes */
   for (int i = 0; i < num_dims * num_electrons; ++i)
   {
     diff_array[i] = idx_array[2 * i + 1] - idx_array[2 * i];

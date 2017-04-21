@@ -6,6 +6,7 @@
 
 * Validate atomic input
 * SAE support
+* set up checks for input parameters
 
 # Hamiltonian
 

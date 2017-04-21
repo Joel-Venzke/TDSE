@@ -32,6 +32,8 @@ void Parameters::Setup(std::string file_name)
     std::cout << "Reading input file: " << file_name << "\n" << std::flush;
   }
 
+  double polar_norm = 0.0; /* the norm for the polarization vector */
+
   /* read data from file */
   json data = FileToJson(file_name);
 
@@ -114,7 +116,40 @@ void Parameters::Setup(std::string file_name)
   propagate = data["propagate"];
 
   /* get pulse information */
-  num_pulses = data["pulses"].size();
+  num_pulses   = data["laser"]["pulses"].size();
+  polarization = data["laser"]["polarization"];
+
+  if (polarization == "linear")
+  {
+    polarization_idx = 0;
+  }
+  else if (polarization == "circular")
+  {
+    polarization_idx = 1;
+  }
+  else
+  {
+    polarization_idx = -1;
+  }
+
+  polarization_vector = std::make_unique<double[]>(num_dims);
+
+  if (data["laser"]["polarization_vector"].size() < num_dims)
+  {
+    EndRun("Polarization vector dimension is to small");
+  }
+
+  for (int i = 0; i < num_dims; ++i)
+  {
+    polarization_vector[i] = data["laser"]["polarization_vector"][i];
+    polar_norm += polarization_vector[i] * polarization_vector[i];
+  }
+  /* normalize the polarization vector*/
+  polar_norm = sqrt(polar_norm);
+  for (int i = 0; i < num_dims; ++i)
+  {
+    polarization_vector[i] /= polar_norm;
+  }
 
   /* allocate memory */
   pulse_shape     = std::make_unique<std::string[]>(num_pulses);
@@ -130,7 +165,7 @@ void Parameters::Setup(std::string file_name)
   /* read data */
   for (int i = 0; i < num_pulses; ++i)
   {
-    pulse_shape[i] = data["pulses"][i]["pulse_shape"];
+    pulse_shape[i] = data["laser"]["pulses"][i]["pulse_shape"];
 
     /* index used similar target_idx */
     if (pulse_shape[i] == "sin2")
@@ -142,13 +177,13 @@ void Parameters::Setup(std::string file_name)
       pulse_shape_idx[i] = 1;
     }
 
-    cycles_on[i]      = data["pulses"][i]["cycles_on"];
-    cycles_plateau[i] = data["pulses"][i]["cycles_plateau"];
-    cycles_off[i]     = data["pulses"][i]["cycles_off"];
-    cycles_delay[i]   = data["pulses"][i]["cycles_delay"];
-    cep[i]            = data["pulses"][i]["cep"];
-    energy[i]         = data["pulses"][i]["energy"];
-    field_max[i]      = data["pulses"][i]["field_max"];
+    cycles_on[i]      = data["laser"]["pulses"][i]["cycles_on"];
+    cycles_plateau[i] = data["laser"]["pulses"][i]["cycles_plateau"];
+    cycles_off[i]     = data["laser"]["pulses"][i]["cycles_off"];
+    cycles_delay[i]   = data["laser"]["pulses"][i]["cycles_delay"];
+    cep[i]            = data["laser"]["pulses"][i]["cep"];
+    energy[i]         = data["laser"]["pulses"][i]["energy"];
+    field_max[i]      = data["laser"]["pulses"][i]["field_max"];
   }
 
   /* ensure input is good */
@@ -180,6 +215,13 @@ void Parameters::Validate()
   bool error_found = false; /* set to true if error is found */
 
   /* Check pulses */
+  if (polarization_idx != 0) /* linear */
+  {
+    error_found = true;
+    err_str += "\nInvalid polarization: \"";
+    err_str += polarization;
+    err_str += "\"\nvalid polarizations are \"linear\"\n";
+  }
   for (int i = 0; i < num_pulses; i++)
   {
     /* Check pulse shapes */
@@ -250,12 +292,6 @@ void Parameters::Validate()
       err_str += std::to_string(p_length) + "\"\n";
       err_str += "the length should be > 0\n";
     }
-  }
-
-  if (num_dims > 1 and propagate == 1)
-  {
-    error_found = true;
-    err_str += "\npropagation only works in 1D \"";
   }
 
   if (num_electrons > 3)
@@ -354,3 +390,5 @@ std::string Parameters::GetStateSolver() { return state_solver; }
 int Parameters::GetPropagate() { return propagate; }
 
 int Parameters::GetNumPulses() { return num_pulses; }
+
+int Parameters::GetPolarizationIdx() { return polarization_idx; }

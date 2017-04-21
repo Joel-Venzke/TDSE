@@ -1,12 +1,10 @@
 {
   "delta_t": 0.005,
   "dimensions": [
-    {"dim_size": 50.0,
-    "delta_x":   0.7},
-    {"dim_size": 50.0,
-    "delta_x":   0.7},
-    {"dim_size": 50.0,
-    "delta_x":   0.7}],
+    {"dim_size": 100.0,
+    "delta_x":   0.1},
+    {"dim_size": 100.0,
+    "delta_x":   0.1}],
   "num_electrons": 1,
   "restart": 0,
   "target": {
@@ -15,29 +13,20 @@
       {"z": 1.0,
       "location": [0.0,0.0,0.0],
       "SAE": null}]},
-  "alpha":   0.195,
+  "alpha":   1.1,
   "gobbler": 0.9,
   "sigma":   2.0,
   "write_frequency_propagation": 200,
   "write_frequency_eigin_state": 1,
   "state_solver":    "Power",
-  "propagate": 0,
+  "propagate": 1,
   "states": [
-    {"energy": -0.499},
-    {"energy": -0.123},
-    {"energy": -0.123},
-    {"energy": -0.123},
-    {"energy": -0.123},
-    {"energy": -0.036},
-    {"energy": -0.036},
-    {"energy": -0.036},
-    {"energy": -0.027},
-    {"energy": -0.027},
-    {"energy": -0.009},
-    {"energy": -0.009},
-    {"energy": -0.009}],
+    {"energy": -0.499}],
   "tol":        1e-10,
-  "pulses": [
+  "laser": {
+    "polarization": "linear",
+    "polarization_vector": [1.0,0.0,0.0],
+    "pulses": [
     {"pulse_shape":   "sin2",
       "cycles_on":      0.5,
       "cycles_plateau": 0.0,
@@ -46,4 +35,5 @@
       "cep":            0.0,
       "energy":         1.5,
       "field_max":      12.83}]
+  }
 }

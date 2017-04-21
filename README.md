@@ -26,7 +26,7 @@ Finally make the needed changes to paths and run `.\build`.
 
 ## Mac
 
-Need clang 8.0.0 if running on mac here is the command to run once you installed the 8.0.0 command line tools
+Need clang 8.0.0 if running on mac here is the command to run once you installed the 10.12 command line tools
 
 `sudo xcode-select --switch /Library/Developer/CommandLineTools`
 

@@ -41,6 +41,8 @@ class Parameters : protected Utils
 
   /* pulse data */
   int num_pulses; /* number of pulses */
+  std::string polarization;
+  int polarization_idx;
 
   void Setup(std::string file_name);
 
@@ -52,15 +54,16 @@ class Parameters : protected Utils
   std::unique_ptr<double[]>
       state_energy; /* theoretical eigenvalues for each state */
   std::unique_ptr<std::string[]>
-      pulse_shape;                          /* pulse shape {"sin2","linear"} */
-  std::unique_ptr<int[]> pulse_shape_idx;   /* index of pulse shape */
-  std::unique_ptr<double[]> cycles_on;      /* ramp on cycles */
-  std::unique_ptr<double[]> cycles_plateau; /* plateau cycles */
-  std::unique_ptr<double[]> cycles_off;     /* ramp off cycles */
-  std::unique_ptr<double[]> cycles_delay;   /* delay in number of cycles */
-  std::unique_ptr<double[]> cep;            /* carrier envelope phase */
-  std::unique_ptr<double[]> energy;         /* photon energy */
-  std::unique_ptr<double[]> field_max;      /* max amplitude */
+      pulse_shape; /* pulse shape {"sin2","linear"} */
+  std::unique_ptr<double[]> polarization_vector; /* ramp on cycles */
+  std::unique_ptr<int[]> pulse_shape_idx;        /* index of pulse shape */
+  std::unique_ptr<double[]> cycles_on;           /* ramp on cycles */
+  std::unique_ptr<double[]> cycles_plateau;      /* plateau cycles */
+  std::unique_ptr<double[]> cycles_off;          /* ramp off cycles */
+  std::unique_ptr<double[]> cycles_delay;        /* delay in number of cycles */
+  std::unique_ptr<double[]> cep;                 /* carrier envelope phase */
+  std::unique_ptr<double[]> energy;              /* photon energy */
+  std::unique_ptr<double[]> field_max;           /* max amplitude */
 
   /* Constructors */
   Parameters(std::string file_name);
@@ -91,4 +94,5 @@ class Parameters : protected Utils
   int GetPropagate();
 
   int GetNumPulses();
+  int GetPolarizationIdx();
 };
