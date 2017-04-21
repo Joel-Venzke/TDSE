@@ -7,6 +7,9 @@ HDF5 with c++ and mpi
 
 PETSC with complex
 
+need clang 8.0.0
+sudo xcode-select --switch /Library/Developer/CommandLineTools
+
 # INSTALL
 You will need hdf5 with c++ and mpi support. Here is the brew command to install on mac
 

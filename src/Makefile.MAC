@@ -1,13 +1,19 @@
 ALL: TDSE
-CFLAGS = ${PETSC_CC_INCLUDES}
-CXXFLAGS= ${PETSC_CXX_INCLUDES} -std=c++11 -Wall -I/usr/local/include/
-FFLAGS = ${PETSC_FC_INCLUDES}
-INCLUDES = -lhdf5_hl_cpp -lhdf5_cpp
-CXX = /usr/local/bin/mpicxx
-include ${PETSC_DIR}/lib/petsc/conf/variables
-TDSE: TDSE.o HDF5Wrapper.o Hamiltonian.o Observables.o Parameters.o Pulse.o Simulation.o TDSE.o Wavefunction.o json.o
-	${CXX} -o TDSE TDSE.o HDF5Wrapper.o Hamiltonian.o Observables.o Parameters.o Pulse.o Simulation.o Wavefunction.o json.o ${PETSC_LIB} ${INCLUDES}
 
-clean:
-	rm *.o
-	rm TDSE
+CFLAGS = ${PETSC_CC_INCLUDES}
+CXXFLAGS= ${PETSC_CXX_INCLUDES} -std=c++14 -Wall -I/usr/local/include/
+FFLAGS = ${PETSC_FC_INCLUDES}
+INCLUDES = -lhdf5_hl_cpp -lhdf5_cpp -lboost_mpi
+CXX = /usr/local/bin/mpicxx
+OBJECTS = TDSE.o Parameters.o ViewWrapper.o HDF5Wrapper.o Pulse.o PETSCWrapper.o Wavefunction.o Hamiltonian.o Simulation.o Utils.o
+
+include ${PETSC_DIR}/lib/petsc/conf/variables
+include ${PETSC_DIR}/lib/petsc/conf/rules
+
+TDSE: ${OBJECTS}
+	${CXX} -o TDSE ${OBJECTS} ${PETSC_LIB} ${INCLUDES}
+	cp TDSE ../bin
+
+# clean:
+# 	rm *.o
+# 	rm TDSE ../bin/TDSE
