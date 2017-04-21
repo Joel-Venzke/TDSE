@@ -1,4 +1,5 @@
-# TDSE
+# Trivial Dynamics in Schrodinger Equation (TDSE)
+
 This code was developed by @Joel-Venzke during his PHD. It solves the Time Dependent Schroedinger Equation.
 
 # Dependencies

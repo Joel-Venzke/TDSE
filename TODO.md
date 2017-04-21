@@ -1,10 +1,24 @@
+# TDSE
+
+* Set up restart
+
 # Parameters
 
 * Validate atomic input
 * SAE support
-* clean up location
 
 # Hamiltonian
 
-* Set up propagation
-* double check indexes
+* Set up propagation - linear
+* Set up propagation - circular
+* SAE support
+
+# Simulation
+
+* Set up SLEPc
+* Arnoldi algorithm
+
+# Scripts 
+
+* Run Script for Summit
+* Daisey chain Script

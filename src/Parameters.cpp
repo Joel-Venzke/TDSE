@@ -160,7 +160,14 @@ void Parameters::Setup(std::string file_name)
   }
 }
 
-Parameters::~Parameters() {}
+Parameters::~Parameters()
+{
+  for (int i = 0; i < num_nuclei; ++i)
+  {
+    delete location[i];
+  }
+  delete[] location;
+}
 
 /* checks important input parameters for errors */
 void Parameters::Validate()
