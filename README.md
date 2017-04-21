@@ -1,6 +1,6 @@
 # Trivial Dynamics in Schrodinger Equation (TDSE)
 
-This code was developed by @Joel-Venzke during his PHD. It solves the Time Dependent Schroedinger Equation.
+This code was developed by @Joel-Venzke during his PHD. It solves the Time Dependent Schroedinger Equation for ultrafast laser pulses interacting with matter.
 
 # Dependencies
 
@@ -8,10 +8,12 @@ HDF5 with c++ and mpi
 
 PETSC with complex
 
-need clang 8.0.0
-sudo xcode-select --switch /Library/Developer/CommandLineTools
+Compiler with GCC 4.9 or greater
+
+C++11 support
 
 # INSTALL
+
 You will need hdf5 with c++ and mpi support (see system specifics below). 
 
 Then install petsc with complex support (see system specifics below).
@@ -23,6 +25,16 @@ Then back to the root directory and copy a `build.${SYSTEM}` file that is simila
 Finally make the needed changes to paths and run `.\build`.
 
 ## Mac
+
+Need clang 8.0.0 if running on mac here is the command to run once you installed the 8.0.0 command line tools
+
+`sudo xcode-select --switch /Library/Developer/CommandLineTools`
+
+then
+
+`clang -v` 
+
+should tell you the version is 8.0.0
 
 Here is the brew command to install on mac 
 
