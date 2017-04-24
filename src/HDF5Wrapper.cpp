@@ -852,9 +852,9 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
         p.GetWriteFrequencyEigenState(),
         "/Parameters/write_frequency_eigin_state",
         "How often are checkpoints done during eigen state calculations");
-    WriteObject(
-        p.GetGobbler(), "/Parameters/gobbler",
-        "The point at which the gobbler turns on at, (1=100 and 0.9=90)");
+    WriteObject(p.GetGobbler(), "/Parameters/gobbler",
+                "The percent of the grid that is real and not part of the ECS "
+                "boundary potential, (1=100 and 0.9=90)");
     WriteObject(p.GetSigma(), "/Parameters/sigma", "STD of wavefunction guess");
     WriteObject(p.GetTol(), "/Parameters/tol", "Error tolerance in psi");
     WriteObject(p.GetStateSolverIdx(), "/Parameters/state_solver_idx",

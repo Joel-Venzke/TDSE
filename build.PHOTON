@@ -5,4 +5,4 @@ module load hdf5
 module list 
 
 ./configure CXX=h5c++ CC=h5cc
-make 
+make -j8

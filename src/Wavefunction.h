@@ -8,27 +8,22 @@ class Wavefunction : protected Utils
 {
  private:
   PetscInt ierr;
-  int num_dims;               /* number of dimensions */
-  int num_electrons;          /* number of electrons in the system */
-  double *dim_size;           /* sizes of each dimension in a.u. */
-  double *delta_x;            /* step sizes of each dimension in a.u. */
-  double delta_v;             /* step sizes of each dimension in a.u. */
-  int *num_x;                 /* number of grid points in each dimension */
-  int num_psi_build;          /* number of points in psi_1 and psi_2 */
-  int num_psi;                /* number of points in psi */
-  double **x_value;           /* location of grid point in each dimension */
-  dcomp ***psi_build;         /* used for allocating new wave functions */
-  dcomp ***psi_gobbler_build; /* used for allocating new wave functions */
-  Vec psi;                    /* wavefunction for 2 electron system */
-  Vec psi_tmp;                /* wavefunction for 2 electron system */
-  Vec psi_gobbler;            /* boundary for 2 electron system */
+  int num_dims;       /* number of dimensions */
+  int num_electrons;  /* number of electrons in the system */
+  double *dim_size;   /* sizes of each dimension in a.u. */
+  double *delta_x;    /* step sizes of each dimension in a.u. */
+  int *num_x;         /* number of grid points in each dimension */
+  int num_psi_build;  /* number of points in psi_1 and psi_2 */
+  int num_psi;        /* number of points in psi */
+  double **x_value;   /* location of grid point in each dimension */
+  dcomp ***psi_build; /* used for allocating new wave functions */
+  Vec psi;            /* wavefunction for 2 electron system */
+  Vec psi_tmp;        /* wavefunction for 2 electron system */
   bool psi_alloc_build;
   bool psi_alloc;
   /* false if its not the first time checkpointing the wavefunction */
   bool first_pass;
-  double sigma;   /* std of gaussian guess */
-  double *offset; /* distance that starts gobbler */
-  double *width;  /* width of gobbler */
+  double sigma; /* std of gaussian guess */
 
   int write_counter;
 
@@ -58,7 +53,6 @@ class Wavefunction : protected Utils
   double GetEnergy(Mat *h);
   double GetEnergy(Mat *h, Vec &p);
   void ResetPsi();
-  void GobblePsi();
 
   int *GetNumX();
   int GetNumPsi();

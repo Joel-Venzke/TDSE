@@ -25,7 +25,7 @@
   "tol":        1e-10,
   "laser": {
     "polarization": "linear",
-    "polarization_vector": [1.0,0.0,0.0],
+    "polarization_vector": [1.0,1.0,0.0],
     "pulses": [
     {"pulse_shape":   "sin2",
       "cycles_on":      0.5,

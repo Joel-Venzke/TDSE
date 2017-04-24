@@ -1,5 +1,4 @@
 import numpy as np
-from mayavi import mlab
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -19,6 +18,7 @@ x         = f["Wavefunction"]["x_value_0"][:]
 y         = f["Wavefunction"]["x_value_1"][:]
 
 if len(shape) == 3: 
+    from mayavi import mlab
     z         = f["Wavefunction"]["x_value_2"][:]
     x,y,z = np.mgrid[np.min(x):np.max(x)+abs(x[0]-x[1]):abs(x[0]-x[1]),np.min(y):np.max(y)+abs(y[0]-y[1]):abs(y[0]-y[1]),np.min(z):np.max(z)+abs(z[0]-z[1]):abs(z[0]-z[1])]
     print x.shape

@@ -54,7 +54,7 @@ Use the `hdf5_build.summitcu` and `petsc_build.summitcu` scripts to compile on s
 # USAGE
 The code can be used by using the `TDSE` binary. Here is an example run command using 4 processors.
 
-`${TDSE_DIR}/bin/mpiexec -n 4 ../../bin/TDSE  -eigen_ksp_type preonly -eigen_pc_type lu -eigen_pc_factor_mat_solver_package superlu_dist`
+`mpiexec -n 4 ${TDSE_DIR}/bin/TDSE  -eigen_ksp_type preonly -eigen_pc_type lu -eigen_pc_factor_mat_solver_package superlu_dist`
 
 # Development 
 

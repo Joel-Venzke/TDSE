@@ -26,6 +26,7 @@ class Hamiltonian : protected Utils
   Mat time_independent;
   Mat time_dependent;
   Mat total_hamlitonian;
+  int **gobbler_idx; /* distance that starts gobbler */
 
   void CreateTimeIndependent();
   void CreateTimeDependent();
@@ -43,7 +44,7 @@ class Hamiltonian : protected Utils
   dcomp GetOffDiagonal(std::vector<int> &idx_array,
                        std::vector<int> &diff_array, bool time_dep);
   dcomp GetDiagonal(std::vector<int> &idx_array, bool time_dep);
-  dcomp GetKineticTerm();
+  dcomp GetKineticTerm(std::vector<int> &idx_array);
   dcomp GetNucleiTerm(std::vector<int> &idx_array);
   dcomp GetElectronElectronTerm(std::vector<int> &idx_array);
   int GetOffset(int elec_idx, int dim_idx);

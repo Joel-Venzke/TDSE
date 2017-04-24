@@ -95,8 +95,6 @@ void Simulation::Propagate()
       }
     }
 
-    wavefunction->GobblePsi();
-
     /* only checkpoint so often */
     if (i % write_frequency == 0)
     {

@@ -19,8 +19,9 @@ class Utils
 {
  protected:
   mpi::communicator world;
-  const double pi = 3.1415926535897;
-  const double c  = 1 / 7.2973525664e-3;
+  const double pi  = 3.1415926535897;
+  const double c   = 1 / 7.2973525664e-3;
+  const dcomp imag = dcomp(0.0, 1.0);
 
  public:
   void EndRun(std::string str);

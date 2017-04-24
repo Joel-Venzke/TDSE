@@ -13,20 +13,9 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   num_electrons   = p.GetNumElectrons();
   dim_size        = p.dim_size.get();
   delta_x         = p.delta_x.get();
-  delta_v         = 0.0;
   sigma           = p.GetSigma();
   num_psi_build   = 1.0;
   write_counter   = 0;
-
-  offset = new double[num_dims];
-  width  = new double[num_dims];
-  for (int i = 0; i < num_dims; ++i)
-  {
-    delta_v += delta_x[i];
-    offset[i] = dim_size[i] / 2.0 * p.GetGobbler();
-    width[i]  = pi / (2.0 * (dim_size[i] / 2.0 - offset[i]));
-  }
-  delta_v /= (double)num_dims;
 
   /* allocate grid */
   CreateGrid();
@@ -60,7 +49,6 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
     viewer_file.Open("a");
     /* move into group */
     viewer_file.PushGroup(group_name);
-    viewer_file.WriteObject((PetscObject)psi_gobbler);
     /* set time step */
     viewer_file.SetTime(write_counter);
     /* write vector */
@@ -70,9 +58,6 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
     name = tmp;
     viewer_file.WriteAttribute(name, "Attribute",
                                "Wavefunction for the two electron system");
-    PetscObjectGetName((PetscObject)psi_gobbler, &tmp);
-    name = tmp;
-    viewer_file.WriteAttribute(name, "Attribute", "boundary potential for psi");
     /* close file */
     viewer_file.Close();
 
@@ -101,13 +86,6 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
     //           "/Wavefunction/psi_build_dim_" + std::to_string(dim_idx),
     //           "Guess for then nth dimension of the wavefunction. "
     //           "Order is electron 0 the electron 1",
-    //           elec_idx);
-    //       h5_file.WriteObject(
-    //           psi_gobbler_build[elec_idx][dim_idx], num_x[dim_idx],
-    //           "/Wavefunction/psi_gobbler_build_dim_" +
-    //           std::to_string(dim_idx), "Guess for then nth dimension of the
-    //           boundary potential "
-    //           "(gobbler). Order is electron 0 the electron 1",
     //           elec_idx);
     //     }
     //   }
@@ -228,18 +206,15 @@ void Wavefunction::CreatePsi()
 
   if (!psi_alloc_build)
   {
-    psi_build         = new dcomp**[num_electrons];
-    psi_gobbler_build = new dcomp**[num_electrons];
+    psi_build = new dcomp**[num_electrons];
 
     for (int elec_idx = 0; elec_idx < num_electrons; elec_idx++)
     {
-      psi_build[elec_idx]         = new dcomp*[num_dims];
-      psi_gobbler_build[elec_idx] = new dcomp*[num_dims];
+      psi_build[elec_idx] = new dcomp*[num_dims];
 
       for (int dim_idx = 0; dim_idx < num_dims; dim_idx++)
       {
-        psi_build[elec_idx][dim_idx]         = new dcomp[num_x[dim_idx]];
-        psi_gobbler_build[elec_idx][dim_idx] = new dcomp[num_x[dim_idx]];
+        psi_build[elec_idx][dim_idx] = new dcomp[num_x[dim_idx]];
       }
     }
     psi_alloc_build = true;
@@ -258,15 +233,6 @@ void Wavefunction::CreatePsi()
         /* Gaussian centered around 0.0 with variation sigma */
         psi_build[elec_idx][dim_idx][i] =
             dcomp(exp(-1 * x2 / (2 * sigma2)), 0.0);
-        if (std::abs(x) - offset[dim_idx] > 0)
-        {
-          psi_gobbler_build[elec_idx][dim_idx][i] = std::pow(
-              cos((std::abs(x) - offset[dim_idx]) * width[dim_idx]), 1.0 / 8.0);
-        }
-        else
-        {
-          psi_gobbler_build[elec_idx][dim_idx][i] = dcomp(1.0, 0.0);
-        }
       }
     }
   }
@@ -290,11 +256,6 @@ void Wavefunction::CreatePsi()
     VecSetSizes(psi_tmp, PETSC_DECIDE, num_psi);
     VecSetFromOptions(psi_tmp);
 
-    VecCreate(PETSC_COMM_WORLD, &psi_gobbler);
-    VecSetSizes(psi_gobbler, PETSC_DECIDE, num_psi);
-    VecSetFromOptions(psi_gobbler);
-    ierr = PetscObjectSetName((PetscObject)psi_gobbler, "psi_gobbler");
-
     psi_alloc = true;
   }
 
@@ -306,19 +267,9 @@ void Wavefunction::CreatePsi()
     VecSetValues(psi, 1, &idx, &val, INSERT_VALUES);
   }
   VecAssemblyBegin(psi);
-  VecGetOwnershipRange(psi_gobbler, &low, &high);
-  for (int idx = low; idx < high; idx++)
-  {
-    /* set psi */
-    val = GetVal(psi_gobbler_build, idx);
-    VecSetValues(psi_gobbler, 1, &idx, &val, INSERT_VALUES);
-  }
-  VecAssemblyBegin(psi_gobbler);
   VecAssemblyEnd(psi);
   /* normalize all psi */
   Normalize();
-
-  VecAssemblyEnd(psi_gobbler);
 }
 
 void Wavefunction::CleanUp()
@@ -330,13 +281,10 @@ void Wavefunction::CleanUp()
       for (int dim_idx = 0; dim_idx < num_dims; dim_idx++)
       {
         delete psi_build[elec_idx][dim_idx];
-        delete psi_gobbler_build[elec_idx][dim_idx];
       }
       delete[] psi_build[elec_idx];
-      delete[] psi_gobbler_build[elec_idx];
     }
     delete[] psi_build;
-    delete[] psi_gobbler_build;
     psi_alloc_build = false;
   }
 }
@@ -375,9 +323,7 @@ dcomp Wavefunction::GetVal(dcomp*** data, int idx)
 }
 
 /* normalize psi_1, psi_2, and psi */
-void Wavefunction::Normalize() { Normalize(psi, delta_v); }
-
-void Wavefunction::GobblePsi() { VecPointwiseMult(psi, psi_gobbler, psi); }
+void Wavefunction::Normalize() { Normalize(psi, delta_x[0]); }
 
 /* normalizes the array provided */
 void Wavefunction::Normalize(Vec& data, double dv)
@@ -394,6 +340,7 @@ double Wavefunction::Norm(Vec& data, double dv)
 {
   double total = 0;
   VecNorm(data, NORM_2, &total);
+  /* TODO(jove7731): normalize with correct dx term */
   // return total * dv;
   return total;
 }
@@ -439,5 +386,4 @@ Wavefunction::~Wavefunction()
   CleanUp();
   VecDestroy(&psi);
   VecDestroy(&psi_tmp);
-  VecDestroy(&psi_gobbler);
 }
