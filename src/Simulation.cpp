@@ -173,6 +173,7 @@ void Simulation::Propagate()
       wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
       t = clock();
     }
+    i++;
   }
 
   wavefunction->Checkpoint(*h5_file, *viewer_file, time[time_length - 1]);

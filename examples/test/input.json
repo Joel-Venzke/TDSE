@@ -14,7 +14,7 @@
       "location": [0.0,0.0,0.0],
       "SAE": null}]},
   "alpha":   0.8,
-  "gobbler": 0.9,
+  "gobbler": 0.7,
   "sigma":   2.0,
   "write_frequency_propagation": 200,
   "write_frequency_eigin_state": 1,
@@ -25,7 +25,7 @@
   "tol":        1e-10,
   "laser": {
     "polarization": "linear",
-    "polarization_vector": [1.0,2.0,0.0],
+    "polarization_vector": [1.0,0.0,0.0],
     "pulses": [
     {"pulse_shape":   "sin2",
       "cycles_on":      1.0,
