@@ -29,14 +29,14 @@ p_sqrt          = int(p_sqrt)
 fig = plt.figure()
 
 for i, psi in enumerate(psi_value):
-    if i>0:
+    if i>0: # the zeroth wave function is the guess and not relevant
         print "plotting", i
         # set up initial figure with color bar
         psi = psi[:,0] + 1j*psi[:,1]
         psi.shape = (p_sqrt,p_sqrt)
         plt.imshow(np.absolute(psi), cmap='viridis', origin='lower',
                    extent=[x[0],x[-1],x[0],x[-1]],
-                   norm=LogNorm(vmin=1e-10, vmax=max_val))
+                   norm=LogNorm(vmin=1e-7, vmax=max_val))
         plt.text(time_x, time_y, "Time: "+str(psi_time[i])+" a.u.",
                     color='white')
         # color bar doesn't change during the video so only set it here

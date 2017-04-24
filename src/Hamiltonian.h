@@ -27,6 +27,7 @@ class Hamiltonian : protected Utils
   Mat time_dependent;
   Mat total_hamlitonian;
   int **gobbler_idx; /* distance that starts gobbler */
+  double eta;        /* value in exponent for ECS */
 
   void CreateTimeIndependent();
   void CreateTimeDependent();

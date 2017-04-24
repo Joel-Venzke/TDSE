@@ -19,6 +19,7 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
   alpha_2             = alpha * alpha;
   a_field             = pulse.GetAField();
   polarization_vector = p.polarization_vector.get();
+  eta                 = pi / 4.0;
 
   gobbler_idx = new int*[num_dims];
   for (int i = 0; i < num_dims; ++i)
@@ -231,22 +232,22 @@ dcomp Hamiltonian::GetOffDiagonal(std::vector<int>& idx_array,
                   gobbler_idx[dim_idx][1])
           {
             /* Imaginary part of ECS */
-            off_diagonal += std::exp(-2.0 * imag * pi / 4.0) *
+            off_diagonal += std::exp(-2.0 * imag * eta) *
                             dcomp(-1.0 / (2.0 * delta_x_2[dim_idx]), 0.0);
           }
           else if (idx_array[2 * (elec_idx * num_dims + dim_idx)] ==
                    gobbler_idx[dim_idx][0])
           {
             /* left discontinuity part of ECS */
-            off_diagonal += (2.0 / (1.0 + std::exp(imag * pi / 4.0))) *
+            off_diagonal += (2.0 / (1.0 + std::exp(imag * eta))) *
                             dcomp(-1.0 / (2.0 * delta_x_2[dim_idx]), 0.0);
           }
           else if (idx_array[2 * (elec_idx * num_dims + dim_idx)] ==
                    gobbler_idx[dim_idx][1])
           {
             /* right discontinuity part of ECS */
-            off_diagonal += (2.0 * std::exp(-1.0 * imag * pi / 4.0) /
-                             (1.0 + std::exp(imag * pi / 4.0))) *
+            off_diagonal += (2.0 * std::exp(-1.0 * imag * eta) /
+                             (1.0 + std::exp(imag * eta))) *
                             dcomp(-1.0 / (2.0 * delta_x_2[dim_idx]), 0.0);
           }
           else
@@ -262,22 +263,22 @@ dcomp Hamiltonian::GetOffDiagonal(std::vector<int>& idx_array,
                   gobbler_idx[dim_idx][1])
           {
             /* Imaginary part of ECS */
-            off_diagonal += std::exp(-2.0 * imag * pi / 4.0) *
+            off_diagonal += std::exp(-2.0 * imag * eta) *
                             dcomp(-1.0 / (2.0 * delta_x_2[dim_idx]), 0.0);
           }
           else if (idx_array[2 * (elec_idx * num_dims + dim_idx)] ==
                    gobbler_idx[dim_idx][0])
           {
             /* left discontinuity part of ECS */
-            off_diagonal += (2.0 * std::exp(-imag * pi / 4.0) /
-                             (1.0 + std::exp(imag * pi / 4.0))) *
+            off_diagonal += (2.0 * std::exp(-1.0 * imag * eta) /
+                             (1.0 + std::exp(imag * eta))) *
                             dcomp(-1.0 / (2.0 * delta_x_2[dim_idx]), 0.0);
           }
           else if (idx_array[2 * (elec_idx * num_dims + dim_idx)] ==
                    gobbler_idx[dim_idx][1])
           {
             /* right discontinuity part of ECS */
-            off_diagonal += (2.0 / (1.0 + std::exp(imag * pi / 4.0))) *
+            off_diagonal += (2.0 / (1.0 + std::exp(imag * eta))) *
                             dcomp(-1.0 / (2.0 * delta_x_2[dim_idx]), 0.0);
           }
           else
@@ -317,8 +318,8 @@ dcomp Hamiltonian::GetKineticTerm(std::vector<int>& idx_array)
               gobbler_idx[dim_idx][1])
       {
         /* Imaginary part of ECS */
-        kinetic += std::exp(-2.0 * imag * pi / 4.0) *
-                   dcomp(1.0 / delta_x_2[dim_idx], 0.0);
+        kinetic +=
+            std::exp(-2.0 * imag * eta) * dcomp(1.0 / delta_x_2[dim_idx], 0.0);
       }
       else if (idx_array[2 * (elec_idx * num_dims + dim_idx)] ==
                    gobbler_idx[dim_idx][0] ||
@@ -326,8 +327,8 @@ dcomp Hamiltonian::GetKineticTerm(std::vector<int>& idx_array)
                    gobbler_idx[dim_idx][1])
       {
         /* discontinuities of ECS */
-        kinetic += std::exp(-1.0 * imag * pi / 4.0) *
-                   dcomp(1.0 / delta_x_2[dim_idx], 0.0);
+        kinetic +=
+            std::exp(-1.0 * imag * eta) * dcomp(1.0 / delta_x_2[dim_idx], 0.0);
       }
       else
       {
@@ -347,7 +348,7 @@ dcomp Hamiltonian::GetNucleiTerm(std::vector<int>& idx_array)
     /* loop over each nuclei */
     for (int nuclei_idx = 0; nuclei_idx < num_nuclei; ++nuclei_idx)
     {
-      /* Column term */
+      /* Coulomb term */
       nuclei -= dcomp(z[nuclei_idx] / SoftCoreDistance(location[nuclei_idx],
                                                        idx_array, elec_idx),
                       0.0);
