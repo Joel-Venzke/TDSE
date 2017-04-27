@@ -20,8 +20,6 @@ y         = f["Wavefunction"]["x_value_1"][:]
 if len(shape) == 3: 
     from mayavi import mlab
     z         = f["Wavefunction"]["x_value_2"][:]
-    x,y,z = np.mgrid[np.min(x):np.max(x)+abs(x[0]-x[1]):abs(x[0]-x[1]),np.min(y):np.max(y)+abs(y[0]-y[1]):abs(y[0]-y[1]),np.min(z):np.max(z)+abs(z[0]-z[1]):abs(z[0]-z[1])]
-    print x.shape
     for psi in psi_value:
         psi = psi[:,0]+1j*psi[:,1]
         psi.shape = tuple(shape)
@@ -30,7 +28,7 @@ if len(shape) == 3:
             opacity=0.3,
             colormap="viridis",
             contours=5,
-            extent=[x[0,0,0],x[-1,0,0],y[0,0,0],y[0,-1,0],z[0,0,0],z[0,0,-1]])
+            extent=[x[0],x[-1],y[0],y[-1],z[0],z[-1]])
         # mlab.pipeline.iso_surface(
         #     mlab.pipeline.scalar_field(psi.real),
         #     vmin=-1*np.max(np.abs(psi)),
@@ -53,11 +51,11 @@ if len(shape) == 3:
         #     transparent=True,colormap="viridis",
         #     slice_index=shape[2]/2)
         mlab.axes(color=(0.0,0.0,0.0),
-            ranges=[x[0,0,0],x[-1,0,0],y[0,0,0],y[0,-1,0],z[0,0,0],z[0,0,-1]],
+            ranges=[x[0],x[-1],y[0],y[-1],z[0],z[-1]],
             nb_labels=5,
-            extent=[x[0,0,0],x[-1,0,0],y[0,0,0],y[0,-1,0],z[0,0,0],z[0,0,-1]])
+            extent=[x[0],x[-1],y[0],y[-1],z[0],z[-1]])
         mlab.colorbar(nb_labels=4,orientation="vertical")
-        mlab.outline(extent=[x[0,0,0],x[-1,0,0],y[0,0,0],y[0,-1,0],z[0,0,0],z[0,0,-1]])
+        mlab.outline(extent=[x[0],x[-1],y[0],y[-1],z[0],z[-1]])
         mlab.show()
 
 elif len(shape) == 2:

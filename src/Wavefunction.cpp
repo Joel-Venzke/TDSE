@@ -165,7 +165,7 @@ void Wavefunction::CreateGrid()
     num_psi_build *= num_x[i];
 
     /* find center of grid */
-    center = num_x[i] / 2 + 1;
+    center = num_x[i] / 2;
 
     /* allocate grid */
     x_value[i] = new double[num_x[i]];
@@ -174,21 +174,21 @@ void Wavefunction::CreateGrid()
     x_value[i][center] = 0.0;
 
     /* loop over all others */
-    for (int j = center - 1; j > 0; j--)
+    for (int j = center - 1; j >= 0; j--)
     {
       /* get x value */
       current_x = (j - center) * delta_x[i];
 
       /* double checking index */
-      if (j - 1 < 0 || num_x[i] - j >= num_x[i])
+      if (j < 0 || num_x[i] - j - 1 >= num_x[i])
       {
         EndRun("Allocation error in grid");
       }
 
       /* set negative side */
-      x_value[i][j - 1] = current_x;
+      x_value[i][j] = current_x;
       /* set positive side */
-      x_value[i][num_x[i] - j] = -1 * current_x;
+      x_value[i][num_x[i] - j - 1] = -1 * current_x;
     }
   }
 }

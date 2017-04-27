@@ -87,12 +87,9 @@ void Simulation::Propagate()
 
     /* Check for Divergence*/
     KSPGetConvergedReason(ksp, &reason);
-    if (world.rank() == 0)
+    if (reason < 0)
     {
-      if (reason < 0)
-      {
-        EndRun("Divergence!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-      }
+      EndRun("Divergence!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
     }
 
     /* only checkpoint so often */
@@ -111,6 +108,9 @@ void Simulation::Propagate()
       t = clock();
     }
   }
+
+  /* Save frame after pulse ends*/
+  wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
 
   if (world.rank() == 0)
     std::cout << "\nPropagating until norm stops changing\n";
@@ -132,7 +132,10 @@ void Simulation::Propagate()
   while (!converged) /* Should I add an upper bound to this? */
   {
     /* copy old state for convergence */
-    VecCopy(*psi, psi_old);
+    if (i % write_frequency == 0)
+    {
+      VecCopy(*psi, psi_old);
+    }
     /* Get psi_right side */
     MatMult(right, *psi, psi_right);
 
@@ -141,12 +144,9 @@ void Simulation::Propagate()
 
     /* Check for Divergence*/
     KSPGetConvergedReason(ksp, &reason);
-    if (world.rank() == 0)
+    if (reason < 0)
     {
-      if (reason < 0)
-      {
-        EndRun("Divergence!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-      }
+      EndRun("Divergence!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
     }
 
     /* only checkpoint so often */
@@ -167,7 +167,7 @@ void Simulation::Propagate()
       if (norm < 1e-14)
       {
         converged = true;
-        if (world.rank() == 0) std::cout << "Converged!!!";
+        if (world.rank() == 0) std::cout << "Converged!!!\n";
       }
       /* write a checkpoint */
       wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
@@ -175,8 +175,6 @@ void Simulation::Propagate()
     }
     i++;
   }
-
-  wavefunction->Checkpoint(*h5_file, *viewer_file, time[time_length - 1]);
 
   VecDestroy(&psi_right);
   VecDestroy(&psi_old);
@@ -276,12 +274,9 @@ void Simulation::PowerMethod(int num_states, int return_state_idx)
 
       /* Check for Divergence*/
       KSPGetConvergedReason(ksp, &reason);
-      if (world.rank() == 0)
+      if (reason < 0)
       {
-        if (reason < 0)
-        {
-          EndRun("Divergence!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-        }
+        EndRun("Divergence!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
       }
 
       /* used to get higher states */
