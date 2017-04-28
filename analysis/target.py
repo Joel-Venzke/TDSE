@@ -10,6 +10,7 @@ target_name = "H"
 target = h5py.File(target_name+".h5","r")
 f = h5py.File("TDSE.h5","r")
 psi_value = target["psi"]
+# psi_value = f["Wavefunction"]["psi"]
 energy    = target["Energy"]
 psi_time  = f["Wavefunction"]["psi_time"][:]
 shape         = f["Wavefunction"]["num_x"][:]
@@ -20,43 +21,26 @@ y         = f["Wavefunction"]["x_value_1"][:]
 if len(shape) == 3: 
     from mayavi import mlab
     z         = f["Wavefunction"]["x_value_2"][:]
-    for psi in psi_value:
+    for i, psi in enumerate(psi_value):
         psi = psi[:,0]+1j*psi[:,1]
         psi.shape = tuple(shape)
-        mlab.pipeline.iso_surface(mlab.pipeline.scalar_field(np.abs(psi)),
-            vmin=1e-15,
+        # print np.log10(np.abs(psi))
+        mlab.pipeline.iso_surface(mlab.pipeline.scalar_field(np.log10(np.abs(psi))),
+            vmin=-15,
             opacity=0.3,
             colormap="viridis",
-            contours=5,
-            extent=[x[0],x[-1],y[0],y[-1],z[0],z[-1]])
-        # mlab.pipeline.iso_surface(
-        #     mlab.pipeline.scalar_field(psi.real),
-        #     vmin=-1*np.max(np.abs(psi)),
-        #     vmax=np.max(np.abs(psi)),
-        #     opacity=0.5,
-        #     colormap="bwr",
-        #     contours=5)
-        # mlab.pipeline.volume(mlab.pipeline.scalar_field(np.abs(psi)),
-        #     vmin=1e-10)
-        # mlab.pipeline.image_plane_widget(mlab.pipeline.scalar_field(np.abs(psi)),vmin=1e-15,
-        #     plane_orientation='x_axes',
-        #     transparent=True,colormap="viridis",
-        #     slice_index=shape[0]/2)
-        # mlab.pipeline.image_plane_widget(mlab.pipeline.scalar_field(np.abs(psi)),vmin=1e-15,
-        #     plane_orientation='y_axes',
-        #     transparent=True,colormap="viridis",
-        #     slice_index=shape[1]/2)
-        # mlab.pipeline.image_plane_widget(mlab.pipeline.scalar_field(np.abs(psi)),vmin=1e-15,
-        #     plane_orientation='z_axes',
-        #     transparent=True,colormap="viridis",
-        #     slice_index=shape[2]/2)
+            contours=5)
+        mlab.pipeline.image_plane_widget(mlab.pipeline.scalar_field(np.log10(np.abs(psi))),vmin=-15,
+            plane_orientation='z_axes',
+            transparent=True,colormap="viridis",
+            slice_index=shape[2]/2)
         mlab.axes(color=(0.0,0.0,0.0),
             ranges=[x[0],x[-1],y[0],y[-1],z[0],z[-1]],
-            nb_labels=5,
-            extent=[x[0],x[-1],y[0],y[-1],z[0],z[-1]])
+            nb_labels=5)
         mlab.colorbar(nb_labels=4,orientation="vertical")
-        mlab.outline(extent=[x[0],x[-1],y[0],y[-1],z[0],z[-1]])
-        mlab.show()
+        # mlab.show()
+        mlab.savefig("figs/target_"+str(i).zfill(8)+".png")
+        mlab.clf()
 
 elif len(shape) == 2:
     fig = plt.figure()

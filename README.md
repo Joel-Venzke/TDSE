@@ -8,9 +8,9 @@ HDF5 with c++ and mpi
 
 PETSC with complex
 
-Compiler with GCC 4.9 or greater
+Boost MPI
 
-C++11 support
+Compiler with GCC 4.9 or greater (C++11 support)
 
 # INSTALL
 
