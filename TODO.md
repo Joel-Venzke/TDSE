@@ -1,6 +1,8 @@
 # TDSE
 
+* Unit test
 * Set up restart
+* non Born-Oppenheimer
 
 # Parameters
 
@@ -27,3 +29,4 @@
 * Daisey chain Script
 * python input file generator
 * set up unit conversion calculator 
+* Paraview?
