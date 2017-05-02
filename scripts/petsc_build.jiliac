@@ -4,7 +4,6 @@ module purge
 module load intel 
 module load openmpi
 module load hdf5 
-module load fftw/3.3.6
 module load cmake
 module list
 

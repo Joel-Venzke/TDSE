@@ -4,6 +4,13 @@
 #PBS -j oe
 #PBS -q nistQ
 
+module purge 
+module load intel 
+module load openmpi
+module load hdf5 
+module load boost
+module load cmake
+module list
 
 TDSE_ROOT=/home/becker/jove7731/Repos/TDSE
 
