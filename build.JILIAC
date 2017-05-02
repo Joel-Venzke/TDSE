@@ -1,0 +1,9 @@
+#/bin/bash
+module load intel
+module load openmpi
+module load hdf5
+module load boost
+module list 
+
+./configure CXX=h5c++ CC=h5cc
+make 
