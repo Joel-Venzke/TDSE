@@ -29,7 +29,8 @@ void Parameters::Setup(std::string file_name)
 {
   if (world.rank() == 0)
   {
-    std::cout << "Reading input file: " << file_name << "\n" << std::flush;
+    std::cout << "Simulation running on " <<  world.size() << " Processors\n"
+              << "Reading input file: " << file_name << "\n" << std::flush;
   }
 
   double polar_norm = 0.0; /* the norm for the polarization vector */
