@@ -6,12 +6,6 @@ module load szip
 module load zlib 
 module list 
 
-#need gcc 4.9 or greater
-#GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
-    #if GCC_VERSION < 40900
-        #error "unsupported GCC version - see https://github.com/nlohmann/json#supported-compilers"
-    #endif
-
 
 ~/Repos/hdf5-1.10.0-patch1/configure \
   --prefix=/projects/jove7731/local/gcc/hdf5 \

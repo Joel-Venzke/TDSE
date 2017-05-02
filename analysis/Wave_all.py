@@ -33,7 +33,7 @@ if len(shape) == 3:
     z         = f["Wavefunction"]["x_value_2"][:]
     mlab.figure(bgcolor=(1.0,1.0,1.0),fgcolor=(0.0,0.0,0.0))
     for i, psi in enumerate(psi_value):
-        if i>76: # the zeroth wave function is the guess and not relevant
+        if i>0: # the zeroth wave function is the guess and not relevant
             print "plotting", i
             psi = psi[:,0]+1j*psi[:,1]
             psi.shape = tuple(shape)

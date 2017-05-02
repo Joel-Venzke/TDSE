@@ -1,7 +1,8 @@
 #!/usr/bin/bash
-#PBS -l nodes=1:ppn=1
+#PBS -l nodes=32:ppn=1
 #PBS -N Venzke
 #PBS -j oe
+#PBS -q nistQ
 
 
 TDSE_ROOT=/home/becker/jove7731/Repos/TDSE
@@ -15,8 +16,4 @@ module list
 
 cd $PBS_O_WORKDIR
 
-
-export OMP_NUM_THREADS=1
-pwd
-time ${RUN_FILE}>run.log
-
+mpiexec -n 32 ${RUN_FILE}  -eigen_ksp_type preonly -eigen_pc_type lu -eigen_pc_factor_mat_solver_package superlu_dist
