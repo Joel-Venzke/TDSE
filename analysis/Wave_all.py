@@ -11,7 +11,7 @@ psi_time  = f["Wavefunction"]["psi_time"][:]
 x         = f["Wavefunction"]["x_value_0"][:]
 y         = f["Wavefunction"]["x_value_1"][:]
 shape     = f["Wavefunction"]["num_x"][:]
-print shape
+print(shape)
 # calculate location for time to be printed
 time_x    = np.min(x)*0.95
 time_y    = np.max(x)*0.9
@@ -33,8 +33,8 @@ if len(shape) == 3:
     z         = f["Wavefunction"]["x_value_2"][:]
     mlab.figure(bgcolor=(1.0,1.0,1.0),fgcolor=(0.0,0.0,0.0))
     for i, psi in enumerate(psi_value):
-        if i>415: # the zeroth wave function is the guess and not relevant
-            print "plotting", i
+        if i>0: # the zeroth wave function is the guess and not relevant
+            print("plotting", i)
             psi = psi[:,0]+1j*psi[:,1]
             psi.shape = tuple(shape)
             psi = np.log10(np.abs(psi))
@@ -63,14 +63,14 @@ if len(shape) == 3:
 elif len(shape) == 2:
     # shape into a 3d array with time as the first axis
     p_sqrt   = np.sqrt(psi_value[0].shape[0])
-    print "dim size:", p_sqrt, "Should be integer"
+    print("dim size:", p_sqrt, "Should be integer")
     p_sqrt          = int(p_sqrt)
     fig = plt.figure()
     font = {'size'   : 18}
     matplotlib.rc('font', **font)
     for i, psi in enumerate(psi_value):
         if i>0: # the zeroth wave function is the guess and not relevant
-            print "plotting", i
+            print("plotting", i)
             # set up initial figure with color bar
             psi = psi[:,0] + 1j*psi[:,1]
             psi.shape = (p_sqrt,p_sqrt)
