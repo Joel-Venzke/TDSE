@@ -1,11 +1,9 @@
 {
   "delta_t": 0.005,
   "dimensions": [
-    {"dim_size": 20.0,
+    {"dim_size": 50.0,
     "delta_x":   0.5},
-    {"dim_size": 20.0,
-    "delta_x":   0.5},
-    {"dim_size": 20.0,
+    {"dim_size": 50.0,
     "delta_x":   0.5}],
   "num_electrons": 1,
   "restart": 0,
@@ -21,12 +19,8 @@
   "write_frequency_propagation": 200,
   "write_frequency_eigin_state": 1,
   "state_solver":    "Power",
-  "propagate": 1,
+  "propagate": 0,
   "states": [
-    {"energy": -0.499},
-    {"energy": -0.499},
-    {"energy": -0.499},
-    {"energy": -0.499},
     {"energy": -0.499}],
   "tol":        1e-10,
   "laser": {

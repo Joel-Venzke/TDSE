@@ -2,11 +2,9 @@
   "delta_t": 0.005,
   "dimensions": [
     {"dim_size": 50.0,
-    "delta_x":   0.76},
+    "delta_x":   0.2},
     {"dim_size": 50.0,
-    "delta_x":   0.76},
-    {"dim_size": 50.0,
-    "delta_x":   0.76}],
+    "delta_x":   0.2}],
   "num_electrons": 1,
   "restart": 0,
   "target": {
@@ -15,7 +13,7 @@
       {"z": 1.0,
       "location": [0.0,0.0,0.0],
       "SAE": null}]},
-  "alpha":   0.3,
+  "alpha":   0.78,
   "gobbler": 0.9,
   "sigma":   2.0,
   "write_frequency_propagation": 200,

@@ -33,7 +33,7 @@ if len(shape) == 3:
     z         = f["Wavefunction"]["x_value_2"][:]
     mlab.figure(bgcolor=(1.0,1.0,1.0),fgcolor=(0.0,0.0,0.0))
     for i, psi in enumerate(psi_value):
-        if i>0: # the zeroth wave function is the guess and not relevant
+        if i>415: # the zeroth wave function is the guess and not relevant
             print "plotting", i
             psi = psi[:,0]+1j*psi[:,1]
             psi.shape = tuple(shape)
@@ -52,7 +52,7 @@ if len(shape) == 3:
                 transparent=True,colormap="viridis",
                 slice_index=shape[2]/2)
             mlab.colorbar(nb_labels=4,orientation="vertical")
-            mlab.savefig("figs/Wave_iso_cross_"+str(i).zfill(8)+".png",magnification=3)
+            # mlab.savefig("figs/Wave_iso_cross_"+str(i).zfill(8)+".png",magnification=3)
             mlab.pipeline.volume(mlab.pipeline.scalar_field(psi), 
                 vmin=-7,
                 vmax=np.log10([max_val])[0])
