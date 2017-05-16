@@ -1,0 +1,24 @@
+#!/bin/bash
+
+module load gcc
+module load openmpi
+module load szip 
+module load zlib 
+module list 
+
+
+~/Repos/hdf5-1.10.0-patch1/configure \
+  --prefix=/projects/jove7731/local/gcc_openmpi/hdf5 \
+  --enable-build-mode=production \
+  --disable-dependency-tracking \
+  --with-zlib=${CURC_ZLIB_ROOT} \
+  --with-szlib=${CURC_SZIP_ROOT} \
+  --enable-static=yes \
+  --enable-shared=yes \
+  --enable-unsupported \
+  --enable-cxx \
+  --enable-fortran \
+  --enable-parallel
+make 
+make check 
+make install
