@@ -1,0 +1,41 @@
+{
+  "delta_t": 0.005,
+  "dimensions": [
+    {"dim_size": 50.0,
+    "delta_x":   0.5},
+    {"dim_size": 50.0,
+    "delta_x":   0.5},
+    {"dim_size": 50.0,
+    "delta_x":   0.5}],
+  "num_electrons": 1,
+  "restart": 0,
+  "target": {
+    "name":  "H",
+    "nuclei" : [
+      {"z": 1.0,
+      "location": [0.0,0.0,0.0],
+      "SAE": null}]},
+  "alpha":   0.78,
+  "gobbler": 1.0,
+  "sigma":   2.0,
+  "write_frequency_propagation": 200,
+  "write_frequency_eigin_state": 1,
+  "state_solver":    "Power",
+  "propagate": 0,
+  "states": [
+    {"energy": -0.5}],
+  "tol":        1e-10,
+  "laser": {
+    "polarization": "linear",
+    "polarization_vector": [1.0,0.0,0.0],
+    "pulses": [
+    {"pulse_shape":   "sin2",
+      "cycles_on":      10.0,
+      "cycles_plateau": 0.0,
+      "cycles_off":     10.0,
+      "cycles_delay":   0.0,
+      "cep":            0.0,
+      "energy":         1.5,
+      "field_max":      12.83}]
+  }
+}
