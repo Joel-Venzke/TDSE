@@ -29,8 +29,9 @@ void Parameters::Setup(std::string file_name)
 {
   if (world.rank() == 0)
   {
-    std::cout << "Simulation running on " <<  world.size() << " Processors\n"
-              << "Reading input file: " << file_name << "\n" << std::flush;
+    std::cout << "Simulation running on " << world.size() << " Processors\n"
+              << "Reading input file: " << file_name << "\n"
+              << std::flush;
   }
 
   double polar_norm = 0.0; /* the norm for the polarization vector */
@@ -112,6 +113,10 @@ void Parameters::Setup(std::string file_name)
   else if (state_solver == "Power")
   {
     state_solver_idx = 2;
+  }
+  else if (state_solver == "SLEPC")
+  {
+    state_solver_idx = 3;
   }
 
   propagate = data["propagate"];
@@ -325,12 +330,20 @@ void Parameters::Validate()
     err_str += "\nInvalid state solver: \"";
     err_str += "States from file is not supported yet\"";
   }
-  else if (state_solver != "ITP" && state_solver != "Power")
+  else if (state_solver == "ITP")
   {
     error_found = true;
     err_str += "\nInvalid state solver: \"";
     err_str += state_solver;
-    err_str += "\"\nvalid solvers are \"ITP\" and \"Power\"\n";
+    err_str += "\"\nITP sucks, so I dropped support for it\n";
+    err_str += "\nvalid solvers are \"SLEPC\" and \"Power\"\n";
+  }
+  else if (state_solver != "Power" && state_solver != "SLEPC")
+  {
+    error_found = true;
+    err_str += "\nInvalid state solver: \"";
+    err_str += state_solver;
+    err_str += "\"\nvalid solvers are \"SLEPC\" and \"Power\"\n";
   }
 
   /* exit here to get all errors in one run */

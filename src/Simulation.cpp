@@ -183,6 +183,207 @@ void Simulation::Propagate()
   KSPDestroy(&ksp);
 }
 
+void Simulation::EigenSolve(int num_states, int return_state_idx)
+{
+  if (world.rank() == 0)
+    std::cout << "\nCalculating the lowest " << num_states
+              << " eigenvectors using SLEPC\n"
+              << std::flush;
+  clock_t t;
+  /* write index for checkpoints, Starts at 1 to avoid writing on first
+   * iteration*/
+  int i                = 1;
+  double *state_energy = parameters->state_energy.get(); /* energy guesses */
+  double energy; /* stores energy for IO */
+  double norm;   /* stores norm for IO */
+  double tol = parameters->GetTol();
+  dcomp eigen_real;
+  dcomp eigen_imag;
+  double target = state_energy[0];
+  double error;
+  int nconv;
+
+  /* Files for */
+  ViewWrapper v_states_file(parameters->GetTarget() + ".h5"); /* PETSC viewer */
+  /* create file so that the format works with PETSC */
+  v_states_file.Open();
+  v_states_file.Close();
+  HDF5Wrapper h_states_file(parameters->GetTarget() + ".h5"); /* HDF5 viewer */
+
+  std::vector<Vec> states; /* vector of currently converged states */
+  Vec psi_real;            /* Used to place copies in states */
+  Vec psi_imag;            /* Used to place copies in states */
+  psi = wavefunction->GetPsi();
+  VecDuplicate(*psi, &psi_imag);
+  VecDuplicate(*psi, &psi_real);
+  Mat A; /* matrix on left side of Ax=b */
+  MatDuplicate(*(hamiltonian->GetTimeIndependent()), MAT_DO_NOT_COPY_VALUES,
+               &A);
+  MatCopy(*(hamiltonian->GetTimeIndependent()), A, SAME_NONZERO_PATTERN);
+  MatView(A, PETSC_VIEWER_STDOUT_WORLD);
+  // MatCreateVecs(A, NULL, &psi_imag);
+  // MatCreateVecs(A, NULL, &psi_real);
+
+  EPS eps; /* eigen solver */
+  EPSCreate(PETSC_COMM_WORLD, &eps);
+
+  EPSSetOperators(eps, A, NULL);
+  EPSSetProblemType(eps, EPS_NHEP);
+  EPSSetTolerances(eps, tol, PETSC_DECIDE);
+  EPSSetWhichEigenpairs(eps, EPS_SMALLEST_REAL);
+  EPSSetDimensions(eps, num_states, PETSC_DECIDE, PETSC_DECIDE);
+  EPSSetFromOptions(eps);
+  EPSSetUp(eps);
+  // EPSView(eps, PETSC_VIEWER_STDOUT_WORLD);
+  EPSSetInitialSpace(eps, 1, psi);
+  EPSSolve(eps);
+  EPSGetConverged(eps, &nconv);
+  for (int j = 0; j < nconv; j++)
+  {
+    EPSGetEigenpair(eps, j, &eigen_real, &eigen_imag, psi_real, psi_imag);
+    VecGetSize(psi_real, &i);
+    if (world.rank() == 0)
+      std::cout << "Eigen " << eigen_real << " " << eigen_imag << " " << i
+                << "\n";
+    // if (j == 0) VecView(*psi, PETSC_VIEWER_STDOUT_WORLD);
+    VecCopy(psi_real, *psi);
+    VecView(psi_real, PETSC_VIEWER_STDOUT_WORLD);
+    CheckpointState(h_states_file, v_states_file, j);
+    // CheckpointState(h_states_file, v_states_file, j * 2);
+    // VecCopy(psi_imag, *psi);
+    // CheckpointState(h_states_file, v_states_file, j * 2 + 1);
+  }
+  VecDestroy(&psi_imag);
+  EPSDestroy(&eps);
+
+  // /* allocate mem for left */
+  // MatDuplicate(*(hamiltonian->GetTimeIndependent()), MAT_DO_NOT_COPY_VALUES,
+  //              &left);
+
+  // /* Create the solver */
+  // KSPCreate(PETSC_COMM_WORLD, &ksp);
+  // KSPSetOptionsPrefix(ksp, "eigen_");
+
+  // /* pointer to actual psi in wavefunction object */
+  // psi = wavefunction->GetPsi();
+
+  // /* Allocate space for psi_old */
+  // VecDuplicate(*psi, &psi_old);
+
+  // /* loop over number of states wanted */
+  // for (int iter = 0; iter < num_states; iter++)
+  // {
+  //   /* Get Hamiltonian */
+  //   MatCopy(*(hamiltonian->GetTimeIndependent()), left,
+  //   SAME_NONZERO_PATTERN);
+  //   /* Shift by eigen value */
+  //   MatShift(left, -1.0 * state_energy[iter]);
+
+  //   /* Tell user the guess */
+  //   if (world.rank() == 0)
+  //     std::cout << "Looking for state with Energy Guess: " <<
+  //     state_energy[iter]
+  //               << "\n";
+
+  //   /* Put matrix in solver
+  //    * do this outside the loop since left never changes */
+  //   KSPSetOperators(ksp, left, left);
+  //   /* Allow command line options */
+  //   KSPSetFromOptions(ksp);
+
+  //   /* Do we need to use gram schmidt */
+  //   if (iter > 0 and
+  //       std::abs(state_energy[iter] - state_energy[iter - 1]) < 1e-10)
+  //   {
+  //     if (world.rank() == 0) std::cout << "Starting Gram Schmit\n";
+
+  //     gram_schmit = true;
+
+  //     /* This is needed because the Power method converges
+  //      * extremely quickly */
+  //     ModifiedGramSchmidt(states);
+  //   }
+  //   t = clock();
+  //   /* loop until error is small enough */
+  //   while (!converged)
+  //   {
+  //     /* copy old state for convergence */
+  //     VecCopy(*psi, psi_old);
+
+  //     /* Solve Ax=b */
+  //     KSPSolve(ksp, psi_old, *psi);
+
+  //     /* Check for Divergence*/
+  //     KSPGetConvergedReason(ksp, &reason);
+  //     if (reason < 0)
+  //     {
+  //       EndRun("Divergence!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+  //     }
+
+  //     /* used to get higher states */
+  //     if (gram_schmit) ModifiedGramSchmidt(states);
+
+  //     /* Re normalize wave function */
+  //     wavefunction->Normalize();
+
+  //     /* only checkpoint so often */
+  //     if (i % write_frequency == 0)
+  //     {
+  //       /* check convergence criteria */
+  //       converged = CheckConvergance(psi[0], psi_old, parameters->GetTol());
+  //       /* save this psi to ${target}.h5 */
+  //       energy = wavefunction->GetEnergy(hamiltonian->GetTimeIndependent());
+  //       if (world.rank() == 0)
+  //         std::cout << "Energy: " << energy << "\n" << std::flush;
+  //       // /* write a checkpoint */
+  //       // wavefunction->Checkpoint(*h5_file, *viewer_file, i /
+  //       // write_frequency);
+  //       if (world.rank() == 0)
+  //         std::cout << "Time: "
+  //                   << ((float)clock() - t) / (CLOCKS_PER_SEC *
+  //                   write_frequency)
+  //                   << "\n"
+  //                   << std::flush;
+  //       t = clock();
+  //     }
+  //     /* increment counter */
+  //     i++;
+  //   }
+
+  //   /* make sure all states are orthonormal for mgs */
+  //   VecNormalize(*psi, &norm);
+  //   VecDuplicate(*psi, &psi_tmp);
+  //   VecCopy(*psi, psi_tmp);
+  //   states.push_back(psi_tmp);
+
+  //   /* save this psi to ${target}.h5 */
+  //   CheckpointState(h_states_file, v_states_file, iter);
+
+  //   /* new Gaussian guess */
+  //   wavefunction->ResetPsi();
+
+  //   /* reset for next state */
+  //   converged = false;
+  //   if (world.rank() == 0) std::cout << "\n";
+  // }
+
+  // /* set psi to the return state */
+  // VecCopy(states[return_state_idx], *psi);
+  // wavefunction->Normalize();
+
+  // /* Clean up after ourselves */
+  // /* DO NOT delete psi_tmp since it is the same as states[states.size()-1]
+  // which
+  //  * is being deleted already */
+  // KSPDestroy(&ksp);
+  // MatDestroy(&left);
+  // VecDestroy(&psi_old);
+  // for (int i = 0; i < states.size(); ++i)
+  // {
+  //   VecDestroy(&states[i]);
+  // }
+}
+
 void Simulation::PowerMethod(int num_states, int return_state_idx)
 {
   if (world.rank() == 0)
@@ -248,6 +449,7 @@ void Simulation::PowerMethod(int num_states, int return_state_idx)
      * do this outside the loop since left never changes */
     KSPSetOperators(ksp, left, left);
     /* Allow command line options */
+    KSPSetTolerances(ksp, 1.e-15, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
     KSPSetFromOptions(ksp);
 
     /* Do we need to use gram schmidt */

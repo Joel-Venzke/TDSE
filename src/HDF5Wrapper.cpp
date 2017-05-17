@@ -858,7 +858,7 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
     WriteObject(p.GetSigma(), "/Parameters/sigma", "STD of wavefunction guess");
     WriteObject(p.GetTol(), "/Parameters/tol", "Error tolerance in psi");
     WriteObject(p.GetStateSolverIdx(), "/Parameters/state_solver_idx",
-                "Index of solver: File:0, ITP:1, Power:2");
+                "Index of solver: File:0, ITP:1, Power:2, SLEPC:3");
     WriteObject(num_pulses, "/Parameters/num_pulses",
                 "The number of pulses from the input file");
     WriteObject(p.GetPolarizationIdx(), "/Parameters/polarization_idx",

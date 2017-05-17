@@ -62,6 +62,15 @@ elif len(shape) == 2:
         plt.ylabel("Electron 1 a.u.")
         plt.title("Wave Function - Energy "+str(energy[i]))
         fig.savefig("figs/"+target_name+"_bwr_state_"+str(i).zfill(3)+".jpg")
+        plt.clf()
+        plt.imshow(psi.imag, cmap='bwr', vmin=-1*max_val, vmax=max_val,
+                   origin='lower', extent=[y[0],y[-1],x[0],x[-1]])
+        # color bar doesn't change during the video so only set it here
+        plt.colorbar()
+        plt.xlabel("Electron 2 a.u.")
+        plt.ylabel("Electron 1 a.u.")
+        plt.title("Wave Function - Energy "+str(energy[i]))
+        fig.savefig("figs/"+target_name+"_bwr_state_imag_"+str(i).zfill(3)+".jpg")
 
         plt.clf()
         plt.imshow(np.abs(psi.real), cmap='viridis', origin='lower',

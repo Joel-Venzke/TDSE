@@ -32,6 +32,7 @@ class Simulation : protected Utils
              HDF5Wrapper &h_file, ViewWrapper &v_file, Parameters &p);
 
   void PowerMethod(int num_states, int return_state_idx = 0);
+  void EigenSolve(int num_states, int return_state_idx = 0);
   void Propagate();
 
   void CheckpointState(HDF5Wrapper &h_file, ViewWrapper &v_file, int write_idx);

@@ -1,5 +1,6 @@
 #pragma once
 #include <petsc.h>
+#include <slepceps.h>
 
 class PETSCWrapper
 {
