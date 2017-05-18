@@ -2,11 +2,9 @@
   "delta_t": 0.005,
   "dimensions": [
     {"dim_size": 50.0,
-    "delta_x":   0.5},
+    "delta_x":   1.0},
     {"dim_size": 50.0,
-    "delta_x":   0.5},
-    {"dim_size": 50.0,
-    "delta_x":   0.5}],
+    "delta_x":   1.0}],
   "num_electrons": 1,
   "restart": 0,
   "target": {
@@ -20,9 +18,14 @@
   "sigma":   2.0,
   "write_frequency_propagation": 200,
   "write_frequency_eigin_state": 1,
-  "state_solver":    "Power",
+  "state_solver":    "SLEPC",
   "propagate": 0,
   "states": [
+    {"energy": -0.5},
+    {"energy": -0.5},
+    {"energy": -0.5},
+    {"energy": -0.5},
+    {"energy": -0.5},
     {"energy": -0.5}],
   "tol":        1e-10,
   "laser": {
