@@ -1,7 +1,4 @@
 import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
-from matplotlib.colors import LogNorm
 import h5py
 
 # read data
@@ -18,7 +15,7 @@ time_y    = np.max(x)*0.9
 
 max_val = 0
 # calculate color bounds
-for i,psi in enumerate(psi_value):
+for i,psi in enumerate(psi_value[:3]):
     if i>0: # the zeroth wave function is the guess and not relevant
         psi = psi[:,0] + 1j*psi[:,1]
         max_val_tmp   = np.max(np.absolute(psi))
@@ -33,7 +30,7 @@ if len(shape) == 3:
     z         = f["Wavefunction"]["x_value_2"][:]
     mlab.figure(bgcolor=(1.0,1.0,1.0),fgcolor=(0.0,0.0,0.0))
     for i, psi in enumerate(psi_value):
-        if i>0: # the zeroth wave function is the guess and not relevant
+        if i>160: # the zeroth wave function is the guess and not relevant
             print("plotting", i)
             psi = psi[:,0]+1j*psi[:,1]
             psi.shape = tuple(shape)
@@ -44,7 +41,8 @@ if len(shape) == 3:
                 vmax=np.log10([max_val])[0],
                 opacity=0.3,
                 colormap="viridis",
-                contours=[-1.0,-3.0,-5.0])
+                contours=5)
+                #contours=[-1.0,-3.0,-5.0])
             mlab.pipeline.image_plane_widget(mlab.pipeline.scalar_field(psi),
                 vmin=-15,
                 vmax=np.log10([max_val])[0],
@@ -52,15 +50,18 @@ if len(shape) == 3:
                 transparent=True,colormap="viridis",
                 slice_index=shape[2]/2)
             mlab.colorbar(nb_labels=4,orientation="vertical")
-            # mlab.savefig("figs/Wave_iso_cross_"+str(i).zfill(8)+".png",magnification=3)
-            mlab.pipeline.volume(mlab.pipeline.scalar_field(psi), 
-                vmin=-7,
-                vmax=np.log10([max_val])[0])
-            # mlab.show()
-            mlab.savefig("figs/Wave_density_cross_"+str(i).zfill(8)+".png",magnification=3)
+            mlab.savefig("figs/Wave_iso_cross_"+str(i).zfill(8)+".png",magnification=3)
+            #mlab.pipeline.volume(mlab.pipeline.scalar_field(psi), 
+            #    vmin=-7,
+            #    vmax=np.log10([max_val])[0])
+            ## mlab.show()
+            #mlab.savefig("figs/Wave_density_cross_"+str(i).zfill(8)+".png",magnification=3)
             mlab.clf()
 
 elif len(shape) == 2:
+    import matplotlib
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import LogNorm
     # shape into a 3d array with time as the first axis
     p_sqrt   = np.sqrt(psi_value[0].shape[0])
     print("dim size:", p_sqrt, "Should be integer")
