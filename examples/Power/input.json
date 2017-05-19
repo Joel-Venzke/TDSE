@@ -2,26 +2,35 @@
   "delta_t": 0.005,
   "dimensions": [
     {"dim_size": 50.0,
-    "delta_x":   0.8},
+    "delta_x":   0.5},
     {"dim_size": 50.0,
-    "delta_x":   0.8}],
+    "delta_x":   0.5}],
   "num_electrons": 1,
   "restart": 0,
   "target": {
     "name":  "H",
     "nuclei" : [
-      {"z": 1.0,
+      { "z": 0.0,
       "location": [0.0,0.0,0.0],
-      "SAE": null}]},
+      "SAE": {
+        "z_c": 1.0,
+        "c0": 1.0,
+        "r0": 2.353059,
+        "a" : [0.66294407],
+        "b" : [4.073942]}
+      }]},
   "alpha":   0.78,
   "gobbler": 0.9,
   "sigma":   2.0,
   "write_frequency_propagation": 200,
   "write_frequency_eigin_state": 1,
   "state_solver":    "Power",
-  "propagate": 1,
+  "propagate": 0,
   "states": [
-    {"energy": -0.5}],
+    {"energy": -0.82},
+    {"energy": -0.27},
+    {"energy": -0.27},
+    {"energy": -0.27}],
   "tol":        1e-10,
   "laser": {
     "polarization": "linear",

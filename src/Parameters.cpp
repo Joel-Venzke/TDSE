@@ -29,8 +29,9 @@ void Parameters::Setup(std::string file_name)
 {
   if (world.rank() == 0)
   {
-    std::cout << "Simulation running on " <<  world.size() << " Processors\n"
-              << "Reading input file: " << file_name << "\n" << std::flush;
+    std::cout << "Simulation running on " << world.size() << " Processors\n"
+              << "Reading input file: " << file_name << "\n"
+              << std::flush;
   }
 
   double polar_norm = 0.0; /* the norm for the polarization vector */
@@ -74,10 +75,54 @@ void Parameters::Setup(std::string file_name)
   }
 
   z        = std::make_unique<double[]>(num_nuclei);
+  z_c      = std::make_unique<double[]>(num_nuclei);
+  c0       = std::make_unique<double[]>(num_nuclei);
+  r0       = std::make_unique<double[]>(num_nuclei);
+  sae_size = std::make_unique<int[]>(num_nuclei);
+  a        = new double*[num_nuclei];
+  b        = new double*[num_nuclei];
   location = new double*[num_nuclei];
+  std::cout << "1\n";
   for (int i = 0; i < num_nuclei; ++i)
   {
-    z[i]        = data["target"]["nuclei"][i]["z"];
+    z[i] = data["target"]["nuclei"][i]["z"];
+
+    if (z[i] == 0.0)
+    {
+      z_c[i] = data["target"]["nuclei"][i]["SAE"]["z_c"];
+      c0[i]  = data["target"]["nuclei"][i]["SAE"]["c0"];
+      r0[i]  = data["target"]["nuclei"][i]["SAE"]["r0"];
+      if (data["target"]["nuclei"][i]["SAE"]["a"].size() !=
+          data["target"]["nuclei"][i]["SAE"]["b"].size())
+      {
+        EndRun("Nuclei " + std::to_string(i) +
+               " SAE potential a and b must have the same size");
+      }
+      sae_size[i] = data["target"]["nuclei"][i]["SAE"]["a"].size();
+
+      a[i] = new double[sae_size[i]];
+      b[i] = new double[sae_size[i]];
+      for (int j = 0; j < sae_size[i]; ++j)
+      {
+        a[i][j] = data["target"]["nuclei"][i]["SAE"]["a"][j];
+        b[i][j] = data["target"]["nuclei"][i]["SAE"]["b"][j];
+      }
+    }
+    else
+    {
+      /* So we don't have issues deleting them*/
+      a[i] = new double[1];
+      b[i] = new double[1];
+
+      /* So they write nicely */
+      z_c[i]      = 0.0;
+      c0[i]       = 0.0;
+      r0[i]       = 0.0;
+      sae_size[i] = 0;
+      a[i][0]     = 0.0;
+      b[i][0]     = 0.0;
+    }
+
     location[i] = new double[num_dims];
     if (data["target"]["nuclei"][i]["location"].size() < num_dims)
     {
@@ -201,8 +246,12 @@ Parameters::~Parameters()
   for (int i = 0; i < num_nuclei; ++i)
   {
     delete location[i];
+    delete a[i];
+    delete b[i];
   }
   delete[] location;
+  delete[] a;
+  delete[] b;
 }
 
 /* checks important input parameters for errors */
@@ -363,6 +412,10 @@ int Parameters::GetTargetIdx() { return target_idx; }
 int Parameters::GetNumNuclei() { return num_nuclei; }
 
 double** Parameters::GetLocation() { return location; }
+
+double** Parameters::GetA() { return a; }
+
+double** Parameters::GetB() { return b; }
 
 double Parameters::GetAlpha() { return alpha; }
 

@@ -843,6 +843,24 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
                 "The index of the target. He:0 ");
     WriteObject(p.z.get(), p.GetNumNuclei(), "/Parameters/z",
                 "Atomic number used in Hamiltonian ");
+    WriteObject(p.z_c.get(), p.GetNumNuclei(), "/Parameters/z_c",
+                "Z_c in the SAE potential for each nuclei");
+    WriteObject(p.c0.get(), p.GetNumNuclei(), "/Parameters/c0",
+                "C_0 in the SAE potential for each nuclei");
+    WriteObject(p.r0.get(), p.GetNumNuclei(), "/Parameters/r0",
+                "R_0 in the SAE potential for each nuclei");
+    for (int i = 0; i < p.GetNumNuclei(); ++i)
+    {
+      WriteObject(p.GetLocation()[i], p.GetNumDims(),
+                  "/Parameters/location_" + std::to_string(i),
+                  "location of nuclei " + std::to_string(i));
+      WriteObject(p.GetA()[i], p.sae_size[i],
+                  "/Parameters/a_" + std::to_string(i),
+                  "SAE a terms for nuclei " + std::to_string(i));
+      WriteObject(p.GetB()[i], p.sae_size[i],
+                  "/Parameters/b_" + std::to_string(i),
+                  "SAE a terms for nuclei " + std::to_string(i));
+    }
     WriteObject(p.GetAlpha(), "/Parameters/alpha",
                 "Soft core used in atomic term of Hamiltonian");
     WriteObject(p.GetWriteFrequencyPropagation(),

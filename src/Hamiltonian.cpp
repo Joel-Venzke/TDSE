@@ -15,6 +15,12 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
   x_value             = w.GetXValue();
   z                   = p.z.get();
   location            = p.GetLocation();
+  a                   = p.GetA();
+  b                   = p.GetA();
+  r0                  = p.r0.get();
+  c0                  = p.c0.get();
+  z_c                 = p.z_c.get();
+  sae_size            = p.sae_size.get();
   alpha               = p.GetAlpha();
   alpha_2             = alpha * alpha;
   a_field             = pulse.GetAField();
@@ -342,16 +348,30 @@ dcomp Hamiltonian::GetKineticTerm(std::vector<int>& idx_array)
 dcomp Hamiltonian::GetNucleiTerm(std::vector<int>& idx_array)
 {
   dcomp nuclei(0.0, 0.0);
+  double r;
   /* loop over each electron */
   for (int elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
   {
     /* loop over each nuclei */
     for (int nuclei_idx = 0; nuclei_idx < num_nuclei; ++nuclei_idx)
     {
-      /* Coulomb term */
-      nuclei -= dcomp(z[nuclei_idx] / SoftCoreDistance(location[nuclei_idx],
-                                                       idx_array, elec_idx),
-                      0.0);
+      if (z[nuclei_idx] != 0.0) /* Column term */
+      {
+        nuclei -= dcomp(z[nuclei_idx] / SoftCoreDistance(location[nuclei_idx],
+                                                         idx_array, elec_idx),
+                        0.0);
+      }
+      else /* SAE */
+      {
+        r = SoftCoreDistance(location[nuclei_idx], idx_array, elec_idx);
+        nuclei -= dcomp(c0[nuclei_idx], 0.0);
+        nuclei -= dcomp(z_c[nuclei_idx] * exp(-r0[nuclei_idx] * r), 0.0);
+        for (int i = 0; i < sae_size[nuclei_idx]; ++i)
+        {
+          nuclei -= dcomp(a[nuclei_idx][i] * exp(-b[nuclei_idx][i] * r), 0.0);
+        }
+        nuclei /= r;
+      }
     }
   }
   return nuclei;
