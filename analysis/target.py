@@ -1,9 +1,4 @@
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-from matplotlib.colors import LogNorm
 import h5py
 target_name = "H"
 # read data
@@ -43,6 +38,11 @@ if len(shape) == 3:
         mlab.clf()
 
 elif len(shape) == 2:
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    import matplotlib.animation as animation
+    from matplotlib.colors import LogNorm
     fig = plt.figure()
     for i, psi in enumerate(psi_value):
         print("plotting", i)
