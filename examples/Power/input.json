@@ -2,9 +2,9 @@
   "delta_t": 0.005,
   "dimensions": [
     {"dim_size": 50.0,
-    "delta_x":   0.2},
+    "delta_x":   0.8},
     {"dim_size": 50.0,
-    "delta_x":   0.2}],
+    "delta_x":   0.8}],
   "num_electrons": 1,
   "restart": 0,
   "target": {

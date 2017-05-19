@@ -167,7 +167,6 @@ void Simulation::Propagate()
       if (norm < 1e-14)
       {
         converged = true;
-        if (world.rank() == 0) std::cout << "Converged!!!\n";
       }
       /* write a checkpoint */
       wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
@@ -247,6 +246,7 @@ void Simulation::PowerMethod(int num_states, int return_state_idx)
     /* Put matrix in solver
      * do this outside the loop since left never changes */
     KSPSetOperators(ksp, left, left);
+    KSPSetTolerances(ksp, 1.e-15, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
     /* Allow command line options */
     KSPSetFromOptions(ksp);
 

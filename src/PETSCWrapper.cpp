@@ -29,3 +29,8 @@ void PETSCWrapper::PopStage()
   ierr = PetscLogStagePop();
   ierr = PetscBarrier(NULL);
 }
+
+void PETSCWrapper::Print(std::string message)
+{
+  PetscPrintf(PETSC_COMM_WORLD, message.c_str());
+}
