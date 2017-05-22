@@ -10,7 +10,7 @@
   "target": {
     "name":  "H",
     "nuclei" : [
-      { "z": 0.0,
+      { "z": 1.0,
       "location": [0.0,0.0,0.0],
       "SAE": {
         "z_c": 1.0,
@@ -19,27 +19,26 @@
         "a" : [0.66294407],
         "b" : [4.073942]}
       }]},
-  "alpha":   0.78,
+  "alpha":   0.0,
   "gobbler": 0.9,
   "sigma":   2.0,
-  "write_frequency_propagation": 200,
+  "write_frequency_checkpoint": 200,
+  "write_frequency_observables": 2,
   "write_frequency_eigin_state": 1,
   "state_solver":    "Power",
-  "propagate": 0,
+  "propagate": 1,
+  "free_propagate": 1000,
   "states": [
-    {"energy": -0.82},
-    {"energy": -0.27},
-    {"energy": -0.27},
-    {"energy": -0.27}],
+    {"energy": -0.8}],
   "tol":        1e-10,
   "laser": {
     "polarization": "linear",
     "polarization_vector": [1.0,0.0,0.0],
     "pulses": [
     {"pulse_shape":   "sin2",
-      "cycles_on":      10.0,
+      "cycles_on":      1.0,
       "cycles_plateau": 0.0,
-      "cycles_off":     10.0,
+      "cycles_off":     1.0,
       "cycles_delay":   0.0,
       "cep":            0.0,
       "energy":         1.5,

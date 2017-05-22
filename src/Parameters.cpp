@@ -59,7 +59,8 @@ void Parameters::Setup(std::string file_name)
   target                      = data["target"]["name"];
   num_nuclei                  = data["target"]["nuclei"].size();
   alpha                       = data["alpha"];
-  write_frequency_propagation = data["write_frequency_propagation"];
+  write_frequency_checkpoint  = data["write_frequency_checkpoint"];
+  write_frequency_observables = data["write_frequency_observables"];
   write_frequency_eigin_state = data["write_frequency_eigin_state"];
   gobbler                     = data["gobbler"];
   sigma                       = data["sigma"];
@@ -82,7 +83,6 @@ void Parameters::Setup(std::string file_name)
   a        = new double*[num_nuclei];
   b        = new double*[num_nuclei];
   location = new double*[num_nuclei];
-  std::cout << "1\n";
   for (int i = 0; i < num_nuclei; ++i)
   {
     z[i] = data["target"]["nuclei"][i]["z"];
@@ -159,7 +159,8 @@ void Parameters::Setup(std::string file_name)
     state_solver_idx = 2;
   }
 
-  propagate = data["propagate"];
+  propagate      = data["propagate"];
+  free_propagate = data["free_propagate"];
 
   /* get pulse information */
   num_pulses   = data["laser"]["pulses"].size();
@@ -419,9 +420,14 @@ double** Parameters::GetB() { return b; }
 
 double Parameters::GetAlpha() { return alpha; }
 
-int Parameters::GetWriteFrequencyPropagation()
+int Parameters::GetWriteFrequencyCheckpoint()
 {
-  return write_frequency_propagation;
+  return write_frequency_checkpoint;
+}
+
+int Parameters::GetWriteFrequencyObservables()
+{
+  return write_frequency_observables;
 }
 
 int Parameters::GetWriteFrequencyEigenState()
@@ -442,6 +448,8 @@ int Parameters::GetStateSolverIdx() { return state_solver_idx; }
 std::string Parameters::GetStateSolver() { return state_solver; }
 
 int Parameters::GetPropagate() { return propagate; }
+
+int Parameters::GetFreePropagate() { return free_propagate; }
 
 int Parameters::GetNumPulses() { return num_pulses; }
 

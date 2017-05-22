@@ -829,6 +829,7 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
     header         = true;
 
     CreateGroup("/Parameters");
+    CreateGroup("/Observables");
 
     /* write out header values */
     WriteObject(num_dims, "/Parameters/num_dims",
@@ -863,8 +864,12 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
     }
     WriteObject(p.GetAlpha(), "/Parameters/alpha",
                 "Soft core used in atomic term of Hamiltonian");
-    WriteObject(p.GetWriteFrequencyPropagation(),
-                "/Parameters/write_frequency_propagation",
+    WriteObject(
+        p.GetWriteFrequencyObservables(),
+        "/Parameters/write_frequency_observables",
+        "How often are observables are printed done during propagation");
+    WriteObject(p.GetWriteFrequencyCheckpoint(),
+                "/Parameters/write_frequency_checkpoint",
                 "How often are checkpoints done during propagation");
     WriteObject(
         p.GetWriteFrequencyEigenState(),
