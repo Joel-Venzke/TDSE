@@ -16,7 +16,7 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
   z                   = p.z.get();
   location            = p.GetLocation();
   a                   = p.GetA();
-  b                   = p.GetA();
+  b                   = p.GetB();
   r0                  = p.r0.get();
   c0                  = p.c0.get();
   z_c                 = p.z_c.get();
