@@ -247,6 +247,7 @@ void Simulation::PowerMethod(int num_states, int return_state_idx)
     /* Put matrix in solver
      * do this outside the loop since left never changes */
     KSPSetOperators(ksp, left, left);
+    KSPSetTolerances(ksp, 1.e-15, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
     /* Allow command line options */
     KSPSetFromOptions(ksp);
 

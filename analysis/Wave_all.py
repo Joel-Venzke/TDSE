@@ -1,7 +1,4 @@
 import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
-from matplotlib.colors import LogNorm
 import h5py
 
 # read data
@@ -61,6 +58,9 @@ if len(shape) == 3:
             mlab.clf()
 
 elif len(shape) == 2:
+    import matplotlib
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import LogNorm
     # shape into a 3d array with time as the first axis
     p_sqrt   = np.sqrt(psi_value[0].shape[0])
     print("dim size:", p_sqrt, "Should be integer")
