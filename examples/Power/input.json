@@ -36,9 +36,9 @@
     "polarization_vector": [1.0,0.0,0.0],
     "pulses": [
     {"pulse_shape":   "sin2",
-      "cycles_on":      1.0,
+      "cycles_on":      10.0,
       "cycles_plateau": 0.0,
-      "cycles_off":     1.0,
+      "cycles_off":     10.0,
       "cycles_delay":   0.0,
       "cep":            0.0,
       "energy":         1.5,

@@ -4,7 +4,7 @@ import h5py
 # read data
 f = h5py.File("TDSE.h5","r")
 psi_value = f["Wavefunction"]["psi"]
-psi_time  = f["Wavefunction"]["psi_time"][:]
+psi_time  = f["Wavefunction"]["time"][:]
 x         = f["Wavefunction"]["x_value_0"][:]
 y         = f["Wavefunction"]["x_value_1"][:]
 shape     = f["Wavefunction"]["num_x"][:]
@@ -30,7 +30,7 @@ if len(shape) == 3:
     z         = f["Wavefunction"]["x_value_2"][:]
     mlab.figure(bgcolor=(1.0,1.0,1.0),fgcolor=(0.0,0.0,0.0))
     for i, psi in enumerate(psi_value):
-        if i>160: # the zeroth wave function is the guess and not relevant
+        if i>0: # the zeroth wave function is the guess and not relevant
             print("plotting", i)
             psi = psi[:,0]+1j*psi[:,1]
             psi.shape = tuple(shape)
