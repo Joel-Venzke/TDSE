@@ -16,8 +16,17 @@ class Hamiltonian : protected Utils
   int num_psi_build;
   double *z;         /* atomic number of each nuclei */
   double **location; /* location of each nuclei */
-  double alpha;      /* soft core atomic */
-  double alpha_2;    /* square of soft core atomic */
+
+  /* SAE stuff */
+  double **a;    /* SAE a for each nuclei (coefficient of exponential) */
+  double **b;    /* SAE b for each nuclei (in exponential) */
+  double *r0;    /* SAE r_0 for each nuclei */
+  double *c0;    /* SAE C_0 for each nuclei */
+  double *z_c;   /* SAE z_0 for each nuclei */
+  int *sae_size; /* number of elements in a and b */
+
+  double alpha;   /* soft core atomic */
+  double alpha_2; /* square of soft core atomic */
   double *a_field;
   double *polarization_vector;
   double *delta_x;

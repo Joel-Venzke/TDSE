@@ -4,7 +4,7 @@ import h5py
 # read data
 f = h5py.File("TDSE.h5","r")
 psi_value = f["Wavefunction"]["psi"]
-psi_time  = f["Wavefunction"]["psi_time"][:]
+psi_time  = f["Wavefunction"]["time"][:]
 x         = f["Wavefunction"]["x_value_0"][:]
 y         = f["Wavefunction"]["x_value_1"][:]
 shape     = f["Wavefunction"]["num_x"][:]
@@ -15,7 +15,7 @@ time_y    = np.max(x)*0.9
 
 max_val = 0
 # calculate color bounds
-for i,psi in enumerate(psi_value):
+for i,psi in enumerate(psi_value[:3]):
     if i>0: # the zeroth wave function is the guess and not relevant
         psi = psi[:,0] + 1j*psi[:,1]
         max_val_tmp   = np.max(np.absolute(psi))
@@ -41,7 +41,8 @@ if len(shape) == 3:
                 vmax=np.log10([max_val])[0],
                 opacity=0.3,
                 colormap="viridis",
-                contours=[-1.0,-3.0,-5.0])
+                contours=5)
+                #contours=[-1.0,-3.0,-5.0])
             mlab.pipeline.image_plane_widget(mlab.pipeline.scalar_field(psi),
                 vmin=-15,
                 vmax=np.log10([max_val])[0],
@@ -49,12 +50,12 @@ if len(shape) == 3:
                 transparent=True,colormap="viridis",
                 slice_index=shape[2]/2)
             mlab.colorbar(nb_labels=4,orientation="vertical")
-            # mlab.savefig("figs/Wave_iso_cross_"+str(i).zfill(8)+".png",magnification=3)
-            mlab.pipeline.volume(mlab.pipeline.scalar_field(psi), 
-                vmin=-7,
-                vmax=np.log10([max_val])[0])
-            # mlab.show()
-            mlab.savefig("figs/Wave_density_cross_"+str(i).zfill(8)+".png",magnification=3)
+            mlab.savefig("figs/Wave_iso_cross_"+str(i).zfill(8)+".png",magnification=3)
+            #mlab.pipeline.volume(mlab.pipeline.scalar_field(psi), 
+            #    vmin=-7,
+            #    vmax=np.log10([max_val])[0])
+            ## mlab.show()
+            #mlab.savefig("figs/Wave_density_cross_"+str(i).zfill(8)+".png",magnification=3)
             mlab.clf()
 
 elif len(shape) == 2:
