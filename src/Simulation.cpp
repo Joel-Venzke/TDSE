@@ -200,11 +200,6 @@ void Simulation::Propagate()
                 << "\n";
     while (i < time_length + free_propagate)
     {
-      /* copy old state for convergence */
-      if (i % write_frequency_checkpoint == 0)
-      {
-        VecCopy(*psi, psi_old);
-      }
       /* Get psi_right side */
       MatMult(right, *psi, psi_right);
 
@@ -228,7 +223,6 @@ void Simulation::Propagate()
       /* only checkpoint so often */
       if (i % write_frequency_checkpoint == 0)
       {
-        norm = wavefunction->Norm();
         if (world.rank() == 0)
           std::cout << "\nIteration: " << i
                     << "\nSimulation Ends: " << time_length + free_propagate
@@ -236,16 +230,8 @@ void Simulation::Propagate()
                     << "Average time for time-step: "
                     << ((float)clock() - t) /
                            (CLOCKS_PER_SEC * write_frequency_checkpoint)
-                    << "\nNorm: " << norm << "\n"
+                    << "\n"
                     << std::flush;
-
-        norm -= wavefunction->Norm(psi_old, delta_x[0]);
-        norm = std::abs(norm);
-        if (world.rank() == 0) std::cout << "Norm error: " << norm << "\n";
-        if (norm < 1e-14)
-        {
-          converged = true;
-        }
         /* write a checkpoint */
         wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
         t = clock();
