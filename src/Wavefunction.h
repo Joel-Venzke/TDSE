@@ -8,17 +8,19 @@ class Wavefunction : protected Utils
 {
  private:
   PetscInt ierr;
-  int num_dims;       /* number of dimensions */
-  int num_electrons;  /* number of electrons in the system */
-  double *dim_size;   /* sizes of each dimension in a.u. */
-  double *delta_x;    /* step sizes of each dimension in a.u. */
-  int *num_x;         /* number of grid points in each dimension */
-  int num_psi_build;  /* number of points in psi_1 and psi_2 */
-  int num_psi;        /* number of points in psi */
-  double **x_value;   /* location of grid point in each dimension */
-  dcomp ***psi_build; /* used for allocating new wave functions */
-  Vec psi;            /* wavefunction for 2 electron system */
-  Vec psi_tmp;        /* wavefunction for 2 electron system */
+  int num_dims;              /* number of dimensions */
+  int num_electrons;         /* number of electrons in the system */
+  double *dim_size;          /* sizes of each dimension in a.u. */
+  double *delta_x;           /* step sizes of each dimension in a.u. */
+  int *num_x;                /* number of grid points in each dimension */
+  int num_psi_build;         /* number of points in psi_1 and psi_2 */
+  int num_psi;               /* number of points in psi */
+  double **x_value;          /* location of grid point in each dimension */
+  dcomp ***psi_build;        /* used for allocating new wave functions */
+  Vec psi;                   /* wavefunction for 2 electron system */
+  Vec psi_tmp;               /* wavefunction for 2 electron system */
+  Vec *dipole_acceleration;  /* dipole acceleration */
+  Vec *position_expectation; /* expectation of position */
   bool psi_alloc_build;
   bool psi_alloc;
   /* false if its not the first time checkpointing the wavefunction */
@@ -31,9 +33,16 @@ class Wavefunction : protected Utils
   /* hidden from user for safety */
   void CreateGrid();
   void CreatePsi();
+  void CreateObservables();
   void CleanUp();
 
-  dcomp GetVal(dcomp ***data, int idx);
+  dcomp GetPsiVal(dcomp ***data, int idx);
+  dcomp GetPositionVal(int idx, int elec_idx, int dim_idx);
+  dcomp GetDipoleAccerationVal(int idx, int elec_idx, int dim_idx);
+
+  double GetDistance(std::vector<int> idx_array, int elec_idx);
+
+  std::vector<int> GetIntArray(int idx);
 
  public:
   /* Constructor */
@@ -54,6 +63,8 @@ class Wavefunction : protected Utils
   double Norm(Vec &data, double dx);
   double GetEnergy(Mat *h);
   double GetEnergy(Mat *h, Vec &p);
+  double GetPosition(int elec_idx, int dim_idx);
+  double GetDipoleAcceration(int elec_idx, int dim_idx);
   void ResetPsi();
 
   int *GetNumX();
