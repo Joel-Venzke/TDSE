@@ -349,13 +349,14 @@ void Wavefunction::CreateObservables()
 {
   PetscInt low, high;
   PetscComplex val;
-  /* allocate array */
+  /* allocate arrays */
   position_expectation = new Vec[num_dims * num_electrons];
   dipole_acceleration  = new Vec[num_dims * num_electrons];
   for (int elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
   {
     for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
     {
+      /* create position vector */
       VecCreate(PETSC_COMM_WORLD,
                 &position_expectation[elec_idx * num_dims + dim_idx]);
       VecSetSizes(position_expectation[elec_idx * num_dims + dim_idx],
@@ -367,18 +368,20 @@ void Wavefunction::CreateObservables()
            std::to_string(dim_idx))
               .c_str());
 
+      /* Fill position vector*/
       VecGetOwnershipRange(position_expectation[elec_idx * num_dims + dim_idx],
                            &low, &high);
       for (int idx = low; idx < high; idx++)
       {
-        /* set psi */
         val = GetPositionVal(idx, elec_idx, dim_idx);
         VecSetValues(position_expectation[elec_idx * num_dims + dim_idx], 1,
                      &idx, &val, INSERT_VALUES);
       }
+      /* Assemble position vector */
       VecAssemblyBegin(position_expectation[elec_idx * num_dims + dim_idx]);
       VecAssemblyEnd(position_expectation[elec_idx * num_dims + dim_idx]);
 
+      /* create dipole acceleration vector */
       VecCreate(PETSC_COMM_WORLD,
                 &dipole_acceleration[elec_idx * num_dims + dim_idx]);
       VecSetSizes(dipole_acceleration[elec_idx * num_dims + dim_idx],
@@ -390,15 +393,16 @@ void Wavefunction::CreateObservables()
            std::to_string(dim_idx))
               .c_str());
 
+      /* fill dipole acceleration vector */
       VecGetOwnershipRange(dipole_acceleration[elec_idx * num_dims + dim_idx],
                            &low, &high);
       for (int idx = low; idx < high; idx++)
       {
-        /* set psi */
         val = GetDipoleAccerationVal(idx, elec_idx, dim_idx);
         VecSetValues(dipole_acceleration[elec_idx * num_dims + dim_idx], 1,
                      &idx, &val, INSERT_VALUES);
       }
+      /* assemble dipole acceleration vector */
       VecAssemblyBegin(dipole_acceleration[elec_idx * num_dims + dim_idx]);
       VecAssemblyEnd(dipole_acceleration[elec_idx * num_dims + dim_idx]);
     }
@@ -422,6 +426,7 @@ void Wavefunction::CleanUp()
   }
 }
 
+/* returns values for global psi */
 dcomp Wavefunction::GetPsiVal(dcomp*** data, int idx)
 {
   /* Value to be returned */
@@ -439,6 +444,7 @@ dcomp Wavefunction::GetPsiVal(dcomp*** data, int idx)
   return ret_val;
 }
 
+/* returns values for global position vector */
 dcomp Wavefunction::GetPositionVal(int idx, int elec_idx, int dim_idx)
 {
   /* Value to be returned */
@@ -449,6 +455,7 @@ dcomp Wavefunction::GetPositionVal(int idx, int elec_idx, int dim_idx)
   return ret_val;
 }
 
+/* returns values for global dipole acceleration */
 dcomp Wavefunction::GetDipoleAccerationVal(int idx, int elec_idx, int dim_idx)
 {
   /* Value to be returned */
@@ -462,6 +469,7 @@ dcomp Wavefunction::GetDipoleAccerationVal(int idx, int elec_idx, int dim_idx)
   return ret_val;
 }
 
+/* Returns r component of that electron */
 double Wavefunction::GetDistance(std::vector<int> idx_array, int elec_idx)
 {
   double r = 0.0;
@@ -530,6 +538,7 @@ double Wavefunction::GetEnergy(Mat* h, Vec& p)
   return energy.real();
 }
 
+/* returns position expectation value <psi|x_{elec_idx,dim_idx}|psi> */
 double Wavefunction::GetPosition(int elec_idx, int dim_idx)
 {
   PetscComplex expectation;
@@ -539,6 +548,7 @@ double Wavefunction::GetPosition(int elec_idx, int dim_idx)
   return expectation.real();
 }
 
+/* returns dipole acceleration value <psi|x_{elec_idx,dim_idx}/r^3|psi> */
 double Wavefunction::GetDipoleAcceration(int elec_idx, int dim_idx)
 {
   PetscComplex expectation;
