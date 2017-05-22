@@ -368,8 +368,7 @@ dcomp Hamiltonian::GetNucleiTerm(std::vector<int>& idx_array)
         nuclei -= dcomp(z_c[nuclei_idx] * exp(-r0[nuclei_idx] * r) / r, 0.0);
         for (int i = 0; i < sae_size[nuclei_idx]; ++i)
         {
-          nuclei -=
-              dcomp(a[nuclei_idx][i] * exp(-b[nuclei_idx][i] * r) / r, 0.0);
+          nuclei -= dcomp(a[nuclei_idx][i] * exp(-b[nuclei_idx][i] * r), 0.0);
         }
       }
     }
