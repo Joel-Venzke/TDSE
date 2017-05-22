@@ -589,4 +589,17 @@ Wavefunction::~Wavefunction()
   CleanUp();
   VecDestroy(&psi);
   VecDestroy(&psi_tmp);
+  for (int elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
+  {
+    for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+    {
+      /* destroy position vector */
+      VecDestroy(&position_expectation[elec_idx * num_dims + dim_idx]);
+
+      /* destroy dipole acceleration vector */
+      VecDestroy(&dipole_acceleration[elec_idx * num_dims + dim_idx]);
+    }
+  }
+  delete position_expectation;
+  delete dipole_acceleration;
 }
