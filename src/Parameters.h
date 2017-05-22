@@ -21,15 +21,21 @@ class Parameters : protected Utils
   /* restart mode */
   /* 0 no restart, 1 restart from file */
   int restart;
-  std::string target;              /* type of target {"He"} */
-  int target_idx;                  /* index of target */
-  int num_nuclei;                  /* number of nuclei in potential */
-  double** location;               /* location of each nuclei */
-  double alpha;                    /* atomic soft core */
-  int write_frequency_propagation; /* how many steps between checkpoints during
-                                      propagation */
+  std::string target; /* type of target {"He"} */
+  int target_idx;     /* index of target */
+  int num_nuclei;     /* number of nuclei in potential */
+  double** location;  /* location of each nuclei */
+  double** a;         /* SAE a for each nuclei (coefficient of exponential) */
+  double** b;         /* SAE b for each nuclei (in exponential) */
+  double alpha;       /* atomic soft core */
+  int write_frequency_checkpoint;  /* how many steps between checkpoints during
+                                       propagation */
+  int write_frequency_observables; /* how many steps between observable
+                                      measurements during propagation */
   int write_frequency_eigin_state; /* how many steps between checkpoints during
                                       eigen state calculations */
+  int free_propagate;              /* How many free propagation steps (-1 means
+                                      till converged)*/
   double gobbler; /* percent (1=100% and .9=90%) gobbler turns on at */
   double sigma;   /* std of wave function guess */
   int num_states; /* number of ground states */
@@ -51,6 +57,10 @@ class Parameters : protected Utils
   std::unique_ptr<double[]> delta_x;   /* size of grid step */
   std::unique_ptr<double[]> delta_x_2; /* size of grid step squared */
   std::unique_ptr<double[]> z;         /* atomic number for each nuclei */
+  std::unique_ptr<double[]> r0;        /* SAE r_0 for each nuclei */
+  std::unique_ptr<double[]> c0;        /* SAE C_0 for each nuclei */
+  std::unique_ptr<double[]> z_c;       /* SAE z_0 for each nuclei */
+  std::unique_ptr<int[]> sae_size;     /* number of elements in a and b */
   std::unique_ptr<double[]>
       state_energy; /* theoretical eigenvalues for each state */
   std::unique_ptr<std::string[]>
@@ -81,8 +91,11 @@ class Parameters : protected Utils
   int GetTargetIdx();
   int GetNumNuclei();
   double** GetLocation();
+  double** GetA();
+  double** GetB();
   double GetAlpha();
-  int GetWriteFrequencyPropagation();
+  int GetWriteFrequencyCheckpoint();
+  int GetWriteFrequencyObservables();
   int GetWriteFrequencyEigenState();
   double GetGobbler();
   double GetSigma();
@@ -92,6 +105,7 @@ class Parameters : protected Utils
   std::string GetStateSolver();
 
   int GetPropagate();
+  int GetFreePropagate();
 
   int GetNumPulses();
   int GetPolarizationIdx();

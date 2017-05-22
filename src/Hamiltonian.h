@@ -16,8 +16,17 @@ class Hamiltonian : protected Utils
   int num_psi_build;
   double *z;         /* atomic number of each nuclei */
   double **location; /* location of each nuclei */
-  double alpha;      /* soft core atomic */
-  double alpha_2;    /* square of soft core atomic */
+
+  /* SAE stuff */
+  double **a;    /* SAE a for each nuclei (coefficient of exponential) */
+  double **b;    /* SAE b for each nuclei (in exponential) */
+  double *r0;    /* SAE r_0 for each nuclei */
+  double *c0;    /* SAE C_0 for each nuclei */
+  double *z_c;   /* SAE z_0 for each nuclei */
+  int *sae_size; /* number of elements in a and b */
+
+  double alpha;   /* soft core atomic */
+  double alpha_2; /* square of soft core atomic */
   double *a_field;
   double *polarization_vector;
   double *delta_x;
@@ -26,6 +35,8 @@ class Hamiltonian : protected Utils
   Mat time_independent;
   Mat time_dependent;
   Mat total_hamlitonian;
+  int **gobbler_idx; /* distance that starts gobbler */
+  double eta;        /* value in exponent for ECS */
 
   void CreateTimeIndependent();
   void CreateTimeDependent();
@@ -43,7 +54,7 @@ class Hamiltonian : protected Utils
   dcomp GetOffDiagonal(std::vector<int> &idx_array,
                        std::vector<int> &diff_array, bool time_dep);
   dcomp GetDiagonal(std::vector<int> &idx_array, bool time_dep);
-  dcomp GetKineticTerm();
+  dcomp GetKineticTerm(std::vector<int> &idx_array);
   dcomp GetNucleiTerm(std::vector<int> &idx_array);
   dcomp GetElectronElectronTerm(std::vector<int> &idx_array);
   int GetOffset(int elec_idx, int dim_idx);

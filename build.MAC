@@ -5,4 +5,4 @@ export PATH=$(echo "$PATH" | sed -e 's/:\/Users\/jvenzke\/anaconda\/bin//')
 export PATH=$(echo "$PATH" | sed -e 's/\/Users\/jvenzke\/anaconda\/bin://')
 
 cd src
-make
+make -j8

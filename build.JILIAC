@@ -1,0 +1,13 @@
+#/bin/bash
+module purge 
+module load intel
+module load openmpi
+module load hdf5
+module load boost
+module load cmake
+module load blas
+module list 
+
+cd src
+make -j8
+

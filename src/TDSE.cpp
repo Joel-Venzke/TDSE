@@ -13,6 +13,9 @@
 int main(int argc, char** argv)
 {
   PETSCWrapper p_wrap(argc, argv);
+  p_wrap.Print(
+      "\n******************* Setting up Simulation *******************\n\n");
+
   p_wrap.PushStage("Set up");
 
   /* initialize all of the classes */
@@ -25,6 +28,9 @@ int main(int argc, char** argv)
   Simulation s(hamiltonian, wavefunction, pulse, h5_file, viewer_file,
                parameters);
   p_wrap.PopStage(); /* Set up */
+
+  p_wrap.Print(
+      "\n****************** Eigen State Calculation ******************\n\n");
 
   p_wrap.PushStage("Eigen State");
   /* get ground states */
@@ -41,9 +47,14 @@ int main(int argc, char** argv)
   p_wrap.PushStage("Propagation");
   if (parameters.GetPropagate() == 1)
   {
+    p_wrap.Print(
+        "\n************************ Propagation ************************\n\n");
     s.Propagate();
   }
   p_wrap.PopStage(); /* Propagation */
+
+  p_wrap.Print(
+      "\n******************** Simulation Complete ********************\n\n");
 
   return 0;
 }

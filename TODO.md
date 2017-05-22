@@ -1,12 +1,18 @@
 # TDSE
 
+* Unit test
 * Set up restart
+* non Born-Oppenheimer
 
 # Parameters
 
 * Validate atomic input
 * SAE support
-* set up checks for input parameters in the input.json file
+* safety set up checks for input parameters in the input.json file
+
+# Wavefunction
+
+* fix the normalization code with the right dx terms
 
 # Hamiltonian
 
@@ -16,9 +22,11 @@
 # Simulation
 
 * Set up SLEPc
-* Arnoldi algorithm
+* Arnoldi algorithm for eigen vectors
 
 # Scripts 
 
-* Run Script for Summit
 * Daisey chain Script
+* python input file generator
+* set up unit conversion calculator 
+* Paraview?
