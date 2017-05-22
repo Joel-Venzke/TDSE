@@ -25,7 +25,8 @@ class Wavefunction : protected Utils
   bool first_pass;
   double sigma; /* std of gaussian guess */
 
-  int write_counter;
+  int write_counter_checkpoint;
+  int write_counter_observables;
 
   /* hidden from user for safety */
   void CreateGrid();
@@ -42,7 +43,8 @@ class Wavefunction : protected Utils
   ~Wavefunction();
 
   /* IO */
-  void Checkpoint(HDF5Wrapper &data_file, ViewWrapper &view_file, double time);
+  void Checkpoint(HDF5Wrapper &data_file, ViewWrapper &view_file, double time,
+                  bool checkpoint_psi = true);
   void CheckpointPsi(ViewWrapper &view_file, int write_idx);
 
   /* tools */

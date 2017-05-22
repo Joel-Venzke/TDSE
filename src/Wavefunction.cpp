@@ -6,16 +6,17 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   if (world.rank() == 0) std::cout << "Creating Wavefunction\n";
 
   /* initialize values */
-  psi_alloc_build = false;
-  psi_alloc       = false;
-  first_pass      = true;
-  num_dims        = p.GetNumDims();
-  num_electrons   = p.GetNumElectrons();
-  dim_size        = p.dim_size.get();
-  delta_x         = p.delta_x.get();
-  sigma           = p.GetSigma();
-  num_psi_build   = 1.0;
-  write_counter   = 0;
+  psi_alloc_build           = false;
+  psi_alloc                 = false;
+  first_pass                = true;
+  num_dims                  = p.GetNumDims();
+  num_electrons             = p.GetNumElectrons();
+  dim_size                  = p.dim_size.get();
+  delta_x                   = p.delta_x.get();
+  sigma                     = p.GetSigma();
+  num_psi_build             = 1.0;
+  write_counter_checkpoint  = 0;
+  write_counter_observables = 0;
 
   /* allocate grid */
   CreateGrid();
@@ -33,11 +34,16 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
 }
 
 void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
-                              double time)
+                              double time, bool checkpoint_psi)
 {
   if (world.rank() == 0)
-    std::cout << "Checkpointing Wavefunction: " << write_counter << "\n"
-              << std::flush;
+  {
+    if (checkpoint_psi)
+    {
+      std::cout << "Checkpointing Psi: " << write_counter_checkpoint << "\n"
+                << std::flush;
+    }
+  }
   std::string str;
   const char* tmp;
   std::string name;
@@ -50,7 +56,7 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
     /* move into group */
     viewer_file.PushGroup(group_name);
     /* set time step */
-    viewer_file.SetTime(write_counter);
+    viewer_file.SetTime(write_counter_checkpoint);
     /* write vector */
     viewer_file.WriteObject((PetscObject)psi);
     /* get object name */
@@ -92,37 +98,48 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
     // }
 
     // /* write time and attribute */
-    h5_file.WriteObject(time, "/Wavefunction/psi_time",
+    h5_file.WriteObject(time, "/Wavefunction/time",
                         "Time step that psi was written to disk",
-                        write_counter);
+                        write_counter_checkpoint);
 
-    /* write time and attribute */
-    h5_file.WriteObject(Norm(), "/Wavefunction/norm", "Norm of wavefunction",
-                        write_counter);
+    /* write observables */
+    h5_file.WriteObject(time, "/Observables/time",
+                        "Time step that the observables were written to disk",
+                        write_counter_checkpoint);
+    h5_file.WriteObject(Norm(), "/Observables/norm", "Norm of wavefunction",
+                        write_counter_checkpoint);
 
-    /* allow for future passes to write psi only */
+    /* allow for future passes to write psi or observables only */
     first_pass = false;
+    write_counter_checkpoint++;
+    write_counter_observables++;
   }
   else
   {
-    viewer_file.Open("a");
-    /* set time step */
-    viewer_file.SetTime(write_counter);
-    /* move into group */
-    viewer_file.PushGroup(group_name);
-    /* write vector */
-    viewer_file.WriteObject((PetscObject)psi);
-    /* close file */
-    viewer_file.Close();
+    if (checkpoint_psi)
+    {
+      viewer_file.Open("a");
+      /* set time step */
+      viewer_file.SetTime(write_counter_checkpoint);
+      /* move into group */
+      viewer_file.PushGroup(group_name);
+      /* write vector */
+      viewer_file.WriteObject((PetscObject)psi);
+      /* close file */
+      viewer_file.Close();
 
-    /* write time */
-    h5_file.WriteObject(time, "/Wavefunction/psi_time", write_counter);
-
-    h5_file.WriteObject(Norm(), "/Wavefunction/norm", write_counter);
+      /* write time */
+      h5_file.WriteObject(time, "/Wavefunction/time", write_counter_checkpoint);
+      write_counter_checkpoint++;
+    }
+    else
+    {
+      h5_file.WriteObject(time, "/Observables/time", write_counter_observables);
+      h5_file.WriteObject(Norm(), "/Observables/norm",
+                          write_counter_observables);
+      write_counter_observables++;
+    }
   }
-
-  /* keep track of what index we are on */
-  write_counter++;
 }
 
 void Wavefunction::CheckpointPsi(ViewWrapper& viewer_file, int write_idx)
@@ -159,7 +176,7 @@ void Wavefunction::CreateGrid()
     num_x[i] = ceil((dim_size[i]) / delta_x[i]) + 1;
 
     /* odd number so it is even on both sides */
-    if (num_x[i] % 2 == 0) num_x[i]++;
+    if (num_x[i] % 2 != 0) num_x[i]++;
 
     /* size of 1d array for psi */
     num_psi_build *= num_x[i];
@@ -174,10 +191,10 @@ void Wavefunction::CreateGrid()
     x_value[i][center] = 0.0;
 
     /* loop over all others */
-    for (int j = center - 1; j >= 0; j--)
+    for (int j = center; j >= 0; j--)
     {
       /* get x value */
-      current_x = (j - center) * delta_x[i];
+      current_x = (j - center) * delta_x[i] + delta_x[i] / 2.0;
 
       /* double checking index */
       if (j < 0 || num_x[i] - j - 1 >= num_x[i])

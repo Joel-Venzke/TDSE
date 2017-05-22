@@ -7,7 +7,7 @@ f = h5py.File("TDSE.h5","r")
 psi_value = target["psi"]
 # psi_value = f["Wavefunction"]["psi"]
 energy    = target["Energy"]
-psi_time  = f["Wavefunction"]["psi_time"][:]
+psi_time  = f["Wavefunction"]["time"][:]
 shape         = f["Wavefunction"]["num_x"][:]
 print shape
 x         = f["Wavefunction"]["x_value_0"][:]
