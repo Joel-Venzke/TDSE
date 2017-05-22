@@ -15,10 +15,25 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
   x_value             = w.GetXValue();
   z                   = p.z.get();
   location            = p.GetLocation();
+  a                   = p.GetA();
+  b                   = p.GetA();
+  r0                  = p.r0.get();
+  c0                  = p.c0.get();
+  z_c                 = p.z_c.get();
+  sae_size            = p.sae_size.get();
   alpha               = p.GetAlpha();
   alpha_2             = alpha * alpha;
   a_field             = pulse.GetAField();
   polarization_vector = p.polarization_vector.get();
+  eta                 = pi / 4.0;
+
+  gobbler_idx = new int*[num_dims];
+  for (int i = 0; i < num_dims; ++i)
+  {
+    gobbler_idx[i]    = new int[2];
+    gobbler_idx[i][0] = (num_x[i] - int(num_x[i] * p.GetGobbler())) / 2 - 1;
+    gobbler_idx[i][1] = num_x[i] - 1 - gobbler_idx[i][0];
+  }
 
   /* set up time independent */
   CreateTimeIndependent();
@@ -84,6 +99,8 @@ void Hamiltonian::CreateTimeIndependent()
   }
   MatAssemblyBegin(time_independent, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(time_independent, MAT_FINAL_ASSEMBLY);
+  // MatView(time_independent, PETSC_VIEWER_STDOUT_SELF);
+  // EndRun("dslk");
 }
 
 void Hamiltonian::CreateTimeDependent()
@@ -190,9 +207,11 @@ dcomp Hamiltonian::GetOffDiagonal(std::vector<int>& idx_array,
   {
     for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
     {
+      /* DONT TOUCH FIELD WITH ECS */
       if (time_dep) /* Time dependent matrix */
       {
         /* Upper diagonals */
+        /* DONT TOUCH FIELD WITH ECS */
         if (diff_array[elec_idx * num_dims + dim_idx] == 1)
         {
           /* Polarization vector for linear polarization */
@@ -200,6 +219,7 @@ dcomp Hamiltonian::GetOffDiagonal(std::vector<int>& idx_array,
                           dcomp(0.0, 1.0 / (2.0 * delta_x[dim_idx] * c));
         }
         /* Lower diagonals */
+        /* DONT TOUCH FIELD WITH ECS */
         else if (diff_array[elec_idx * num_dims + dim_idx] == -1)
         {
           /* Polarization vector for linear polarization */
@@ -209,10 +229,68 @@ dcomp Hamiltonian::GetOffDiagonal(std::vector<int>& idx_array,
       }
       else /* Time independent matrix */
       {
-        /* Both upper and lower diagonals are the same */
-        if (std::abs(diff_array[elec_idx * num_dims + dim_idx]) == 1)
+        /* upper diagonal */
+        if (diff_array[elec_idx * num_dims + dim_idx] == 1)
         {
-          off_diagonal += dcomp(-1.0 / (2.0 * delta_x_2[dim_idx]), 0.0);
+          if (idx_array[2 * (elec_idx * num_dims + dim_idx)] <
+                  gobbler_idx[dim_idx][0] ||
+              idx_array[2 * (elec_idx * num_dims + dim_idx)] >
+                  gobbler_idx[dim_idx][1])
+          {
+            /* Imaginary part of ECS */
+            off_diagonal += std::exp(-2.0 * imag * eta) *
+                            dcomp(-1.0 / (2.0 * delta_x_2[dim_idx]), 0.0);
+          }
+          else if (idx_array[2 * (elec_idx * num_dims + dim_idx)] ==
+                   gobbler_idx[dim_idx][0])
+          {
+            /* left discontinuity part of ECS */
+            off_diagonal += (2.0 / (1.0 + std::exp(imag * eta))) *
+                            dcomp(-1.0 / (2.0 * delta_x_2[dim_idx]), 0.0);
+          }
+          else if (idx_array[2 * (elec_idx * num_dims + dim_idx)] ==
+                   gobbler_idx[dim_idx][1])
+          {
+            /* right discontinuity part of ECS */
+            off_diagonal += (2.0 * std::exp(-1.0 * imag * eta) /
+                             (1.0 + std::exp(imag * eta))) *
+                            dcomp(-1.0 / (2.0 * delta_x_2[dim_idx]), 0.0);
+          }
+          else
+          {
+            off_diagonal += dcomp(-1.0 / (2.0 * delta_x_2[dim_idx]), 0.0);
+          }
+        }
+        else if (diff_array[elec_idx * num_dims + dim_idx] == -1)
+        {
+          if (idx_array[2 * (elec_idx * num_dims + dim_idx)] <
+                  gobbler_idx[dim_idx][0] ||
+              idx_array[2 * (elec_idx * num_dims + dim_idx)] >
+                  gobbler_idx[dim_idx][1])
+          {
+            /* Imaginary part of ECS */
+            off_diagonal += std::exp(-2.0 * imag * eta) *
+                            dcomp(-1.0 / (2.0 * delta_x_2[dim_idx]), 0.0);
+          }
+          else if (idx_array[2 * (elec_idx * num_dims + dim_idx)] ==
+                   gobbler_idx[dim_idx][0])
+          {
+            /* left discontinuity part of ECS */
+            off_diagonal += (2.0 * std::exp(-1.0 * imag * eta) /
+                             (1.0 + std::exp(imag * eta))) *
+                            dcomp(-1.0 / (2.0 * delta_x_2[dim_idx]), 0.0);
+          }
+          else if (idx_array[2 * (elec_idx * num_dims + dim_idx)] ==
+                   gobbler_idx[dim_idx][1])
+          {
+            /* right discontinuity part of ECS */
+            off_diagonal += (2.0 / (1.0 + std::exp(imag * eta))) *
+                            dcomp(-1.0 / (2.0 * delta_x_2[dim_idx]), 0.0);
+          }
+          else
+          {
+            off_diagonal += dcomp(-1.0 / (2.0 * delta_x_2[dim_idx]), 0.0);
+          }
         }
       }
     }
@@ -224,7 +302,7 @@ dcomp Hamiltonian::GetDiagonal(std::vector<int>& idx_array, bool time_dep)
 {
   dcomp diagonal(0.0, 0.0);
   /* kinetic term */
-  diagonal += GetKineticTerm();
+  diagonal += GetKineticTerm(idx_array);
   /* nuclei term */
   diagonal += GetNucleiTerm(idx_array);
   /* e-e correlation */
@@ -232,32 +310,68 @@ dcomp Hamiltonian::GetDiagonal(std::vector<int>& idx_array, bool time_dep)
   return diagonal;
 }
 
-dcomp Hamiltonian::GetKineticTerm()
+dcomp Hamiltonian::GetKineticTerm(std::vector<int>& idx_array)
 {
   dcomp kinetic(0.0, 0.0);
   /* Only num_dim terms per electron since it psi is a scalar function */
-  for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+  for (int elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
   {
-    kinetic += dcomp(1.0 / delta_x_2[dim_idx], 0.0);
+    for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+    {
+      if (idx_array[2 * (elec_idx * num_dims + dim_idx)] <
+              gobbler_idx[dim_idx][0] ||
+          idx_array[2 * (elec_idx * num_dims + dim_idx)] >
+              gobbler_idx[dim_idx][1])
+      {
+        /* Imaginary part of ECS */
+        kinetic +=
+            std::exp(-2.0 * imag * eta) * dcomp(1.0 / delta_x_2[dim_idx], 0.0);
+      }
+      else if (idx_array[2 * (elec_idx * num_dims + dim_idx)] ==
+                   gobbler_idx[dim_idx][0] ||
+               idx_array[2 * (elec_idx * num_dims + dim_idx)] ==
+                   gobbler_idx[dim_idx][1])
+      {
+        /* discontinuities of ECS */
+        kinetic +=
+            std::exp(-1.0 * imag * eta) * dcomp(1.0 / delta_x_2[dim_idx], 0.0);
+      }
+      else
+      {
+        kinetic += dcomp(1.0 / delta_x_2[dim_idx], 0.0);
+      }
+    }
   }
-  /* Same terms for each electron */
-  kinetic *= num_electrons;
   return kinetic;
 }
 
 dcomp Hamiltonian::GetNucleiTerm(std::vector<int>& idx_array)
 {
   dcomp nuclei(0.0, 0.0);
+  double r;
   /* loop over each electron */
   for (int elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
   {
     /* loop over each nuclei */
     for (int nuclei_idx = 0; nuclei_idx < num_nuclei; ++nuclei_idx)
     {
-      /* Column term */
-      nuclei -= dcomp(z[nuclei_idx] / SoftCoreDistance(location[nuclei_idx],
-                                                       idx_array, elec_idx),
-                      0.0);
+      if (z[nuclei_idx] != 0.0) /* Column term */
+      {
+        nuclei -= dcomp(z[nuclei_idx] / SoftCoreDistance(location[nuclei_idx],
+                                                         idx_array, elec_idx),
+                        0.0);
+      }
+      else /* SAE */
+      {
+        r = SoftCoreDistance(location[nuclei_idx], idx_array, elec_idx);
+        nuclei -= dcomp(c0[nuclei_idx] / r, 0.0);
+        nuclei -= dcomp(z_c[nuclei_idx] * exp(-r0[nuclei_idx] * r) / r, 0.0);
+        for (int i = 0; i < sae_size[nuclei_idx]; ++i)
+        {
+          nuclei -=
+              dcomp(a[nuclei_idx][i] * exp(-b[nuclei_idx][i] * r) / r, 0.0);
+        }
+      }
     }
   }
   return nuclei;
@@ -386,4 +500,10 @@ Hamiltonian::~Hamiltonian()
   MatDestroy(&time_independent);
   MatDestroy(&time_dependent);
   MatDestroy(&total_hamlitonian);
+
+  for (int i = 0; i < num_dims; ++i)
+  {
+    delete gobbler_idx[i];
+  }
+  delete[] gobbler_idx;
 }
