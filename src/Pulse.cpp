@@ -17,30 +17,23 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p)
   polarization_vector = p.polarization_vector.get();
   max_pulse_length    = 0; /* stores longest pulse */
 
+  pulse_shape_idx = p.pulse_shape_idx.get();
+  cycles_on       = p.cycles_on.get();
+  cycles_plateau  = p.cycles_plateau.get();
+  cycles_off      = p.cycles_off.get();
+  cycles_delay    = p.cycles_delay.get();
+  cep             = p.cep.get();
+  energy          = p.energy.get();
+  field_max       = p.field_max.get();
+
   /* allocate arrays */
-  pulse_shape_idx = new int[num_pulses];
-  cycles_on       = new double[num_pulses];
-  cycles_plateau  = new double[num_pulses];
-  cycles_off      = new double[num_pulses];
-  cycles_delay    = new double[num_pulses];
-  cycles_total    = new double[num_pulses];
-  cep             = new double[num_pulses];
-  energy          = new double[num_pulses];
-  field_max       = new double[num_pulses];
+  cycles_total = new double[num_pulses];
 
   /* get data from Parameters */
   for (int i = 0; i < num_pulses; ++i)
   {
-    pulse_shape_idx[i] = p.pulse_shape_idx.get()[i];
-    cycles_on[i]       = p.cycles_on.get()[i];
-    cycles_plateau[i]  = p.cycles_plateau.get()[i];
-    cycles_off[i]      = p.cycles_off.get()[i];
-    cycles_delay[i]    = p.cycles_delay.get()[i];
     cycles_total[i] =
         cycles_delay[i] + cycles_on[i] + cycles_plateau[i] + cycles_off[i];
-    cep[i]       = p.cep.get()[i];
-    energy[i]    = p.energy.get()[i];
-    field_max[i] = p.field_max.get()[i];
 
     /* calculate length (number of array cells) of each pulse */
     pulse_length = ceil(2.0 * pi * cycles_total[i] / (energy[i] * delta_t)) + 1;
@@ -72,15 +65,7 @@ Pulse::~Pulse()
   {
     std::cout << "Deleting Pulse\n" << std::flush;
   }
-  delete pulse_shape_idx;
-  delete cycles_on;
-  delete cycles_plateau;
-  delete cycles_off;
-  delete cycles_delay;
   delete cycles_total;
-  delete cep;
-  delete energy;
-  delete field_max;
   delete time;
   if (pulse_alloc)
   {
@@ -103,9 +88,9 @@ Pulse::~Pulse()
 void Pulse::InitializeTime()
 {
   time = new double[max_pulse_length];
-  for (int i = 0; i < max_pulse_length; ++i)
+  for (int time_idx = 0; time_idx < max_pulse_length; ++time_idx)
   {
-    time[i] = i * delta_t;
+    time[time_idx] = time_idx * delta_t;
   }
 }
 
