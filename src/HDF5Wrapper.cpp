@@ -828,7 +828,7 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
     int num_pulses = p.GetNumPulses();
     header         = true;
 
-    CreateGroup("/Parameters");
+    CreateGroup("/Parameters/");
 
     /* write out header values */
     WriteObject(num_dims, "/Parameters/num_dims",
