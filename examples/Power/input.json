@@ -1,12 +1,10 @@
 {
   "delta_t": 0.005,
   "dimensions": [
-    {"dim_size": 50.0,
-    "delta_x":   0.4},
-    {"dim_size": 50.0,
-    "delta_x":   0.4},
-    {"dim_size": 50.0,
-    "delta_x":   0.4}],
+    {"dim_size": 40.0,
+    "delta_x":   0.6},
+    {"dim_size": 40.0,
+    "delta_x":   0.6}],
   "num_electrons": 1,
   "restart": 0,
   "target": {
@@ -31,7 +29,7 @@
   "propagate": 1,
   "free_propagate": -1,
   "states": [
-    {"energy": -0.9}],
+    {"energy": -0.2}],
   "tol":        1e-10,
   "laser": {
     "polarization": "linear",

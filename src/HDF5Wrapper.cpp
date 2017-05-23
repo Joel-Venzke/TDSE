@@ -829,7 +829,6 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
     header         = true;
 
     CreateGroup("/Parameters");
-    CreateGroup("/Observables");
 
     /* write out header values */
     WriteObject(num_dims, "/Parameters/num_dims",
