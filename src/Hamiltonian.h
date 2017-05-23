@@ -27,8 +27,7 @@ class Hamiltonian : protected Utils
 
   double alpha;   /* soft core atomic */
   double alpha_2; /* square of soft core atomic */
-  double *a_field;
-  double *polarization_vector;
+  double **field;
   double *delta_x;
   double *delta_x_2;
   double **x_value;

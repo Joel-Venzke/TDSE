@@ -4,28 +4,27 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
                          Parameters& p)
 {
   if (world.rank() == 0) std::cout << "Creating Hamiltonian\n";
-  num_dims            = p.GetNumDims();
-  num_electrons       = p.GetNumElectrons();
-  num_nuclei          = p.GetNumNuclei();
-  num_x               = w.GetNumX();
-  num_psi             = w.GetNumPsi();
-  num_psi_build       = w.GetNumPsiBuild();
-  delta_x             = p.delta_x.get();
-  delta_x_2           = p.delta_x_2.get();
-  x_value             = w.GetXValue();
-  z                   = p.z.get();
-  location            = p.GetLocation();
-  a                   = p.GetA();
-  b                   = p.GetB();
-  r0                  = p.r0.get();
-  c0                  = p.c0.get();
-  z_c                 = p.z_c.get();
-  sae_size            = p.sae_size.get();
-  alpha               = p.GetAlpha();
-  alpha_2             = alpha * alpha;
-  a_field             = pulse.GetAField();
-  polarization_vector = p.polarization_vector.get();
-  eta                 = pi / 4.0;
+  num_dims      = p.GetNumDims();
+  num_electrons = p.GetNumElectrons();
+  num_nuclei    = p.GetNumNuclei();
+  num_x         = w.GetNumX();
+  num_psi       = w.GetNumPsi();
+  num_psi_build = w.GetNumPsiBuild();
+  delta_x       = p.delta_x.get();
+  delta_x_2     = p.delta_x_2.get();
+  x_value       = w.GetXValue();
+  z             = p.z.get();
+  location      = p.GetLocation();
+  a             = p.GetA();
+  b             = p.GetB();
+  r0            = p.r0.get();
+  c0            = p.c0.get();
+  z_c           = p.z_c.get();
+  sae_size      = p.sae_size.get();
+  alpha         = p.GetAlpha();
+  alpha_2       = alpha * alpha;
+  field         = pulse.GetField();
+  eta           = pi / 4.0;
 
   gobbler_idx = new int*[num_dims];
   for (int i = 0; i < num_dims; ++i)
@@ -166,7 +165,7 @@ dcomp Hamiltonian::GetOffDiagonal(std::vector<int>& idx_array,
         if (diff_array[elec_idx * num_dims + dim_idx] == 1)
         {
           /* Polarization vector for linear polarization */
-          off_diagonal += a_field[time_idx] * polarization_vector[dim_idx] *
+          off_diagonal += field[dim_idx][time_idx] *
                           dcomp(0.0, 1.0 / (2.0 * delta_x[dim_idx] * c));
         }
         /* Lower diagonals */
@@ -174,7 +173,7 @@ dcomp Hamiltonian::GetOffDiagonal(std::vector<int>& idx_array,
         else if (diff_array[elec_idx * num_dims + dim_idx] == -1)
         {
           /* Polarization vector for linear polarization */
-          off_diagonal += a_field[time_idx] * polarization_vector[dim_idx] *
+          off_diagonal += field[dim_idx][time_idx] *
                           dcomp(0.0, -1.0 / (2.0 * delta_x[dim_idx] * c));
         }
       }

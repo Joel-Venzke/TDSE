@@ -10,10 +10,12 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p)
   }
 
   /* get number of pulses and dt from Parameters */
-  pulse_alloc      = false;
-  num_pulses       = p.GetNumPulses();
-  delta_t          = p.GetDeltaT();
-  max_pulse_length = 0; /* stores longest pulse */
+  pulse_alloc         = false;
+  num_pulses          = p.GetNumPulses();
+  num_dims            = p.GetNumDims();
+  delta_t             = p.GetDeltaT();
+  polarization_vector = p.polarization_vector.get();
+  max_pulse_length    = 0; /* stores longest pulse */
 
   /* allocate arrays */
   pulse_shape_idx = new int[num_pulses];
@@ -52,7 +54,7 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p)
 
   InitializeTime();
   InitializePulse();
-  InitializeAField();
+  InitializeField();
 
   Checkpoint(data_file);
 
@@ -90,7 +92,11 @@ Pulse::~Pulse()
     delete[] pulse_value;
     delete[] pulse_envelope;
   }
-  delete a_field;
+  for (int i = 0; i < num_dims; ++i)
+  {
+    delete field[i];
+  }
+  delete[] field;
 }
 
 /* Build array with time in au */
@@ -166,7 +172,7 @@ void Pulse::InitializePulse(int n)
   }
 }
 
-/* sets up all pulses and calculates the a_field */
+/* sets up all pulses and calculates the field */
 void Pulse::InitializePulse()
 {
   /* set up the input pulses */
@@ -182,21 +188,26 @@ void Pulse::InitializePulse()
   pulse_alloc = true;
 }
 
-void Pulse::InitializeAField()
+void Pulse::InitializeField()
 {
-  /* calculate the a_field by summing each pulse */
+  /* calculate the field by summing each pulse */
   /* TODO(jove7731): add support for setting e_field */
   if (!pulse_alloc)
   {
     InitializePulse();
   }
-  a_field = new double[max_pulse_length];
-  for (int i = 0; i < max_pulse_length; ++i)
+  field = new double*[num_dims];
+  for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
   {
-    a_field[i] = 0;
-    for (int j = 0; j < num_pulses; ++j)
+    field[dim_idx] = new double[max_pulse_length];
+    for (int time_idx = 0; time_idx < max_pulse_length; ++time_idx)
     {
-      a_field[i] += pulse_value[j][i];
+      field[dim_idx][time_idx] = 0;
+      for (int pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
+      {
+        field[dim_idx][time_idx] +=
+            polarization_vector[dim_idx] * pulse_value[pulse_idx][time_idx];
+      }
     }
   }
 }
@@ -205,13 +216,18 @@ void Pulse::InitializeAField()
 void Pulse::Checkpoint(HDF5Wrapper& data_file)
 {
   data_file.CreateGroup("/Pulse");
-  /* write time, a_field, and a_field_envelope to hdf5 */
+  /* write time, field, and field_envelope to hdf5 */
   data_file.WriteObject(time, max_pulse_length, "/Pulse/time",
                         "The time for each index of the pulse in a.u.");
 
-  data_file.WriteObject(
-      a_field, max_pulse_length, "/Pulse/a_field",
-      "The value of the A field at each point in time in a.u.");
+  for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+  {
+    data_file.WriteObject(field[dim_idx], max_pulse_length,
+                          "/Pulse/field_" + std::to_string(dim_idx),
+                          "The value of the field in the " +
+                              std::to_string(dim_idx) +
+                              " dimension at each point in time in a.u.");
+  }
 
   if (pulse_alloc)
   {
@@ -245,7 +261,7 @@ void Pulse::DeallocatePulses()
   }
 }
 
-double* Pulse::GetAField() { return a_field; }
+double** Pulse::GetField() { return field; }
 
 double* Pulse::GetTime() { return time; }
 
