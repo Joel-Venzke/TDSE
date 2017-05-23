@@ -2,20 +2,24 @@
 
 Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p)
 {
-  int pulse_length = 0;
-
   if (world.rank() == 0)
   {
     std::cout << "Creating pulses\n" << std::flush;
   }
 
+  int pulse_length  = 0;
+  double polar_norm = 0.0;
+
   /* get number of pulses and dt from Parameters */
-  pulse_alloc         = false;
-  num_pulses          = p.GetNumPulses();
-  num_dims            = p.GetNumDims();
-  delta_t             = p.GetDeltaT();
-  polarization_vector = p.polarization_vector.get();
-  max_pulse_length    = 0; /* stores longest pulse */
+  pulse_alloc                        = false;
+  num_pulses                         = p.GetNumPulses();
+  num_dims                           = p.GetNumDims();
+  delta_t                            = p.GetDeltaT();
+  polarization_vector_major          = p.GetPolarizationVector();
+  if (num_dims == 3) poynting_vector = p.GetPoyntingVector();
+  ellipticity                        = p.ellipticity.get();
+  helicity_idx                       = p.helicity_idx.get();
+  max_pulse_length                   = 0; /* stores longest pulse */
 
   pulse_shape_idx = p.pulse_shape_idx.get();
   cycles_on       = p.cycles_on.get();
@@ -27,16 +31,76 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p)
   field_max       = p.field_max.get();
 
   /* allocate arrays */
-  cycles_total = new double[num_pulses];
+  polarization_vector_minor = new double*[num_pulses];
+  cycles_total              = new double[num_pulses];
 
   /* get data from Parameters */
-  for (int i = 0; i < num_pulses; ++i)
+  for (int pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
   {
-    cycles_total[i] =
-        cycles_delay[i] + cycles_on[i] + cycles_plateau[i] + cycles_off[i];
+    polarization_vector_minor[pulse_idx] = new double[num_dims];
+    /* Take cross product */
+    if (num_dims == 1)
+    {
+      polarization_vector_minor[pulse_idx][0] = 0.0;
+    }
+    else if (num_dims == 2)
+    {
+      polarization_vector_minor[pulse_idx][0] =
+          -1.0 * polarization_vector_major[pulse_idx][1];
+      polarization_vector_minor[pulse_idx][1] =
+          polarization_vector_major[pulse_idx][0];
+    }
+    else if (num_dims == 3)
+    {
+      polarization_vector_minor[pulse_idx][0] =
+          poynting_vector[pulse_idx][1] *
+              polarization_vector_major[pulse_idx][2] -
+          poynting_vector[pulse_idx][2] *
+              polarization_vector_major[pulse_idx][1];
+
+      polarization_vector_minor[pulse_idx][1] =
+          poynting_vector[pulse_idx][2] *
+              polarization_vector_major[pulse_idx][0] -
+          poynting_vector[pulse_idx][0] *
+              polarization_vector_major[pulse_idx][2];
+
+      polarization_vector_minor[pulse_idx][2] =
+          poynting_vector[pulse_idx][0] *
+              polarization_vector_major[pulse_idx][1] -
+          poynting_vector[pulse_idx][1] *
+              polarization_vector_major[pulse_idx][0];
+    }
+    else
+    {
+      EndRun("How many dimensions are you using?");
+    }
+
+    /* normalize and scale with ellipticity */
+    polar_norm = 0.0;
+    for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+    {
+      polar_norm += polarization_vector_minor[pulse_idx][dim_idx] *
+                    polarization_vector_minor[pulse_idx][dim_idx];
+    }
+    /* normalize the polarization vector*/
+    polar_norm = sqrt(polar_norm);
+    for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+    {
+      if (polar_norm > 1e-10)
+      {
+        polarization_vector_minor[pulse_idx][dim_idx] /= polar_norm;
+      }
+      /* scale with ellipticity */
+      polarization_vector_minor[pulse_idx][dim_idx] *= ellipticity[pulse_idx];
+    }
+
+    cycles_total[pulse_idx] = cycles_delay[pulse_idx] + cycles_on[pulse_idx] +
+                              cycles_plateau[pulse_idx] + cycles_off[pulse_idx];
 
     /* calculate length (number of array cells) of each pulse */
-    pulse_length = ceil(2.0 * pi * cycles_total[i] / (energy[i] * delta_t)) + 1;
+    pulse_length = ceil(2.0 * pi * cycles_total[pulse_idx] /
+                        (energy[pulse_idx] * delta_t)) +
+                   1;
 
     /* find the largest */
     if (pulse_length > max_pulse_length)
@@ -102,58 +166,87 @@ void Pulse::InitializePulse(int n)
   double s1;
 
   /* index that turns pulse on */
-  on_start = ceil(period * cycles_delay[n] / (delta_t)) + 1;
+  on_start = ceil(period * cycles_delay[n] / (delta_t));
 
   /* index that holds pulse at max */
-  plateau_start =
-      ceil(period * (cycles_on[n] + cycles_delay[n]) / (delta_t)) + 1;
+  plateau_start = ceil(period * (cycles_on[n] + cycles_delay[n]) / (delta_t));
 
   /* index that turns pulse off */
   off_start =
       ceil(period * (cycles_plateau[n] + cycles_on[n] + cycles_delay[n]) /
-           (delta_t)) +
-      1;
+           (delta_t));
 
   /* index that holds pulse at 0 */
-  off_end = ceil(period *
-                 (cycles_off[n] + cycles_plateau[n] + cycles_on[n] +
-                  cycles_delay[n]) /
-                 (delta_t)) +
-            1;
+  off_end = ceil(
+      period *
+      (cycles_off[n] + cycles_plateau[n] + cycles_on[n] + cycles_delay[n]) /
+      (delta_t));
+
   if (!pulse_alloc)
   {
     pulse_envelope[n] = new double[max_pulse_length];
-    pulse_value[n]    = new double[max_pulse_length];
   }
-  for (int i = 0; i < max_pulse_length; ++i)
+  for (int time_idx = 0; time_idx < max_pulse_length; ++time_idx)
   {
-    if (i < on_start)
+    if (time_idx < on_start)
     { /* pulse still off */
-      pulse_envelope[n][i] = 0.0;
+      pulse_envelope[n][time_idx] = 0.0;
     }
-    else if (i < plateau_start)
+    else if (time_idx < plateau_start)
     { /* pulse ramping on */
-      s1 = sin(energy[n] * delta_t * (i - on_start) / (4.0 * cycles_on[n]));
-      pulse_envelope[n][i] = field_max[n] * s1 * s1;
+      s1 = sin(energy[n] * delta_t * (time_idx - on_start) /
+               (4.0 * cycles_on[n]));
+      pulse_envelope[n][time_idx] = field_max[n] * s1 * s1;
     }
-    else if (i < off_start)
+    else if (time_idx < off_start)
     { /* pulse at max */
-      pulse_envelope[n][i] = field_max[n];
+      pulse_envelope[n][time_idx] = field_max[n];
     }
-    else if (i < off_end)
+    else if (time_idx < off_end)
     { /* pulse ramping off */
-      s1 = sin(energy[n] * delta_t * (i - off_start) / (4.0 * cycles_off[n]));
-      pulse_envelope[n][i] = field_max[n] * (1 - (s1 * s1));
+      s1 = sin(energy[n] * delta_t * (time_idx - off_start) /
+               (4.0 * cycles_off[n]));
+      pulse_envelope[n][time_idx] = field_max[n] * (1 - (s1 * s1));
     }
     else
     { /* pulse is off */
-      pulse_envelope[n][i] = 0.0;
+      pulse_envelope[n][time_idx] = 0.0;
     }
+  }
 
-    /* calculate the actual pulse */
-    pulse_value[n][i] =
-        pulse_envelope[n][i] *
-        sin(energy[n] * delta_t * (i - on_start) + cep[n] * 2 * pi);
+  if (!pulse_alloc)
+  {
+    pulse_value[n] = new double*[num_dims];
+  }
+  for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+  {
+    if (!pulse_alloc)
+    {
+      pulse_value[n][dim_idx] = new double[max_pulse_length];
+    }
+    for (int time_idx = 0; time_idx < max_pulse_length; ++time_idx)
+    {
+      /* calculate the actual pulse */
+      pulse_value[n][dim_idx][time_idx] =
+          polarization_vector_major[n][dim_idx] * pulse_envelope[n][time_idx] *
+          sin(energy[n] * delta_t * (time_idx - on_start) + cep[n] * 2 * pi);
+      if (helicity_idx[n] == 0) /* right */
+      {
+        /* We want cos(...) */
+        pulse_value[n][dim_idx][time_idx] +=
+            polarization_vector_minor[n][dim_idx] *
+            pulse_envelope[n][time_idx] *
+            cos(energy[n] * delta_t * (time_idx - on_start) + cep[n] * 2 * pi);
+      }
+      else if (helicity_idx[n] == 1) /* left */
+      {
+        /* We want -1.0 * cos(...) */
+        pulse_value[n][dim_idx][time_idx] -=
+            polarization_vector_minor[n][dim_idx] *
+            pulse_envelope[n][time_idx] *
+            cos(energy[n] * delta_t * (time_idx - on_start) + cep[n] * 2 * pi);
+      }
+    }
   }
 }
 
@@ -163,7 +256,7 @@ void Pulse::InitializePulse()
   /* set up the input pulses */
   if (!pulse_alloc)
   {
-    pulse_value    = new double*[num_pulses];
+    pulse_value    = new double**[num_pulses];
     pulse_envelope = new double*[num_pulses];
   }
   for (int i = 0; i < num_pulses; ++i)
@@ -187,11 +280,10 @@ void Pulse::InitializeField()
     field[dim_idx] = new double[max_pulse_length];
     for (int time_idx = 0; time_idx < max_pulse_length; ++time_idx)
     {
-      field[dim_idx][time_idx] = 0;
+      field[dim_idx][time_idx] = 0.0;
       for (int pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
       {
-        field[dim_idx][time_idx] +=
-            polarization_vector[dim_idx] * pulse_value[pulse_idx][time_idx];
+        field[dim_idx][time_idx] += pulse_value[pulse_idx][dim_idx][time_idx];
       }
     }
   }
@@ -217,16 +309,23 @@ void Pulse::Checkpoint(HDF5Wrapper& data_file)
   if (pulse_alloc)
   {
     /* write each pulse both value and envelope */
-    for (int i = 0; i < num_pulses; ++i)
+    for (int pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
     {
-      data_file.WriteObject(pulse_envelope[i], max_pulse_length,
-                            "/Pulse/Pulse_envelope_" + std::to_string(i),
-                            "The envelope function for the " +
-                                std::to_string(i) + " pulse in the input file");
-      data_file.WriteObject(pulse_value[i], max_pulse_length,
-                            "/Pulse/Pulse_value_" + std::to_string(i),
-                            "The pulse value for the " + std::to_string(i) +
-                                " pulse in the input file");
+      data_file.WriteObject(
+          pulse_envelope[pulse_idx], max_pulse_length,
+          "/Pulse/Pulse_envelope_" + std::to_string(pulse_idx),
+          "The envelope function for the " + std::to_string(pulse_idx) +
+              " pulse in the input file");
+      for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+      {
+        data_file.WriteObject(
+            pulse_value[pulse_idx][dim_idx], max_pulse_length,
+            "/Pulse/Pulse_value_" + std::to_string(pulse_idx) + "_" +
+                std::to_string(dim_idx),
+            "The pulse value for the " + std::to_string(pulse_idx) +
+                " pulse's " + std::to_string(dim_idx) +
+                " dimension in the input file");
+      }
     }
   }
 }
@@ -235,10 +334,14 @@ void Pulse::DeallocatePulses()
 {
   if (pulse_alloc)
   {
-    for (int i = 0; i < num_pulses; ++i)
+    for (int pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
     {
-      delete pulse_value[i];
-      delete pulse_envelope[i];
+      for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+      {
+        delete[] pulse_value[pulse_idx][dim_idx];
+      }
+      delete[] pulse_value[pulse_idx];
+      delete[] pulse_envelope[pulse_idx];
     }
     delete[] pulse_value;
     delete[] pulse_envelope;

@@ -1,10 +1,10 @@
 {
-  "delta_t": 0.005,
+  "delta_t": 0.015,
   "dimensions": [
-    {"dim_size": 50.0,
-    "delta_x":   0.5},
-    {"dim_size": 50.0,
-    "delta_x":   0.5}],
+    {"dim_size": 60.0,
+    "delta_x":   0.3},
+    {"dim_size": 60.0,
+    "delta_x":   0.3}],
   "num_electrons": 1,
   "restart": 0,
   "target": {
@@ -27,21 +27,23 @@
   "write_frequency_eigin_state": 1,
   "state_solver":    "Power",
   "propagate": 1,
-  "free_propagate": 1000,
+  "free_propagate": -1,
   "states": [
     {"energy": -0.5}],
   "tol":        1e-10,
   "laser": {
-    "polarization": "linear",
-    "polarization_vector": [1.0,0.0,0.0],
     "pulses": [
-    {"pulse_shape":   "sin2",
-      "cycles_on":      1.0,
+    { "polarization_vector": [1.0,0.0,0.0],
+      "poynting_vector": [0.0,0.0,1.0],
+      "helicity" : "left",
+      "ellipticity" : 0.5,
+      "pulse_shape":   "sin2",
+      "cycles_on":      4.0,
       "cycles_plateau": 0.0,
-      "cycles_off":     1.0,
+      "cycles_off":     4.0,
       "cycles_delay":   0.0,
       "cep":            0.0,
-      "energy":         1.5,
+      "energy":         0.75,
       "field_max":      12.83}]
   }
 }
