@@ -55,36 +55,6 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   /* only write out at start */
   if (first_pass)
   {
-    /* write observables */
-    h5_file.CreateGroup("/Observables/");
-    h5_file.WriteObject(time, "/Observables/time",
-                        "Time step that the observables were written to disk",
-                        write_counter_observables);
-    h5_file.WriteObject(Norm(), "/Observables/norm", "Norm of wavefunction",
-                        write_counter_observables);
-    for (int elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
-    {
-      for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
-      {
-        h5_file.WriteObject(GetPosition(elec_idx, dim_idx),
-                            "/Observables/position_expectation_" +
-                                std::to_string(elec_idx) + "_" +
-                                std::to_string(dim_idx),
-                            "Expectation value of position for the " +
-                                std::to_string(elec_idx) + " electron and " +
-                                std::to_string(dim_idx) + " dimension",
-                            write_counter_observables);
-        h5_file.WriteObject(
-            GetDipoleAcceration(elec_idx, dim_idx),
-            "/Observables/dipole_acceleration_" + std::to_string(elec_idx) +
-                "_" + std::to_string(dim_idx),
-            "Expectation value of the dipole acceleration for the " +
-                std::to_string(elec_idx) + " electron and " +
-                std::to_string(dim_idx) + " dimension",
-            write_counter_observables);
-      }
-    }
-
     viewer_file.Open("a");
     /* move into group */
     viewer_file.PushGroup(group_name);
@@ -149,6 +119,36 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
     h5_file.WriteObject(time, "/Wavefunction/time",
                         "Time step that psi was written to disk",
                         write_counter_checkpoint);
+
+    /* write observables */
+    h5_file.CreateGroup("/Observables/");
+    h5_file.WriteObject(time, "/Observables/time",
+                        "Time step that the observables were written to disk",
+                        write_counter_observables);
+    h5_file.WriteObject(Norm(), "/Observables/norm", "Norm of wavefunction",
+                        write_counter_observables);
+    for (int elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
+    {
+      for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+      {
+        h5_file.WriteObject(GetPosition(elec_idx, dim_idx),
+                            "/Observables/position_expectation_" +
+                                std::to_string(elec_idx) + "_" +
+                                std::to_string(dim_idx),
+                            "Expectation value of position for the " +
+                                std::to_string(elec_idx) + " electron and " +
+                                std::to_string(dim_idx) + " dimension",
+                            write_counter_observables);
+        h5_file.WriteObject(
+            GetDipoleAcceration(elec_idx, dim_idx),
+            "/Observables/dipole_acceleration_" + std::to_string(elec_idx) +
+                "_" + std::to_string(dim_idx),
+            "Expectation value of the dipole acceleration for the " +
+                std::to_string(elec_idx) + " electron and " +
+                std::to_string(dim_idx) + " dimension",
+            write_counter_observables);
+      }
+    }
 
     /* allow for future passes to write psi or observables only */
     first_pass = false;
