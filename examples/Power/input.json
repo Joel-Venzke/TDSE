@@ -10,7 +10,7 @@
   "target": {
     "name":  "H",
     "nuclei" : [
-      { "z": 0.0,
+      { "z": 1.0,
       "location": [0.0,0.0,0.0],
       "SAE": {
         "z_c": 1.0,
@@ -29,7 +29,7 @@
   "propagate": 1,
   "free_propagate": -1,
   "states": [
-    {"energy": -0.2}],
+    {"energy": -0.5}],
   "tol":        1e-10,
   "laser": {
     "polarization": "linear",
