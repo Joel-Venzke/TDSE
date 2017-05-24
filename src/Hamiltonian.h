@@ -46,7 +46,8 @@ class Hamiltonian : protected Utils
   Mat *GetTotalHamiltonian(int time_idx);
   Mat *GetTimeIndependent();
 
-  dcomp GetVal(int idx_i, int idx_j, bool time_dep, int time_idx);
+  dcomp GetVal(int idx_i, int idx_j, bool time_dep, int time_idx,
+               bool &insert_val);
   dcomp GetOffDiagonal(std::vector<int> &idx_array,
                        std::vector<int> &diff_array, bool time_dep,
                        int time_idx);

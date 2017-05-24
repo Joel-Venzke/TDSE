@@ -55,7 +55,7 @@ void Hamiltonian::CalculateHamlitonian(int time_idx)
   int j_val;           /* j index for matrix */
   int offset;          /* offset of diagonal */
   int start, end;      /* start end rows */
-  bool time_dependent;
+  bool time_dependent, insert_val;
   MatGetOwnershipRange(hamiltonian, &start, &end);
   if (time_idx < 0)
   {
@@ -69,8 +69,8 @@ void Hamiltonian::CalculateHamlitonian(int time_idx)
   {
     /* Diagonal element */
     j_val = i_val;
-    val   = GetVal(i_val, j_val, time_dependent, time_idx);
-    if (val != dcomp(0.0, 0.0))
+    val   = GetVal(i_val, j_val, time_dependent, time_idx, insert_val);
+    if (insert_val)
     {
       MatSetValues(hamiltonian, 1, &i_val, 1, &j_val, &val, INSERT_VALUES);
     }
@@ -86,8 +86,8 @@ void Hamiltonian::CalculateHamlitonian(int time_idx)
         if (i_val - offset >= 0 and i_val - offset < num_psi)
         {
           j_val = i_val - offset;
-          val   = GetVal(i_val, j_val, time_dependent, time_idx);
-          if (val != dcomp(0.0, 0.0))
+          val   = GetVal(i_val, j_val, time_dependent, time_idx, insert_val);
+          if (insert_val)
           {
             MatSetValues(hamiltonian, 1, &i_val, 1, &j_val, &val,
                          INSERT_VALUES);
@@ -98,8 +98,8 @@ void Hamiltonian::CalculateHamlitonian(int time_idx)
         if (i_val + offset >= 0 and i_val + offset < num_psi)
         {
           j_val = i_val + offset;
-          val   = GetVal(i_val, j_val, time_dependent, time_idx);
-          if (val != dcomp(0.0, 0.0))
+          val   = GetVal(i_val, j_val, time_dependent, time_idx, insert_val);
+          if (insert_val)
           {
             MatSetValues(hamiltonian, 1, &i_val, 1, &j_val, &val,
                          INSERT_VALUES);
@@ -118,12 +118,14 @@ Mat* Hamiltonian::GetTotalHamiltonian(int time_idx)
   return &hamiltonian;
 }
 
-dcomp Hamiltonian::GetVal(int idx_i, int idx_j, bool time_dep, int time_idx)
+dcomp Hamiltonian::GetVal(int idx_i, int idx_j, bool time_dep, int time_idx,
+                          bool& insert_val)
 {
   /* Get arrays */
   std::vector<int> idx_array  = GetIndexArray(idx_i, idx_j);
   std::vector<int> diff_array = GetDiffArray(idx_array);
   int sum                     = 0;
+  insert_val                  = true;
 
   /* Diagonal elements */
   if (idx_i == idx_j)
@@ -143,6 +145,9 @@ dcomp Hamiltonian::GetVal(int idx_i, int idx_j, bool time_dep, int time_idx)
   {
     return GetOffDiagonal(idx_array, diff_array, time_dep, time_idx);
   }
+
+  /* This is a true zero of the matrix */
+  insert_val = false;
 
   /* Should be a zero in the matrix */
   return dcomp(0.0, 0.0);

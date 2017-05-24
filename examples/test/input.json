@@ -31,7 +31,7 @@
   "propagate": 1,
   "free_propagate": -1,
   "states": [
-    {"energy": -0.5}],
+    {"energy": -1.0}],
   "tol":        1e-10,
   "laser": {
     "pulses": [
