@@ -34,8 +34,7 @@ class Parameters : protected Utils
                                       measurements during propagation */
   int write_frequency_eigin_state; /* how many steps between checkpoints during
                                       eigen state calculations */
-  int free_propagate;              /* How many free propagation steps (-1 means
-                                      till converged)*/
+
   double gobbler; /* percent (1=100% and .9=90%) gobbler turns on at */
   double sigma;   /* std of wave function guess */
   int num_states; /* number of ground states */
@@ -43,12 +42,14 @@ class Parameters : protected Utils
   std::string state_solver; /* name of the solver used to get states */
   int state_solver_idx;     /* index of state solver */
 
-  int propagate; /* 0: no propagation 1: propagation */
+  int propagate;      /* 0: no propagation 1: propagation */
+  int free_propagate; /* How many free propagation steps (-1 means
+                         till norm is converged) */
 
   /* pulse data */
-  int num_pulses; /* number of pulses */
-  std::string polarization;
-  int polarization_idx;
+  int num_pulses;               /* number of pulses */
+  double** polarization_vector; /* polarization vector for each pulse */
+  double** poynting_vector;     /* poynting vector of the field */
 
   void Setup(std::string file_name);
 
@@ -64,16 +65,19 @@ class Parameters : protected Utils
   std::unique_ptr<double[]>
       state_energy; /* theoretical eigenvalues for each state */
   std::unique_ptr<std::string[]>
-      pulse_shape; /* pulse shape {"sin2","linear"} */
-  std::unique_ptr<double[]> polarization_vector; /* ramp on cycles */
-  std::unique_ptr<int[]> pulse_shape_idx;        /* index of pulse shape */
-  std::unique_ptr<double[]> cycles_on;           /* ramp on cycles */
-  std::unique_ptr<double[]> cycles_plateau;      /* plateau cycles */
-  std::unique_ptr<double[]> cycles_off;          /* ramp off cycles */
-  std::unique_ptr<double[]> cycles_delay;        /* delay in number of cycles */
-  std::unique_ptr<double[]> cep;                 /* carrier envelope phase */
-  std::unique_ptr<double[]> energy;              /* photon energy */
-  std::unique_ptr<double[]> field_max;           /* max amplitude */
+      pulse_shape;                          /* pulse shape {"sin2","linear"} */
+  std::unique_ptr<int[]> pulse_shape_idx;   /* index of pulse shape */
+  std::unique_ptr<double[]> cycles_on;      /* ramp on cycles */
+  std::unique_ptr<double[]> cycles_plateau; /* plateau cycles */
+  std::unique_ptr<double[]> cycles_off;     /* ramp off cycles */
+  std::unique_ptr<double[]> cycles_delay;   /* delay in number of cycles */
+  std::unique_ptr<double[]>
+      cep; /* carrier envelope phase fractions of a cycle */
+  std::unique_ptr<double[]> energy;      /* photon energy */
+  std::unique_ptr<double[]> field_max;   /* max amplitude */
+  std::unique_ptr<double[]> ellipticity; /* major_min/minor_max of the field */
+  std::unique_ptr<std::string[]> helicity; /* helicity of the field */
+  std::unique_ptr<int[]> helicity_idx;     /* helicity index right:0 left:1 */
 
   /* Constructors */
   Parameters(std::string file_name);
@@ -108,5 +112,6 @@ class Parameters : protected Utils
   int GetFreePropagate();
 
   int GetNumPulses();
-  int GetPolarizationIdx();
+  double** GetPolarizationVector();
+  double** GetPoyntingVector();
 };
