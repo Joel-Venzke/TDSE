@@ -1,7 +1,8 @@
 #pragma once
 #include <math.h>
-#include <petsc.h>
-#include <slepceps.h>
+// #include <petsc.h>
+// #include <slepceps.h>
+#include <slepc.h>
 #include <stdlib.h>
 #include <boost/mpi.hpp>
 #include <boost/mpi/environment.hpp>

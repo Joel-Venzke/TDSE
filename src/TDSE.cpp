@@ -1,9 +1,10 @@
 // #include "config.h"
-#include <petsc.h>
+#include <slepc.h>
+// #include <petsc.h>
 #include <iostream>
 #include "HDF5Wrapper.h"
 #include "Hamiltonian.h"
-#include "PETSCWrapper.h"
+// #include "PETSCWrapper.h"
 #include "Parameters.h"
 #include "Pulse.h"
 #include "Simulation.h"
@@ -12,8 +13,10 @@
 
 int main(int argc, char** argv)
 {
+  // PetscInitialize(&argc, &argv, (char*)0, "TDSE");
+
   PETSCWrapper p_wrap(argc, argv);
-  // p_wrap.PushStage("Set up");
+  p_wrap.PushStage("Set up");
 
   /* initialize all of the classes */
   ViewWrapper viewer_file("TDSE.h5");
@@ -24,9 +27,9 @@ int main(int argc, char** argv)
   Hamiltonian hamiltonian(wavefunction, pulse, h5_file, parameters);
   Simulation s(hamiltonian, wavefunction, pulse, h5_file, viewer_file,
                parameters);
-  // p_wrap.PopStage(); /* Set up */
+  p_wrap.PopStage(); /* Set up */
 
-  // p_wrap.PushStage("Eigen State");
+  p_wrap.PushStage("Eigen State");
   /* get ground states */
   switch (parameters.GetStateSolverIdx())
   {
@@ -39,14 +42,13 @@ int main(int argc, char** argv)
       s.EigenSolve(parameters.GetNumStates());
       break;
   }
-  // p_wrap.PopStage(); /* Eigen State */
+  p_wrap.PopStage(); /* Eigen State */
 
-  // p_wrap.PushStage("Propagation");
+  p_wrap.PushStage("Propagation");
   if (parameters.GetPropagate() == 1)
   {
     s.Propagate();
   }
-  // p_wrap.PopStage(); /* Propagation */
-
+  p_wrap.PopStage(); /* Propagation */
   return 0;
 }

@@ -220,32 +220,58 @@ void Simulation::EigenSolve(int num_states, int return_state_idx)
   MatDuplicate(*(hamiltonian->GetTimeIndependent()), MAT_DO_NOT_COPY_VALUES,
                &A);
   MatCopy(*(hamiltonian->GetTimeIndependent()), A, SAME_NONZERO_PATTERN);
-  MatView(A, PETSC_VIEWER_STDOUT_WORLD);
+  // MatView(A, PETSC_VIEWER_STDOUT_WORLD);
   // MatCreateVecs(A, NULL, &psi_imag);
   // MatCreateVecs(A, NULL, &psi_real);
 
-  std::cout << "1\n";
+  std::cout << "1\n" << std::flush;
   EPS eps; /* eigen solver */
   EPSCreate(PETSC_COMM_WORLD, &eps);
 
-  std::cout << "2\n";
+  std::cout << "2\n" << std::flush;
+  EPSSetOperators(eps, A, NULL);
+  std::cout << "3\n" << std::flush;
   EPSSetProblemType(eps, EPS_NHEP);
-  EPSSetOperators(eps, A, PETSC_IGNORE);
-  std::cout << "3\n";
+  std::cout << "4\n" << std::flush;
   EPSSetTolerances(eps, tol, PETSC_DECIDE);
-  std::cout << "ldskjsdlfjlsd\n";
+  std::cout << "5\n" << std::flush;
   EPSSetWhichEigenpairs(eps, EPS_SMALLEST_REAL);
-  std::cout << "ldskjsdlfjlsd\n";
+  std::cout << "6\n" << std::flush;
   EPSSetDimensions(eps, num_states, PETSC_DECIDE, PETSC_DECIDE);
-  std::cout << "ldskjsdlfjlsd\n";
+  std::cout << "7\n" << std::flush;
   EPSSetFromOptions(eps);
-  std::cout << "ldskjsdlfjlsd\n";
-  EPSSetInitialSpace(eps, 1, psi);
-  std::cout << "ldskjsdlfjlsd\n";
+  std::cout << "8\n" << std::flush;
+  // EPSSetUp(eps);
+  // EndRun("lslksjfd");
+  // EPSView(eps, PETSC_VIEWER_STDOUT_WORLD);
+  // EPSSetInitialSpace(eps, 1, psi);
   EPSSolve(eps);
-  std::cout << "ldskjsdlfjlsd\n";
+  std::cout << "9\n" << std::flush;
+
   EPSGetConverged(eps, &nconv);
-  std::cout << "ldskjsdlfjlsd\n";
+  std::cout << "10\n" << std::flush;
+
+  // EPSCreate(PETSC_COMM_WORLD, &eps);
+
+  // std::cout << "2\n";
+  // EPSSetProblemType(eps, EPS_NHEP);
+  // std::cout << "2a\n";
+  // EPSSetOperators(eps, A, NULL);
+  // std::cout << "3\n";
+  // EPSSetTolerances(eps, tol, PETSC_DECIDE);
+  // std::cout << "ldskjsdlfjlsd\n";
+  // EPSSetWhichEigenpairs(eps, EPS_SMALLEST_REAL);
+  // std::cout << "ldskjsdlfjlsd\n";
+  // EPSSetDimensions(eps, num_states, PETSC_DECIDE, PETSC_DECIDE);
+  // std::cout << "ldskjsdlfjlsd\n";
+  // EPSSetFromOptions(eps);
+  // std::cout << "ldskjsdlfjlsd\n";
+  // EPSSetInitialSpace(eps, 1, psi);
+  // std::cout << "ldskjsdlfjlsd\n";
+  // EPSSolve(eps);
+  // std::cout << "ldskjsdlfjlsd\n";
+  // EPSGetConverged(eps, &nconv);
+  // std::cout << "ldskjsdlfjlsd\n";
   for (int j = 0; j < nconv; j++)
   {
     EPSGetEigenpair(eps, j, &eigen_real, &eigen_imag, psi_real, psi_imag);
