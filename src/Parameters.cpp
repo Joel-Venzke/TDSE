@@ -142,9 +142,13 @@ void Parameters::Setup(std::string file_name)
   {
     target_idx = 0;
   }
-  if (target == "H")
+  else if (target == "H")
   {
     target_idx = 1;
+  }
+  else
+  {
+    target_idx = -1;
   }
 
   if (state_solver == "File")
@@ -302,77 +306,99 @@ void Parameters::Validate()
   }
   std::string err_str;
   bool error_found = false; /* set to true if error is found */
+  double total;
 
   /* Check pulses */
-  for (int i = 0; i < num_pulses; i++)
+  for (int pulse_idx = 0; pulse_idx < num_pulses; pulse_idx++)
   {
     /* Check pulse shapes */
-    if (pulse_shape[i] != "sin2")
+    if (pulse_shape[pulse_idx] != "sin2")
     {
       error_found = true;
       err_str += "\nPulse ";
-      err_str += std::to_string(i);
+      err_str += std::to_string(pulse_idx);
       err_str += " has unsupported pulse shape: \"";
-      err_str += pulse_shape[i] + "\"\n";
+      err_str += pulse_shape[pulse_idx] + "\"\n";
       err_str += "Current support includes: ";
       err_str += "\"sin2\"\n";
     }
 
     /* check field_max */
-    if (field_max[i] <= 0)
+    if (field_max[pulse_idx] <= 0)
     {
       error_found = true;
       err_str += "\nPulse ";
-      err_str += std::to_string(i);
+      err_str += std::to_string(pulse_idx);
       err_str += " has unsupported field_max: \"";
-      err_str += std::to_string(field_max[i]) + "\"\n";
+      err_str += std::to_string(field_max[pulse_idx]) + "\"\n";
       err_str += "field_max should be greater than 0\n";
     }
 
     /* check cycles_on */
-    if (cycles_on[i] < 0)
+    if (cycles_on[pulse_idx] < 0)
     {
       error_found = true;
       err_str += "\nPulse ";
-      err_str += std::to_string(i);
+      err_str += std::to_string(pulse_idx);
       err_str += " has cycles_on: \"";
-      err_str += std::to_string(cycles_on[i]) + "\"\n";
+      err_str += std::to_string(cycles_on[pulse_idx]) + "\"\n";
       err_str += "cycles_on should be >= 0\n";
     }
 
     /* check cycles_plateau */
-    if (cycles_plateau[i] < 0)
+    if (cycles_plateau[pulse_idx] < 0)
     {
       error_found = true;
       err_str += "\nPulse ";
-      err_str += std::to_string(i);
+      err_str += std::to_string(pulse_idx);
       err_str += " has cycles_plateau: \"";
-      err_str += std::to_string(cycles_plateau[i]) + "\"\n";
+      err_str += std::to_string(cycles_plateau[pulse_idx]) + "\"\n";
       err_str += "cycles_plateau should be >= 0\n";
     }
 
     /* check cycles_off */
-    if (cycles_off[i] < 0)
+    if (cycles_off[pulse_idx] < 0)
     {
       error_found = true;
       err_str += "\nPulse ";
-      err_str += std::to_string(i);
+      err_str += std::to_string(pulse_idx);
       err_str += " has cycles_off: \"";
-      err_str += std::to_string(cycles_off[i]) + "\"\n";
+      err_str += std::to_string(cycles_off[pulse_idx]) + "\"\n";
       err_str += "cycles_off should be >= 0\n";
     }
 
     /* exclude delay because it is zero anyways */
     /* pulses must exist so we don't run supper long time scales */
-    double p_length = cycles_on[i] + cycles_off[i] + cycles_plateau[i];
+    double p_length = cycles_on[pulse_idx] + cycles_off[pulse_idx] +
+                      cycles_plateau[pulse_idx];
     if (p_length <= 0)
     {
       error_found = true;
       err_str += "\nPulse ";
-      err_str += std::to_string(i);
+      err_str += std::to_string(pulse_idx);
       err_str += " has length: \"";
       err_str += std::to_string(p_length) + "\"\n";
       err_str += "the length should be > 0\n";
+    }
+    if (num_dims == 3)
+    {
+      total = 0.0;
+      for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+      {
+        total += polarization_vector[pulse_idx][dim_idx] *
+                 poynting_vector[pulse_idx][dim_idx];
+      }
+      if (total > 1e-10)
+      {
+        error_found = true;
+        err_str += "\nPulse ";
+        err_str += std::to_string(pulse_idx);
+        err_str += " has non orthogonal poynting_vector and";
+        err_str += "polarization_vector\n";
+        err_str += "current dot product is: ";
+        err_str += std::to_string(total);
+        err_str += "\n";
+      }
     }
   }
 
@@ -388,15 +414,6 @@ void Parameters::Validate()
     error_found = true;
     err_str += "\nCome on we live in a 3D world!\n";
     err_str += "You provided more than 3 spacial dimensions\n";
-  }
-
-  /* target */
-  if (target != "He" and target != "H")
-  {
-    error_found = true;
-    err_str += "\nInvalid target: \"";
-    err_str += target;
-    err_str += "\" \nvalid targets are \"He\" and \"H\"";
   }
 
   /* state_solver issues*/

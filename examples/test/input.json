@@ -1,16 +1,18 @@
 {
   "delta_t": 0.015,
   "dimensions": [
-    {"dim_size": 60.0,
-    "delta_x":   0.3},
-    {"dim_size": 60.0,
-    "delta_x":   0.3}],
+    {"dim_size": 50.0,
+    "delta_x":   1.0},
+    {"dim_size": 50.0,
+    "delta_x":   1.0},
+    {"dim_size": 50.0,
+    "delta_x":   1.0}],
   "num_electrons": 1,
   "restart": 0,
   "target": {
-    "name":  "H",
+    "name":  "He-SAE",
     "nuclei" : [
-      { "z": 1.0,
+      { "z": 0.0,
       "location": [0.0,0.0,0.0],
       "SAE": {
         "z_c": 1.0,
@@ -19,7 +21,7 @@
         "a" : [0.66294407],
         "b" : [4.073942]}
       }]},
-  "alpha":   0.78,
+  "alpha":   0.0,
   "gobbler": 0.9,
   "sigma":   2.0,
   "write_frequency_checkpoint": 200,
@@ -36,11 +38,11 @@
     { "polarization_vector": [1.0,0.0,0.0],
       "poynting_vector": [0.0,0.0,1.0],
       "helicity" : "left",
-      "ellipticity" : 0.5,
+      "ellipticity" : 1.0,
       "pulse_shape":   "sin2",
-      "cycles_on":      4.0,
+      "cycles_on":      10.0,
       "cycles_plateau": 0.0,
-      "cycles_off":     4.0,
+      "cycles_off":     10.0,
       "cycles_delay":   0.0,
       "cep":            0.0,
       "energy":         0.75,
