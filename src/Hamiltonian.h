@@ -27,20 +27,16 @@ class Hamiltonian : protected Utils
 
   double alpha;   /* soft core atomic */
   double alpha_2; /* square of soft core atomic */
-  double *a_field;
-  double *polarization_vector;
+  double **field;
   double *delta_x;
   double *delta_x_2;
   double **x_value;
-  Mat time_independent;
-  Mat time_dependent;
-  Mat total_hamlitonian;
+  Mat hamiltonian;
   int **gobbler_idx; /* distance that starts gobbler */
   double eta;        /* value in exponent for ECS */
 
-  void CreateTimeIndependent();
-  void CreateTimeDependent();
-  void CreateTotalHamlitonian();
+  void CreateHamlitonian();
+  void CalculateHamlitonian(int time_idx);
 
  public:
   /* Constructor */
@@ -50,10 +46,11 @@ class Hamiltonian : protected Utils
   Mat *GetTotalHamiltonian(int time_idx);
   Mat *GetTimeIndependent();
 
-  dcomp GetVal(int idx_i, int idx_j, bool time_dep);
+  dcomp GetVal(int idx_i, int idx_j, bool time_dep, int time_idx);
   dcomp GetOffDiagonal(std::vector<int> &idx_array,
-                       std::vector<int> &diff_array, bool time_dep);
-  dcomp GetDiagonal(std::vector<int> &idx_array, bool time_dep);
+                       std::vector<int> &diff_array, bool time_dep,
+                       int time_idx);
+  dcomp GetDiagonal(std::vector<int> &idx_array, bool time_dep, int time_idx);
   dcomp GetKineticTerm(std::vector<int> &idx_array);
   dcomp GetNucleiTerm(std::vector<int> &idx_array);
   dcomp GetElectronElectronTerm(std::vector<int> &idx_array);
