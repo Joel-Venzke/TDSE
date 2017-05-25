@@ -25,14 +25,22 @@ class Wavefunction : protected Utils
   bool first_pass;
   double sigma; /* std of gaussian guess */
 
-  int write_counter;
+  int write_counter_checkpoint;
+  int write_counter_observables;
 
   /* hidden from user for safety */
   void CreateGrid();
   void CreatePsi();
+  void CreateObservable(int observable_idx, int elec_idx, int dim_idx);
   void CleanUp();
 
-  dcomp GetVal(dcomp ***data, int idx);
+  dcomp GetPsiVal(dcomp ***data, int idx);
+  dcomp GetPositionVal(int idx, int elec_idx, int dim_idx);
+  dcomp GetDipoleAccerationVal(int idx, int elec_idx, int dim_idx);
+
+  double GetDistance(std::vector<int> idx_array, int elec_idx);
+
+  std::vector<int> GetIntArray(int idx);
 
  public:
   /* Constructor */
@@ -42,7 +50,8 @@ class Wavefunction : protected Utils
   ~Wavefunction();
 
   /* IO */
-  void Checkpoint(HDF5Wrapper &data_file, ViewWrapper &view_file, double time);
+  void Checkpoint(HDF5Wrapper &data_file, ViewWrapper &view_file, double time,
+                  bool checkpoint_psi = true);
   void CheckpointPsi(ViewWrapper &view_file, int write_idx);
 
   /* tools */
@@ -52,6 +61,8 @@ class Wavefunction : protected Utils
   double Norm(Vec &data, double dx);
   double GetEnergy(Mat *h);
   double GetEnergy(Mat *h, Vec &p);
+  double GetPosition(int elec_idx, int dim_idx);
+  double GetDipoleAcceration(int elec_idx, int dim_idx);
   void ResetPsi();
 
   int *GetNumX();

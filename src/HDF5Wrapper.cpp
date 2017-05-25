@@ -828,7 +828,7 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
     int num_pulses = p.GetNumPulses();
     header         = true;
 
-    CreateGroup("/Parameters");
+    CreateGroup("/Parameters/");
 
     /* write out header values */
     WriteObject(num_dims, "/Parameters/num_dims",
@@ -843,10 +843,32 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
                 "The index of the target. He:0 ");
     WriteObject(p.z.get(), p.GetNumNuclei(), "/Parameters/z",
                 "Atomic number used in Hamiltonian ");
+    WriteObject(p.z_c.get(), p.GetNumNuclei(), "/Parameters/z_c",
+                "Z_c in the SAE potential for each nuclei");
+    WriteObject(p.c0.get(), p.GetNumNuclei(), "/Parameters/c0",
+                "C_0 in the SAE potential for each nuclei");
+    WriteObject(p.r0.get(), p.GetNumNuclei(), "/Parameters/r0",
+                "R_0 in the SAE potential for each nuclei");
+    for (int i = 0; i < p.GetNumNuclei(); ++i)
+    {
+      WriteObject(p.GetLocation()[i], p.GetNumDims(),
+                  "/Parameters/location_" + std::to_string(i),
+                  "location of nuclei " + std::to_string(i));
+      WriteObject(p.GetA()[i], p.sae_size[i],
+                  "/Parameters/a_" + std::to_string(i),
+                  "SAE a terms for nuclei " + std::to_string(i));
+      WriteObject(p.GetB()[i], p.sae_size[i],
+                  "/Parameters/b_" + std::to_string(i),
+                  "SAE a terms for nuclei " + std::to_string(i));
+    }
     WriteObject(p.GetAlpha(), "/Parameters/alpha",
                 "Soft core used in atomic term of Hamiltonian");
-    WriteObject(p.GetWriteFrequencyPropagation(),
-                "/Parameters/write_frequency_propagation",
+    WriteObject(
+        p.GetWriteFrequencyObservables(),
+        "/Parameters/write_frequency_observables",
+        "How often are observables are printed done during propagation");
+    WriteObject(p.GetWriteFrequencyCheckpoint(),
+                "/Parameters/write_frequency_checkpoint",
                 "How often are checkpoints done during propagation");
     WriteObject(
         p.GetWriteFrequencyEigenState(),
@@ -861,11 +883,30 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
                 "Index of solver: File:0, ITP:1, Power:2, SLEPC:3");
     WriteObject(num_pulses, "/Parameters/num_pulses",
                 "The number of pulses from the input file");
-    WriteObject(p.GetPolarizationIdx(), "/Parameters/polarization_idx",
-                "Polarization of the laser. linear:0, circular:1");
-    WriteObject(p.polarization_vector.get(), num_dims,
-                "/Parameters/polarization_vector",
-                "The vector used to define the polarization direction");
+    for (int pulse_idx = 0; pulse_idx < p.GetNumPulses(); ++pulse_idx)
+    {
+      WriteObject(
+          p.GetPolarizationVector()[pulse_idx], num_dims,
+          "/Parameters/polarization_vector_" + std::to_string(pulse_idx),
+          "The vector used to define the polarization direction for the " +
+              std::to_string(pulse_idx) + " pulse");
+      if (num_dims == 3)
+      {
+        WriteObject(
+            p.GetPoyntingVector()[pulse_idx], num_dims,
+            "/Parameters/poynting_vector_" + std::to_string(pulse_idx),
+            "The vector used to define the poynting direction for the " +
+                std::to_string(pulse_idx) + " pulse");
+      }
+      WriteObject(p.ellipticity.get()[pulse_idx],
+                  "/Parameters/ellipticity_" + std::to_string(pulse_idx),
+                  "The ellipticity for the " + std::to_string(pulse_idx) +
+                      " pulse (major/minor)");
+      WriteObject(p.helicity_idx.get()[pulse_idx],
+                  "/Parameters/helicity_idx_" + std::to_string(pulse_idx),
+                  "The helicity idx for the " + std::to_string(pulse_idx) +
+                      " pulse right:0, left:1");
+    }
     WriteObject(p.pulse_shape_idx.get(), num_pulses,
                 "/Parameters/pulse_shape_idx",
                 "The index of the pulse shape. Sin2:0");
@@ -880,7 +921,7 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
                 "Number of cycles before the pulse starts");
     WriteObject(p.cep.get(), num_pulses, "/Parameters/cep",
                 "The carrying phase envelope of the pulse. It is defined at "
-                "the time the pulse starts to turn on.");
+                "the time the pulse starts to turn on in fractions of a cycle");
     WriteObject(p.energy.get(), num_pulses, "/Parameters/energy",
                 "The fundamental angular frequency of the pulse. Corresponds "
                 "to the energy of the photons in atomic units.");

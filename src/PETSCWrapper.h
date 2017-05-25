@@ -19,4 +19,5 @@ class PETSCWrapper
 
   void PushStage(std::string stage_name);
   void PopStage();
+  void Print(std::string message);
 };

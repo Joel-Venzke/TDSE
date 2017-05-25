@@ -7,6 +7,7 @@ class Pulse : protected Utils
 {
  private:
   int num_pulses;          /* number of pulses */
+  int num_dims;            /* number of dimensions in a simulation*/
   double delta_t;          /* time step */
   int max_pulse_length;    /* length of longest pulse; */
   int *pulse_shape_idx;    /* index of pulse shape */
@@ -19,9 +20,16 @@ class Pulse : protected Utils
   double *energy;          /* photon energy */
   double *field_max;       /* max amplitude */
   double *time;            /* stores the time at each point */
-  double **pulse_value;    /* pulse value */
+  double ***pulse_value;   /* pulse value */
   double **pulse_envelope; /* envelope function of pulse */
-  double *a_field;         /* total vector potential */
+  /* polarization for major axis of the field */
+  double **polarization_vector_major;
+  /* polarization for minor axis of the field */
+  double **polarization_vector_minor;
+  double **poynting_vector; /* poynting vector of the field */
+  double *ellipticity;      /* major_min/minor_max of the field */
+  int *helicity_idx;        /* helicity of the field */
+  double **field;           /* total vector potential */
   /* true if the individual pulses and envelopes are allocated */
   bool pulse_alloc;
 
@@ -31,7 +39,7 @@ class Pulse : protected Utils
   void InitializePulse();
   void InitializeTime();
   void DeallocatePulses();
-  void InitializeAField();
+  void InitializeField();
 
  public:
   /* Constructor */
@@ -44,7 +52,7 @@ class Pulse : protected Utils
   void Checkpoint(HDF5Wrapper &data_file);
 
   /* accessors methods */
-  double *GetAField();
+  double **GetField();
   double *GetTime();
   int GetMaxPulseLength();
 };

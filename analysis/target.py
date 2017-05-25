@@ -1,9 +1,4 @@
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-from matplotlib.colors import LogNorm
 import h5py
 target_name = "H"
 # read data
@@ -12,7 +7,7 @@ f = h5py.File("TDSE.h5","r")
 psi_value = target["psi"]
 # psi_value = f["Wavefunction"]["psi"]
 energy    = target["Energy"]
-psi_time  = f["Wavefunction"]["psi_time"][:]
+psi_time  = f["Wavefunction"]["time"][:]
 shape         = f["Wavefunction"]["num_x"][:]
 print shape
 x         = f["Wavefunction"]["x_value_0"][:]
@@ -41,6 +36,11 @@ if len(shape) == 3:
         mlab.clf()
 
 elif len(shape) == 2:
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    import matplotlib.animation as animation
+    from matplotlib.colors import LogNorm
     fig = plt.figure()
     for i, psi in enumerate(psi_value):
         print("plotting", i)
