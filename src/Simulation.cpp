@@ -214,80 +214,32 @@ void Simulation::EigenSolve(int num_states, int return_state_idx)
   Vec psi_real;            /* Used to place copies in states */
   Vec psi_imag;            /* Used to place copies in states */
   psi = wavefunction->GetPsi();
-  VecDuplicate(*psi, &psi_imag);
-  VecDuplicate(*psi, &psi_real);
   Mat A; /* matrix on left side of Ax=b */
   MatDuplicate(*(hamiltonian->GetTimeIndependent()), MAT_DO_NOT_COPY_VALUES,
                &A);
   MatCopy(*(hamiltonian->GetTimeIndependent()), A, SAME_NONZERO_PATTERN);
-  // MatView(A, PETSC_VIEWER_STDOUT_WORLD);
-  // MatCreateVecs(A, NULL, &psi_imag);
-  // MatCreateVecs(A, NULL, &psi_real);
 
-  std::cout << "1\n" << std::flush;
   EPS eps; /* eigen solver */
   EPSCreate(PETSC_COMM_WORLD, &eps);
 
-  std::cout << "2\n" << std::flush;
   EPSSetOperators(eps, A, NULL);
-  std::cout << "3\n" << std::flush;
-  EPSSetProblemType(eps, EPS_NHEP);
-  std::cout << "4\n" << std::flush;
+  EPSSetProblemType(eps, EPS_HEP);
   EPSSetTolerances(eps, tol, PETSC_DECIDE);
-  std::cout << "5\n" << std::flush;
   EPSSetWhichEigenpairs(eps, EPS_SMALLEST_REAL);
-  std::cout << "6\n" << std::flush;
   EPSSetDimensions(eps, num_states, PETSC_DECIDE, PETSC_DECIDE);
-  std::cout << "7\n" << std::flush;
   EPSSetFromOptions(eps);
-  std::cout << "8\n" << std::flush;
-  // EPSSetUp(eps);
-  // EndRun("lslksjfd");
-  // EPSView(eps, PETSC_VIEWER_STDOUT_WORLD);
-  // EPSSetInitialSpace(eps, 1, psi);
   EPSSolve(eps);
-  std::cout << "9\n" << std::flush;
-
   EPSGetConverged(eps, &nconv);
-  std::cout << "10\n" << std::flush;
 
-  // EPSCreate(PETSC_COMM_WORLD, &eps);
-
-  // std::cout << "2\n";
-  // EPSSetProblemType(eps, EPS_NHEP);
-  // std::cout << "2a\n";
-  // EPSSetOperators(eps, A, NULL);
-  // std::cout << "3\n";
-  // EPSSetTolerances(eps, tol, PETSC_DECIDE);
-  // std::cout << "ldskjsdlfjlsd\n";
-  // EPSSetWhichEigenpairs(eps, EPS_SMALLEST_REAL);
-  // std::cout << "ldskjsdlfjlsd\n";
-  // EPSSetDimensions(eps, num_states, PETSC_DECIDE, PETSC_DECIDE);
-  // std::cout << "ldskjsdlfjlsd\n";
-  // EPSSetFromOptions(eps);
-  // std::cout << "ldskjsdlfjlsd\n";
-  // EPSSetInitialSpace(eps, 1, psi);
-  // std::cout << "ldskjsdlfjlsd\n";
-  // EPSSolve(eps);
-  // std::cout << "ldskjsdlfjlsd\n";
-  // EPSGetConverged(eps, &nconv);
-  // std::cout << "ldskjsdlfjlsd\n";
   for (int j = 0; j < nconv; j++)
   {
-    EPSGetEigenpair(eps, j, &eigen_real, &eigen_imag, psi_real, psi_imag);
-    VecGetSize(psi_real, &i);
+    EPSGetEigenpair(eps, j, &eigen_real, NULL, *psi, NULL);
     if (world.rank() == 0)
       std::cout << "Eigen " << eigen_real << " " << eigen_imag << " " << i
                 << "\n";
-    // if (j == 0) VecView(*psi, PETSC_VIEWER_STDOUT_WORLD);
-    VecCopy(psi_real, *psi);
-    // VecView(psi_real, PETSC_VIEWER_STDOUT_WORLD);
     CheckpointState(h_states_file, v_states_file, j);
-    // CheckpointState(h_states_file, v_states_file, j * 2);
-    // VecCopy(psi_imag, *psi);
-    // CheckpointState(h_states_file, v_states_file, j * 2 + 1);
   }
-  VecDestroy(&psi_imag);
+  EPSGetEigenpair(eps, 0, &eigen_real, NULL, *psi, NULL);
   EPSDestroy(&eps);
 
   // /* allocate mem for left */

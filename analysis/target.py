@@ -21,22 +21,20 @@ y         = f["Wavefunction"]["x_value_1"][:]
 if len(shape) == 3: 
     from mayavi import mlab
     z         = f["Wavefunction"]["x_value_2"][:]
+    mlab.figure(bgcolor=(1.0,1.0,1.0),fgcolor=(0.0,0.0,0.0),size=(1000,1000))
     for i, psi in enumerate(psi_value):
         psi = psi[:,0]+1j*psi[:,1]
         psi.shape = tuple(shape)
         # print np.log10(np.abs(psi))
         mlab.pipeline.iso_surface(mlab.pipeline.scalar_field(np.log10(np.abs(psi))),
-            vmin=-15,
+            vmin=-05,
             opacity=0.3,
             colormap="viridis",
-            contours=5)
-        mlab.pipeline.image_plane_widget(mlab.pipeline.scalar_field(np.log10(np.abs(psi))),vmin=-15,
-            plane_orientation='z_axes',
-            transparent=True,colormap="viridis",
-            slice_index=shape[2]/2)
-        mlab.axes(color=(0.0,0.0,0.0),
-            ranges=[x[0],x[-1],y[0],y[-1],z[0],z[-1]],
-            nb_labels=5)
+            contours=[-3,-2,-1])
+        #mlab.pipeline.image_plane_widget(mlab.pipeline.scalar_field(np.log10(np.abs(psi))),vmin=-15,
+        #    plane_orientation='z_axes',
+        #    transparent=True,colormap="viridis",
+        #    slice_index=shape[2]/2)
         mlab.colorbar(nb_labels=4,orientation="vertical")
         # mlab.show()
         mlab.savefig("figs/target_"+str(i).zfill(8)+".png")
@@ -75,7 +73,7 @@ elif len(shape) == 2:
         plt.clf()
         plt.imshow(np.abs(psi.real), cmap='viridis', origin='lower',
             extent=[y[0],y[-1],x[0],x[-1]],
-            norm=LogNorm(vmin=1e-15, vmax=np.abs(psi.real).max()))
+            norm=LogNorm(vmin=1e-12, vmax=np.abs(psi.real).max()))
         # plt.pcolor(x, x, abs(psi.real),
         #     norm=LogNorm(vmin=1e-16,
         #         vmax=abs(psi.real).max()), cmap='viridis')
