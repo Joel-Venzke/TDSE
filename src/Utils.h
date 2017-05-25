@@ -25,5 +25,5 @@ class Utils
 
  public:
   void EndRun(std::string str);
-  void EndRun(std::string str, int exit_val);
+  void EndRun(std::string str, PetscInt exit_val);
 };

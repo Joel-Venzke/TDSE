@@ -25,13 +25,15 @@ void Simulation::Propagate()
   /* error in norm */
   double norm = 1.0;
   /* iteration */
-  int i = 1;
+  PetscInt i = 1;
   /* steps in each direction */
   double *delta_x = parameters->delta_x.get();
   /* how often do we write data */
-  int write_frequency_checkpoint  = parameters->GetWriteFrequencyCheckpoint();
-  int write_frequency_observables = parameters->GetWriteFrequencyObservables();
-  int free_propagate              = parameters->GetFreePropagate();
+  PetscInt write_frequency_checkpoint =
+      parameters->GetWriteFrequencyCheckpoint();
+  PetscInt write_frequency_observables =
+      parameters->GetWriteFrequencyObservables();
+  PetscInt free_propagate = parameters->GetFreePropagate();
   /* pointer to actual psi in wavefunction object */
   psi = wavefunction->GetPsi();
   Vec psi_right;
@@ -249,7 +251,7 @@ void Simulation::Propagate()
   KSPDestroy(&ksp);
 }
 
-void Simulation::PowerMethod(int num_states, int return_state_idx)
+void Simulation::PowerMethod(PetscInt num_states, PetscInt return_state_idx)
 {
   if (world.rank() == 0)
     std::cout << "\nCalculating the lowest " << num_states
@@ -260,8 +262,8 @@ void Simulation::PowerMethod(int num_states, int return_state_idx)
   bool gram_schmit = false; /* if we using gram_schmit */
   /* write index for checkpoints, Starts at 1 to avoid writing on first
    * iteration*/
-  int i = 1;
-  int write_frequency =
+  PetscInt i = 1;
+  PetscInt write_frequency =
       parameters
           ->GetWriteFrequencyEigenState(); /* how often do we write data */
   double *state_energy = parameters->state_energy.get(); /* energy guesses */
@@ -298,7 +300,7 @@ void Simulation::PowerMethod(int num_states, int return_state_idx)
   VecDuplicate(*psi, &psi_old);
 
   /* loop over number of states wanted */
-  for (int iter = 0; iter < num_states; iter++)
+  for (PetscInt iter = 0; iter < num_states; iter++)
   {
     /* Get Hamiltonian */
     MatCopy(*(hamiltonian->GetTimeIndependent()), left, SAME_NONZERO_PATTERN);
@@ -402,7 +404,7 @@ void Simulation::PowerMethod(int num_states, int return_state_idx)
   KSPDestroy(&ksp);
   MatDestroy(&left);
   VecDestroy(&psi_old);
-  for (int i = 0; i < states.size(); ++i)
+  for (PetscInt i = 0; i < states.size(); ++i)
   {
     VecDestroy(&states[i]);
   }
@@ -444,9 +446,9 @@ bool Simulation::CheckConvergance(Vec &psi_1, Vec &psi_2, double tol)
  */
 void Simulation::ModifiedGramSchmidt(std::vector<Vec> &states)
 {
-  int size = states.size();
+  PetscInt size = states.size();
   dcomp coef;
-  for (int i = 0; i < size; i++)
+  for (PetscInt i = 0; i < size; i++)
   {
     VecDot(*psi, states[i], &coef);
     VecAXPY(*psi, -1.0 * coef, states[i]);
@@ -454,7 +456,7 @@ void Simulation::ModifiedGramSchmidt(std::vector<Vec> &states)
 }
 
 void Simulation::CheckpointState(HDF5Wrapper &h_file, ViewWrapper &v_file,
-                                 int write_idx)
+                                 PetscInt write_idx)
 {
   wavefunction->Normalize();
   wavefunction->CheckpointPsi(v_file, write_idx);
