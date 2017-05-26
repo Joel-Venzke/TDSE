@@ -8,7 +8,7 @@ void Utils::EndRun(std::string str)
 }
 
 /* prints error message, kills code and returns exit_val */
-void Utils::EndRun(std::string str, int exit_val)
+void Utils::EndRun(std::string str, PetscInt exit_val)
 {
   std::cout << "\n\nERROR: " << str << "\n";
   mpi::environment::abort(exit_val);
