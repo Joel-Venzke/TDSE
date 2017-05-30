@@ -1,4 +1,5 @@
 #!/bin/bash
+export PETSC_DIR=`pwd`
 
 module load gcc
 module load impi 
@@ -30,10 +31,5 @@ module list
   --with-hdf5-dir=/projects/jove7731/local/gcc/hdf5 \
   --with-blas-lapack-dir=${CURC_MKL_LIB} \
   --with-fftw-dir=${CURC_FFTW_ROOT} \
-  --download-superlu_dist=yes \
-  --download-superlu=yes \
-  --download-suitesparse=yes \
-  --download-metis=yes \
   --download-parmetis=yes \
-  --download-scalapack=yes \
   --download-mumps=yes
