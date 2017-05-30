@@ -26,11 +26,12 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
   field         = pulse.GetField();
   eta           = pi / 4.0;
 
-  gobbler_idx = new int*[num_dims];
-  for (int i = 0; i < num_dims; ++i)
+  gobbler_idx = new PetscInt*[num_dims];
+  for (PetscInt i = 0; i < num_dims; ++i)
   {
-    gobbler_idx[i]    = new int[2];
-    gobbler_idx[i][0] = (num_x[i] - int(num_x[i] * p.GetGobbler())) / 2 - 1;
+    gobbler_idx[i] = new PetscInt[2];
+    gobbler_idx[i][0] =
+        (num_x[i] - PetscInt(num_x[i] * p.GetGobbler())) / 2 - 1;
     gobbler_idx[i][1] = num_x[i] - 1 - gobbler_idx[i][0];
   }
 
@@ -49,12 +50,12 @@ void Hamiltonian::CreateHamlitonian()
   CalculateHamlitonian(-1);
 }
 
-void Hamiltonian::CalculateHamlitonian(int time_idx)
+void Hamiltonian::CalculateHamlitonian(PetscInt time_idx)
 {
   dcomp val(0.0, 0.0); /* diagonal terms */
-  int j_val;           /* j index for matrix */
-  int offset;          /* offset of diagonal */
-  int start, end;      /* start end rows */
+  PetscInt j_val;      /* j index for matrix */
+  PetscInt offset;     /* offset of diagonal */
+  PetscInt start, end; /* start end rows */
   bool time_dependent, insert_val;
   MatGetOwnershipRange(hamiltonian, &start, &end);
   if (time_idx < 0)
@@ -65,7 +66,7 @@ void Hamiltonian::CalculateHamlitonian(int time_idx)
   {
     time_dependent = true;
   }
-  for (int i_val = start; i_val < end; i_val++)
+  for (PetscInt i_val = start; i_val < end; i_val++)
   {
     /* Diagonal element */
     j_val = i_val;
@@ -76,9 +77,9 @@ void Hamiltonian::CalculateHamlitonian(int time_idx)
     }
 
     /* Loop over off diagonal elements */
-    for (int elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
+    for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
     {
-      for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+      for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
       {
         offset = GetOffset(elec_idx, dim_idx);
 
@@ -112,20 +113,20 @@ void Hamiltonian::CalculateHamlitonian(int time_idx)
   MatAssemblyEnd(hamiltonian, MAT_FINAL_ASSEMBLY);
 }
 
-Mat* Hamiltonian::GetTotalHamiltonian(int time_idx)
+Mat* Hamiltonian::GetTotalHamiltonian(PetscInt time_idx)
 {
   CalculateHamlitonian(time_idx);
   return &hamiltonian;
 }
 
-dcomp Hamiltonian::GetVal(int idx_i, int idx_j, bool time_dep, int time_idx,
-                          bool& insert_val)
+dcomp Hamiltonian::GetVal(PetscInt idx_i, PetscInt idx_j, bool time_dep,
+                          PetscInt time_idx, bool& insert_val)
 {
   /* Get arrays */
-  std::vector<int> idx_array  = GetIndexArray(idx_i, idx_j);
-  std::vector<int> diff_array = GetDiffArray(idx_array);
-  int sum                     = 0;
-  insert_val                  = true;
+  std::vector<PetscInt> idx_array  = GetIndexArray(idx_i, idx_j);
+  std::vector<PetscInt> diff_array = GetDiffArray(idx_array);
+  PetscInt sum                     = 0;
+  insert_val                       = true;
 
   /* Diagonal elements */
   if (idx_i == idx_j)
@@ -135,7 +136,7 @@ dcomp Hamiltonian::GetVal(int idx_i, int idx_j, bool time_dep, int time_idx,
 
   /* Make sure there is exactly 1 non zero index so we can take care of the off
    * diagonal zeros */
-  for (int i = 0; i < num_dims * num_electrons; ++i)
+  for (PetscInt i = 0; i < num_dims * num_electrons; ++i)
   {
     sum += std::abs(diff_array[i]);
   }
@@ -153,14 +154,14 @@ dcomp Hamiltonian::GetVal(int idx_i, int idx_j, bool time_dep, int time_idx,
   return dcomp(0.0, 0.0);
 }
 
-dcomp Hamiltonian::GetOffDiagonal(std::vector<int>& idx_array,
-                                  std::vector<int>& diff_array, bool time_dep,
-                                  int time_idx)
+dcomp Hamiltonian::GetOffDiagonal(std::vector<PetscInt>& idx_array,
+                                  std::vector<PetscInt>& diff_array,
+                                  bool time_dep, PetscInt time_idx)
 {
   dcomp off_diagonal(0.0, 0.0);
-  for (int elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
+  for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
   {
-    for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+    for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
     {
       /* DONT TOUCH FIELD WITH ECS */
       if (time_dep) /* Time dependent matrix */
@@ -252,8 +253,8 @@ dcomp Hamiltonian::GetOffDiagonal(std::vector<int>& idx_array,
   return off_diagonal;
 }
 
-dcomp Hamiltonian::GetDiagonal(std::vector<int>& idx_array, bool time_dep,
-                               int time_idx)
+dcomp Hamiltonian::GetDiagonal(std::vector<PetscInt>& idx_array, bool time_dep,
+                               PetscInt time_idx)
 {
   dcomp diagonal(0.0, 0.0);
   /* kinetic term */
@@ -265,13 +266,13 @@ dcomp Hamiltonian::GetDiagonal(std::vector<int>& idx_array, bool time_dep,
   return diagonal;
 }
 
-dcomp Hamiltonian::GetKineticTerm(std::vector<int>& idx_array)
+dcomp Hamiltonian::GetKineticTerm(std::vector<PetscInt>& idx_array)
 {
   dcomp kinetic(0.0, 0.0);
   /* Only num_dim terms per electron since it psi is a scalar function */
-  for (int elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
+  for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
   {
-    for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+    for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
     {
       if (idx_array[2 * (elec_idx * num_dims + dim_idx)] <
               gobbler_idx[dim_idx][0] ||
@@ -300,15 +301,15 @@ dcomp Hamiltonian::GetKineticTerm(std::vector<int>& idx_array)
   return kinetic;
 }
 
-dcomp Hamiltonian::GetNucleiTerm(std::vector<int>& idx_array)
+dcomp Hamiltonian::GetNucleiTerm(std::vector<PetscInt>& idx_array)
 {
   dcomp nuclei(0.0, 0.0);
   double r;
   /* loop over each electron */
-  for (int elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
+  for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
   {
     /* loop over each nuclei */
-    for (int nuclei_idx = 0; nuclei_idx < num_nuclei; ++nuclei_idx)
+    for (PetscInt nuclei_idx = 0; nuclei_idx < num_nuclei; ++nuclei_idx)
     {
       if (z[nuclei_idx] != 0.0) /* Column term */
       {
@@ -321,7 +322,7 @@ dcomp Hamiltonian::GetNucleiTerm(std::vector<int>& idx_array)
         r = SoftCoreDistance(location[nuclei_idx], idx_array, elec_idx);
         nuclei -= dcomp(c0[nuclei_idx] / r, 0.0);
         nuclei -= dcomp(z_c[nuclei_idx] * exp(-r0[nuclei_idx] * r) / r, 0.0);
-        for (int i = 0; i < sae_size[nuclei_idx]; ++i)
+        for (PetscInt i = 0; i < sae_size[nuclei_idx]; ++i)
         {
           nuclei -= dcomp(a[nuclei_idx][i] * exp(-b[nuclei_idx][i] * r), 0.0);
         }
@@ -331,15 +332,15 @@ dcomp Hamiltonian::GetNucleiTerm(std::vector<int>& idx_array)
   return nuclei;
 }
 
-dcomp Hamiltonian::GetElectronElectronTerm(std::vector<int>& idx_array)
+dcomp Hamiltonian::GetElectronElectronTerm(std::vector<PetscInt>& idx_array)
 {
   dcomp ee_val(0.0, 0.0);
   /* loop over each correlation
    * (e_1 with e_2, e_1 with e_3, ... e_2 with e_3, ... ect.) */
-  for (int elec_idx_1 = 0; elec_idx_1 < num_electrons; ++elec_idx_1)
+  for (PetscInt elec_idx_1 = 0; elec_idx_1 < num_electrons; ++elec_idx_1)
   {
     /* make sure to not double count or calculate self terms */
-    for (int elec_idx_2 = elec_idx_1 + 1; elec_idx_2 < num_electrons;
+    for (PetscInt elec_idx_2 = elec_idx_1 + 1; elec_idx_2 < num_electrons;
          ++elec_idx_2)
     {
       /* 1/r like pot */
@@ -351,12 +352,13 @@ dcomp Hamiltonian::GetElectronElectronTerm(std::vector<int>& idx_array)
 }
 
 double Hamiltonian::SoftCoreDistance(double* location,
-                                     std::vector<int>& idx_array, int elec_idx)
+                                     std::vector<PetscInt>& idx_array,
+                                     PetscInt elec_idx)
 {
   double distance = alpha_2; /* Make sure we include the soft core */
   double diff     = 0.0;
   /* loop over all dims */
-  for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+  for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
   {
     diff = location[dim_idx] -
            x_value[dim_idx][idx_array[2 * (dim_idx + elec_idx * num_dims)]];
@@ -365,13 +367,13 @@ double Hamiltonian::SoftCoreDistance(double* location,
   return sqrt(distance);
 }
 
-double Hamiltonian::SoftCoreDistance(std::vector<int>& idx_array,
-                                     int elec_idx_1, int elec_idx_2)
+double Hamiltonian::SoftCoreDistance(std::vector<PetscInt>& idx_array,
+                                     PetscInt elec_idx_1, PetscInt elec_idx_2)
 {
   double distance = alpha_2; /* Make sure we include the soft core */
   double diff     = 0.0;
   /* loop over all dims */
-  for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+  for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
   {
     diff = x_value[dim_idx][idx_array[2 * elec_idx_1]] -
            x_value[dim_idx][idx_array[2 * elec_idx_2]];
@@ -380,22 +382,22 @@ double Hamiltonian::SoftCoreDistance(std::vector<int>& idx_array,
   return sqrt(distance);
 }
 
-int Hamiltonian::GetOffset(int elec_idx, int dim_idx)
+PetscInt Hamiltonian::GetOffset(PetscInt elec_idx, PetscInt dim_idx)
 {
-  int offset = 1;
+  PetscInt offset = 1;
   /* offset gets a factor of
    * num_psi_build = num_x[num_dims-1] * num_x[num_dims-2] * ... * num_x[0]
    * for each electron */
   if (elec_idx > 0)
   {
-    for (int iter = 0; iter < elec_idx; ++iter)
+    for (PetscInt iter = 0; iter < elec_idx; ++iter)
     {
       offset *= num_psi_build;
     }
   }
   if (dim_idx > 0)
   {
-    for (int iter = 0; iter < dim_idx; ++iter)
+    for (PetscInt iter = 0; iter < dim_idx; ++iter)
     {
       /* first offset is num_x[num_dims-1] and then next is
        * num_x[num_dims-1]*num_x[num_dims-2] and so on*/
@@ -406,17 +408,17 @@ int Hamiltonian::GetOffset(int elec_idx, int dim_idx)
 }
 
 /* Returns the an array of alternating i,j components of the local matrix */
-std::vector<int> Hamiltonian::GetIndexArray(int idx_i, int idx_j)
+std::vector<PetscInt> Hamiltonian::GetIndexArray(PetscInt idx_i, PetscInt idx_j)
 {
-  int total_dims = num_electrons * num_dims;
+  PetscInt total_dims = num_electrons * num_dims;
   /* size of each dim */
-  std::vector<int> num(total_dims);
+  std::vector<PetscInt> num(total_dims);
   /* idx for return */
-  std::vector<int> idx_array(total_dims * 2);
+  std::vector<PetscInt> idx_array(total_dims * 2);
   /* used for convenience. Could/should be optimized */
-  for (int elec_idx = 0; elec_idx < num_electrons; elec_idx++)
+  for (PetscInt elec_idx = 0; elec_idx < num_electrons; elec_idx++)
   {
-    for (int dim_idx = 0; dim_idx < num_dims; dim_idx++)
+    for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
     {
       num[elec_idx * num_dims + dim_idx] = num_x[dim_idx];
     }
@@ -425,7 +427,7 @@ std::vector<int> Hamiltonian::GetIndexArray(int idx_i, int idx_j)
    * psi[x_1,y_1,z_1,x_2,y_2,z_2,...]
    * where x_1 is the first dimension of the first electron and x_2 is the first
    * dimension of the second electron and so on */
-  for (int i = total_dims - 1; i >= 0; --i)
+  for (PetscInt i = total_dims - 1; i >= 0; --i)
   {
     idx_array[2 * i] = idx_i % num[i];
     idx_i /= num[i];
@@ -435,11 +437,12 @@ std::vector<int> Hamiltonian::GetIndexArray(int idx_i, int idx_j)
   return idx_array;
 }
 
-std::vector<int> Hamiltonian::GetDiffArray(std::vector<int>& idx_array)
+std::vector<PetscInt> Hamiltonian::GetDiffArray(
+    std::vector<PetscInt>& idx_array)
 {
-  std::vector<int> diff_array(num_dims * num_electrons);
+  std::vector<PetscInt> diff_array(num_dims * num_electrons);
   /* Calculated difference between i and j indexes */
-  for (int i = 0; i < num_dims * num_electrons; ++i)
+  for (PetscInt i = 0; i < num_dims * num_electrons; ++i)
   {
     diff_array[i] = idx_array[2 * i + 1] - idx_array[2 * i];
   }
@@ -457,7 +460,7 @@ Hamiltonian::~Hamiltonian()
   if (world.rank() == 0) std::cout << "Deleting Hamiltonian\n";
   MatDestroy(&hamiltonian);
 
-  for (int i = 0; i < num_dims; ++i)
+  for (PetscInt i = 0; i < num_dims; ++i)
   {
     delete gobbler_idx[i];
   }

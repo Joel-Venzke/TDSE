@@ -7,8 +7,8 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p)
     std::cout << "Creating pulses\n" << std::flush;
   }
 
-  int pulse_length  = 0;
-  double polar_norm = 0.0;
+  PetscInt pulse_length = 0;
+  double polar_norm     = 0.0;
 
   /* get number of pulses and dt from Parameters */
   pulse_alloc                        = false;
@@ -35,7 +35,7 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p)
   cycles_total              = new double[num_pulses];
 
   /* get data from Parameters */
-  for (int pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
+  for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
   {
     polarization_vector_minor[pulse_idx] = new double[num_dims];
     /* Take cross product */
@@ -77,14 +77,14 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p)
 
     /* normalize and scale with ellipticity */
     polar_norm = 0.0;
-    for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+    for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
     {
       polar_norm += polarization_vector_minor[pulse_idx][dim_idx] *
                     polarization_vector_minor[pulse_idx][dim_idx];
     }
     /* normalize the polarization vector*/
     polar_norm = sqrt(polar_norm);
-    for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+    for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
     {
       if (polar_norm > 1e-10)
       {
@@ -133,7 +133,7 @@ Pulse::~Pulse()
   delete time;
   if (pulse_alloc)
   {
-    for (int i = 0; i < num_pulses; ++i)
+    for (PetscInt i = 0; i < num_pulses; ++i)
     {
       delete pulse_value[i];
       delete pulse_envelope[i];
@@ -141,7 +141,7 @@ Pulse::~Pulse()
     delete[] pulse_value;
     delete[] pulse_envelope;
   }
-  for (int i = 0; i < num_dims; ++i)
+  for (PetscInt i = 0; i < num_dims; ++i)
   {
     delete field[i];
   }
@@ -152,16 +152,16 @@ Pulse::~Pulse()
 void Pulse::InitializeTime()
 {
   time = new double[max_pulse_length];
-  for (int time_idx = 0; time_idx < max_pulse_length; ++time_idx)
+  for (PetscInt time_idx = 0; time_idx < max_pulse_length; ++time_idx)
   {
     time[time_idx] = time_idx * delta_t;
   }
 }
 
 /* build the nth pulse */
-void Pulse::InitializePulse(int n)
+void Pulse::InitializePulse(PetscInt n)
 {
-  int on_start, plateau_start, off_start, off_end;
+  PetscInt on_start, plateau_start, off_start, off_end;
   double period = 2 * pi / energy[n];
   double s1;
 
@@ -186,7 +186,7 @@ void Pulse::InitializePulse(int n)
   {
     pulse_envelope[n] = new double[max_pulse_length];
   }
-  for (int time_idx = 0; time_idx < max_pulse_length; ++time_idx)
+  for (PetscInt time_idx = 0; time_idx < max_pulse_length; ++time_idx)
   {
     if (time_idx < on_start)
     { /* pulse still off */
@@ -218,13 +218,13 @@ void Pulse::InitializePulse(int n)
   {
     pulse_value[n] = new double*[num_dims];
   }
-  for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+  for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
   {
     if (!pulse_alloc)
     {
       pulse_value[n][dim_idx] = new double[max_pulse_length];
     }
-    for (int time_idx = 0; time_idx < max_pulse_length; ++time_idx)
+    for (PetscInt time_idx = 0; time_idx < max_pulse_length; ++time_idx)
     {
       /* calculate the actual pulse */
       pulse_value[n][dim_idx][time_idx] =
@@ -259,7 +259,7 @@ void Pulse::InitializePulse()
     pulse_value    = new double**[num_pulses];
     pulse_envelope = new double*[num_pulses];
   }
-  for (int i = 0; i < num_pulses; ++i)
+  for (PetscInt i = 0; i < num_pulses; ++i)
   {
     InitializePulse(i);
   }
@@ -275,13 +275,13 @@ void Pulse::InitializeField()
     InitializePulse();
   }
   field = new double*[num_dims];
-  for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+  for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
   {
     field[dim_idx] = new double[max_pulse_length];
-    for (int time_idx = 0; time_idx < max_pulse_length; ++time_idx)
+    for (PetscInt time_idx = 0; time_idx < max_pulse_length; ++time_idx)
     {
       field[dim_idx][time_idx] = 0.0;
-      for (int pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
+      for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
       {
         field[dim_idx][time_idx] += pulse_value[pulse_idx][dim_idx][time_idx];
       }
@@ -297,7 +297,7 @@ void Pulse::Checkpoint(HDF5Wrapper& data_file)
   data_file.WriteObject(time, max_pulse_length, "/Pulse/time",
                         "The time for each index of the pulse in a.u.");
 
-  for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+  for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
   {
     data_file.WriteObject(field[dim_idx], max_pulse_length,
                           "/Pulse/field_" + std::to_string(dim_idx),
@@ -309,14 +309,14 @@ void Pulse::Checkpoint(HDF5Wrapper& data_file)
   if (pulse_alloc)
   {
     /* write each pulse both value and envelope */
-    for (int pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
+    for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
     {
       data_file.WriteObject(
           pulse_envelope[pulse_idx], max_pulse_length,
           "/Pulse/Pulse_envelope_" + std::to_string(pulse_idx),
           "The envelope function for the " + std::to_string(pulse_idx) +
               " pulse in the input file");
-      for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+      for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
       {
         data_file.WriteObject(
             pulse_value[pulse_idx][dim_idx], max_pulse_length,
@@ -334,9 +334,9 @@ void Pulse::DeallocatePulses()
 {
   if (pulse_alloc)
   {
-    for (int pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
+    for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
     {
-      for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+      for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
       {
         delete[] pulse_value[pulse_idx][dim_idx];
       }
@@ -353,4 +353,4 @@ double** Pulse::GetField() { return field; }
 
 double* Pulse::GetTime() { return time; }
 
-int Pulse::GetMaxPulseLength() { return max_pulse_length; }
+PetscInt Pulse::GetMaxPulseLength() { return max_pulse_length; }

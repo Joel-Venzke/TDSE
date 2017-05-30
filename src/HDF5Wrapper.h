@@ -15,7 +15,7 @@ class HDF5Wrapper : protected Utils
   bool header;
   H5::CompType *complex_data_type;
 
-  hsize_t *GetHsizeT(int size, int *dims);
+  hsize_t *GetHsizeT(PetscInt size, PetscInt *dims);
   void DefineComplex();
 
  public:
@@ -35,44 +35,49 @@ class HDF5Wrapper : protected Utils
   void CreateGroup(H5std_string group_path);
 
   // write single entry
-  void WriteObject(int data, H5std_string var_path);
-  void WriteObject(int data, H5std_string var_path, H5std_string attribute);
+  void WriteObject(PetscInt data, H5std_string var_path);
+  void WriteObject(PetscInt data, H5std_string var_path,
+                   H5std_string attribute);
 
   void WriteObject(double data, H5std_string var_path);
   void WriteObject(double data, H5std_string var_path, H5std_string attribute);
 
-  void WriteObject(int *data, int size, H5std_string var_path);
-  void WriteObject(int *data, int size, H5std_string var_path,
+  void WriteObject(PetscInt *data, PetscInt size, H5std_string var_path);
+  void WriteObject(PetscInt *data, PetscInt size, H5std_string var_path,
                    H5std_string attribute);
 
-  void WriteObject(int *data, int size, int *dims, H5std_string var_path);
-  void WriteObject(int *data, int size, int *dims, H5std_string var_path,
+  void WriteObject(PetscInt *data, PetscInt size, PetscInt *dims,
+                   H5std_string var_path);
+  void WriteObject(PetscInt *data, PetscInt size, PetscInt *dims,
+                   H5std_string var_path, H5std_string attribute);
+
+  void WriteObject(double *data, PetscInt size, H5std_string var_path);
+  void WriteObject(double *data, PetscInt size, H5std_string var_path,
                    H5std_string attribute);
 
-  void WriteObject(double *data, int size, H5std_string var_path);
-  void WriteObject(double *data, int size, H5std_string var_path,
+  void WriteObject(double *data, PetscInt size, PetscInt *dims,
+                   H5std_string var_path);
+  void WriteObject(double *data, PetscInt size, PetscInt *dims,
+                   H5std_string var_path, H5std_string attribute);
+
+  void WriteObject(dcomp *data, PetscInt size, H5std_string var_path);
+  void WriteObject(dcomp *data, PetscInt size, H5std_string var_path,
                    H5std_string attribute);
 
-  void WriteObject(double *data, int size, int *dims, H5std_string var_path);
-  void WriteObject(double *data, int size, int *dims, H5std_string var_path,
-                   H5std_string attribute);
-
-  void WriteObject(dcomp *data, int size, H5std_string var_path);
-  void WriteObject(dcomp *data, int size, H5std_string var_path,
-                   H5std_string attribute);
-
-  void WriteObject(dcomp *data, int size, int *dims, H5std_string var_path);
-  void WriteObject(dcomp *data, int size, int *dims, H5std_string var_path,
-                   H5std_string attribute);
+  void WriteObject(dcomp *data, PetscInt size, PetscInt *dims,
+                   H5std_string var_path);
+  void WriteObject(dcomp *data, PetscInt size, PetscInt *dims,
+                   H5std_string var_path, H5std_string attribute);
 
   /* time series writes */
-  void WriteObject(dcomp *data, int size, H5std_string var_path, int write_idx);
-  void WriteObject(dcomp *data, int size, H5std_string var_path,
-                   H5std_string attribute, int write_idx);
+  void WriteObject(dcomp *data, PetscInt size, H5std_string var_path,
+                   PetscInt write_idx);
+  void WriteObject(dcomp *data, PetscInt size, H5std_string var_path,
+                   H5std_string attribute, PetscInt write_idx);
 
-  void WriteObject(double data, H5std_string var_path, int write_idx);
+  void WriteObject(double data, H5std_string var_path, PetscInt write_idx);
   void WriteObject(double data, H5std_string var_path, H5std_string attribute,
-                   int write_idx);
+                   PetscInt write_idx);
 
   /* write for parameters */
   void WriteHeader(Parameters &p);

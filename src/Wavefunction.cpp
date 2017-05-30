@@ -83,9 +83,9 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
     /* write psi_1 and psi_2 if still allocated */
     // if (psi_alloc_build)
     // {
-    //   for (int elec_idx = 0; elec_idx < num_electrons; elec_idx++)
+    //   for (PetscInt elec_idx = 0; elec_idx < num_electrons; elec_idx++)
     //   {
-    //     for (int dim_idx = 0; dim_idx < num_dims; dim_idx++)
+    //     for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
     //     {
     //       h5_file.WriteObject(
     //           psi_build[elec_idx][dim_idx], num_x[dim_idx],
