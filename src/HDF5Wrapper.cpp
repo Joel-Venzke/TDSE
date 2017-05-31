@@ -7,6 +7,7 @@ HDF5Wrapper::HDF5Wrapper(std::string f_name, Parameters &p)
   {
     file_name = f_name;
     header    = false;
+    file_open = false;
     if (p.GetRestart() == 1)
     {
       ReadRestart(p);
@@ -28,6 +29,7 @@ HDF5Wrapper::HDF5Wrapper(std::string f_name)
   {
     file_name = f_name;
     header    = false;
+    file_open = false;
     data_file = std::make_shared<H5::H5File>(file_name, H5F_ACC_RDWR);
     file_open = true;
     Close();
@@ -41,6 +43,7 @@ HDF5Wrapper::HDF5Wrapper(Parameters &p)
   {
     header    = false;
     file_name = "TDSE.h5";
+    file_open = false;
     if (p.GetRestart() == 1)
     {
       ReadRestart(p);
