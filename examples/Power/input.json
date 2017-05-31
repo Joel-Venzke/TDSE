@@ -6,7 +6,7 @@
     {"dim_size": 50.0,
     "delta_x":   1.0}],
   "num_electrons": 1,
-  "restart": 0,
+  "restart": 1,
   "target": {
     "name":  "He-SAE",
     "nuclei" : [
@@ -26,7 +26,7 @@
   "write_frequency_observables": 2,
   "write_frequency_eigin_state": 1,
   "state_solver":    "Power",
-  "propagate": 0,
+  "propagate": 1,
   "free_propagate": -1,
   "states": [
     {"energy": -1.0}],

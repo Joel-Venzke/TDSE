@@ -24,16 +24,15 @@ void Simulation::Propagate()
   bool converged = false;
   /* error in norm */
   double norm = 1.0;
-  /* iteration */
-  PetscInt i = 1;
-  /* steps in each direction */
-  double *delta_x = parameters->delta_x.get();
   /* how often do we write data */
   PetscInt write_frequency_checkpoint =
       parameters->GetWriteFrequencyCheckpoint();
   PetscInt write_frequency_observables =
       parameters->GetWriteFrequencyObservables();
   PetscInt free_propagate = parameters->GetFreePropagate();
+  PetscInt i              = 1;
+  /* steps in each direction */
+  double *delta_x = parameters->delta_x.get();
   /* pointer to actual psi in wavefunction object */
   psi = wavefunction->GetPsi();
   Vec psi_right;
@@ -60,15 +59,29 @@ void Simulation::Propagate()
   MatDuplicate(*(hamiltonian->GetTimeIndependent()), MAT_DO_NOT_COPY_VALUES,
                &right);
 
+  if (parameters->GetRestart() == 1)
+  {
+    /* set current iteration */
+    /* The -2 is from the already increased counter and the fact that psi[0] is
+     * written during simulation setup*/
+    i = (wavefunction->GetWrieCounterCheckpoint() - 2) *
+        write_frequency_checkpoint;
+    i++;
+  }
+
   if (world.rank() == 0)
     std::cout << "Total writes: " << time_length / write_frequency_checkpoint
               << "\nStarting propagation\n"
               << std::flush;
 
   /* Checkpoint file before propagation starts */
-  wavefunction->Checkpoint(*h5_file, *viewer_file, 0.0);
+  if (parameters->GetRestart() != 1)
+  {
+    wavefunction->Checkpoint(*h5_file, *viewer_file, 0.0);
+  }
+
   t = clock();
-  for (i = 1; i < time_length; i++)
+  for (; i < time_length; i++)
   {
     h = hamiltonian->GetTotalHamiltonian(i);
 

@@ -52,5 +52,6 @@ class ViewWrapper : protected Utils
   void WriteObject(PetscObject data);
 
   /* reads a frame */
-  void ReadObject(PetscObject data);
+  void ReadObject(Vec data);
+  void ReadObject(Mat data);
 };

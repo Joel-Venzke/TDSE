@@ -113,7 +113,7 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p)
   InitializePulse();
   InitializeField();
 
-  Checkpoint(data_file);
+  if (p.GetRestart() != 1) Checkpoint(data_file);
 
   DeallocatePulses();
 
