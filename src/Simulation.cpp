@@ -67,6 +67,7 @@ void Simulation::Propagate()
     i = (wavefunction->GetWrieCounterCheckpoint() - 2) *
         write_frequency_checkpoint;
     i++;
+    if (i >= time_length) EndRun("Restart needs work for free prop restarts");
   }
 
   if (world.rank() == 0)

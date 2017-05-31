@@ -46,34 +46,34 @@ if len(shape) == 3:
                 contours=11)
             mlab.colorbar(nb_labels=11,orientation="vertical")
             mlab.orientation_axes()
-            mlab.view(azimuth=0.0,distance=120.0,elevation=90.0)
+            mlab.view(azimuth=0.0,distance='auto',elevation=90.0)
             mlab.savefig("figs/Wave_iso_x_"+str(i).zfill(8)+".png")
-            mlab.view(azimuth=90.0,distance=120.0,elevation=90.0)
+            mlab.view(azimuth=90.0,distance='auto',elevation=90.0)
             mlab.savefig("figs/Wave_iso_y_"+str(i).zfill(8)+".png")
-            mlab.view(azimuth=0.0,distance=120.0,elevation=0.0)
+            mlab.view(azimuth=0.0,distance='auto',elevation=0.0)
             mlab.savefig("figs/Wave_iso_z_"+str(i).zfill(8)+".png")
-            mlab.view(azimuth=45.0,distance=120.0,elevation=45.0)
+            mlab.view(azimuth=45.0,distance='auto',elevation=45.0)
             mlab.savefig("figs/Wave_iso_"+str(i).zfill(8)+".png")
 
             mlab.clf()
             mlab.pipeline.iso_surface(mlab.pipeline.scalar_field(psi),
-                vmin=-3.0,
+                vmin=-9.0,
                 vmax=0.0,
                 opacity=0.3,
                 colormap="viridis",
                 contours=[1.0])
             mlab.pipeline.volume(mlab.pipeline.scalar_field(psi), 
-               vmin=-3.0,
+               vmin=-9.0,
                vmax=0.0)
-            mlab.colorbar(nb_labels=4,orientation="vertical")
+            mlab.colorbar(nb_labels=10,orientation="vertical")
             mlab.orientation_axes()
-            mlab.view(azimuth=0.0,distance=120.0,elevation=90.0)
+            mlab.view(azimuth=0.0,distance='auto',elevation=90.0)
             mlab.savefig("figs/Wave_density_cross_x_"+str(i).zfill(8)+".png")
-            mlab.view(azimuth=90.0,distance=120.0,elevation=90.0)
+            mlab.view(azimuth=90.0,distance='auto',elevation=90.0)
             mlab.savefig("figs/Wave_density_cross_y_"+str(i).zfill(8)+".png")
-            mlab.view(azimuth=0.0,distance=120.0,elevation=0.0)
+            mlab.view(azimuth=0.0,distance='auto',elevation=0.0)
             mlab.savefig("figs/Wave_density_cross_z_"+str(i).zfill(8)+".png")
-            mlab.view(azimuth=45.0,distance=120.0,elevation=45.0)
+            mlab.view(azimuth=45.0,distance='auto',elevation=45.0)
             mlab.savefig("figs/Wave_density_cross_"+str(i).zfill(8)+".png")
             mlab.clf()
 
