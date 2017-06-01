@@ -35,8 +35,19 @@ class Hamiltonian : protected Utils
   PetscInt **gobbler_idx; /* distance that starts gobbler */
   double eta;             /* value in exponent for ECS */
 
+  PetscInt order;
+  PetscInt order_middle_idx;
+  /* *_ecs_coef[dim_idx][discontinuity_idx][derivative][index] */
+  std::vector< std::vector< std::vector< std::vector< dcomp > > > >
+      left_ecs_coef;
+  std::vector< std::vector< std::vector< std::vector< dcomp > > > >
+      right_ecs_coef;
+  /* real_coef[dim_idx][derivative][index] */
+  std::vector< std::vector< std::vector< dcomp > > > real_coef;
+
   void CreateHamlitonian();
   void CalculateHamlitonian(PetscInt time_idx);
+  void SetUpCoefficients();
 
  public:
   /* Constructor */
@@ -48,21 +59,23 @@ class Hamiltonian : protected Utils
 
   dcomp GetVal(PetscInt idx_i, PetscInt idx_j, bool time_dep, PetscInt time_idx,
                bool &insert_val);
-  dcomp GetOffDiagonal(std::vector<PetscInt> &idx_array,
-                       std::vector<PetscInt> &diff_array, bool time_dep,
+  void FDWeights(std::vector< dcomp > &x_vals, PetscInt max_derivative,
+                 std::vector< std::vector< dcomp > > &coef, double dx);
+  dcomp GetOffDiagonal(std::vector< PetscInt > &idx_array,
+                       std::vector< PetscInt > &diff_array, bool time_dep,
                        PetscInt time_idx);
-  dcomp GetDiagonal(std::vector<PetscInt> &idx_array, bool time_dep,
+  dcomp GetDiagonal(std::vector< PetscInt > &idx_array, bool time_dep,
                     PetscInt time_idx);
-  dcomp GetKineticTerm(std::vector<PetscInt> &idx_array);
-  dcomp GetNucleiTerm(std::vector<PetscInt> &idx_array);
-  dcomp GetElectronElectronTerm(std::vector<PetscInt> &idx_array);
+  dcomp GetKineticTerm(std::vector< PetscInt > &idx_array);
+  dcomp GetNucleiTerm(std::vector< PetscInt > &idx_array);
+  dcomp GetElectronElectronTerm(std::vector< PetscInt > &idx_array);
   PetscInt GetOffset(PetscInt elec_idx, PetscInt dim_idx);
-  double SoftCoreDistance(double *location, std::vector<PetscInt> &idx_array,
+  double SoftCoreDistance(double *location, std::vector< PetscInt > &idx_array,
                           PetscInt elec_idx);
-  double SoftCoreDistance(std::vector<PetscInt> &idx_array, PetscInt elec_idx_1,
-                          PetscInt elec_idx_2);
-  std::vector<PetscInt> GetIndexArray(PetscInt idx_i, PetscInt idx_j);
-  std::vector<PetscInt> GetDiffArray(std::vector<PetscInt> &idx_array);
+  double SoftCoreDistance(std::vector< PetscInt > &idx_array,
+                          PetscInt elec_idx_1, PetscInt elec_idx_2);
+  std::vector< PetscInt > GetIndexArray(PetscInt idx_i, PetscInt idx_j);
+  std::vector< PetscInt > GetDiffArray(std::vector< PetscInt > &idx_array);
 
   ~Hamiltonian();
 };
