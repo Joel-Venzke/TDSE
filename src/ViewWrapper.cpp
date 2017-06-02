@@ -156,4 +156,5 @@ void ViewWrapper::WriteObject(PetscObject data)
 }
 
 /* reads a frame */
-void ViewWrapper::ReadObject(PetscObject data) {}
+void ViewWrapper::ReadObject(Vec data) { VecLoad(data, data_file); }
+void ViewWrapper::ReadObject(Mat data) { MatLoad(data, data_file); }

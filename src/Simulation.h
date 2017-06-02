@@ -20,7 +20,7 @@ class Simulation : protected Utils
   ViewWrapper *viewer_file;
   Vec *psi;
   double *time;
-  int time_length;
+  PetscInt time_length;
 
   /* destroys psi_old*/
   bool CheckConvergance(Vec &psi_1, Vec &psi_2, double tol);
@@ -31,8 +31,9 @@ class Simulation : protected Utils
   Simulation(Hamiltonian &h, Wavefunction &w, Pulse &pulse_in,
              HDF5Wrapper &h_file, ViewWrapper &v_file, Parameters &p);
 
-  void PowerMethod(int num_states, int return_state_idx = 0);
+  void PowerMethod(PetscInt num_states, PetscInt return_state_idx = 0);
   void Propagate();
 
-  void CheckpointState(HDF5Wrapper &h_file, ViewWrapper &v_file, int write_idx);
+  void CheckpointState(HDF5Wrapper &h_file, ViewWrapper &v_file,
+                       PetscInt write_idx);
 };

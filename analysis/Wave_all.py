@@ -2,7 +2,7 @@ import numpy as np
 import h5py
 
 # read data
-f = h5py.File("TDSE.h5","r")
+f = h5py.File("TDSE_6th_3.h5","r")
 psi_value = f["Wavefunction"]["psi"]
 psi_time  = f["Wavefunction"]["time"][:]
 x         = f["Wavefunction"]["x_value_0"][:]
@@ -57,15 +57,15 @@ if len(shape) == 3:
 
             mlab.clf()
             mlab.pipeline.iso_surface(mlab.pipeline.scalar_field(psi),
-                vmin=-3.0,
+                vmin=-9.0,
                 vmax=0.0,
                 opacity=0.3,
                 colormap="viridis",
                 contours=[1.0])
             mlab.pipeline.volume(mlab.pipeline.scalar_field(psi), 
-               vmin=-3.0,
+               vmin=-9.0,
                vmax=0.0)
-            mlab.colorbar(nb_labels=4,orientation="vertical")
+            mlab.colorbar(nb_labels=10,orientation="vertical")
             mlab.orientation_axes()
             mlab.view(azimuth=0.0,distance='auto',elevation=90.0)
             mlab.savefig("figs/Wave_density_cross_x_"+str(i).zfill(8)+".png")
@@ -82,9 +82,6 @@ elif len(shape) == 2:
     import matplotlib.pyplot as plt
     from matplotlib.colors import LogNorm
     # shape into a 3d array with time as the first axis
-    p_sqrt   = np.sqrt(psi_value[0].shape[0])
-    print("dim size:", p_sqrt, "Should be integer")
-    p_sqrt          = int(p_sqrt)
     fig = plt.figure()
     font = {'size'   : 18}
     matplotlib.rc('font', **font)
@@ -93,7 +90,7 @@ elif len(shape) == 2:
             print("plotting", i)
             # set up initial figure with color bar
             psi = psi[:,0] + 1j*psi[:,1]
-            psi.shape = (p_sqrt,p_sqrt)
+            psi.shape = tuple(shape)
             plt.imshow(np.absolute(psi), cmap='viridis', origin='lower',
                        extent=[x[0],x[-1],x[0],x[-1]],
                        norm=LogNorm(vmin=1e-10, vmax=max_val))

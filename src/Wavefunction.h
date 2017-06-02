@@ -44,6 +44,10 @@ class Wavefunction : protected Utils
 
   std::vector<PetscInt> GetIntArray(PetscInt idx);
 
+  void LoadRestart(HDF5Wrapper &h5_file, ViewWrapper &viewer_file,
+                   PetscInt write_frequency_checkpoint,
+                   PetscInt write_frequency_observables);
+
  public:
   /* Constructor */
   Wavefunction(HDF5Wrapper &h5_file, ViewWrapper &view_file, Parameters &p);
@@ -72,4 +76,5 @@ class Wavefunction : protected Utils
   PetscInt GetNumPsiBuild();
   Vec *GetPsi();
   double **GetXValue();
+  PetscInt GetWrieCounterCheckpoint();
 };

@@ -1,9 +1,9 @@
 import numpy as np
 import h5py
-target_name = "H"
+target_name = "He-SAE"
 # read data
 target = h5py.File(target_name+".h5","r")
-f = h5py.File("TDSE.h5","r")
+f = h5py.File("TDSE_2nd_1.h5","r")
 psi_value = target["psi"]
 # psi_value = f["Wavefunction"]["psi"]
 energy    = target["Energy"]

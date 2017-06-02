@@ -24,8 +24,16 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   /* allocate psi_1, psi_2, and psi */
   CreatePsi();
 
-  /* write out data */
-  Checkpoint(h5_file, viewer_file, -1.0);
+  if (p.GetRestart() == 1)
+  {
+    LoadRestart(h5_file, viewer_file, p.GetWriteFrequencyCheckpoint(),
+                p.GetWriteFrequencyObservables());
+  }
+  else
+  {
+    /* write out data */
+    Checkpoint(h5_file, viewer_file, -1.0);
+  }
 
   /* delete psi_1 and psi_2 */
   CleanUp();
@@ -83,9 +91,9 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
     /* write psi_1 and psi_2 if still allocated */
     // if (psi_alloc_build)
     // {
-    //   for (int elec_idx = 0; elec_idx < num_electrons; elec_idx++)
+    //   for (PetscInt elec_idx = 0; elec_idx < num_electrons; elec_idx++)
     //   {
-    //     for (int dim_idx = 0; dim_idx < num_dims; dim_idx++)
+    //     for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
     //     {
     //       h5_file.WriteObject(
     //           psi_build[elec_idx][dim_idx], num_x[dim_idx],
@@ -179,6 +187,34 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
       write_counter_observables++;
     }
   }
+}
+
+void Wavefunction::LoadRestart(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
+                               PetscInt write_frequency_checkpoint,
+                               PetscInt write_frequency_observables)
+{
+  first_pass             = false;
+  std::string group_name = "/Wavefunction/";
+  /* Get write index for last checkpoint */
+  write_counter_checkpoint = h5_file.GetTime("/Wavefunction/psi");
+  /* Open file */
+  viewer_file.Open("r");
+  /* Set time idx */
+  viewer_file.SetTime(write_counter_checkpoint);
+  /* Push group */
+  viewer_file.PushGroup(group_name);
+  /* Read psi*/
+  viewer_file.ReadObject(psi);
+  /* Close file */
+  viewer_file.Close();
+  /* Calculate observable counters */
+  write_counter_observables =
+      ((write_counter_checkpoint - 1) * write_frequency_checkpoint) /
+      write_frequency_observables;
+
+  /* Increment both counters */
+  write_counter_observables++;
+  write_counter_checkpoint++;
 }
 
 void Wavefunction::CheckpointPsi(ViewWrapper& viewer_file, PetscInt write_idx)
@@ -528,6 +564,11 @@ PetscInt Wavefunction::GetNumPsiBuild() { return num_psi_build; }
 Vec* Wavefunction::GetPsi() { return &psi; }
 
 double** Wavefunction::GetXValue() { return x_value; }
+
+PetscInt Wavefunction::GetWrieCounterCheckpoint()
+{
+  return write_counter_checkpoint;
+}
 
 /* destructor */
 Wavefunction::~Wavefunction()

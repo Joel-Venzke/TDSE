@@ -1,14 +1,12 @@
 {
   "delta_t": 0.015,
   "dimensions": [
-    {"dim_size": 100.0,
-    "delta_x":   0.2},
-    {"dim_size": 100.0,
-    "delta_x":   0.2},
-    {"dim_size": 100.0,
-    "delta_x":   0.2}],
+    {"dim_size": 50.0,
+    "delta_x":   1.0},
+    {"dim_size": 50.0,
+    "delta_x":   1.0}],
   "num_electrons": 1,
-  "restart": 0,
+  "restart": 1,
   "target": {
     "name":  "He-SAE",
     "nuclei" : [
