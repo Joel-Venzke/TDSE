@@ -138,6 +138,7 @@ void Hamiltonian::SetUpCoefficients()
       num_dims, std::vector< std::vector< std::vector< dcomp > > >(
                     order, std::vector< std::vector< dcomp > >(
                                3, std::vector< dcomp >(order + 1, 0.0))));
+
   real_coef.resize(num_dims, std::vector< std::vector< dcomp > >(
                                  3, std::vector< dcomp >(order + 1, 0.0)));
 
@@ -149,7 +150,7 @@ void Hamiltonian::SetUpCoefficients()
       x_vals[coef_idx] = delta_x[dim_idx] * coef_idx;
     }
     /* Get real coefficients for each dimension */
-    FDWeights(x_vals, 2, real_coef[dim_idx], delta_x[dim_idx]);
+    FDWeights(x_vals, 2, real_coef[dim_idx]);
     for (int discontinuity_idx = 0; discontinuity_idx < order;
          ++discontinuity_idx)
     {
@@ -167,8 +168,7 @@ void Hamiltonian::SetUpCoefficients()
                                                      std::exp(imag * eta));
         }
       }
-      FDWeights(x_vals, 2, right_ecs_coef[dim_idx][discontinuity_idx],
-                delta_x[dim_idx]);
+      FDWeights(x_vals, 2, right_ecs_coef[dim_idx][discontinuity_idx]);
 
       for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
       {
@@ -184,9 +184,37 @@ void Hamiltonian::SetUpCoefficients()
                (discontinuity_idx - coef_idx + 1.0) * std::exp(imag * eta));
         }
       }
-      FDWeights(x_vals, 2, left_ecs_coef[dim_idx][discontinuity_idx],
-                delta_x[dim_idx]);
+      FDWeights(x_vals, 2, left_ecs_coef[dim_idx][discontinuity_idx]);
     }
+  }
+
+  std::vector< dcomp > x_vals_bc(order + 2, 0.0);
+  radial_bc_coef.resize(order / 2 + 1,
+                        std::vector< std::vector< dcomp > >(
+                            3, std::vector< dcomp >(order + 2, 0.0)));
+  /* Set up real gird for 1st and 2nd order derivatives */
+  for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
+  {
+    x_vals[coef_idx] = delta_x[0] * coef_idx;
+  }
+  for (int coef_idx = 0; coef_idx < order + 2; ++coef_idx)
+  {
+    x_vals_bc[coef_idx] = delta_x[0] * coef_idx;
+  }
+  for (int discontinuity_idx = 0; discontinuity_idx < order / 2 + 1;
+       ++discontinuity_idx)
+  {
+    /* Get real coefficients for 2nd derivative (order+2 terms)*/
+    FDWeights(x_vals_bc, 2, radial_bc_coef[discontinuity_idx],
+              discontinuity_idx);
+    /* reset data */
+    for (int coef_idx = 0; coef_idx < order + 2; ++coef_idx)
+    {
+      radial_bc_coef[discontinuity_idx][0][coef_idx] = 0.0;
+      radial_bc_coef[discontinuity_idx][1][coef_idx] = 0.0;
+    }
+    /* Get real coefficients for 1st derivative (order+1 terms) */
+    FDWeights(x_vals, 1, radial_bc_coef[discontinuity_idx], discontinuity_idx);
   }
 }
 
@@ -236,12 +264,20 @@ dcomp Hamiltonian::GetVal(PetscInt idx_i, PetscInt idx_j, bool time_dep,
 void Hamiltonian::FDWeights(std::vector< dcomp >& x_vals,
                             PetscInt max_derivative,
                             std::vector< std::vector< dcomp > >& coef,
-                            double dx)
+                            PetscInt z_idx)
 {
   /* get number of grid points given (order+1) */
   PetscInt x_size = x_vals.size();
   /* Find center */
-  dcomp z = x_vals[x_size / 2];
+  dcomp z;
+  if (z_idx == -1)
+  {
+    z = x_vals[x_size / 2];
+  }
+  else
+  {
+    z = x_vals[z_idx];
+  }
   /* Temporary variables */
   dcomp last_product, current_product, x_distance, z_distance,
       previous_z_distance;

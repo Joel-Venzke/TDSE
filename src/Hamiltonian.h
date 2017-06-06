@@ -42,6 +42,8 @@ class Hamiltonian : protected Utils
       left_ecs_coef;
   std::vector< std::vector< std::vector< std::vector< dcomp > > > >
       right_ecs_coef;
+  /* radial_bc_coef[discontinuity_idx][derivative][index] */
+  std::vector< std::vector< std::vector< dcomp > > > radial_bc_coef;
   /* real_coef[dim_idx][derivative][index] */
   std::vector< std::vector< std::vector< dcomp > > > real_coef;
 
@@ -60,7 +62,8 @@ class Hamiltonian : protected Utils
   dcomp GetVal(PetscInt idx_i, PetscInt idx_j, bool time_dep, PetscInt time_idx,
                bool &insert_val);
   void FDWeights(std::vector< dcomp > &x_vals, PetscInt max_derivative,
-                 std::vector< std::vector< dcomp > > &coef, double dx);
+                 std::vector< std::vector< dcomp > > &coef,
+                 PetscInt z_idx = -1);
   dcomp GetOffDiagonal(std::vector< PetscInt > &idx_array,
                        std::vector< PetscInt > &diff_array, bool time_dep,
                        PetscInt time_idx);

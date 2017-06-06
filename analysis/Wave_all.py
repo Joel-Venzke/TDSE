@@ -2,7 +2,7 @@ import numpy as np
 import h5py
 
 # read data
-f = h5py.File("TDSE_6th_3.h5","r")
+f = h5py.File("TDSE.h5","r")
 psi_value = f["Wavefunction"]["psi"]
 psi_time  = f["Wavefunction"]["time"][:]
 x         = f["Wavefunction"]["x_value_0"][:]
@@ -18,8 +18,8 @@ time_y    = np.max(x)*0.9
 
 max_val = 0
 # calculate color bounds
-for i,psi in enumerate(psi_value[:3]):
-    if i>0: # the zeroth wave function is the guess and not relevant
+for i,psi in enumerate(psi_value):
+    if i>0 and i<2: # the zeroth wave function is the guess and not relevant
         psi = psi[:,0] + 1j*psi[:,1]
         max_val_tmp   = np.max(np.absolute(psi))
         if (max_val_tmp > max_val):
@@ -38,43 +38,43 @@ if len(shape) == 3:
             psi.shape = tuple(shape)
             psi = psi[lower_idx[0]:upper_idx[0],lower_idx[1]:upper_idx[1],lower_idx[2]:upper_idx[2]]
             psi = np.log10(np.abs(psi))
-            mlab.pipeline.iso_surface(mlab.pipeline.scalar_field(psi),
-                vmin=-10,
-                vmax=0.0,
-                opacity=0.3,
-                colormap="viridis",
-                contours=11)
-            mlab.colorbar(nb_labels=11,orientation="vertical")
-            mlab.orientation_axes()
-            mlab.view(azimuth=0.0,distance='auto',elevation=90.0)
-            mlab.savefig("figs/Wave_iso_x_"+str(i).zfill(8)+".png")
-            mlab.view(azimuth=90.0,distance='auto',elevation=90.0)
-            mlab.savefig("figs/Wave_iso_y_"+str(i).zfill(8)+".png")
-            mlab.view(azimuth=0.0,distance='auto',elevation=0.0)
-            mlab.savefig("figs/Wave_iso_z_"+str(i).zfill(8)+".png")
-            mlab.view(azimuth=45.0,distance='auto',elevation=45.0)
-            mlab.savefig("figs/Wave_iso_"+str(i).zfill(8)+".png")
+            # mlab.pipeline.iso_surface(mlab.pipeline.scalar_field(psi),
+            #     vmin=-10,
+            #     vmax=0.0,
+            #     opacity=0.3,
+            #     colormap="viridis",
+            #     contours=11)
+            # mlab.colorbar(nb_labels=11,orientation="vertical")
+            # mlab.orientation_axes()
+            # mlab.view(azimuth=0.0,distance='auto',elevation=90.0)
+            # mlab.savefig("figs/Wave_iso_x_"+str(i).zfill(8)+".png")
+            # mlab.view(azimuth=90.0,distance='auto',elevation=90.0)
+            # mlab.savefig("figs/Wave_iso_y_"+str(i).zfill(8)+".png")
+            # mlab.view(azimuth=0.0,distance='auto',elevation=0.0)
+            # mlab.savefig("figs/Wave_iso_z_"+str(i).zfill(8)+".png")
+            # mlab.view(azimuth=45.0,distance='auto',elevation=45.0)
+            # mlab.savefig("figs/Wave_iso_"+str(i).zfill(8)+".png")
 
             mlab.clf()
             mlab.pipeline.iso_surface(mlab.pipeline.scalar_field(psi),
-                vmin=-9.0,
+                vmin=-10.0,
                 vmax=0.0,
                 opacity=0.3,
                 colormap="viridis",
                 contours=[1.0])
             mlab.pipeline.volume(mlab.pipeline.scalar_field(psi), 
-               vmin=-9.0,
+               vmin=-10.0,
                vmax=0.0)
             mlab.colorbar(nb_labels=10,orientation="vertical")
             mlab.orientation_axes()
             mlab.view(azimuth=0.0,distance='auto',elevation=90.0)
-            mlab.savefig("figs/Wave_density_cross_x_"+str(i).zfill(8)+".png")
+            mlab.savefig("figs/Wave_density_10_cross_x_"+str(i).zfill(8)+".png")
             mlab.view(azimuth=90.0,distance='auto',elevation=90.0)
-            mlab.savefig("figs/Wave_density_cross_y_"+str(i).zfill(8)+".png")
+            mlab.savefig("figs/Wave_density_10_cross_y_"+str(i).zfill(8)+".png")
             mlab.view(azimuth=0.0,distance='auto',elevation=0.0)
-            mlab.savefig("figs/Wave_density_cross_z_"+str(i).zfill(8)+".png")
+            mlab.savefig("figs/Wave_density_10_cross_z_"+str(i).zfill(8)+".png")
             mlab.view(azimuth=45.0,distance='auto',elevation=45.0)
-            mlab.savefig("figs/Wave_density_cross_"+str(i).zfill(8)+".png")
+            mlab.savefig("figs/Wave_density_10_cross_"+str(i).zfill(8)+".png")
             mlab.clf()
 
 elif len(shape) == 2:
