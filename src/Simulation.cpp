@@ -291,10 +291,10 @@ void Simulation::PowerMethod(PetscInt num_states, PetscInt return_state_idx)
   v_states_file.Close();
   HDF5Wrapper h_states_file(parameters->GetTarget() + ".h5"); /* HDF5 viewer */
 
-  std::vector<Vec> states; /* vector of currently converged states */
-  Vec psi_old;             /* keeps track of last psi */
-  Vec psi_tmp;             /* Used to place copies in states */
-  Mat left;                /* matrix on left side of Ax=b */
+  std::vector< Vec > states; /* vector of currently converged states */
+  Vec psi_old;               /* keeps track of last psi */
+  Vec psi_tmp;               /* Used to place copies in states */
+  Mat left;                  /* matrix on left side of Ax=b */
 
   KSP ksp;                   /* solver for Ax=b */
   KSPConvergedReason reason; /* reason for convergence check */
@@ -377,9 +377,11 @@ void Simulation::PowerMethod(PetscInt num_states, PetscInt return_state_idx)
         energy = wavefunction->GetEnergy(hamiltonian->GetTimeIndependent());
         if (world.rank() == 0)
           std::cout << "Energy: " << energy << "\n" << std::flush;
+        energy = wavefunction->Norm();
+        if (world.rank() == 0)
+          std::cout << "Norm is: " << energy << "\n" << std::flush;
         // /* write a checkpoint */
-        // wavefunction->Checkpoint(*h5_file, *viewer_file, i /
-        // write_frequency);
+        // wavefunction->Checkpoint(*h5_file, *viewer_file, -1.0);
         if (world.rank() == 0)
           std::cout << "Time: "
                     << ((float)clock() - t) / (CLOCKS_PER_SEC * write_frequency)
@@ -458,7 +460,7 @@ bool Simulation::CheckConvergance(Vec &psi_1, Vec &psi_2, double tol)
  * Assumes all states are orthornormal and applies modified gram-schmit to
  * psi
  */
-void Simulation::ModifiedGramSchmidt(std::vector<Vec> &states)
+void Simulation::ModifiedGramSchmidt(std::vector< Vec > &states)
 {
   PetscInt size = states.size();
   dcomp coef;

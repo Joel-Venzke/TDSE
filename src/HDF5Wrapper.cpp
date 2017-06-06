@@ -477,6 +477,8 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
                 "The length of that dimension in atomic units.");
     WriteObject(p.delta_x.get(), num_dims, "/Parameters/delta_x",
                 "The step sizes in that dimension in atomic units.");
+    WriteObject(p.GetCoordinateSystemIdx(), "/Parameters/coordinate_system_idx",
+                "Index of coordinate system: Cartesian:0, Cylindrical:1");
     WriteObject(p.GetDeltaT(), "/Parameters/delta_t",
                 "The size of the time step in atomic units.");
     WriteObject(p.GetTargetIdx(), "/Parameters/target_idx",
@@ -621,4 +623,5 @@ template void HDF5Wrapper::WriteObject< double >(double data,
                                                  H5std_string var_path,
                                                  H5std_string attribute,
                                                  int write_idx);
-template void HDF5Wrapper::WriteObject<int*>(int*, int, std::string, std::string);
+template void HDF5Wrapper::WriteObject< int * >(int *, int, std::string,
+                                                std::string);

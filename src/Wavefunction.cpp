@@ -13,6 +13,7 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   num_electrons             = p.GetNumElectrons();
   dim_size                  = p.dim_size.get();
   delta_x                   = p.delta_x.get();
+  coordinate_system_idx     = p.GetCoordinateSystemIdx();
   sigma                     = p.GetSigma();
   num_psi_build             = 1.0;
   write_counter_checkpoint  = 0;
@@ -246,41 +247,53 @@ void Wavefunction::CreateGrid()
   num_psi_build = 1.0;
 
   /* build grid */
-  for (PetscInt i = 0; i < num_dims; i++)
+  for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
   {
-    num_x[i] = ceil((dim_size[i]) / delta_x[i]) + 1;
+    num_x[dim_idx] = ceil((dim_size[dim_idx]) / delta_x[dim_idx]);
 
     /* odd number so it is even on both sides */
-    if (num_x[i] % 2 != 0) num_x[i]++;
-
-    /* size of 1d array for psi */
-    num_psi_build *= num_x[i];
-
-    /* find center of grid */
-    center = num_x[i] / 2;
+    if (num_x[dim_idx] % 2 != 0) num_x[dim_idx]++;
 
     /* allocate grid */
-    x_value[i] = new double[num_x[i]];
+    x_value[dim_idx] = new double[num_x[dim_idx]];
 
-    /* store center */
-    x_value[i][center] = 0.0;
+    /* size of 1d array for psi */
+    num_psi_build *= num_x[dim_idx];
 
-    /* loop over all others */
-    for (PetscInt j = center; j >= 0; j--)
+    if (coordinate_system_idx == 1 and dim_idx == 0)
     {
-      /* get x value */
-      current_x = (j - center) * delta_x[i] + delta_x[i] / 2.0;
-
-      /* double checking index */
-      if (j < 0 || num_x[i] - j - 1 >= num_x[i])
+      for (int x_idx = 0; x_idx < num_x[dim_idx]; ++x_idx)
       {
-        EndRun("Allocation error in grid");
+        x_value[dim_idx][x_idx] =
+            x_idx * delta_x[dim_idx] + delta_x[dim_idx] / 2.0;
       }
+    }
+    else
+    {
+      /* find center of grid */
+      center = num_x[dim_idx] / 2;
 
-      /* set negative side */
-      x_value[i][j] = current_x;
-      /* set positive side */
-      x_value[i][num_x[i] - j - 1] = -1 * current_x;
+      /* store center */
+      x_value[dim_idx][center] = 0.0;
+
+      /* loop over all others */
+      for (PetscInt x_idx = center; x_idx >= 0; x_idx--)
+      {
+        /* get x value */
+        current_x =
+            (x_idx - center) * delta_x[dim_idx] + delta_x[dim_idx] / 2.0;
+
+        /* double checking index */
+        if (x_idx < 0 || num_x[dim_idx] - x_idx - 1 >= num_x[dim_idx])
+        {
+          EndRun("Allocation error in grid");
+        }
+
+        /* set negative side */
+        x_value[dim_idx][x_idx] = current_x;
+        /* set positive side */
+        x_value[dim_idx][num_x[dim_idx] - x_idx - 1] = -1 * current_x;
+      }
     }
   }
 }
@@ -348,6 +361,10 @@ void Wavefunction::CreatePsi()
     VecSetSizes(psi_tmp, PETSC_DECIDE, num_psi);
     VecSetFromOptions(psi_tmp);
 
+    VecCreate(PETSC_COMM_WORLD, &psi_tmp_cyl);
+    VecSetSizes(psi_tmp_cyl, PETSC_DECIDE, num_psi);
+    VecSetFromOptions(psi_tmp_cyl);
+
     psi_alloc = true;
   }
 
@@ -388,6 +405,10 @@ void Wavefunction::CreateObservable(PetscInt observable_idx, PetscInt elec_idx,
       VecSetValues(psi_tmp, 1, &idx, &val, INSERT_VALUES);
     }
   }
+  else if (observable_idx == 2) /* r */
+  {
+    CreateObservable(0, 0, 0);
+  }
   else
   {
     EndRun("Bad observable index in Wavefunction");
@@ -420,7 +441,7 @@ dcomp Wavefunction::GetPsiVal(dcomp*** data, PetscInt idx)
   /* Value to be returned */
   dcomp ret_val(1.0, 0.0);
   /* idx for return */
-  std::vector<PetscInt> idx_array = GetIntArray(idx);
+  std::vector< PetscInt > idx_array = GetIntArray(idx);
   for (PetscInt elec_idx = 0; elec_idx < num_electrons; elec_idx++)
   {
     for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
@@ -439,7 +460,7 @@ dcomp Wavefunction::GetPositionVal(PetscInt idx, PetscInt elec_idx,
   /* Value to be returned */
   dcomp ret_val(0.0, 0.0);
   /* idx for return */
-  std::vector<PetscInt> idx_array = GetIntArray(idx);
+  std::vector< PetscInt > idx_array = GetIntArray(idx);
   ret_val += x_value[dim_idx][idx_array[elec_idx * num_dims + dim_idx]];
   return ret_val;
 }
@@ -452,15 +473,15 @@ dcomp Wavefunction::GetDipoleAccerationVal(PetscInt idx, PetscInt elec_idx,
   dcomp ret_val(0.0, 0.0);
   double r;
   /* idx for return */
-  std::vector<PetscInt> idx_array = GetIntArray(idx);
-  r                               = GetDistance(idx_array, elec_idx);
+  std::vector< PetscInt > idx_array = GetIntArray(idx);
+  r                                 = GetDistance(idx_array, elec_idx);
   ret_val +=
       x_value[dim_idx][idx_array[elec_idx * num_dims + dim_idx]] / (r * r * r);
   return ret_val;
 }
 
 /* Returns r component of that electron */
-double Wavefunction::GetDistance(std::vector<PetscInt> idx_array,
+double Wavefunction::GetDistance(std::vector< PetscInt > idx_array,
                                  PetscInt elec_idx)
 {
   double r = 0.0;
@@ -473,14 +494,14 @@ double Wavefunction::GetDistance(std::vector<PetscInt> idx_array,
   return sqrt(r);
 }
 
-std::vector<PetscInt> Wavefunction::GetIntArray(PetscInt idx)
+std::vector< PetscInt > Wavefunction::GetIntArray(PetscInt idx)
 {
   /* Total number of dims for total system*/
   PetscInt total_dims = num_electrons * num_dims;
   /* size of each dim */
-  std::vector<PetscInt> num(total_dims);
+  std::vector< PetscInt > num(total_dims);
   /* idx for return */
-  std::vector<PetscInt> idx_array(total_dims);
+  std::vector< PetscInt > idx_array(total_dims);
   for (PetscInt elec_idx = 0; elec_idx < num_electrons; elec_idx++)
   {
     for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
@@ -512,10 +533,19 @@ double Wavefunction::Norm() { return Norm(psi, delta_x[0]); }
 /* returns norm of array using trapezoidal rule */
 double Wavefunction::Norm(Vec& data, double dv)
 {
+  dcomp dot_product;
   double total = 0;
-  VecNorm(data, NORM_2, &total);
-  /* TODO(jove7731): normalize with correct dx term */
-  // return total * dv;
+  if (coordinate_system_idx == 1)
+  {
+    CreateObservable(2, 0, 0);
+    VecPointwiseMult(psi_tmp, psi_tmp, psi);
+    VecDot(psi, psi_tmp, &dot_product);
+    total = sqrt(dot_product.real());
+  }
+  else
+  {
+    VecNorm(data, NORM_2, &total);
+  }
   return total;
 }
 
@@ -524,8 +554,18 @@ double Wavefunction::GetEnergy(Mat* h) { return GetEnergy(h, psi); }
 double Wavefunction::GetEnergy(Mat* h, Vec& p)
 {
   PetscComplex energy;
-  MatMult(*h, p, psi_tmp);
-  VecDot(p, psi_tmp, &energy);
+  if (coordinate_system_idx == 1)
+  {
+    MatMult(*h, p, psi_tmp_cyl);
+    CreateObservable(2, 0, 0); /* pho */
+    VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi_tmp_cyl);
+    VecDot(p, psi_tmp_cyl, &energy);
+  }
+  else
+  {
+    MatMult(*h, psi_tmp, p);
+    VecDot(p, psi_tmp, &energy);
+  }
   return energy.real();
 }
 
@@ -533,8 +573,18 @@ double Wavefunction::GetEnergy(Mat* h, Vec& p)
 double Wavefunction::GetPosition(PetscInt elec_idx, PetscInt dim_idx)
 {
   PetscComplex expectation;
-  CreateObservable(0, elec_idx, dim_idx);
-  VecPointwiseMult(psi_tmp, psi_tmp, psi);
+  if (coordinate_system_idx == 1)
+  {
+    CreateObservable(2, elec_idx, dim_idx); /* pho */
+    VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi);
+    CreateObservable(0, elec_idx, dim_idx); /* dim */
+    VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
+  }
+  else
+  {
+    CreateObservable(0, elec_idx, dim_idx); /* dim */
+    VecPointwiseMult(psi_tmp, psi_tmp, psi);
+  }
   VecDot(psi, psi_tmp, &expectation);
   return expectation.real();
 }
@@ -543,8 +593,18 @@ double Wavefunction::GetPosition(PetscInt elec_idx, PetscInt dim_idx)
 double Wavefunction::GetDipoleAcceration(PetscInt elec_idx, PetscInt dim_idx)
 {
   PetscComplex expectation;
-  CreateObservable(1, elec_idx, dim_idx);
-  VecPointwiseMult(psi_tmp, psi_tmp, psi);
+  if (coordinate_system_idx == 1)
+  {
+    CreateObservable(2, elec_idx, dim_idx); /* pho */
+    VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi);
+    CreateObservable(1, elec_idx, dim_idx); /* dim */
+    VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
+  }
+  else
+  {
+    CreateObservable(1, elec_idx, dim_idx); /* dim */
+    VecPointwiseMult(psi_tmp, psi_tmp, psi);
+  }
   VecDot(psi, psi_tmp, &expectation);
   return expectation.real();
 }

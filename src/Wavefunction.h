@@ -12,6 +12,7 @@ class Wavefunction : protected Utils
   PetscInt num_electrons; /* number of electrons in the system */
   double *dim_size;       /* sizes of each dimension in a.u. */
   double *delta_x;        /* step sizes of each dimension in a.u. */
+  PetscInt coordinate_system_idx;
   PetscInt *num_x;        /* number of grid points in each dimension */
   PetscInt num_psi_build; /* number of points in psi_1 and psi_2 */
   PetscInt num_psi;       /* number of points in psi */
@@ -19,6 +20,7 @@ class Wavefunction : protected Utils
   dcomp ***psi_build;     /* used for allocating new wave functions */
   Vec psi;                /* wavefunction for 2 electron system */
   Vec psi_tmp;            /* wavefunction for 2 electron system */
+  Vec psi_tmp_cyl;        /* wavefunction for 2 electron system */
   bool psi_alloc_build;
   bool psi_alloc;
   /* false if its not the first time checkpointing the wavefunction */
@@ -40,9 +42,9 @@ class Wavefunction : protected Utils
   dcomp GetDipoleAccerationVal(PetscInt idx, PetscInt elec_idx,
                                PetscInt dim_idx);
 
-  double GetDistance(std::vector<PetscInt> idx_array, PetscInt elec_idx);
+  double GetDistance(std::vector< PetscInt > idx_array, PetscInt elec_idx);
 
-  std::vector<PetscInt> GetIntArray(PetscInt idx);
+  std::vector< PetscInt > GetIntArray(PetscInt idx);
 
   void LoadRestart(HDF5Wrapper &h5_file, ViewWrapper &viewer_file,
                    PetscInt write_frequency_checkpoint,

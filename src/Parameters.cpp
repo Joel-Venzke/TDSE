@@ -41,12 +41,27 @@ void Parameters::Setup(std::string file_name)
   json data = FileToJson(file_name);
 
   /* get numeric information */
-  delta_t       = data["delta_t"];
-  num_dims      = data["dimensions"].size();
-  num_electrons = data["num_electrons"];
-  dim_size      = std::make_unique< double[] >(num_dims);
-  delta_x       = std::make_unique< double[] >(num_dims);
-  delta_x_2     = std::make_unique< double[] >(num_dims);
+  delta_t           = data["delta_t"];
+  num_dims          = data["dimensions"].size();
+  num_electrons     = data["num_electrons"];
+  coordinate_system = data["coordinate_system"];
+
+  if (coordinate_system == "Cartesian")
+  {
+    coordinate_system_idx = 0;
+  }
+  else if (coordinate_system == "Cylindrical")
+  {
+    coordinate_system_idx = 1;
+  }
+  else
+  {
+    coordinate_system_idx = -1;
+  }
+
+  dim_size  = std::make_unique< double[] >(num_dims);
+  delta_x   = std::make_unique< double[] >(num_dims);
+  delta_x_2 = std::make_unique< double[] >(num_dims);
 
   for (PetscInt i = 0; i < num_dims; ++i)
   {
@@ -309,6 +324,62 @@ void Parameters::Validate()
   bool error_found = false; /* set to true if error is found */
   double total;
 
+  /* coordinate system checks */
+  if (coordinate_system_idx == -1)
+  {
+    error_found = true;
+    err_str += "\nUnsupported coordinate system: ";
+    err_str += coordinate_system;
+    err_str += "\nSupported coordinate systems are:\n";
+    err_str += "\"Cartesian\" and \"Cylindrical\"\n";
+  }
+  if (coordinate_system_idx == 1)
+  {
+    if (num_dims != 2)
+    {
+      error_found = true;
+      err_str +=
+          "\nCylindrical coordinate systems only supports 2D simulations\n";
+    }
+    if (num_electrons != 1)
+    {
+      error_found = true;
+      err_str +=
+          "\nCylindrical coordinate systems only supports single electron "
+          "simulations\n";
+    }
+    for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; pulse_idx++)
+    {
+      if (polarization_vector[pulse_idx][0] > 1e-14)
+      {
+        error_found = true;
+        err_str +=
+            "\nCylindrical coordinate systems only supports polarization "
+            "vectors\npointing in the z direction (i.e. [0.0,1.0])\nPulse " +
+            std::to_string(pulse_idx) + " does not meet this requirement\n";
+      }
+      if (ellipticity[pulse_idx] > 1e-14)
+      {
+        error_found = true;
+        err_str +=
+            "\nCylindrical coordinate systems only supports linear polarized "
+            "light\nPulse " +
+            std::to_string(pulse_idx) + " has a non zero ellipticity\n";
+      }
+    }
+    for (PetscInt nuclei_idx = 0; nuclei_idx < num_nuclei; ++nuclei_idx)
+    {
+      if (location[nuclei_idx][0] > 1e-14)
+      {
+        error_found = true;
+        err_str +=
+            "\nCylindrical coordinate systems only supports nuclei on the z "
+            "axis (i.e. [0.0, z_value])\nNuclei " +
+            std::to_string(nuclei_idx) + " has a non zero radial coordinate\n";
+      }
+    }
+  }
+
   /* Check pulses */
   for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; pulse_idx++)
   {
@@ -452,6 +523,8 @@ double Parameters::GetDeltaT() { return delta_t; }
 PetscInt Parameters::GetNumDims() { return num_dims; }
 
 PetscInt Parameters::GetNumElectrons() { return num_electrons; }
+
+PetscInt Parameters::GetCoordinateSystemIdx() { return coordinate_system_idx; }
 
 PetscInt Parameters::GetRestart() { return restart; }
 

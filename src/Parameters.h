@@ -13,9 +13,11 @@ class Parameters : protected Utils
 {
  private:
   /* numeric data */
-  PetscInt num_dims;      /* number of dimensions */
-  PetscInt num_electrons; /* number of dimensions */
-  double delta_t;         /* size of time step */
+  PetscInt num_dims;              /* number of dimensions */
+  PetscInt num_electrons;         /* number of dimensions */
+  double delta_t;                 /* size of time step */
+  std::string coordinate_system;  /* Cartesian or Cylindrical */
+  PetscInt coordinate_system_idx; /* Cartesian:0, Cylindrical:1 */
 
   /* simulation behavior */
   /* restart mode */
@@ -93,6 +95,7 @@ class Parameters : protected Utils
   /* getters */
   PetscInt GetNumDims();
   PetscInt GetNumElectrons();
+  PetscInt GetCoordinateSystemIdx();
   double GetDeltaT();
 
   PetscInt GetRestart();

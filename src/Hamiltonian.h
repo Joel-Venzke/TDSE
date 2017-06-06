@@ -11,6 +11,7 @@ class Hamiltonian : protected Utils
   PetscInt num_dims;
   PetscInt num_electrons;
   PetscInt num_nuclei; /* number of nuclei in potential */
+  PetscInt coordinate_system_idx;
   PetscInt *num_x;
   PetscInt num_psi;
   PetscInt num_psi_build;

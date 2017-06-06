@@ -24,6 +24,7 @@ for i,psi in enumerate(psi_value):
         max_val_tmp   = np.max(np.absolute(psi))
         if (max_val_tmp > max_val):
             max_val = max_val_tmp
+max_val = 1
 
 
 if len(shape) == 3: 
@@ -91,9 +92,14 @@ elif len(shape) == 2:
             # set up initial figure with color bar
             psi = psi[:,0] + 1j*psi[:,1]
             psi.shape = tuple(shape)
-            plt.imshow(np.absolute(psi), cmap='viridis', origin='lower',
-                       extent=[x[0],x[-1],x[0],x[-1]],
-                       norm=LogNorm(vmin=1e-10, vmax=max_val))
+            if f["Parameters"]["coordinate_system_idx"]==1:
+                plt.imshow(np.vdot(psi,np.multiply(x,psi.transpose()).transpose()), cmap='viridis', origin='lower',
+                           extent=[y[0],y[-1],x[0],x[-1]],
+                           norm=LogNorm(vmin=1e-10, vmax=max_val))
+            else:
+                plt.imshow(np.absolute(psi), cmap='viridis', origin='lower',
+                           extent=[y[0],y[-1],x[0],x[-1]],
+                           norm=LogNorm(vmin=1e-10, vmax=max_val))
             plt.text(time_x, time_y, "Time: "+str(psi_time[i])+" a.u.",
                         color='white')
             # color bar doesn't change during the video so only set it here
