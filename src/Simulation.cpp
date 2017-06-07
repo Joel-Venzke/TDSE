@@ -1,10 +1,11 @@
 #include "Simulation.h"
 
-Simulation::Simulation(Hamiltonian &h, Wavefunction &w, Pulse &pulse_in,
-                       HDF5Wrapper &h_file, ViewWrapper &v_file, Parameters &p)
+Simulation::Simulation(Hamiltonian &hamiltonian_in, Wavefunction &w,
+                       Pulse &pulse_in, HDF5Wrapper &h_file,
+                       ViewWrapper &v_file, Parameters &p)
 {
   if (world.rank() == 0) std::cout << "Creating Simulation\n";
-  hamiltonian  = &h;
+  hamiltonian  = &hamiltonian_in;
   wavefunction = &w;
   pulse        = &pulse_in;
   h5_file      = &h_file;
@@ -12,6 +13,17 @@ Simulation::Simulation(Hamiltonian &h, Wavefunction &w, Pulse &pulse_in,
   parameters   = &p;
   time         = pulse_in.GetTime();
   time_length  = pulse_in.GetMaxPulseLength();
+
+  /* allocated left and right */
+  h = hamiltonian->GetTimeIndependent();
+  MatDuplicate(*(hamiltonian->GetTimeIndependent()), MAT_DO_NOT_COPY_VALUES,
+               &left);
+  MatDuplicate(left, MAT_DO_NOT_COPY_VALUES, &right);
+  psi = wavefunction->GetPsi();
+  VecDuplicate(*psi, &psi_right);
+
+  /* Create the solver */
+  KSPCreate(PETSC_COMM_WORLD, &ksp);
 
   if (world.rank() == 0) std::cout << "Simulation Created\n";
 }
@@ -31,33 +43,18 @@ void Simulation::Propagate()
       parameters->GetWriteFrequencyObservables();
   PetscInt free_propagate = parameters->GetFreePropagate();
   PetscInt i              = 1;
-  /* steps in each direction */
-  double *delta_x = parameters->delta_x.get();
   /* pointer to actual psi in wavefunction object */
   psi = wavefunction->GetPsi();
-  Vec psi_right;
   Vec psi_old;
   /* Allocate space for psi_old */
-  VecDuplicate(*psi, &psi_right);
   VecDuplicate(*psi, &psi_old);
   /* time step */
   double delta_t = parameters->GetDeltaT();
-  /* factor = i*(-i*dt/2) */
-  dcomp factor = dcomp(0.0, 1.0) * dcomp(delta_t / 2.0, 0.0);
-  KSP ksp; /* solver for Ax=b */
-  /* Create the solver */
+
+  KSPDestroy(&ksp);
   KSPCreate(PETSC_COMM_WORLD, &ksp);
   KSPSetOptionsPrefix(ksp, "prop_");
-  KSPConvergedReason reason; /* reason for convergence check */
   /* time independent Hamiltonian */
-  Mat *h = hamiltonian->GetTimeIndependent();
-  /* left matrix in Ax=Cb it would be A */
-  Mat left;  /* matrix on left side of Ax=b */
-  Mat right; /* matrix on left side of Ax=Cb */
-  MatDuplicate(*(hamiltonian->GetTimeIndependent()), MAT_DO_NOT_COPY_VALUES,
-               &left);
-  MatDuplicate(*(hamiltonian->GetTimeIndependent()), MAT_DO_NOT_COPY_VALUES,
-               &right);
 
   if (parameters->GetRestart() == 1)
   {
@@ -84,30 +81,187 @@ void Simulation::Propagate()
   t = clock();
   for (; i < time_length; i++)
   {
-    h = hamiltonian->GetTotalHamiltonian(i);
+    CrankNicolson(delta_t, i, -1);
 
-    MatCopy(*h, left, SAME_NONZERO_PATTERN);
-    MatScale(left, factor);
-    MatShift(left, 1.0);
-
-    MatCopy(*h, right, SAME_NONZERO_PATTERN);
-    MatScale(right, -1.0 * factor);
-    MatShift(right, 1.0);
-
-    /* Get psi_right side */
-    MatMult(right, *psi, psi_right);
-
-    KSPSetOperators(ksp, left, left);
-    KSPSetTolerances(ksp, 1.e-15, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
-    KSPSetFromOptions(ksp);
-    /* Solve Ax=b */
-    KSPSolve(ksp, psi_right, *psi);
-
-    /* Check for Divergence*/
-    KSPGetConvergedReason(ksp, &reason);
-    if (reason < 0)
+    /* only calculate observables so often */
+    if (i % write_frequency_observables == 0)
     {
-      EndRun("Divergence!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+      /* write a checkpoint */
+      wavefunction->Checkpoint(*h5_file, *viewer_file, time[i], false);
+    }
+
+    /* only checkpoint so often */
+    if (i % write_frequency_checkpoint == 0)
+    {
+      if (world.rank() == 0)
+        std::cout << "\nIteration: " << i << "\nPulse ends: " << time_length
+                  << "\n"
+                  << "Average time for time-step: "
+                  << ((float)clock() - t) /
+                         (CLOCKS_PER_SEC * write_frequency_checkpoint)
+                  << "\n"
+                  << std::flush;
+      /* write a checkpoint */
+      wavefunction->Checkpoint(*h5_file, *viewer_file, time[i]);
+      t = clock();
+    }
+  }
+
+  /* Save frame after pulse ends*/
+  wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
+
+  if (free_propagate == -1) /* until norm stops changing */
+  {
+    if (world.rank() == 0)
+      std::cout << "\nPropagating until norm stops changing\n";
+    while (!converged) /* Should I add an upper bound to this? */
+    {
+      /* copy old state for convergence */
+      if (i % write_frequency_checkpoint == 0)
+      {
+        VecCopy(*psi, psi_old);
+      }
+
+      CrankNicolson(delta_t, -1, -1);
+
+      /* only calculate observables so often */
+      if (i % write_frequency_observables == 0)
+      {
+        /* write a checkpoint */
+        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i, false);
+      }
+
+      /* only checkpoint so often */
+      if (i % write_frequency_checkpoint == 0)
+      {
+        norm = wavefunction->Norm();
+        if (world.rank() == 0)
+          std::cout << "\nIteration: " << i << "\nPulse ended: " << time_length
+                    << "\n"
+                    << "Average time for time-step: "
+                    << ((float)clock() - t) /
+                           (CLOCKS_PER_SEC * write_frequency_checkpoint)
+                    << "\nNorm: " << norm << "\n"
+                    << std::flush;
+
+        norm -= wavefunction->Norm(psi_old);
+        norm = std::abs(norm);
+        if (world.rank() == 0) std::cout << "Norm error: " << norm << "\n";
+        if (norm < 1e-14)
+        {
+          converged = true;
+        }
+        /* write a checkpoint */
+        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
+        t = clock();
+      }
+      i++;
+    }
+  }
+  else /* Fixed number of steps */
+  {
+    if (world.rank() == 0)
+      std::cout << "\nPropagating until step: " << time_length + free_propagate
+                << "\n";
+    while (i < time_length + free_propagate)
+    {
+      CrankNicolson(delta_t, -1, -1);
+
+      /* only calculate observables so often */
+      if (i % write_frequency_observables == 0)
+      {
+        /* write a checkpoint */
+        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i, false);
+      }
+
+      /* only checkpoint so often */
+      if (i % write_frequency_checkpoint == 0)
+      {
+        if (world.rank() == 0)
+          std::cout << "\nIteration: " << i
+                    << "\nSimulation Ends: " << time_length + free_propagate
+                    << "\n"
+                    << "Average time for time-step: "
+                    << ((float)clock() - t) /
+                           (CLOCKS_PER_SEC * write_frequency_checkpoint)
+                    << "\n"
+                    << std::flush;
+        /* write a checkpoint */
+        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
+        t = clock();
+      }
+      i++;
+    }
+    /* Save last Wavefunction since it might not by on a write frequency*/
+    wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
+  }
+
+  VecDestroy(&psi_old);
+}
+
+void Simulation::SplitOpperator()
+{
+  if (world.rank() == 0) std::cout << "\nPropagating in time\n";
+  clock_t t;
+  /* if we are converged */
+  bool converged = false;
+  /* error in norm */
+  double norm = 1.0;
+  /* how often do we write data */
+  PetscInt write_frequency_checkpoint =
+      parameters->GetWriteFrequencyCheckpoint();
+  PetscInt write_frequency_observables =
+      parameters->GetWriteFrequencyObservables();
+  PetscInt free_propagate = parameters->GetFreePropagate();
+  PetscInt i              = 1;
+  /* pointer to actual psi in wavefunction object */
+  psi = wavefunction->GetPsi();
+  Vec psi_old;
+  /* Allocate space for psi_old */
+  VecDuplicate(*psi, &psi_old);
+  /* time step */
+  double delta_t = parameters->GetDeltaT();
+
+  KSPDestroy(&ksp);
+  KSPCreate(PETSC_COMM_WORLD, &ksp);
+  KSPSetOptionsPrefix(ksp, "prop_");
+  /* time independent Hamiltonian */
+
+  if (parameters->GetRestart() == 1)
+  {
+    /* set current iteration */
+    /* The -2 is from the already increased counter and the fact that psi[0] is
+     * written during simulation setup */
+    i = (wavefunction->GetWrieCounterCheckpoint() - 2) *
+        write_frequency_checkpoint;
+    i++;
+    if (i >= time_length) EndRun("Restart needs work for free prop restarts");
+  }
+
+  if (world.rank() == 0)
+    std::cout << "Total writes: " << time_length / write_frequency_checkpoint
+              << "\nStarting propagation\n"
+              << std::flush;
+
+  /* Checkpoint file before propagation starts */
+  if (parameters->GetRestart() != 1)
+  {
+    wavefunction->Checkpoint(*h5_file, *viewer_file, 0.0);
+  }
+
+  t = clock();
+  for (; i < time_length; i++)
+  {
+    for (int dim_idx = 0; dim_idx < parameters->GetNumDims() - 1; ++dim_idx)
+    {
+      CrankNicolson(delta_t / 2.0, i, dim_idx);
+    }
+
+    CrankNicolson(delta_t, i, parameters->GetNumDims() - 1);
+
+    for (int dim_idx = parameters->GetNumDims() - 2; dim_idx >= 0; --dim_idx)
+    {
+      CrankNicolson(delta_t / 2.0, i, dim_idx);
     }
 
     /* only calculate observables so often */
@@ -137,20 +291,6 @@ void Simulation::Propagate()
   /* Save frame after pulse ends*/
   wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
 
-  h = hamiltonian->GetTimeIndependent();
-
-  MatCopy(*h, left, SAME_NONZERO_PATTERN);
-  MatScale(left, factor);
-  MatShift(left, 1.0);
-
-  MatCopy(*h, right, SAME_NONZERO_PATTERN);
-  MatScale(right, -1.0 * factor);
-  MatShift(right, 1.0);
-
-  KSPSetOperators(ksp, left, left);
-  KSPSetTolerances(ksp, 1.e-15, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
-  KSPSetFromOptions(ksp);
-
   if (free_propagate == -1) /* until norm stops changing */
   {
     if (world.rank() == 0)
@@ -162,17 +302,17 @@ void Simulation::Propagate()
       {
         VecCopy(*psi, psi_old);
       }
-      /* Get psi_right side */
-      MatMult(right, *psi, psi_right);
 
-      /* Solve Ax=b */
-      KSPSolve(ksp, psi_right, *psi);
-
-      /* Check for Divergence*/
-      KSPGetConvergedReason(ksp, &reason);
-      if (reason < 0)
+      for (int dim_idx = 0; dim_idx < parameters->GetNumDims() - 1; ++dim_idx)
       {
-        EndRun("Divergence!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+        CrankNicolson(delta_t / 2.0, -1, dim_idx);
+      }
+
+      CrankNicolson(delta_t, -1, parameters->GetNumDims() - 1);
+
+      for (int dim_idx = parameters->GetNumDims() - 2; dim_idx >= 0; --dim_idx)
+      {
+        CrankNicolson(delta_t / 2.0, -1, dim_idx);
       }
 
       /* only calculate observables so often */
@@ -195,7 +335,7 @@ void Simulation::Propagate()
                     << "\nNorm: " << norm << "\n"
                     << std::flush;
 
-        norm -= wavefunction->Norm(psi_old, delta_x[0]);
+        norm -= wavefunction->Norm(psi_old);
         norm = std::abs(norm);
         if (world.rank() == 0) std::cout << "Norm error: " << norm << "\n";
         if (norm < 1e-14)
@@ -216,17 +356,16 @@ void Simulation::Propagate()
                 << "\n";
     while (i < time_length + free_propagate)
     {
-      /* Get psi_right side */
-      MatMult(right, *psi, psi_right);
-
-      /* Solve Ax=b */
-      KSPSolve(ksp, psi_right, *psi);
-
-      /* Check for Divergence*/
-      KSPGetConvergedReason(ksp, &reason);
-      if (reason < 0)
+      for (int dim_idx = 0; dim_idx < parameters->GetNumDims() - 1; ++dim_idx)
       {
-        EndRun("Divergence!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+        CrankNicolson(delta_t / 2.0, -1, dim_idx);
+      }
+
+      CrankNicolson(delta_t, -1, parameters->GetNumDims() - 1);
+
+      for (int dim_idx = parameters->GetNumDims() - 2; dim_idx >= 0; --dim_idx)
+      {
+        CrankNicolson(delta_t / 2.0, -1, dim_idx);
       }
 
       /* only calculate observables so often */
@@ -258,11 +397,55 @@ void Simulation::Propagate()
     wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
   }
 
-  VecDestroy(&psi_right);
   VecDestroy(&psi_old);
-  MatDestroy(&left);
-  MatDestroy(&right);
-  KSPDestroy(&ksp);
+}
+
+void Simulation::CrankNicolson(double delta_t, PetscInt time_idx,
+                               PetscInt dim_idx)
+{
+  static PetscInt old_time_idx = -2;
+  static PetscInt old_dim_idx  = -2;
+  if (time_idx != old_time_idx or dim_idx != old_dim_idx)
+  {
+    /* factor = i*(-i*dt/2) */
+    dcomp factor = dcomp(0.0, 1.0) * dcomp(delta_t / 2.0, 0.0);
+    if (time_idx < 0)
+    {
+      h = hamiltonian->GetTimeIndependent(dim_idx);
+    }
+    else
+    {
+      h = hamiltonian->GetTotalHamiltonian(time_idx, dim_idx);
+    }
+
+    MatCopy(*h, left, SAME_NONZERO_PATTERN);
+    MatScale(left, factor);
+    MatShift(left, 1.0);
+
+    MatCopy(*h, right, SAME_NONZERO_PATTERN);
+    MatScale(right, -1.0 * factor);
+    MatShift(right, 1.0);
+
+    KSPSetOperators(ksp, left, left);
+    KSPSetTolerances(ksp, 1.e-17, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
+    KSPSetFromOptions(ksp);
+
+    old_dim_idx  = dim_idx;
+    old_time_idx = time_idx;
+  }
+
+  /* Get psi_right side */
+  MatMult(right, *psi, psi_right);
+
+  /* Solve Ax=b */
+  KSPSolve(ksp, psi_right, *psi);
+
+  /* Check for Divergence*/
+  KSPGetConvergedReason(ksp, &reason);
+  if (reason < 0)
+  {
+    EndRun("Divergence!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+  }
 }
 
 void Simulation::PowerMethod(PetscInt num_states, PetscInt return_state_idx)
@@ -294,16 +477,9 @@ void Simulation::PowerMethod(PetscInt num_states, PetscInt return_state_idx)
   std::vector< Vec > states; /* vector of currently converged states */
   Vec psi_old;               /* keeps track of last psi */
   Vec psi_tmp;               /* Used to place copies in states */
-  Mat left;                  /* matrix on left side of Ax=b */
-
-  KSP ksp;                   /* solver for Ax=b */
-  KSPConvergedReason reason; /* reason for convergence check */
-
-  /* allocate mem for left */
-  MatDuplicate(*(hamiltonian->GetTimeIndependent()), MAT_DO_NOT_COPY_VALUES,
-               &left);
 
   /* Create the solver */
+  KSPDestroy(&ksp);
   KSPCreate(PETSC_COMM_WORLD, &ksp);
   KSPSetOptionsPrefix(ksp, "eigen_");
 
@@ -329,7 +505,7 @@ void Simulation::PowerMethod(PetscInt num_states, PetscInt return_state_idx)
     /* Put matrix in solver
      * do this outside the loop since left never changes */
     KSPSetOperators(ksp, left, left);
-    KSPSetTolerances(ksp, 1.e-15, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
+    KSPSetTolerances(ksp, 1.e-17, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
     /* Allow command line options */
     KSPSetFromOptions(ksp);
 
@@ -377,10 +553,7 @@ void Simulation::PowerMethod(PetscInt num_states, PetscInt return_state_idx)
         energy = wavefunction->GetEnergy(hamiltonian->GetTimeIndependent());
         if (world.rank() == 0)
           std::cout << "Energy: " << energy << "\n" << std::flush;
-        energy = wavefunction->Norm();
-        if (world.rank() == 0)
-          std::cout << "Norm is: " << energy << "\n" << std::flush;
-        // /* write a checkpoint */
+        /* write a checkpoint */
         // wavefunction->Checkpoint(*h5_file, *viewer_file, -1.0);
         if (world.rank() == 0)
           std::cout << "Time: "
@@ -413,12 +586,12 @@ void Simulation::PowerMethod(PetscInt num_states, PetscInt return_state_idx)
   /* set psi to the return state */
   VecCopy(states[return_state_idx], *psi);
   wavefunction->Normalize();
+  /* Handel roundoff in cylindrical */
+  wavefunction->Normalize();
 
   /* Clean up after ourselves */
   /* DO NOT delete psi_tmp since it is the same as states[states.size()-1] which
    * is being deleted already */
-  KSPDestroy(&ksp);
-  MatDestroy(&left);
   VecDestroy(&psi_old);
   for (PetscInt i = 0; i < states.size(); ++i)
   {
@@ -456,7 +629,7 @@ bool Simulation::CheckConvergance(Vec &psi_1, Vec &psi_2, double tol)
 }
 
 /* for details see:
- * https://ocw.mit.edu/courses/mathematics/18-335j-introduction-to-numerical-methods-fall-2010/lecture-notes/MIT18_335JF10_lec10a_hand.pdf
+ * https://ocw.mit.edu/courses/mathematics/18-335j-introduction-to-numerical-methods-fall-1710/lecture-notes/MIT18_335JF10_lec10a_hand.pdf
  * Assumes all states are orthornormal and applies modified gram-schmit to
  * psi
  */
@@ -478,4 +651,12 @@ void Simulation::CheckpointState(HDF5Wrapper &h_file, ViewWrapper &v_file,
   wavefunction->CheckpointPsi(v_file, write_idx);
   h_file.WriteObject(wavefunction->GetEnergy(hamiltonian->GetTimeIndependent()),
                      "/Energy", "Energy of the corresponding state", write_idx);
+}
+
+Simulation::~Simulation()
+{
+  MatDestroy(&left);
+  MatDestroy(&right);
+  VecDestroy(&psi_right);
+  KSPDestroy(&ksp);
 }

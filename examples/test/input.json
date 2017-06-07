@@ -2,9 +2,9 @@
   "delta_t": 0.005,
   "dimensions": [
     {"dim_size": 20.0,
-    "delta_x":   0.1},
+    "delta_x":   0.2},
     {"dim_size": 40.0,
-    "delta_x":   0.1}],
+    "delta_x":   0.2}],
   "coordinate_system": "Cylindrical",
   "num_electrons": 1,
   "restart": 0,

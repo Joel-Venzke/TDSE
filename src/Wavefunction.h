@@ -64,9 +64,9 @@ class Wavefunction : protected Utils
 
   /* tools */
   void Normalize();
-  void Normalize(Vec &data, double dx);
+  void Normalize(Vec &data);
   double Norm();
-  double Norm(Vec &data, double dx);
+  double Norm(Vec &data);
   double GetEnergy(Mat *h);
   double GetEnergy(Mat *h, Vec &p);
   double GetPosition(PetscInt elec_idx, PetscInt dim_idx);

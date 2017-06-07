@@ -62,12 +62,12 @@ void Hamiltonian::CreateHamlitonian()
                  num_dims * num_electrons * order + 1, NULL,
                  num_dims * num_electrons * order + 1, NULL, &hamiltonian);
   }
-  CalculateHamlitonian(-1);
+  CalculateHamlitonian(-1, -1);
   // MatView(hamiltonian, PETSC_VIEWER_STDOUT_WORLD);
   // EndRun("lsdkjf");
 }
 
-void Hamiltonian::CalculateHamlitonian(PetscInt time_idx)
+void Hamiltonian::CalculateHamlitonian(PetscInt time_idx, PetscInt d_idx)
 {
   dcomp val(0.0, 0.0);  /* diagonal terms */
   PetscInt j_val;       /* j index for matrix */
@@ -90,7 +90,7 @@ void Hamiltonian::CalculateHamlitonian(PetscInt time_idx)
   {
     /* Diagonal element */
     j_val = i_val;
-    val   = GetVal(i_val, j_val, time_dependent, time_idx, insert_val);
+    val   = GetVal(i_val, j_val, time_dependent, time_idx, insert_val, d_idx);
     if (insert_val)
     {
       MatSetValues(hamiltonian, 1, &i_val, 1, &j_val, &val, INSERT_VALUES);
@@ -117,7 +117,8 @@ void Hamiltonian::CalculateHamlitonian(PetscInt time_idx)
             if (i_val - offset >= 0 and i_val - offset < num_psi)
             {
               j_val = i_val - offset;
-              val = GetVal(i_val, j_val, time_dependent, time_idx, insert_val);
+              val   = GetVal(i_val, j_val, time_dependent, time_idx, insert_val,
+                           d_idx);
               if (insert_val)
               {
                 MatSetValues(hamiltonian, 1, &i_val, 1, &j_val, &val,
@@ -129,7 +130,8 @@ void Hamiltonian::CalculateHamlitonian(PetscInt time_idx)
             if (i_val + offset >= 0 and i_val + offset < num_psi)
             {
               j_val = i_val + offset;
-              val = GetVal(i_val, j_val, time_dependent, time_idx, insert_val);
+              val   = GetVal(i_val, j_val, time_dependent, time_idx, insert_val,
+                           d_idx);
               if (insert_val)
               {
                 MatSetValues(hamiltonian, 1, &i_val, 1, &j_val, &val,
@@ -149,7 +151,8 @@ void Hamiltonian::CalculateHamlitonian(PetscInt time_idx)
             if (i_val - offset >= 0 and i_val - offset < num_psi)
             {
               j_val = i_val - offset;
-              val = GetVal(i_val, j_val, time_dependent, time_idx, insert_val);
+              val   = GetVal(i_val, j_val, time_dependent, time_idx, insert_val,
+                           d_idx);
               if (insert_val)
               {
                 MatSetValues(hamiltonian, 1, &i_val, 1, &j_val, &val,
@@ -161,7 +164,8 @@ void Hamiltonian::CalculateHamlitonian(PetscInt time_idx)
             if (i_val + offset >= 0 and i_val + offset < num_psi)
             {
               j_val = i_val + offset;
-              val = GetVal(i_val, j_val, time_dependent, time_idx, insert_val);
+              val   = GetVal(i_val, j_val, time_dependent, time_idx, insert_val,
+                           d_idx);
               if (insert_val)
               {
                 MatSetValues(hamiltonian, 1, &i_val, 1, &j_val, &val,
@@ -201,9 +205,22 @@ void Hamiltonian::SetUpCoefficients()
     for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
     {
       x_vals[coef_idx] = delta_x[dim_idx] * coef_idx;
+      // x_vals[coef_idx] = coef_idx;
     }
     /* Get real coefficients for each dimension */
     FDWeights(x_vals, 2, real_coef[dim_idx]);
+    std::cout << "real_coef\n";
+    for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
+    {
+      std::cout << real_coef[dim_idx][2][coef_idx] << " ";
+    }
+    std::cout << "\n";
+    for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
+    {
+      std::cout << real_coef[dim_idx][1][coef_idx] << " ";
+    }
+    std::cout << "\n";
+    std::cout << "\n";
     for (int discontinuity_idx = 0; discontinuity_idx < order;
          ++discontinuity_idx)
     {
@@ -271,18 +288,15 @@ void Hamiltonian::SetUpCoefficients()
       /* Get real coefficients for 1st derivative (order+1 terms) */
       FDWeights(x_vals, 1, radial_bc_coef[discontinuity_idx],
                 discontinuity_idx);
-    }
-    for (int discontinuity_idx = 0; discontinuity_idx < order / 2 + 1;
-         ++discontinuity_idx)
-    {
+      std::cout << "radial_bc_coef\n";
       for (int coef_idx = 0; coef_idx < order + 2; ++coef_idx)
       {
-        std::cout << radial_bc_coef[discontinuity_idx][1][coef_idx] << " ";
+        std::cout << radial_bc_coef[discontinuity_idx][2][coef_idx] << " ";
       }
       std::cout << "\n";
       for (int coef_idx = 0; coef_idx < order + 2; ++coef_idx)
       {
-        std::cout << radial_bc_coef[discontinuity_idx][2][coef_idx] << " ";
+        std::cout << radial_bc_coef[discontinuity_idx][1][coef_idx] << " ";
       }
       std::cout << "\n";
       std::cout << "\n";
@@ -290,14 +304,23 @@ void Hamiltonian::SetUpCoefficients()
   }
 }
 
-Mat* Hamiltonian::GetTotalHamiltonian(PetscInt time_idx)
+Mat* Hamiltonian::GetTotalHamiltonian(PetscInt time_idx, PetscInt d_idx)
 {
-  CalculateHamlitonian(time_idx);
+  CalculateHamlitonian(time_idx, d_idx);
+  // std::cout << time_idx << "\n";
+  // if (time_idx == 5 and d_idx == 1)
+  // {
+  //   MatView(hamiltonian, PETSC_VIEWER_STDOUT_WORLD);
+  //   CalculateHamlitonian(-1);
+  //   MatView(hamiltonian, PETSC_VIEWER_STDOUT_WORLD);
+
+  //   EndRun("lsdkjf");
+  // }
   return &hamiltonian;
 }
 
 dcomp Hamiltonian::GetVal(PetscInt idx_i, PetscInt idx_j, bool time_dep,
-                          PetscInt time_idx, bool& insert_val)
+                          PetscInt time_idx, bool& insert_val, PetscInt d_idx)
 {
   /* Get arrays */
   std::vector< PetscInt > idx_array  = GetIndexArray(idx_i, idx_j);
@@ -309,7 +332,7 @@ dcomp Hamiltonian::GetVal(PetscInt idx_i, PetscInt idx_j, bool time_dep,
   /* Diagonal elements */
   if (idx_i == idx_j)
   {
-    return GetDiagonal(idx_array, time_dep, time_idx);
+    return GetDiagonal(idx_array, time_dep, time_idx, d_idx);
   }
 
   /* Make sure there is exactly 1 non zero index so we can take care of the
@@ -325,11 +348,11 @@ dcomp Hamiltonian::GetVal(PetscInt idx_i, PetscInt idx_j, bool time_dep,
   {
     if (sum <= order / 2)
     {
-      return GetOffDiagonal(idx_array, diff_array, time_dep, time_idx);
+      return GetOffDiagonal(idx_array, diff_array, time_dep, time_idx, d_idx);
     }
     else if (coordinate_system_idx == 1 and sum <= order + 1)
     {
-      return GetOffDiagonal(idx_array, diff_array, time_dep, time_idx);
+      return GetOffDiagonal(idx_array, diff_array, time_dep, time_idx, d_idx);
     }
   }
 
@@ -402,7 +425,8 @@ void Hamiltonian::FDWeights(std::vector< dcomp >& x_vals,
 
 dcomp Hamiltonian::GetOffDiagonal(std::vector< PetscInt >& idx_array,
                                   std::vector< PetscInt >& diff_array,
-                                  bool time_dep, PetscInt time_idx)
+                                  bool time_dep, PetscInt time_idx,
+                                  PetscInt d_idx)
 {
   dcomp off_diagonal(0.0, 0.0);
   PetscInt discontinuity_idx = 0;
@@ -410,125 +434,121 @@ dcomp Hamiltonian::GetOffDiagonal(std::vector< PetscInt >& idx_array,
   {
     for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
     {
-      if (diff_array[elec_idx * num_dims + dim_idx] != 0)
+      if (d_idx == -1 or d_idx == dim_idx)
       {
-        /* DONT TOUCH FIELD WITH ECS */
-        if (time_dep) /* Time dependent matrix */
+        if (diff_array[elec_idx * num_dims + dim_idx] != 0)
         {
           /* DONT TOUCH FIELD WITH ECS */
-          /* Polarization vector for linear polarization */
+          if (time_dep) /* Time dependent matrix */
+          {
+            /* DONT TOUCH FIELD WITH ECS */
+            /* Polarization vector for linear polarization */
+            if (abs(diff_array[elec_idx * num_dims + dim_idx]) < order)
+            {
+              off_diagonal -=
+                  real_coef[dim_idx][1]
+                           [order_middle_idx +
+                            diff_array[elec_idx * num_dims + dim_idx]] *
+                  dcomp(0.0, field[dim_idx][time_idx] / c);
+            }
+          }
 
-          off_diagonal -=
-              real_coef[dim_idx][1][order_middle_idx +
-                                    diff_array[elec_idx * num_dims + dim_idx]] *
-              dcomp(0.0, field[dim_idx][time_idx] / c);
-        }
+          /* Time independent portion*/
+          if (coordinate_system_idx == 1 and dim_idx == 0)
+          {
+            if (idx_array[2 * (elec_idx * num_dims + dim_idx)] <
+                order_middle_idx)
+            {
+              discontinuity_idx =
+                  idx_array[2 * (elec_idx * num_dims + dim_idx)];
+              // std::cout << discontinuity_idx << "\n";
 
-        /* Time independent portion*/
-        if (coordinate_system_idx == 1 and dim_idx == 0)
-        {
-          if (idx_array[2 * (elec_idx * num_dims + dim_idx)] < order_middle_idx)
-          {
-            discontinuity_idx = idx_array[2 * (elec_idx * num_dims + dim_idx)];
-
-            off_diagonal -=
-                radial_bc_coef[discontinuity_idx][2]
-                              [discontinuity_idx +
-                               diff_array[elec_idx * num_dims + dim_idx]] /
-                2.0;
-            off_diagonal -=
-                radial_bc_coef[discontinuity_idx][1]
-                              [discontinuity_idx +
-                               diff_array[elec_idx * num_dims + dim_idx]] /
-                (2.0 * x_value[dim_idx][discontinuity_idx]);
+              off_diagonal -=
+                  radial_bc_coef[discontinuity_idx][2]
+                                [discontinuity_idx +
+                                 diff_array[elec_idx * num_dims + dim_idx]] /
+                  2.0;
+              off_diagonal -=
+                  radial_bc_coef[discontinuity_idx][1]
+                                [discontinuity_idx +
+                                 diff_array[elec_idx * num_dims + dim_idx]] /
+                  (2.0 * x_value[dim_idx][discontinuity_idx]);
+            }
+            /* right ECS */
+            else if (idx_array[2 * (elec_idx * num_dims + dim_idx)] >=
+                     gobbler_idx[dim_idx][1])
+            {
+              discontinuity_idx =
+                  fmin(idx_array[2 * (elec_idx * num_dims + dim_idx)] -
+                           gobbler_idx[dim_idx][1],
+                       order - 1);
+              off_diagonal -=
+                  right_ecs_coef[dim_idx][discontinuity_idx][2]
+                                [order_middle_idx +
+                                 diff_array[elec_idx * num_dims + dim_idx]] /
+                  2.0;
+              off_diagonal -=
+                  right_ecs_coef[dim_idx][discontinuity_idx][1]
+                                [order_middle_idx +
+                                 diff_array[elec_idx * num_dims + dim_idx]] /
+                  (2.0 *
+                   x_value[dim_idx]
+                          [idx_array[2 * (elec_idx * num_dims + dim_idx)]]);
+            }
+            else /* Real part */
+            {
+              off_diagonal -=
+                  real_coef[dim_idx][2]
+                           [order_middle_idx +
+                            diff_array[elec_idx * num_dims + dim_idx]] /
+                  2.0;
+              off_diagonal -=
+                  real_coef[dim_idx][1]
+                           [order_middle_idx +
+                            diff_array[elec_idx * num_dims + dim_idx]] /
+                  (2.0 *
+                   x_value[dim_idx]
+                          [idx_array[2 * (elec_idx * num_dims + dim_idx)]]);
+            }
           }
-          /* right ECS */
-          else if (idx_array[2 * (elec_idx * num_dims + dim_idx)] >=
-                   gobbler_idx[dim_idx][1])
+          else if (abs(diff_array[elec_idx * num_dims + dim_idx]) < order)
           {
-            discontinuity_idx =
-                fmin(idx_array[2 * (elec_idx * num_dims + dim_idx)] -
-                         gobbler_idx[dim_idx][1],
-                     order - 1);
-            off_diagonal -=
-                right_ecs_coef[dim_idx][discontinuity_idx][2]
-                              [order_middle_idx +
-                               diff_array[elec_idx * num_dims + dim_idx]] /
-                2.0;
-            off_diagonal -=
-                right_ecs_coef[dim_idx][discontinuity_idx][1]
-                              [order_middle_idx +
-                               diff_array[elec_idx * num_dims + dim_idx]] /
-                (2.0 * x_value[dim_idx]
-                              [idx_array[2 * (elec_idx * num_dims + dim_idx)]]);
-          }
-          else /* Real part */
-          {
-            off_diagonal -=
-                real_coef[dim_idx][2]
-                         [order_middle_idx +
-                          diff_array[elec_idx * num_dims + dim_idx]] /
-                2.0;
-            off_diagonal -=
-                real_coef[dim_idx][1]
-                         [order_middle_idx +
-                          diff_array[elec_idx * num_dims + dim_idx]] /
-                (2.0 * x_value[dim_idx]
-                              [idx_array[2 * (elec_idx * num_dims + dim_idx)]]);
-
-            // std::cout << order_middle_idx << " "
-            //           << diff_array[elec_idx * num_dims + dim_idx] << " "
-            //           << real_coef[order_middle_idx][1]
-            //                       [order_middle_idx +
-            //                        diff_array[elec_idx * num_dims + dim_idx]]
-            //           << " "
-            //           << real_coef[order_middle_idx][2]
-            //                       [order_middle_idx +
-            //                        diff_array[elec_idx * num_dims + dim_idx]]
-            //           << " "
-            //           << x_value[dim_idx]
-            //                     [idx_array[2 * (elec_idx * num_dims +
-            //                     dim_idx)]]
-            //           << "\n";
-          }
-        }
-        else if (abs(diff_array[elec_idx * num_dims + dim_idx]) < order)
-        {
-          /* left ECS */
-          if (idx_array[2 * (elec_idx * num_dims + dim_idx)] <=
-              gobbler_idx[dim_idx][0])
-          {
-            discontinuity_idx =
-                fmin(gobbler_idx[dim_idx][0] -
-                         idx_array[2 * (elec_idx * num_dims + dim_idx)],
-                     order - 1);
-            off_diagonal -=
-                left_ecs_coef[dim_idx][discontinuity_idx][2]
-                             [order_middle_idx +
-                              diff_array[elec_idx * num_dims + dim_idx]] /
-                2.0;
-          }
-          /* right ECS */
-          else if (idx_array[2 * (elec_idx * num_dims + dim_idx)] >=
-                   gobbler_idx[dim_idx][1])
-          {
-            discontinuity_idx =
-                fmin(idx_array[2 * (elec_idx * num_dims + dim_idx)] -
-                         gobbler_idx[dim_idx][1],
-                     order - 1);
-            off_diagonal -=
-                right_ecs_coef[dim_idx][discontinuity_idx][2]
-                              [order_middle_idx +
-                               diff_array[elec_idx * num_dims + dim_idx]] /
-                2.0;
-          }
-          else /* real part */
-          {
-            off_diagonal -=
-                real_coef[dim_idx][2]
-                         [order_middle_idx +
-                          diff_array[elec_idx * num_dims + dim_idx]] /
-                2.0;
+            /* left ECS */
+            if (idx_array[2 * (elec_idx * num_dims + dim_idx)] <=
+                gobbler_idx[dim_idx][0])
+            {
+              discontinuity_idx =
+                  fmin(gobbler_idx[dim_idx][0] -
+                           idx_array[2 * (elec_idx * num_dims + dim_idx)],
+                       order - 1);
+              off_diagonal -=
+                  left_ecs_coef[dim_idx][discontinuity_idx][2]
+                               [order_middle_idx +
+                                diff_array[elec_idx * num_dims + dim_idx]] /
+                  2.0;
+            }
+            /* right ECS */
+            else if (idx_array[2 * (elec_idx * num_dims + dim_idx)] >=
+                     gobbler_idx[dim_idx][1])
+            {
+              discontinuity_idx =
+                  fmin(idx_array[2 * (elec_idx * num_dims + dim_idx)] -
+                           gobbler_idx[dim_idx][1],
+                       order - 1);
+              off_diagonal -=
+                  right_ecs_coef[dim_idx][discontinuity_idx][2]
+                                [order_middle_idx +
+                                 diff_array[elec_idx * num_dims + dim_idx]] /
+                  2.0;
+            }
+            else /* real part */
+            {
+              off_diagonal -=
+                  real_coef[dim_idx][2]
+                           [order_middle_idx +
+                            diff_array[elec_idx * num_dims + dim_idx]] /
+                  2.0;
+            }
           }
         }
       }
@@ -538,21 +558,31 @@ dcomp Hamiltonian::GetOffDiagonal(std::vector< PetscInt >& idx_array,
 }
 
 dcomp Hamiltonian::GetDiagonal(std::vector< PetscInt >& idx_array,
-                               bool time_dep, PetscInt time_idx)
+                               bool time_dep, PetscInt time_idx, PetscInt d_idx)
 {
   dcomp diagonal(0.0, 0.0);
   /* kinetic term */
-  diagonal += GetKineticTerm(idx_array);
-  /* nuclei term */
-  diagonal += GetNucleiTerm(idx_array);
-  /* e-e correlation */
-  diagonal += GetElectronElectronTerm(idx_array);
-  // std::cout << GetKineticTerm(idx_array) << " " << GetNucleiTerm(idx_array)
-  //           << " " << GetElectronElectronTerm(idx_array) << "\n";
+  diagonal += GetKineticTerm(idx_array, d_idx);
+  if (d_idx == -1)
+  {
+    /* nuclei term */
+    diagonal += GetNucleiTerm(idx_array);
+    /* e-e correlation */
+    diagonal += GetElectronElectronTerm(idx_array);
+  }
+  else
+  {
+    double num_d = (double)num_dims;
+    /* nuclei term */
+    diagonal += GetNucleiTerm(idx_array) / num_d;
+    /* e-e correlation */
+    diagonal += GetElectronElectronTerm(idx_array) / num_d;
+  }
   return diagonal;
 }
 
-dcomp Hamiltonian::GetKineticTerm(std::vector< PetscInt >& idx_array)
+dcomp Hamiltonian::GetKineticTerm(std::vector< PetscInt >& idx_array,
+                                  PetscInt d_idx)
 {
   dcomp kinetic(0.0, 0.0);
   PetscInt discontinuity_idx = 0;
@@ -561,81 +591,76 @@ dcomp Hamiltonian::GetKineticTerm(std::vector< PetscInt >& idx_array)
   {
     for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
     {
-      /* radial component is different */
-      if (coordinate_system_idx == 1 and dim_idx == 0)
+      if (d_idx == -1 or d_idx == dim_idx)
       {
-        if (idx_array[2 * (elec_idx * num_dims + dim_idx)] < order_middle_idx)
+        /* radial component is different */
+        if (coordinate_system_idx == 1 and dim_idx == 0)
         {
-          discontinuity_idx = idx_array[2 * (elec_idx * num_dims + dim_idx)];
+          if (idx_array[2 * (elec_idx * num_dims + dim_idx)] < order_middle_idx)
+          {
+            discontinuity_idx = idx_array[2 * (elec_idx * num_dims + dim_idx)];
 
-          kinetic -=
-              radial_bc_coef[discontinuity_idx][2][discontinuity_idx] / 2.0;
-          kinetic -= radial_bc_coef[discontinuity_idx][1][discontinuity_idx] /
-                     (2.0 * x_value[dim_idx][discontinuity_idx]);
-          // std::cout << discontinuity_idx << " "
-          //           << " "
-          //           <<
-          // radial_bc_coef[discontinuity_idx][1][discontinuity_idx]
-          //           << " "
-          //           <<
-          // radial_bc_coef[discontinuity_idx][2][discontinuity_idx]
-          //           << " " << x_value[dim_idx][discontinuity_idx] << " "
-          //           << x_value[dim_idx + 1][discontinuity_idx] << "\n";
+            kinetic -=
+                radial_bc_coef[discontinuity_idx][2][discontinuity_idx] / 2.0;
+            kinetic -= radial_bc_coef[discontinuity_idx][1][discontinuity_idx] /
+                       (2.0 * x_value[dim_idx][discontinuity_idx]);
+          }
+          /* right ECS */
+          else if (idx_array[2 * (elec_idx * num_dims + dim_idx)] >=
+                   gobbler_idx[dim_idx][1])
+          {
+            discontinuity_idx =
+                fmin(idx_array[2 * (elec_idx * num_dims + dim_idx)] -
+                         gobbler_idx[dim_idx][1],
+                     order - 1);
+            kinetic -= right_ecs_coef[dim_idx][discontinuity_idx][2]
+                                     [order_middle_idx] /
+                       2.0;
+            kinetic -=
+                right_ecs_coef[dim_idx][discontinuity_idx][1]
+                              [order_middle_idx] /
+                (2.0 * x_value[dim_idx]
+                              [idx_array[2 * (elec_idx * num_dims + dim_idx)]]);
+          }
+          else /* Real part */
+          {
+            kinetic -= real_coef[dim_idx][2][order_middle_idx] / 2.0;
+            kinetic -=
+                real_coef[dim_idx][1][order_middle_idx] /
+                (2.0 * x_value[dim_idx]
+                              [idx_array[2 * (elec_idx * num_dims + dim_idx)]]);
+          }
         }
-        /* right ECS */
-        else if (idx_array[2 * (elec_idx * num_dims + dim_idx)] >=
-                 gobbler_idx[dim_idx][1])
+        else
         {
-          discontinuity_idx =
-              fmin(idx_array[2 * (elec_idx * num_dims + dim_idx)] -
-                       gobbler_idx[dim_idx][1],
-                   order - 1);
-          kinetic -=
-              right_ecs_coef[dim_idx][discontinuity_idx][2][order_middle_idx] /
-              2.0;
-          kinetic -=
-              right_ecs_coef[dim_idx][discontinuity_idx][1][order_middle_idx] /
-              (2.0 * x_value[dim_idx]
-                            [idx_array[2 * (elec_idx * num_dims + dim_idx)]]);
-        }
-        else /* Real part */
-        {
-          kinetic -= real_coef[dim_idx][2][order_middle_idx] / 2.0;
-          kinetic -=
-              real_coef[dim_idx][1][order_middle_idx] /
-              (2.0 * x_value[dim_idx]
-                            [idx_array[2 * (elec_idx * num_dims + dim_idx)]]);
-        }
-      }
-      else
-      {
-        /* left ECS */
-        if (idx_array[2 * (elec_idx * num_dims + dim_idx)] <=
-            gobbler_idx[dim_idx][0])
-        {
-          discontinuity_idx =
-              fmin(gobbler_idx[dim_idx][0] -
-                       idx_array[2 * (elec_idx * num_dims + dim_idx)],
-                   order - 1);
-          kinetic -=
-              left_ecs_coef[dim_idx][discontinuity_idx][2][order_middle_idx] /
-              2.0;
-        }
-        /* right ECS */
-        else if (idx_array[2 * (elec_idx * num_dims + dim_idx)] >=
-                 gobbler_idx[dim_idx][1])
-        {
-          discontinuity_idx =
-              fmin(idx_array[2 * (elec_idx * num_dims + dim_idx)] -
-                       gobbler_idx[dim_idx][1],
-                   order - 1);
-          kinetic -=
-              right_ecs_coef[dim_idx][discontinuity_idx][2][order_middle_idx] /
-              2.0;
-        }
-        else /* Real part */
-        {
-          kinetic -= real_coef[dim_idx][2][order_middle_idx] / 2.0;
+          /* left ECS */
+          if (idx_array[2 * (elec_idx * num_dims + dim_idx)] <=
+              gobbler_idx[dim_idx][0])
+          {
+            discontinuity_idx =
+                fmin(gobbler_idx[dim_idx][0] -
+                         idx_array[2 * (elec_idx * num_dims + dim_idx)],
+                     order - 1);
+            kinetic -=
+                left_ecs_coef[dim_idx][discontinuity_idx][2][order_middle_idx] /
+                2.0;
+          }
+          /* right ECS */
+          else if (idx_array[2 * (elec_idx * num_dims + dim_idx)] >=
+                   gobbler_idx[dim_idx][1])
+          {
+            discontinuity_idx =
+                fmin(idx_array[2 * (elec_idx * num_dims + dim_idx)] -
+                         gobbler_idx[dim_idx][1],
+                     order - 1);
+            kinetic -= right_ecs_coef[dim_idx][discontinuity_idx][2]
+                                     [order_middle_idx] /
+                       2.0;
+          }
+          else /* Real part */
+          {
+            kinetic -= real_coef[dim_idx][2][order_middle_idx] / 2.0;
+          }
         }
       }
     }
@@ -792,9 +817,9 @@ std::vector< PetscInt > Hamiltonian::GetDiffArray(
   return diff_array;
 }
 
-Mat* Hamiltonian::GetTimeIndependent()
+Mat* Hamiltonian::GetTimeIndependent(PetscInt d_idx)
 {
-  CalculateHamlitonian(-1);
+  CalculateHamlitonian(-1, d_idx);
   return &hamiltonian;
 }
 

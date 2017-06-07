@@ -518,20 +518,20 @@ std::vector< PetscInt > Wavefunction::GetIntArray(PetscInt idx)
 }
 
 /* normalize psi_1, psi_2, and psi */
-void Wavefunction::Normalize() { Normalize(psi, delta_x[0]); }
+void Wavefunction::Normalize() { Normalize(psi); }
 
 /* normalizes the array provided */
-void Wavefunction::Normalize(Vec& data, double dv)
+void Wavefunction::Normalize(Vec& data)
 {
-  PetscReal total = Norm(data, dv);
+  PetscReal total = Norm(data);
   VecScale(data, 1.0 / total);
 }
 
 /* returns norm of psi */
-double Wavefunction::Norm() { return Norm(psi, delta_x[0]); }
+double Wavefunction::Norm() { return Norm(psi); }
 
 /* returns norm of array using trapezoidal rule */
-double Wavefunction::Norm(Vec& data, double dv)
+double Wavefunction::Norm(Vec& data)
 {
   dcomp dot_product;
   double total = 0;
@@ -557,13 +557,13 @@ double Wavefunction::GetEnergy(Mat* h, Vec& p)
   if (coordinate_system_idx == 1)
   {
     MatMult(*h, p, psi_tmp_cyl);
-    CreateObservable(2, 0, 0); /* pho */
+    CreateObservable(2, 0, 0);
     VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi_tmp_cyl);
     VecDot(p, psi_tmp_cyl, &energy);
   }
   else
   {
-    MatMult(*h, psi_tmp, p);
+    MatMult(*h, p, psi_tmp);
     VecDot(p, psi_tmp, &energy);
   }
   return energy.real();
@@ -645,4 +645,5 @@ Wavefunction::~Wavefunction()
   CleanUp();
   VecDestroy(&psi);
   VecDestroy(&psi_tmp);
+  VecDestroy(&psi_tmp_cyl);
 }

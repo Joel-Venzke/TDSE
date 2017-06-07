@@ -13,6 +13,8 @@
 int main(int argc, char** argv)
 {
   PETSCWrapper p_wrap(argc, argv);
+  std::cout << std::setprecision(17);
+
   p_wrap.Print(
       "\n******************* Setting up Simulation *******************\n\n");
 
@@ -52,7 +54,8 @@ int main(int argc, char** argv)
   {
     p_wrap.Print(
         "\n************************ Propagation ************************\n\n");
-    s.Propagate();
+    // s.Propagate();
+    s.SplitOpperator();
   }
   p_wrap.PopStage(); /* Propagation */
 
