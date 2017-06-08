@@ -62,7 +62,7 @@ void Hamiltonian::CreateHamlitonian()
                  num_dims * num_electrons * order + 1, NULL,
                  num_dims * num_electrons * order + 1, NULL, &hamiltonian);
   }
-  CalculateHamlitonian(-1);
+  CalculateHamlitonian(-1, -1);
   // MatView(hamiltonian, PETSC_VIEWER_STDOUT_WORLD);
   // EndRun("lsdkjf");
 }
@@ -569,7 +569,7 @@ dcomp Hamiltonian::GetDiagonal(std::vector< PetscInt >& idx_array,
 {
   dcomp diagonal(0.0, 0.0);
   /* kinetic term */
-  diagonal += GetKineticTerm(idx_array);
+  diagonal += GetKineticTerm(idx_array, only_dim_idx);
   /* nuclei term */
   if (only_dim_idx == -1)
   {
@@ -831,9 +831,9 @@ std::vector< PetscInt > Hamiltonian::GetDiffArray(
   return diff_array;
 }
 
-Mat* Hamiltonian::GetTimeIndependent()
+Mat* Hamiltonian::GetTimeIndependent(PetscInt only_dim_idx)
 {
-  CalculateHamlitonian(-1);
+  CalculateHamlitonian(-1, -1);
   return &hamiltonian;
 }
 
