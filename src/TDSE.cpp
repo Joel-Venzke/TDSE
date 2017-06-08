@@ -52,7 +52,8 @@ int main(int argc, char** argv)
   {
     p_wrap.Print(
         "\n************************ Propagation ************************\n\n");
-    s.Propagate();
+    // s.Propagate();
+    s.SplitOpperator();
   }
   p_wrap.PopStage(); /* Propagation */
 
