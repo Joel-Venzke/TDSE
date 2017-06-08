@@ -335,7 +335,7 @@ void Simulation::SplitOpperator()
                     << "\nNorm: " << norm << "\n"
                     << std::flush;
 
-        norm -= wavefunction->Norm(psi_old);
+        norm -= wavefunction->Norm(psi_old, 0.0);
         norm = std::abs(norm);
         if (world.rank() == 0) std::cout << "Norm error: " << norm << "\n";
         if (norm < 1e-14)
