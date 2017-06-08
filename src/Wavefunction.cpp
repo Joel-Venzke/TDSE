@@ -538,8 +538,8 @@ double Wavefunction::Norm(Vec& data)
   if (coordinate_system_idx == 1)
   {
     CreateObservable(2, 0, 0);
-    VecPointwiseMult(psi_tmp, psi_tmp, psi);
-    VecDot(psi, psi_tmp, &dot_product);
+    VecPointwiseMult(psi_tmp, psi_tmp, data);
+    VecDot(data, psi_tmp, &dot_product);
     total = sqrt(dot_product.real());
   }
   else

@@ -99,11 +99,11 @@ elif len(shape) == 2:
                     extent=[y[0],y[-1],x[0],x[-1]],
                     norm=LogNorm(vmin=1e-20, vmax=max_val))
             else:
-                # plt.imshow(np.absolute(psi), cmap='viridis', origin='lower',
-                #            extent=[y[0],y[-1],x[0],x[-1]],
-                #            norm=LogNorm(vmin=1e-10, vmax=max_val))
                 plt.imshow(np.absolute(psi), cmap='viridis', origin='lower',
-                           extent=[y[0],y[-1],x[0],x[-1]],vmin=0, vmax=1e-3)
+                           extent=[y[0],y[-1],x[0],x[-1]],
+                           norm=LogNorm(vmin=1e-10, vmax=max_val))
+                # plt.imshow(np.absolute(psi), cmap='viridis', origin='lower',
+                #            extent=[y[0],y[-1],x[0],x[-1]],vmin=0, vmax=1e-3)
             plt.text(time_x, time_y, "Time: "+str(psi_time[i])+" a.u.",
                         color='white')
             # color bar doesn't change during the video so only set it here

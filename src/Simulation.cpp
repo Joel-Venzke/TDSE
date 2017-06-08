@@ -427,7 +427,7 @@ void Simulation::CrankNicolson(double delta_t, PetscInt time_idx,
     MatShift(right, 1.0);
 
     KSPSetOperators(ksp, left, left);
-    KSPSetTolerances(ksp, 1.e-17, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
+    KSPSetTolerances(ksp, 1.e-15, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
     KSPSetFromOptions(ksp);
 
     old_dim_idx  = dim_idx;
@@ -505,7 +505,7 @@ void Simulation::PowerMethod(PetscInt num_states, PetscInt return_state_idx)
     /* Put matrix in solver
      * do this outside the loop since left never changes */
     KSPSetOperators(ksp, left, left);
-    KSPSetTolerances(ksp, 1.e-17, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
+    KSPSetTolerances(ksp, 1.e-15, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
     /* Allow command line options */
     KSPSetFromOptions(ksp);
 

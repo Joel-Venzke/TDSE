@@ -205,7 +205,6 @@ void Hamiltonian::SetUpCoefficients()
     for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
     {
       x_vals[coef_idx] = delta_x[dim_idx] * coef_idx;
-      // x_vals[coef_idx] = coef_idx;
     }
     /* Get real coefficients for each dimension */
     FDWeights(x_vals, 2, real_coef[dim_idx]);

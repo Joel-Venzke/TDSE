@@ -1,17 +1,17 @@
 {
   "delta_t": 0.005,
   "dimensions": [
-    {"dim_size": 60.0,
+    {"dim_size": 20.0,
     "delta_x":   0.2},
-    {"dim_size": 80.0,
+    {"dim_size": 40.0,
     "delta_x":   0.2}],
-  "coordinate_system": "Cartesian",
+  "coordinate_system": "Cylindrical",
   "num_electrons": 1,
   "restart": 0,
   "target": {
     "name":  "He-SAE",
     "nuclei" : [
-      { "z": 1.0,
+      { "z": 0.0,
       "location": [0.0,0.0,0.0],
       "SAE": {
         "z_c": 1.0,
@@ -20,7 +20,7 @@
         "a" : [0.66294407],
         "b" : [4.073942]}
       }]},
-  "alpha":   0.78,
+  "alpha":   0.0,
   "gobbler": 0.9,
   "order":   2,
   "sigma":   2.0,
@@ -31,7 +31,7 @@
   "propagate": 1,
   "free_propagate": 20000,
   "states": [
-    {"energy": -0.5}],
+    {"energy": -1.0}],
   "tol":        1e-10,
   "laser": {
     "pulses": [
@@ -46,6 +46,6 @@
       "cycles_delay":   0.0,
       "cep":            0.0,
       "energy":         1.5,
-      "field_max":      12.0}]
+      "field_max":      0.0}]
   }
 }
