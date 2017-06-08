@@ -1,6 +1,6 @@
 import numpy as np
 import h5py
-target_name = "H"
+target_name = "He-SAE"
 # read data
 target = h5py.File(target_name+".h5","r")
 f = h5py.File("TDSE.h5","r")
@@ -64,9 +64,15 @@ elif len(shape) == 2:
         fig.savefig("figs/"+target_name+"_bwr_state_"+str(i).zfill(3)+".jpg")
 
         plt.clf()
-        plt.imshow(np.abs(psi.real), cmap='viridis', origin='lower',
-            extent=[y[0],y[-1],x[0],x[-1]],
-            norm=LogNorm(vmin=1e-15, vmax=np.abs(psi.real).max()))
+        if f["Parameters"]["coordinate_system_idx"][0]==1:
+                plt.imshow(np.multiply(np.conjugate(psi),np.multiply(x,psi.transpose()).transpose()).real,
+                    cmap='viridis', origin='lower',
+                    extent=[y[0],y[-1],x[0],x[-1]],
+                    norm=LogNorm(vmin=1e-10, vmax=max_val))
+        else:
+            plt.imshow(np.abs(psi), cmap='viridis', origin='lower',
+                extent=[y[0],y[-1],x[0],x[-1]],
+                norm=LogNorm(vmin=1e-15, vmax=np.abs(psi.real).max()))
         # plt.pcolor(x, x, abs(psi.real),
         #     norm=LogNorm(vmin=1e-16,
         #         vmax=abs(psi.real).max()), cmap='viridis')

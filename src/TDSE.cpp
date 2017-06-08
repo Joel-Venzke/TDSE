@@ -13,6 +13,8 @@
 int main(int argc, char** argv)
 {
   PETSCWrapper p_wrap(argc, argv);
+  std::cout << std::setprecision(17);
+
   p_wrap.Print(
       "\n******************* Setting up Simulation *******************\n\n");
 
@@ -29,27 +31,31 @@ int main(int argc, char** argv)
                parameters);
   p_wrap.PopStage(); /* Set up */
 
-  p_wrap.Print(
-      "\n****************** Eigen State Calculation ******************\n\n");
-
-  p_wrap.PushStage("Eigen State");
-  /* get ground states */
-  switch (parameters.GetStateSolverIdx())
+  if (parameters.GetRestart() != 1)
   {
-    case 0: /* File */
-      break;
-    case 2: /* Power */
-      s.PowerMethod(parameters.GetNumStates());
-      break;
+    p_wrap.Print(
+        "\n****************** Eigen State Calculation ******************\n\n");
+
+    p_wrap.PushStage("Eigen State");
+    /* get ground states */
+    switch (parameters.GetStateSolverIdx())
+    {
+      case 0: /* File */
+        break;
+      case 2: /* Power */
+        s.PowerMethod(parameters.GetNumStates());
+        break;
+    }
+    p_wrap.PopStage(); /* Eigen State */
   }
-  p_wrap.PopStage(); /* Eigen State */
 
   p_wrap.PushStage("Propagation");
   if (parameters.GetPropagate() == 1)
   {
     p_wrap.Print(
         "\n************************ Propagation ************************\n\n");
-    s.Propagate();
+    // s.Propagate();
+    s.SplitOpperator();
   }
   p_wrap.PopStage(); /* Propagation */
 

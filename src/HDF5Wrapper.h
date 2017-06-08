@@ -1,25 +1,28 @@
 #pragma once
 #include <petsc.h>
 #include <complex>
+#include <memory>
 #include <vector>
 #include "H5Cpp.h"
 #include "Parameters.h"
 #include "Utils.h"
+#include "hdf5.h"
 
 class HDF5Wrapper : protected Utils
 {
  private:
-  H5::H5File *data_file;
+  mpi::communicator world;
+  std::shared_ptr<H5::H5File> data_file;
   std::string file_name;
   bool file_open;
   bool header;
-  H5::CompType *complex_data_type;
 
-  hsize_t *GetHsizeT(int size, int *dims);
-  void DefineComplex();
+  std::unique_ptr<hsize_t[]> GetHsizeT(int &size, int *dims);
+  std::unique_ptr<hsize_t[]> GetHsizeT(int &size);
+  void WriteAttribute(H5std_string &var_path, H5std_string &attribute);
 
  public:
-  /* Constructor */
+  /* ructor */
   HDF5Wrapper(Parameters &p);
   HDF5Wrapper(std::string f_name, Parameters &p);
   HDF5Wrapper(std::string f_name);
@@ -30,54 +33,46 @@ class HDF5Wrapper : protected Utils
   void Open();
   void Close();
 
+  template <typename T>
+  H5::PredType getter(T &data);
+
   void SetHeader(bool h);
 
   void CreateGroup(H5std_string group_path);
 
-  // write single entry
-  void WriteObject(int data, H5std_string var_path);
-  void WriteObject(int data, H5std_string var_path, H5std_string attribute);
+  /* begin template*/
+  template <typename T>
+  void WriteObject(T data, H5std_string var_path);
+  template <typename T>
+  void WriteObject(T data, H5std_string var_path, H5std_string attribute);
 
-  void WriteObject(double data, H5std_string var_path);
-  void WriteObject(double data, H5std_string var_path, H5std_string attribute);
-
-  void WriteObject(int *data, int size, H5std_string var_path);
-  void WriteObject(int *data, int size, H5std_string var_path,
+  template <typename T>
+  void WriteObject(T data, int size, H5std_string var_path);
+  template <typename T>
+  void WriteObject(T data, int size, H5std_string var_path,
                    H5std_string attribute);
 
-  void WriteObject(int *data, int size, int *dims, H5std_string var_path);
-  void WriteObject(int *data, int size, int *dims, H5std_string var_path,
+  template <typename T>
+  void WriteObject(T data, int size, int *dims, H5std_string var_path);
+  template <typename T>
+  void WriteObject(T data, int size, int *dims, H5std_string var_path,
                    H5std_string attribute);
 
-  void WriteObject(double *data, int size, H5std_string var_path);
-  void WriteObject(double *data, int size, H5std_string var_path,
-                   H5std_string attribute);
-
-  void WriteObject(double *data, int size, int *dims, H5std_string var_path);
-  void WriteObject(double *data, int size, int *dims, H5std_string var_path,
-                   H5std_string attribute);
-
-  void WriteObject(dcomp *data, int size, H5std_string var_path);
-  void WriteObject(dcomp *data, int size, H5std_string var_path,
-                   H5std_string attribute);
-
-  void WriteObject(dcomp *data, int size, int *dims, H5std_string var_path);
-  void WriteObject(dcomp *data, int size, int *dims, H5std_string var_path,
-                   H5std_string attribute);
-
-  /* time series writes */
-  void WriteObject(dcomp *data, int size, H5std_string var_path, int write_idx);
-  void WriteObject(dcomp *data, int size, H5std_string var_path,
-                   H5std_string attribute, int write_idx);
-
-  void WriteObject(double data, H5std_string var_path, int write_idx);
-  void WriteObject(double data, H5std_string var_path, H5std_string attribute,
+  template <typename T>
+  void WriteObject(T data, H5std_string var_path, int write_idx);
+  template <typename T>
+  void WriteObject(T data, H5std_string var_path, H5std_string attribute,
                    int write_idx);
+
+  PetscInt GetTime(H5std_string var_path);
 
   /* write for parameters */
   void WriteHeader(Parameters &p);
 
   /* reads restart and validates file */
   void ReadRestart(Parameters &p);
-  void ReadRestart(Parameters &p, std::string f_name);
+
+  /* kill run */
+  void EndRun(std::string str);
+  void EndRun(std::string str, int exit_val);
 };

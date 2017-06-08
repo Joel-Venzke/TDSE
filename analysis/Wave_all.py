@@ -18,12 +18,13 @@ time_y    = np.max(x)*0.9
 
 max_val = 0
 # calculate color bounds
-for i,psi in enumerate(psi_value[:3]):
-    if i>0: # the zeroth wave function is the guess and not relevant
+for i,psi in enumerate(psi_value):
+    if i>0 and i<2: # the zeroth wave function is the guess and not relevant
         psi = psi[:,0] + 1j*psi[:,1]
         max_val_tmp   = np.max(np.absolute(psi))
         if (max_val_tmp > max_val):
             max_val = max_val_tmp
+max_val = 1
 
 
 if len(shape) == 3: 
@@ -38,43 +39,43 @@ if len(shape) == 3:
             psi.shape = tuple(shape)
             psi = psi[lower_idx[0]:upper_idx[0],lower_idx[1]:upper_idx[1],lower_idx[2]:upper_idx[2]]
             psi = np.log10(np.abs(psi))
-            mlab.pipeline.iso_surface(mlab.pipeline.scalar_field(psi),
-                vmin=-10,
-                vmax=0.0,
-                opacity=0.3,
-                colormap="viridis",
-                contours=11)
-            mlab.colorbar(nb_labels=11,orientation="vertical")
-            mlab.orientation_axes()
-            mlab.view(azimuth=0.0,distance=120.0,elevation=90.0)
-            mlab.savefig("figs/Wave_iso_x_"+str(i).zfill(8)+".png")
-            mlab.view(azimuth=90.0,distance=120.0,elevation=90.0)
-            mlab.savefig("figs/Wave_iso_y_"+str(i).zfill(8)+".png")
-            mlab.view(azimuth=0.0,distance=120.0,elevation=0.0)
-            mlab.savefig("figs/Wave_iso_z_"+str(i).zfill(8)+".png")
-            mlab.view(azimuth=45.0,distance=120.0,elevation=45.0)
-            mlab.savefig("figs/Wave_iso_"+str(i).zfill(8)+".png")
+            # mlab.pipeline.iso_surface(mlab.pipeline.scalar_field(psi),
+            #     vmin=-10,
+            #     vmax=0.0,
+            #     opacity=0.3,
+            #     colormap="viridis",
+            #     contours=11)
+            # mlab.colorbar(nb_labels=11,orientation="vertical")
+            # mlab.orientation_axes()
+            # mlab.view(azimuth=0.0,distance='auto',elevation=90.0)
+            # mlab.savefig("figs/Wave_iso_x_"+str(i).zfill(8)+".png")
+            # mlab.view(azimuth=90.0,distance='auto',elevation=90.0)
+            # mlab.savefig("figs/Wave_iso_y_"+str(i).zfill(8)+".png")
+            # mlab.view(azimuth=0.0,distance='auto',elevation=0.0)
+            # mlab.savefig("figs/Wave_iso_z_"+str(i).zfill(8)+".png")
+            # mlab.view(azimuth=45.0,distance='auto',elevation=45.0)
+            # mlab.savefig("figs/Wave_iso_"+str(i).zfill(8)+".png")
 
             mlab.clf()
             mlab.pipeline.iso_surface(mlab.pipeline.scalar_field(psi),
-                vmin=-3.0,
+                vmin=-10.0,
                 vmax=0.0,
                 opacity=0.3,
                 colormap="viridis",
                 contours=[1.0])
             mlab.pipeline.volume(mlab.pipeline.scalar_field(psi), 
-               vmin=-3.0,
+               vmin=-10.0,
                vmax=0.0)
-            mlab.colorbar(nb_labels=4,orientation="vertical")
+            mlab.colorbar(nb_labels=10,orientation="vertical")
             mlab.orientation_axes()
-            mlab.view(azimuth=0.0,distance=120.0,elevation=90.0)
-            mlab.savefig("figs/Wave_density_cross_x_"+str(i).zfill(8)+".png")
-            mlab.view(azimuth=90.0,distance=120.0,elevation=90.0)
-            mlab.savefig("figs/Wave_density_cross_y_"+str(i).zfill(8)+".png")
-            mlab.view(azimuth=0.0,distance=120.0,elevation=0.0)
-            mlab.savefig("figs/Wave_density_cross_z_"+str(i).zfill(8)+".png")
-            mlab.view(azimuth=45.0,distance=120.0,elevation=45.0)
-            mlab.savefig("figs/Wave_density_cross_"+str(i).zfill(8)+".png")
+            mlab.view(azimuth=0.0,distance='auto',elevation=90.0)
+            mlab.savefig("figs/Wave_density_10_cross_x_"+str(i).zfill(8)+".png")
+            mlab.view(azimuth=90.0,distance='auto',elevation=90.0)
+            mlab.savefig("figs/Wave_density_10_cross_y_"+str(i).zfill(8)+".png")
+            mlab.view(azimuth=0.0,distance='auto',elevation=0.0)
+            mlab.savefig("figs/Wave_density_10_cross_z_"+str(i).zfill(8)+".png")
+            mlab.view(azimuth=45.0,distance='auto',elevation=45.0)
+            mlab.savefig("figs/Wave_density_10_cross_"+str(i).zfill(8)+".png")
             mlab.clf()
 
 elif len(shape) == 2:
@@ -82,9 +83,6 @@ elif len(shape) == 2:
     import matplotlib.pyplot as plt
     from matplotlib.colors import LogNorm
     # shape into a 3d array with time as the first axis
-    p_sqrt   = np.sqrt(psi_value[0].shape[0])
-    print("dim size:", p_sqrt, "Should be integer")
-    p_sqrt          = int(p_sqrt)
     fig = plt.figure()
     font = {'size'   : 18}
     matplotlib.rc('font', **font)
@@ -93,10 +91,19 @@ elif len(shape) == 2:
             print("plotting", i)
             # set up initial figure with color bar
             psi = psi[:,0] + 1j*psi[:,1]
-            psi.shape = (p_sqrt,p_sqrt)
-            plt.imshow(np.absolute(psi), cmap='viridis', origin='lower',
-                       extent=[x[0],x[-1],x[0],x[-1]],
-                       norm=LogNorm(vmin=1e-10, vmax=max_val))
+            psi.shape = tuple(shape)
+            # print x
+            if f["Parameters"]["coordinate_system_idx"][0]==1:
+                plt.imshow(np.multiply(np.conjugate(psi),np.multiply(x,psi.transpose()).transpose()).real,
+                    cmap='viridis', origin='lower',
+                    extent=[y[0],y[-1],x[0],x[-1]],
+                    norm=LogNorm(vmin=1e-20, vmax=max_val))
+            else:
+                plt.imshow(np.absolute(psi), cmap='viridis', origin='lower',
+                           extent=[y[0],y[-1],x[0],x[-1]],
+                           norm=LogNorm(vmin=1e-10, vmax=max_val))
+                # plt.imshow(np.absolute(psi), cmap='viridis', origin='lower',
+                #            extent=[y[0],y[-1],x[0],x[-1]],vmin=0, vmax=1e-3)
             plt.text(time_x, time_y, "Time: "+str(psi_time[i])+" a.u.",
                         color='white')
             # color bar doesn't change during the video so only set it here

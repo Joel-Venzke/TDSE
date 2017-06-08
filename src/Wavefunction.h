@@ -8,39 +8,47 @@ class Wavefunction : protected Utils
 {
  private:
   PetscInt ierr;
-  int num_dims;       /* number of dimensions */
-  int num_electrons;  /* number of electrons in the system */
-  double *dim_size;   /* sizes of each dimension in a.u. */
-  double *delta_x;    /* step sizes of each dimension in a.u. */
-  int *num_x;         /* number of grid points in each dimension */
-  int num_psi_build;  /* number of points in psi_1 and psi_2 */
-  int num_psi;        /* number of points in psi */
-  double **x_value;   /* location of grid point in each dimension */
-  dcomp ***psi_build; /* used for allocating new wave functions */
-  Vec psi;            /* wavefunction for 2 electron system */
-  Vec psi_tmp;        /* wavefunction for 2 electron system */
+  PetscInt num_dims;      /* number of dimensions */
+  PetscInt num_electrons; /* number of electrons in the system */
+  double *dim_size;       /* sizes of each dimension in a.u. */
+  double *delta_x;        /* step sizes of each dimension in a.u. */
+  PetscInt coordinate_system_idx;
+  PetscInt *num_x;        /* number of grid points in each dimension */
+  PetscInt num_psi_build; /* number of points in psi_1 and psi_2 */
+  PetscInt num_psi;       /* number of points in psi */
+  double **x_value;       /* location of grid point in each dimension */
+  dcomp ***psi_build;     /* used for allocating new wave functions */
+  Vec psi;                /* wavefunction for 2 electron system */
+  Vec psi_tmp;            /* wavefunction for 2 electron system */
+  Vec psi_tmp_cyl;        /* wavefunction for 2 electron system */
   bool psi_alloc_build;
   bool psi_alloc;
   /* false if its not the first time checkpointing the wavefunction */
   bool first_pass;
   double sigma; /* std of gaussian guess */
 
-  int write_counter_checkpoint;
-  int write_counter_observables;
+  PetscInt write_counter_checkpoint;
+  PetscInt write_counter_observables;
 
   /* hidden from user for safety */
   void CreateGrid();
   void CreatePsi();
-  void CreateObservable(int observable_idx, int elec_idx, int dim_idx);
+  void CreateObservable(PetscInt observable_idx, PetscInt elec_idx,
+                        PetscInt dim_idx);
   void CleanUp();
 
-  dcomp GetPsiVal(dcomp ***data, int idx);
-  dcomp GetPositionVal(int idx, int elec_idx, int dim_idx);
-  dcomp GetDipoleAccerationVal(int idx, int elec_idx, int dim_idx);
+  dcomp GetPsiVal(dcomp ***data, PetscInt idx);
+  dcomp GetPositionVal(PetscInt idx, PetscInt elec_idx, PetscInt dim_idx);
+  dcomp GetDipoleAccerationVal(PetscInt idx, PetscInt elec_idx,
+                               PetscInt dim_idx);
 
-  double GetDistance(std::vector<int> idx_array, int elec_idx);
+  double GetDistance(std::vector< PetscInt > idx_array, PetscInt elec_idx);
 
-  std::vector<int> GetIntArray(int idx);
+  std::vector< PetscInt > GetIntArray(PetscInt idx);
+
+  void LoadRestart(HDF5Wrapper &h5_file, ViewWrapper &viewer_file,
+                   PetscInt write_frequency_checkpoint,
+                   PetscInt write_frequency_observables);
 
  public:
   /* Constructor */
@@ -52,22 +60,23 @@ class Wavefunction : protected Utils
   /* IO */
   void Checkpoint(HDF5Wrapper &data_file, ViewWrapper &view_file, double time,
                   bool checkpoint_psi = true);
-  void CheckpointPsi(ViewWrapper &view_file, int write_idx);
+  void CheckpointPsi(ViewWrapper &view_file, PetscInt write_idx);
 
   /* tools */
   void Normalize();
-  void Normalize(Vec &data, double dx);
+  void Normalize(Vec &data);
   double Norm();
-  double Norm(Vec &data, double dx);
+  double Norm(Vec &data);
   double GetEnergy(Mat *h);
   double GetEnergy(Mat *h, Vec &p);
-  double GetPosition(int elec_idx, int dim_idx);
-  double GetDipoleAcceration(int elec_idx, int dim_idx);
+  double GetPosition(PetscInt elec_idx, PetscInt dim_idx);
+  double GetDipoleAcceration(PetscInt elec_idx, PetscInt dim_idx);
   void ResetPsi();
 
-  int *GetNumX();
-  int GetNumPsi();
-  int GetNumPsiBuild();
+  PetscInt *GetNumX();
+  PetscInt GetNumPsi();
+  PetscInt GetNumPsiBuild();
   Vec *GetPsi();
   double **GetXValue();
+  PetscInt GetWrieCounterCheckpoint();
 };
