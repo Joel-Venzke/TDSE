@@ -41,7 +41,7 @@ class Simulation : protected Utils
   void PowerMethod(PetscInt num_states, PetscInt return_state_idx = 0);
   void Propagate();
   void SplitOpperator();
-  void CrankNicolson(double delta_t, PetscInt time_idx, PetscInt dim_idx = -1);
+  void CrankNicolson(double dt, PetscInt time_idx, PetscInt dim_idx = -1);
 
   void CheckpointState(HDF5Wrapper &h_file, ViewWrapper &v_file,
                        PetscInt write_idx);

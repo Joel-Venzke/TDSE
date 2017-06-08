@@ -254,13 +254,16 @@ void Simulation::SplitOpperator()
   {
     for (int dim_idx = 0; dim_idx < parameters->GetNumDims() - 1; ++dim_idx)
     {
+      std::cout << dim_idx << " " << delta_t / 2.0 << "\n";
       CrankNicolson(delta_t / 2.0, i, dim_idx);
     }
-
+    std::cout << parameters->GetNumDims() - 1 << " " << delta_t << "\n";
     CrankNicolson(delta_t, i, parameters->GetNumDims() - 1);
 
     for (int dim_idx = parameters->GetNumDims() - 2; dim_idx >= 0; --dim_idx)
     {
+      std::cout << dim_idx << " " << delta_t / 2.0 << "\n";
+
       CrankNicolson(delta_t / 2.0, i, dim_idx);
     }
 
@@ -400,15 +403,14 @@ void Simulation::SplitOpperator()
   VecDestroy(&psi_old);
 }
 
-void Simulation::CrankNicolson(double delta_t, PetscInt time_idx,
-                               PetscInt dim_idx)
+void Simulation::CrankNicolson(double dt, PetscInt time_idx, PetscInt dim_idx)
 {
   static PetscInt old_time_idx = -2;
   static PetscInt old_dim_idx  = -2;
   if (time_idx != old_time_idx or dim_idx != old_dim_idx)
   {
     /* factor = i*(-i*dt/2) */
-    dcomp factor = dcomp(0.0, 1.0) * dcomp(delta_t / 2.0, 0.0);
+    dcomp factor = dcomp(0.0, 1.0) * dcomp(dt / 2.0, 0.0);
     if (time_idx < 0)
     {
       h = hamiltonian->GetTimeIndependent(dim_idx);
