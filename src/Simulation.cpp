@@ -254,15 +254,18 @@ void Simulation::SplitOpperator()
   {
     for (int dim_idx = 0; dim_idx < parameters->GetNumDims() - 1; ++dim_idx)
     {
-      std::cout << dim_idx << " " << delta_t / 2.0 << "\n";
+      if (world.rank() == 0)
+        std::cout << dim_idx << " " << delta_t / 2.0 << "\n";
       CrankNicolson(delta_t / 2.0, i, dim_idx);
     }
-    std::cout << parameters->GetNumDims() - 1 << " " << delta_t << "\n";
+    if (world.rank() == 0)
+      std::cout << parameters->GetNumDims() - 1 << " " << delta_t << "\n";
     CrankNicolson(delta_t, i, parameters->GetNumDims() - 1);
 
     for (int dim_idx = parameters->GetNumDims() - 2; dim_idx >= 0; --dim_idx)
     {
-      std::cout << dim_idx << " " << delta_t / 2.0 << "\n";
+      if (world.rank() == 0)
+        std::cout << dim_idx << " " << delta_t / 2.0 << "\n";
 
       CrankNicolson(delta_t / 2.0, i, dim_idx);
     }
