@@ -49,7 +49,7 @@ class Hamiltonian : protected Utils
   std::vector< std::vector< std::vector< dcomp > > > real_coef;
 
   void CreateHamlitonian();
-  void CalculateHamlitonian(PetscInt time_idx);
+  void CalculateHamlitonian(PetscInt time_idx, PetscInt only_dim_idx);
   void SetUpCoefficients();
 
  public:
@@ -57,20 +57,21 @@ class Hamiltonian : protected Utils
   Hamiltonian(Wavefunction &w, Pulse &pulse, HDF5Wrapper &data_file,
               Parameters &p);
 
-  Mat *GetTotalHamiltonian(PetscInt time_idx);
-  Mat *GetTimeIndependent();
+  Mat *GetTotalHamiltonian(PetscInt time_idx, PetscInt only_dim_idx = -1);
+  Mat *GetTimeIndependent(PetscInt only_dim_idx = -1);
 
   dcomp GetVal(PetscInt idx_i, PetscInt idx_j, bool time_dep, PetscInt time_idx,
-               bool &insert_val);
+               bool &insert_val, PetscInt only_dim_idx);
   void FDWeights(std::vector< dcomp > &x_vals, PetscInt max_derivative,
                  std::vector< std::vector< dcomp > > &coef,
                  PetscInt z_idx = -1);
   dcomp GetOffDiagonal(std::vector< PetscInt > &idx_array,
                        std::vector< PetscInt > &diff_array, bool time_dep,
-                       PetscInt time_idx);
+                       PetscInt time_idx, PetscInt only_dim_idx);
   dcomp GetDiagonal(std::vector< PetscInt > &idx_array, bool time_dep,
-                    PetscInt time_idx);
-  dcomp GetKineticTerm(std::vector< PetscInt > &idx_array);
+                    PetscInt time_idx, PetscInt only_dim_idx);
+  dcomp GetKineticTerm(std::vector< PetscInt > &idx_array,
+                       PetscInt only_dim_idx);
   dcomp GetNucleiTerm(std::vector< PetscInt > &idx_array);
   dcomp GetElectronElectronTerm(std::vector< PetscInt > &idx_array);
   PetscInt GetOffset(PetscInt elec_idx, PetscInt dim_idx);
