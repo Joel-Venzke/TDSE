@@ -352,6 +352,7 @@ void Parameters::Validate()
     {
       if (polarization_vector[pulse_idx][0] > 1e-14)
       {
+        std::cout <<polarization_vector[pulse_idx][0] <<"\n";
         error_found = true;
         err_str +=
             "\nCylindrical coordinate systems only supports polarization "
@@ -396,15 +397,15 @@ void Parameters::Validate()
     }
 
     /* check field_max */
-    if (field_max[pulse_idx] <= 0)
-    {
-      error_found = true;
-      err_str += "\nPulse ";
-      err_str += std::to_string(pulse_idx);
-      err_str += " has unsupported field_max: \"";
-      err_str += std::to_string(field_max[pulse_idx]) + "\"\n";
-      err_str += "field_max should be greater than 0\n";
-    }
+    // if (field_max[pulse_idx] <= 0)
+    // {
+    //   error_found = true;
+    //   err_str += "\nPulse ";
+    //   err_str += std::to_string(pulse_idx);
+    //   err_str += " has unsupported field_max: \"";
+    //   err_str += std::to_string(field_max[pulse_idx]) + "\"\n";
+    //   err_str += "field_max should be greater than 0\n";
+    // }
 
     /* check cycles_on */
     if (cycles_on[pulse_idx] < 0)

@@ -107,7 +107,7 @@ void Hamiltonian::CalculateHamlitonian(PetscInt time_idx)
       for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
       {
         base_offset = GetOffset(elec_idx, dim_idx);
-        if (coordinate_system_idx == 1 and idx_array[0] < order_middle_idx)
+        if (coordinate_system_idx == 1 and dim_idx == 1 and idx_array[0] < order_middle_idx)
         {
           /* loop over all off diagonals up to the order needed */
           for (int diagonal_idx = 0; diagonal_idx < order + 1; ++diagonal_idx)
@@ -327,7 +327,7 @@ dcomp Hamiltonian::GetVal(PetscInt idx_i, PetscInt idx_j, bool time_dep,
     {
       return GetOffDiagonal(idx_array, diff_array, time_dep, time_idx);
     }
-    else if (coordinate_system_idx == 1 and sum <= order + 1)
+    else if (coordinate_system_idx == 1 and diff_array[0]>0 and sum <= order + 1)
     {
       return GetOffDiagonal(idx_array, diff_array, time_dep, time_idx);
     }
@@ -418,10 +418,12 @@ dcomp Hamiltonian::GetOffDiagonal(std::vector< PetscInt >& idx_array,
           /* DONT TOUCH FIELD WITH ECS */
           /* Polarization vector for linear polarization */
 
-          off_diagonal -=
-              real_coef[dim_idx][1][order_middle_idx +
-                                    diff_array[elec_idx * num_dims + dim_idx]] *
-              dcomp(0.0, field[dim_idx][time_idx] / c);
+          if (abs(diff_array[elec_idx * num_dims + dim_idx]) < order_middle_idx+1) {
+            off_diagonal -=
+                real_coef[dim_idx][1][order_middle_idx +
+                                      diff_array[elec_idx * num_dims + dim_idx]] *
+                dcomp(0.0, field[dim_idx][time_idx] / c);
+          }
         }
 
         /* Time independent portion*/
@@ -492,7 +494,7 @@ dcomp Hamiltonian::GetOffDiagonal(std::vector< PetscInt >& idx_array,
             //           << "\n";
           }
         }
-        else if (abs(diff_array[elec_idx * num_dims + dim_idx]) < order)
+        else if (abs(diff_array[elec_idx * num_dims + dim_idx]) < order_middle_idx+1)
         {
           /* left ECS */
           if (idx_array[2 * (elec_idx * num_dims + dim_idx)] <=

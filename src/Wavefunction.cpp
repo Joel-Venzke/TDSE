@@ -563,7 +563,7 @@ double Wavefunction::GetEnergy(Mat* h, Vec& p)
   }
   else
   {
-    MatMult(*h, psi_tmp, p);
+    MatMult(*h, p , psi_tmp);
     VecDot(p, psi_tmp, &energy);
   }
   return energy.real();
