@@ -268,30 +268,6 @@ void Hamiltonian::SetUpCoefficients()
       /* Get real coefficients for 2nd derivative (order+2 terms)*/
       FDWeights(x_vals_bc, 2, radial_bc_coef[discontinuity_idx],
                 discontinuity_idx);
-      /* reset data */
-      for (int coef_idx = 0; coef_idx < order + 2; ++coef_idx)
-      {
-        radial_bc_coef[discontinuity_idx][0][coef_idx] = 0.0;
-        radial_bc_coef[discontinuity_idx][1][coef_idx] = 0.0;
-      }
-      /* Get real coefficients for 1st derivative (order+1 terms) */
-      FDWeights(x_vals, 1, radial_bc_coef[discontinuity_idx],
-                discontinuity_idx);
-    }
-    for (int discontinuity_idx = 0; discontinuity_idx < order / 2 + 1;
-         ++discontinuity_idx)
-    {
-      for (int coef_idx = 0; coef_idx < order + 2; ++coef_idx)
-      {
-        std::cout << radial_bc_coef[discontinuity_idx][1][coef_idx] << " ";
-      }
-      std::cout << "\n";
-      for (int coef_idx = 0; coef_idx < order + 2; ++coef_idx)
-      {
-        std::cout << radial_bc_coef[discontinuity_idx][2][coef_idx] << " ";
-      }
-      std::cout << "\n";
-      std::cout << "\n";
     }
   }
 }
@@ -299,6 +275,14 @@ void Hamiltonian::SetUpCoefficients()
 Mat* Hamiltonian::GetTotalHamiltonian(PetscInt time_idx, PetscInt only_dim_idx)
 {
   CalculateHamlitonian(time_idx, only_dim_idx);
+  // if (only_dim_idx==-1 and time_idx==419) {
+  //   MatView(hamiltonian, PETSC_VIEWER_STDOUT_WORLD);
+  //   CalculateHamlitonian(time_idx, 0);
+  //   MatView(hamiltonian, PETSC_VIEWER_STDOUT_WORLD);
+  //   CalculateHamlitonian(time_idx, 1);
+  //   MatView(hamiltonian, PETSC_VIEWER_STDOUT_WORLD);
+  //   EndRun("lsdkjf");
+  // }
   return &hamiltonian;
 }
 
