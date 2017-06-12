@@ -20,4 +20,4 @@ plt.ylabel("A a.u.")
 plt.title("Pulse - Field")
 
 plt.legend()
-fig.savefig("figs/Pulse_field.pdf")
+fig.savefig("figs/Pulse_field.png")
