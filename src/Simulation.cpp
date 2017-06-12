@@ -425,7 +425,7 @@ void Simulation::CrankNicolson(double dt, PetscInt time_idx, PetscInt dim_idx)
     MatShift(right, 1.0);
 
     KSPSetOperators(ksp, left, left);
-    KSPSetTolerances(ksp, 1.e-15, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
+    KSPSetTolerances(ksp, 1.e-17, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
     KSPSetFromOptions(ksp);
 
     old_dim_idx  = dim_idx;

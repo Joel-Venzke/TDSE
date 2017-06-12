@@ -249,24 +249,19 @@ void Hamiltonian::SetUpCoefficients()
 
   if (coordinate_system_idx == 1) /* Cylindrical boundary conditions */
   {
-    std::vector< dcomp > x_vals_bc(order + 2, 0.0);
-    radial_bc_coef.resize(order / 2 + 1,
+    radial_bc_coef.resize(order / 2,
                           std::vector< std::vector< dcomp > >(
-                              3, std::vector< dcomp >(order + 2, 0.0)));
+                              3, std::vector< dcomp >(order + 1, 0.0)));
     /* Set up real gird for 1st and 2nd order derivatives */
     for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
     {
       x_vals[coef_idx] = delta_x[0] * coef_idx;
     }
-    for (int coef_idx = 0; coef_idx < order + 2; ++coef_idx)
-    {
-      x_vals_bc[coef_idx] = delta_x[0] * coef_idx;
-    }
-    for (int discontinuity_idx = 0; discontinuity_idx < order / 2 + 1;
+    for (int discontinuity_idx = 0; discontinuity_idx < order / 2 ;
          ++discontinuity_idx)
     {
       /* Get real coefficients for 2nd derivative (order+2 terms)*/
-      FDWeights(x_vals_bc, 2, radial_bc_coef[discontinuity_idx],
+      FDWeights(x_vals, 2, radial_bc_coef[discontinuity_idx],
                 discontinuity_idx);
     }
   }
@@ -320,7 +315,7 @@ dcomp Hamiltonian::GetVal(PetscInt idx_i, PetscInt idx_j, bool time_dep,
                             only_dim_idx);
     }
     else if (coordinate_system_idx == 1 and diff_array[0] > 0 and
-             sum <= order + 1)
+             sum < order + 1)
     {
       return GetOffDiagonal(idx_array, diff_array, time_dep, time_idx,
                             only_dim_idx);

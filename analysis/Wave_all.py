@@ -95,7 +95,7 @@ elif len(shape) == 2:
             if f["Parameters"]["coordinate_system_idx"][0]==1:
                 plt.imshow(np.absolute(np.multiply(np.conjugate(psi),np.multiply(x,psi.transpose()).transpose())), cmap='viridis', origin='lower',
                            extent=[y[0],y[-1],x[0],x[-1]],
-                           norm=LogNorm(vmin=1e-10, vmax=np.max(np.absolute(np.vdot(psi,np.multiply(x,psi.transpose()).transpose())))))
+                           norm=LogNorm(vmin=1e-18, vmax=np.max(np.absolute(np.vdot(psi,np.multiply(x,psi.transpose()).transpose())))))
                            #norm=LogNorm(vmin=1e-10, vmax=max_val))
             else:
                 plt.imshow(np.absolute(psi), cmap='viridis', origin='lower',
