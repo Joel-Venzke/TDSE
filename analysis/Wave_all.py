@@ -80,6 +80,7 @@ if len(shape) == 3:
 
 elif len(shape) == 2:
     import matplotlib
+    matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     from matplotlib.colors import LogNorm
     # shape into a 3d array with time as the first axis
@@ -92,11 +93,16 @@ elif len(shape) == 2:
             # set up initial figure with color bar
             psi = psi[:,0] + 1j*psi[:,1]
             psi.shape = tuple(shape)
+            x_min_idx = 0
+            x_max_idx = -1
+            y_min_idx = 0
+            y_max_idx = -1
+            psi = psi[x_min_idx:x_max_idx, y_min_idx:y_max_idx]
             if f["Parameters"]["coordinate_system_idx"][0]==1:
-                plt.imshow(np.absolute(np.multiply(np.conjugate(psi),np.multiply(x,psi.transpose()).transpose())), cmap='viridis', origin='lower',
-                           extent=[y[0],y[-1],x[0],x[-1]],
-                           norm=LogNorm(vmin=1e-10, vmax=np.max(np.absolute(np.vdot(psi,np.multiply(x,psi.transpose()).transpose())))))
-                           #norm=LogNorm(vmin=1e-10, vmax=max_val))
+                psi = np.absolute(np.multiply(np.conjugate(psi),np.multiply(x[x_min_idx:x_max_idx],psi.transpose()).transpose()))
+                plt.imshow(psi, cmap='viridis', origin='lower',
+                           extent=[y[y_min_idx],y[y_max_idx],x[x_min_idx],x[x_max_idx]],
+                           norm=LogNorm(vmin=1e-18, vmax=np.max(psi)))
             else:
                 plt.imshow(np.absolute(psi), cmap='viridis', origin='lower',
                            extent=[y[0],y[-1],x[0],x[-1]],
