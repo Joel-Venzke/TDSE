@@ -1,10 +1,8 @@
-// #include "config.h"
 #include <slepc.h>
-// #include <petsc.h>
 #include <iostream>
 #include "HDF5Wrapper.h"
 #include "Hamiltonian.h"
-// #include "PETSCWrapper.h"
+#include "PETSCWrapper.h"
 #include "Parameters.h"
 #include "Pulse.h"
 #include "Simulation.h"
@@ -13,8 +11,6 @@
 
 int main(int argc, char** argv)
 {
-  // PetscInitialize(&argc, &argv, (char*)0, "TDSE");
-
   PETSCWrapper p_wrap(argc, argv);
   p_wrap.Print(
       "\n******************* Setting up Simulation *******************\n\n");
@@ -46,9 +42,9 @@ int main(int argc, char** argv)
       case 2: /* Power */
         s.PowerMethod(parameters.GetNumStates());
         break;
-    case 3: /* SLEPC */
-      s.EigenSolve(parameters.GetNumStates());
-      break;
+      case 3: /* SLEPC */
+        s.EigenSolve(parameters.GetNumStates());
+        break;
     }
     p_wrap.PopStage(); /* Eigen State */
   }
@@ -59,7 +55,7 @@ int main(int argc, char** argv)
     p_wrap.Print(
         "\n************************ Propagation ************************\n\n");
     s.Propagate();
-    //s.SplitOpperator();
+    // s.SplitOpperator();
   }
   p_wrap.PopStage(); /* Propagation */
   p_wrap.Print(
