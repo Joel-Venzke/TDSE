@@ -2,9 +2,9 @@
   "delta_t": 0.005,
   "dimensions": [
     {"dim_size": 30.0,
-    "delta_x":   0.05},
+    "delta_x":   0.03},
     {"dim_size": 60.0,
-    "delta_x":   0.05}],
+    "delta_x":   0.03}],
   "coordinate_system": "Cylindrical",
   "num_electrons": 1,
   "restart": 0,
@@ -31,7 +31,7 @@
   "propagate": 0,
   "free_propagate": 0,
   "states": [
-    {"energy": -3.0}],
+    {"energy": -0.9}],
   "tol":        1e-10,
   "laser": {
     "pulses": [
