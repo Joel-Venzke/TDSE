@@ -1,3 +1,9 @@
+/**
+ * @file Simulation.h
+ * @brief Propagation and Eigen State calculations
+ * @author Joel Venzke
+ * @date 06/13/2017
+ */
 #pragma once
 #include <time.h>
 #include "HDF5Wrapper.h"
@@ -8,6 +14,14 @@
 #include "Utils.h"
 #include "Wavefunction.h"
 
+/**
+ * @brief Ground state calculations and time propagation
+ * @details Allows for ground state calculations and time propagation. It has
+ * support for split operator propagation, full Hamiltonian propagation, power
+ * method eigen state calculations, and slepc support for eigen state
+ * calculations
+ *
+ */
 class Simulation : protected Utils
 {
  private:

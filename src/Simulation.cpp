@@ -1,5 +1,22 @@
+/**
+ * @file Simulation.cpp
+ * @brief Propagation and Eigen State calculations
+ * @author Joel Venzke
+ * @date 06/13/2017
+ */
+
 #include "Simulation.h"
 
+/**
+ * @brief Constructor for the simulation class
+ *
+ * @param hamiltonian_in hamiltonian class
+ * @param w wavefunction
+ * @param pulse_in pulse used in this simulation
+ * @param h_file hdf5 wrapper
+ * @param v_file petsc view wrapper
+ * @param p parameter class
+ */
 Simulation::Simulation(Hamiltonian &hamiltonian_in, Wavefunction &w,
                        Pulse &pulse_in, HDF5Wrapper &h_file,
                        ViewWrapper &v_file, Parameters &p)
@@ -28,6 +45,10 @@ Simulation::Simulation(Hamiltonian &hamiltonian_in, Wavefunction &w,
   if (world.rank() == 0) std::cout << "Simulation Created\n";
 }
 
+/**
+ * @brief Main time propagation routine
+ * @details Propagates in time using the whole Hamiltonian for each time step
+ */
 void Simulation::Propagate()
 {
   if (world.rank() == 0) std::cout << "\nPropagating in time\n";
@@ -199,6 +220,11 @@ void Simulation::Propagate()
   VecDestroy(&psi_old);
 }
 
+/**
+ * @brief Uses Split Opperator method for time propagation
+ * @details Uses Split Opperator method for time propagation. Runs slower than
+ * Propagate
+ */
 void Simulation::SplitOpperator()
 {
   if (world.rank() == 0) std::cout << "\nPropagating in time\n";
@@ -399,6 +425,14 @@ void Simulation::SplitOpperator()
   VecDestroy(&psi_old);
 }
 
+/**
+ * @brief Uses SLEPC to calculate Eigen States
+ * @details Uses SLEPC to calculate Eigen States
+ *
+ * @param num_states The number of states you wish to calculate
+ * @param return_state_idx the index of the state you want the Wavefunction
+ * class to be set to upon return
+ */
 void Simulation::EigenSolve(PetscInt num_states, PetscInt return_state_idx)
 {
   if (world.rank() == 0)
@@ -455,6 +489,14 @@ void Simulation::EigenSolve(PetscInt num_states, PetscInt return_state_idx)
   EPSDestroy(&eps);
 }
 
+/**
+ * @brief Calculates one timestep of Crank Nicolson
+ * @details Calculates one timestep of Crank Nicolson
+ *
+ * @param dt delta t (time step) used in the Crank Nicolson method
+ * @param time_idx index into the laser pulse (-1 for time independent)
+ * @param dim_idx dimension used in split operator (-1 for full Hamiltonian)
+ */
 void Simulation::CrankNicolson(double dt, PetscInt time_idx, PetscInt dim_idx)
 {
   static PetscInt old_time_idx = -2;
@@ -502,6 +544,14 @@ void Simulation::CrankNicolson(double dt, PetscInt time_idx, PetscInt dim_idx)
   }
 }
 
+/**
+ * @brief Inverse shifted power method for Eigen State calculations
+ * @details Uses the Inverse shifted power method for Eigen State calculations.
+ *
+ * @param num_states Number of ground states to calculate
+ * @param return_state_idx the index of the state you want the Wavefunction
+ * class to be set to upon return
+ */
 void Simulation::PowerMethod(PetscInt num_states, PetscInt return_state_idx)
 {
   if (world.rank() == 0)
@@ -654,6 +704,16 @@ void Simulation::PowerMethod(PetscInt num_states, PetscInt return_state_idx)
   }
 }
 
+/**
+ * @brief Checks if psi is converge or not
+ * @details calculates |psi|^2 and the energy and ensures it is less than the
+ * tol provided from the Parameter class
+ *
+ * @param psi_1 [description]
+ * @param psi_2 [description]
+ * @param tol [description]
+ * @return [description]
+ */
 bool Simulation::CheckConvergance(Vec &psi_1, Vec &psi_2, double tol)
 {
   Mat *h              = hamiltonian->GetTimeIndependent();
