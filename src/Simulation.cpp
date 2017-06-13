@@ -433,24 +433,15 @@ void Simulation::EigenSolve(PetscInt num_states, PetscInt return_state_idx)
 
   EPS eps; /* eigen solver */
   EPSCreate(PETSC_COMM_WORLD, &eps);
-  std::cout << "1\n";
 
   EPSSetOperators(eps, *(hamiltonian->GetTimeIndependent()), NULL);
-  std::cout << "2\n";
   EPSSetProblemType(eps, EPS_NHEP);
-  std::cout << "3\n";
   EPSSetTolerances(eps, tol, PETSC_DECIDE);
-  std::cout << "4\n";
   EPSSetWhichEigenpairs(eps, EPS_SMALLEST_REAL);
-  std::cout << "5\n";
   EPSSetDimensions(eps, num_states, PETSC_DECIDE, PETSC_DECIDE);
-  std::cout << "6\n";
   EPSSetFromOptions(eps);
-  std::cout << "7\n";
   EPSSolve(eps);
-  std::cout << "8\n";
   EPSGetConverged(eps, &nconv);
-  std::cout << "9\n";
 
   for (int j = 0; j < nconv; j++)
   {
