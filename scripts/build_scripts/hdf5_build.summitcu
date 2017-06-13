@@ -1,14 +1,15 @@
 #!/bin/bash
 
+module purge
 module load gcc
-module load openmpi
+module load impi
 module load szip 
 module load zlib 
 module list 
 
 
-~/Repos/hdf5-1.10.0-patch1/configure \
-  --prefix=/projects/jove7731/local/gcc_openmpi/hdf5 \
+/projects/jove7731/Repos/hdf5-1.10.0-patch1/configure \
+  --prefix=/projects/jove7731/local/gcc/hdf5 \
   --enable-build-mode=production \
   --disable-dependency-tracking \
   --with-zlib=${CURC_ZLIB_ROOT} \

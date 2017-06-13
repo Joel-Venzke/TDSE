@@ -1,4 +1,5 @@
 #!/bin/bash
+export PETSC_DIR=`pwd`
 
 module load gcc
 module load impi 
@@ -29,11 +30,10 @@ module list
   --with-scalar-type=complex \
   --with-hdf5-dir=/projects/jove7731/local/gcc/hdf5 \
   --with-blas-lapack-dir=${CURC_MKL_LIB} \
-  --with-fftw-dir=${CURC_FFTW_ROOT} \
-  --download-superlu_dist=yes \
-  --download-superlu=yes \
-  --download-suitesparse=yes \
-  --download-metis=yes \
   --download-parmetis=yes \
-  --download-scalapack=yes \
-  --download-mumps=yes
+  --download-fftw \
+  --download-metis 
+
+make PETSC_DIR=/projects/jove7731/Repos/petsc_dev PETSC_ARCH=arch-linux2-c-opt all
+make PETSC_DIR=/projects/jove7731/Repos/petsc_dev PETSC_ARCH=arch-linux2-c-opt install
+

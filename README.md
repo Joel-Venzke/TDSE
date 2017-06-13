@@ -68,3 +68,8 @@ we use the following clang_format
 
 # NOTES
 anaconda may cause issues with install
+
+Intensity to field max (velocity-gauge)
+where i is the intensity in (W/cm^2)
+
+math.sqrt(i/3.51e16)/0.057*(1 / 7.2973525664e-3)
