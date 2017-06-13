@@ -37,10 +37,10 @@ class Simulation : protected Utils
   double *time;
   PetscInt time_length;
   Mat *h;
-  Mat left;                  /* matrix on left side of Ax=b */
-  Mat right;                 /* matrix on left side of Ax=Cb */
-  KSP ksp;                   /* solver for Ax=b */
-  KSPConvergedReason reason; /* reason for convergence check */
+  Mat left;                   ///< matrix on left side of Ax=b
+  Mat right;                  ///< matrix on left side of Ax=Cb
+  KSP ksp;                    ///< solver for Ax=b
+  KSPConvergedReason reason;  ///< reason for convergence check
 
   /* destroys psi_old*/
   bool CheckConvergance(Vec &psi_1, Vec &psi_2, double tol);

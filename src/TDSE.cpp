@@ -1,3 +1,11 @@
+/**
+ * @file TDSE.cpp
+ * @brief Solves the Time-Dependent Schrodinger Equation for ultrafast laser
+ * pulses
+ * @author Joel Venzke
+ * @date 06/13/2017
+ */
+
 #include <slepc.h>
 #include <iostream>
 #include "HDF5Wrapper.h"
@@ -9,6 +17,12 @@
 #include "ViewWrapper.h"
 #include "Wavefunction.h"
 
+/**
+ * @brief Solves the Time-Dependent Schrodinger Equation for ultrafast laser
+ * pulses
+ * @details Creates the needed objects, controls the structure of each
+ * calculation using the Parameter class and controls the petsc timing stages
+ */
 int main(int argc, char** argv)
 {
   PETSCWrapper p_wrap(argc, argv);

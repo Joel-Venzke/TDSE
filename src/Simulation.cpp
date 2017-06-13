@@ -743,9 +743,21 @@ bool Simulation::CheckConvergance(Vec &psi_1, Vec &psi_2, double tol)
   return wave_error < tol and std::abs(energy_error) < tol;
 }
 
-/* for details see:
+/*
+ *
  * https://ocw.mit.edu/courses/mathematics/18-335j-introduction-to-numerical-methods-fall-1710/lecture-notes/MIT18_335JF10_lec10a_hand.pdf
  * Assumes all states are orthornormal and applies modified gram-schmit to
+ * psi
+ */
+
+/**
+ * @brief Preforms modified gram schmidt on psi in the Wavefunction
+ * @details
+ * https://ocw.mit.edu/courses/mathematics/18-335j-introduction-to-numerical-methods-fall-1710/lecture-notes/MIT18_335JF10_lec10a_hand.pdf
+ * Assumes all states are orthornormal and applies modified gram-schmit to
+ * psi
+ *
+ * @param states vector of orthonormal vectors that are to be projected out of
  * psi
  */
 void Simulation::ModifiedGramSchmidt(std::vector< Vec > &states)
@@ -759,6 +771,14 @@ void Simulation::ModifiedGramSchmidt(std::vector< Vec > &states)
   }
 }
 
+/**
+ * @brief Writes psi to a eigen state file
+ * @details Used to save eigen states to a file
+ *
+ * @param h_file HDF5Wapper file
+ * @param v_file ViewWapper file
+ * @param write_idx Index of the eigen state
+ */
 void Simulation::CheckpointState(HDF5Wrapper &h_file, ViewWrapper &v_file,
                                  PetscInt write_idx)
 {
@@ -768,6 +788,9 @@ void Simulation::CheckpointState(HDF5Wrapper &h_file, ViewWrapper &v_file,
                      "/Energy", "Energy of the corresponding state", write_idx);
 }
 
+/**
+ * @brief Destructor
+ */
 Simulation::~Simulation()
 {
   MatDestroy(&left);
