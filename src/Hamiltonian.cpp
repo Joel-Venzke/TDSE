@@ -257,7 +257,7 @@ void Hamiltonian::SetUpCoefficients()
     {
       x_vals[coef_idx] = delta_x[0] * coef_idx;
     }
-    for (int discontinuity_idx = 0; discontinuity_idx < order / 2 ;
+    for (int discontinuity_idx = 0; discontinuity_idx < order / 2;
          ++discontinuity_idx)
     {
       /* Get real coefficients for 2nd derivative (order+2 terms)*/
