@@ -7,8 +7,8 @@ std::string FileToString(std::string file_name)
 {
   // TODO(jove7731): check if file exists
   std::ifstream t(file_name);
-  std::string str((std::istreambuf_iterator<char>(t)),
-                  std::istreambuf_iterator<char>());
+  std::string str((std::istreambuf_iterator< char >(t)),
+                  std::istreambuf_iterator< char >());
   return str;
 }
 
@@ -44,9 +44,9 @@ void Parameters::Setup(std::string file_name)
   delta_t       = data["delta_t"];
   num_dims      = data["dimensions"].size();
   num_electrons = data["num_electrons"];
-  dim_size      = std::make_unique<double[]>(num_dims);
-  delta_x       = std::make_unique<double[]>(num_dims);
-  delta_x_2     = std::make_unique<double[]>(num_dims);
+  dim_size      = std::make_unique< double[] >(num_dims);
+  delta_x       = std::make_unique< double[] >(num_dims);
+  delta_x_2     = std::make_unique< double[] >(num_dims);
 
   for (int i = 0; i < num_dims; ++i)
   {
@@ -69,18 +69,18 @@ void Parameters::Setup(std::string file_name)
   state_solver                = data["state_solver"];
   num_states                  = data["states"].size();
 
-  state_energy = std::make_unique<double[]>(num_states);
+  state_energy = std::make_unique< double[] >(num_states);
 
   for (int i = 0; i < num_states; i++)
   {
     state_energy[i] = data["states"][i]["energy"];
   }
 
-  z        = std::make_unique<double[]>(num_nuclei);
-  z_c      = std::make_unique<double[]>(num_nuclei);
-  c0       = std::make_unique<double[]>(num_nuclei);
-  r0       = std::make_unique<double[]>(num_nuclei);
-  sae_size = std::make_unique<int[]>(num_nuclei);
+  z        = std::make_unique< double[] >(num_nuclei);
+  z_c      = std::make_unique< double[] >(num_nuclei);
+  c0       = std::make_unique< double[] >(num_nuclei);
+  r0       = std::make_unique< double[] >(num_nuclei);
+  sae_size = std::make_unique< int[] >(num_nuclei);
   a        = new double*[num_nuclei];
   b        = new double*[num_nuclei];
   location = new double*[num_nuclei];
@@ -175,18 +175,18 @@ void Parameters::Setup(std::string file_name)
   num_pulses = data["laser"]["pulses"].size();
 
   /* allocate memory */
-  pulse_shape         = std::make_unique<std::string[]>(num_pulses);
-  pulse_shape_idx     = std::make_unique<int[]>(num_pulses);
-  cycles_on           = std::make_unique<double[]>(num_pulses);
-  cycles_plateau      = std::make_unique<double[]>(num_pulses);
-  cycles_off          = std::make_unique<double[]>(num_pulses);
-  cycles_delay        = std::make_unique<double[]>(num_pulses);
-  cep                 = std::make_unique<double[]>(num_pulses);
-  energy              = std::make_unique<double[]>(num_pulses);
-  field_max           = std::make_unique<double[]>(num_pulses);
-  ellipticity         = std::make_unique<double[]>(num_pulses);
-  helicity            = std::make_unique<std::string[]>(num_pulses);
-  helicity_idx        = std::make_unique<int[]>(num_pulses);
+  pulse_shape         = std::make_unique< std::string[] >(num_pulses);
+  pulse_shape_idx     = std::make_unique< int[] >(num_pulses);
+  cycles_on           = std::make_unique< double[] >(num_pulses);
+  cycles_plateau      = std::make_unique< double[] >(num_pulses);
+  cycles_off          = std::make_unique< double[] >(num_pulses);
+  cycles_delay        = std::make_unique< double[] >(num_pulses);
+  cep                 = std::make_unique< double[] >(num_pulses);
+  energy              = std::make_unique< double[] >(num_pulses);
+  field_max           = std::make_unique< double[] >(num_pulses);
+  ellipticity         = std::make_unique< double[] >(num_pulses);
+  helicity            = std::make_unique< std::string[] >(num_pulses);
+  helicity_idx        = std::make_unique< int[] >(num_pulses);
   polarization_vector = new double*[num_pulses];
   if (num_dims == 3) poynting_vector = new double*[num_pulses];
 

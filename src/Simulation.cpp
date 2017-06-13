@@ -276,22 +276,31 @@ void Simulation::EigenSolve(int num_states, int return_state_idx)
   v_states_file.Close();
   HDF5Wrapper h_states_file(parameters->GetTarget() + ".h5"); /* HDF5 viewer */
 
-  std::vector<Vec> states; /* vector of currently converged states */
-  Vec psi_real;            /* Used to place copies in states */
-  Vec psi_imag;            /* Used to place copies in states */
+  std::vector< Vec > states; /* vector of currently converged states */
+  Vec psi_real;              /* Used to place copies in states */
+  Vec psi_imag;              /* Used to place copies in states */
   psi = wavefunction->GetPsi();
 
   EPS eps; /* eigen solver */
   EPSCreate(PETSC_COMM_WORLD, &eps);
+  std::cout << "1\n";
 
   EPSSetOperators(eps, *(hamiltonian->GetTimeIndependent()), NULL);
+  std::cout << "2\n";
   EPSSetProblemType(eps, EPS_NHEP);
+  std::cout << "3\n";
   EPSSetTolerances(eps, tol, PETSC_DECIDE);
+  std::cout << "4\n";
   EPSSetWhichEigenpairs(eps, EPS_SMALLEST_REAL);
+  std::cout << "5\n";
   EPSSetDimensions(eps, num_states, PETSC_DECIDE, PETSC_DECIDE);
+  std::cout << "6\n";
   EPSSetFromOptions(eps);
+  std::cout << "7\n";
   EPSSolve(eps);
+  std::cout << "8\n";
   EPSGetConverged(eps, &nconv);
+  std::cout << "9\n";
 
   for (int j = 0; j < nconv; j++)
   {
@@ -331,10 +340,10 @@ void Simulation::PowerMethod(int num_states, int return_state_idx)
   v_states_file.Close();
   HDF5Wrapper h_states_file(parameters->GetTarget() + ".h5"); /* HDF5 viewer */
 
-  std::vector<Vec> states; /* vector of currently converged states */
-  Vec psi_old;             /* keeps track of last psi */
-  Vec psi_tmp;             /* Used to place copies in states */
-  Mat left;                /* matrix on left side of Ax=b */
+  std::vector< Vec > states; /* vector of currently converged states */
+  Vec psi_old;               /* keeps track of last psi */
+  Vec psi_tmp;               /* Used to place copies in states */
+  Mat left;                  /* matrix on left side of Ax=b */
 
   KSP ksp;                   /* solver for Ax=b */
   KSPConvergedReason reason; /* reason for convergence check */
@@ -499,7 +508,7 @@ bool Simulation::CheckConvergance(Vec &psi_1, Vec &psi_2, double tol)
  * Assumes all states are orthornormal and applies modified gram-schmit to
  * psi
  */
-void Simulation::ModifiedGramSchmidt(std::vector<Vec> &states)
+void Simulation::ModifiedGramSchmidt(std::vector< Vec > &states)
 {
   int size = states.size();
   dcomp coef;
