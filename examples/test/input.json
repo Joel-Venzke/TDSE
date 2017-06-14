@@ -1,11 +1,11 @@
 {
   "delta_t": 0.005,
   "dimensions": [
-    {"dim_size": 30.0,
-    "delta_x":   0.1},
-    {"dim_size": 60.0,
-    "delta_x":   0.1}],
-  "coordinate_system": "Cylindrical",
+    {"dim_size": 100.0,
+    "delta_x":   1.0},
+    {"dim_size": 100.0,
+    "delta_x":   1.0}],
+  "coordinate_system": "Cartesian",
   "num_electrons": 1,
   "restart": 0,
   "target": {
@@ -20,7 +20,7 @@
         "a" : [0.66294407],
         "b" : [4.073942]}
       }]},
-  "alpha":   0.0,
+  "alpha":   0.78,
   "gobbler": 0.9,
   "order":   2,
   "sigma":   3.0,
@@ -45,20 +45,8 @@
       "cycles_off":     1.0,
       "cycles_delay":   0.0,
       "cep":            0.0,
-      "energy":         1.5,
-      "field_max":      128.3},
-    { "polarization_vector": [0.0,1.0,0.0],
-      "poynting_vector": [0.0,0.0,1.0],
-      "helicity" : "left",
-      "ellipticity" : 0.0,
-      "pulse_shape":   "sin2",
-      "cycles_on":      1.0,
-      "cycles_plateau": 0.0,
-      "cycles_off":     1.0,
-      "cycles_delay":   2.0,
-      "cep":            0.0,
-      "energy":         1.5,
-      "field_max":      128.3}]
+      "energy":         0.057,
+      "field_max":      12.83}]
   }
 }
 

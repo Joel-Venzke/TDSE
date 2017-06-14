@@ -58,7 +58,7 @@ plt.tight_layout()
 fig.savefig("figs/ECS_population.png")
 plt.clf()
 
-# Position
+# Dipole
 print "Plotting Dipole"
 fig = plt.figure()
 for elec_idx in range(num_electrons):
@@ -124,6 +124,32 @@ plt.tight_layout()
 fig.savefig("figs/Dipole_acceleration.png")
 plt.clf()
 
+# HHG Spectrum
+print "Plotting HHG Spectrum"
+fig = plt.figure()
+for elec_idx in range(num_electrons):
+    for dim_idx in range(num_dims):
+        if (not (dim_idx == 0 and
+                 f["Parameters"]["coordinate_system_idx"][0] == 1)):
+            data = observables["dipole_acceleration_" +
+                               str(elec_idx) + "_" + str(dim_idx)][1:]
+            if np.max(data) > 1e-10:
+                plt.semilogy(
+                    np.absolute(
+                        np.fft.fft(
+                            np.lib.pad(
+                                data, (10 * data.shape[0], 10 * data.shape[0]),
+                                'constant',
+                                constant_values=(0.0, 0.0)))),
+                    label="Electron " + str(elec_idx) + " Dim " + str(dim_idx))
+plt.ylabel("HHG Spectrum (a.u.)")
+plt.title("HHG Spectrum")
+plt.legend()
+plt.xlim([0, 1000])
+plt.tight_layout()
+fig.savefig("figs/HHG_Spectrum.png")
+plt.clf()
+
 # Dipole acceleration with envelope
 print "Plotting Dipole Acceleration with field Envelope"
 fig2, ax1 = plt.subplots()
@@ -153,12 +179,8 @@ fig2.savefig("figs/Dipole_acceleration_with_field_envelope.png")
 # Linearity
 print "Plotting Linearity"
 fig = plt.figure()
-for dim_idx in range(num_dims):
-    plt.plot(
-        pulses["field_" + str(dim_idx)],
-        pulses["field_" + str(dim_idx)],
-        label="Pulse Dim " + str(dim_idx))
-    for elec_idx in range(num_electrons):
+for elec_idx in range(num_electrons):
+    for dim_idx in range(num_dims):
         if (not (dim_idx == 0 and
                  f["Parameters"]["coordinate_system_idx"][0] == 1)):
             plt.plot(
@@ -188,3 +210,23 @@ plt.ylabel("Field (a.u.)")
 plt.title("Field")
 plt.legend()
 fig.savefig("figs/Pulse_field.png")
+
+# Spectrum
+print "Plotting Spectrum"
+fig = plt.figure()
+for dim_idx in range(num_dims):
+    data = pulses["field_" + str(dim_idx)][:]
+    if np.max(data) > 1e-10:
+        plt.semilogy(
+            np.absolute(
+                np.fft.fft(
+                    np.lib.pad(
+                        data, (10 * data.shape[0], 10 * data.shape[0]),
+                        'constant',
+                        constant_values=(0.0, 0.0)))),
+            label="field " + str(dim_idx))
+plt.ylabel("Field Spectrum")
+plt.title("Field Spectrum")
+plt.xlim([0, 1000])
+plt.legend()
+fig.savefig("figs/Spectrum.png")
