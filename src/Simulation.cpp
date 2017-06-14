@@ -439,18 +439,12 @@ void Simulation::EigenSolve(PetscInt num_states, PetscInt return_state_idx)
     std::cout << "\nCalculating the lowest " << num_states
               << " eigenvectors using SLEPC\n"
               << std::flush;
-  clock_t t;
   /* write index for checkpoints, Starts at 1 to avoid writing on first
    * iteration*/
-  int i                = 1;
-  double *state_energy = parameters->state_energy.get(); /* energy guesses */
-  double energy; /* stores energy for IO */
-  double norm;   /* stores norm for IO */
+  int i      = 1;
   double tol = parameters->GetTol();
   dcomp eigen_real;
   dcomp eigen_imag;
-  double target = state_energy[0];
-  double error;
   int nconv;
 
   /* Files for */
@@ -460,9 +454,6 @@ void Simulation::EigenSolve(PetscInt num_states, PetscInt return_state_idx)
   v_states_file.Close();
   HDF5Wrapper h_states_file(parameters->GetTarget() + ".h5"); /* HDF5 viewer */
 
-  std::vector< Vec > states; /* vector of currently converged states */
-  Vec psi_real;              /* Used to place copies in states */
-  Vec psi_imag;              /* Used to place copies in states */
   psi = wavefunction->GetPsi();
 
   EPS eps; /* eigen solver */

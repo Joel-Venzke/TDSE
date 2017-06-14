@@ -464,15 +464,17 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
 {
   if (world.rank() == 0)
   {
-    int num_dims   = p.GetNumDims();
-    int num_pulses = p.GetNumPulses();
-    header         = true;
+    PetscInt num_dims   = p.GetNumDims();
+    PetscInt num_pulses = p.GetNumPulses();
+    header              = true;
 
     CreateGroup("/Parameters/");
 
     /* write out header values */
     WriteObject(num_dims, "/Parameters/num_dims",
                 "Number of dimension in simulation");
+    WriteObject(p.GetNumElectrons(), "/Parameters/num_electrons",
+                "Number of electrons in the simulation");
     WriteObject(p.dim_size.get(), num_dims, "/Parameters/dim_size",
                 "The length of that dimension in atomic units.");
     WriteObject(p.delta_x.get(), num_dims, "/Parameters/delta_x",

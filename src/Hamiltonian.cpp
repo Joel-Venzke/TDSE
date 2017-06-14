@@ -28,15 +28,7 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
   eta                   = pi / 4.0;
   order                 = p.GetOrder();
   order_middle_idx      = order / 2;
-
-  gobbler_idx = new PetscInt*[num_dims];
-  for (PetscInt i = 0; i < num_dims; ++i)
-  {
-    gobbler_idx[i] = new PetscInt[2];
-    gobbler_idx[i][0] =
-        (num_x[i] - PetscInt(num_x[i] * p.GetGobbler())) / 2 - 1;
-    gobbler_idx[i][1] = num_x[i] - 1 - gobbler_idx[i][0];
-  }
+  gobbler_idx           = w.GetGobblerIdx();
 
   /* call this after setting gobbler and before creating the Hamiltonian */
   SetUpCoefficients();

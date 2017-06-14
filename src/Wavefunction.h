@@ -25,7 +25,8 @@ class Wavefunction : protected Utils
   bool psi_alloc;
   /* false if its not the first time checkpointing the wavefunction */
   bool first_pass;
-  double sigma; /* std of gaussian guess */
+  double sigma;           /* std of gaussian guess */
+  PetscInt **gobbler_idx; /* distance that starts gobbler */
 
   PetscInt write_counter_checkpoint;
   PetscInt write_counter_observables;
@@ -41,6 +42,7 @@ class Wavefunction : protected Utils
   dcomp GetPositionVal(PetscInt idx, PetscInt elec_idx, PetscInt dim_idx);
   dcomp GetDipoleAccerationVal(PetscInt idx, PetscInt elec_idx,
                                PetscInt dim_idx);
+  dcomp GetGobblerVal(PetscInt idx);
 
   double GetDistance(std::vector< PetscInt > idx_array, PetscInt elec_idx);
 
@@ -71,6 +73,7 @@ class Wavefunction : protected Utils
   double GetEnergy(Mat *h, Vec &p);
   double GetPosition(PetscInt elec_idx, PetscInt dim_idx);
   double GetDipoleAcceration(PetscInt elec_idx, PetscInt dim_idx);
+  double GetGobbler();
   void ResetPsi();
 
   PetscInt *GetNumX();
@@ -78,5 +81,6 @@ class Wavefunction : protected Utils
   PetscInt GetNumPsiBuild();
   Vec *GetPsi();
   double **GetXValue();
+  PetscInt **GetGobblerIdx();
   PetscInt GetWrieCounterCheckpoint();
 };

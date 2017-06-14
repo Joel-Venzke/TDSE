@@ -25,6 +25,15 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   /* allocate psi_1, psi_2, and psi */
   CreatePsi();
 
+  gobbler_idx = new PetscInt*[num_dims];
+  for (PetscInt i = 0; i < num_dims; ++i)
+  {
+    gobbler_idx[i] = new PetscInt[2];
+    gobbler_idx[i][0] =
+        (num_x[i] - PetscInt(num_x[i] * p.GetGobbler())) / 2 - 1;
+    gobbler_idx[i][1] = num_x[i] - 1 - gobbler_idx[i][0];
+  }
+
   if (p.GetRestart() == 1)
   {
     LoadRestart(h5_file, viewer_file, p.GetWriteFrequencyCheckpoint(),
@@ -118,6 +127,10 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
                         write_counter_observables);
     h5_file.WriteObject(Norm(), "/Observables/norm", "Norm of wavefunction",
                         write_counter_observables);
+    h5_file.WriteObject(
+        GetGobbler(), "/Observables/gobbler",
+        "Amount of wavefunction in absorbing boundary potential",
+        write_counter_observables);
     for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
     {
       for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
@@ -168,6 +181,8 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
     {
       h5_file.WriteObject(time, "/Observables/time", write_counter_observables);
       h5_file.WriteObject(Norm(), "/Observables/norm",
+                          write_counter_observables);
+      h5_file.WriteObject(GetGobbler(), "/Observables/gobbler",
                           write_counter_observables);
       for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
       {
@@ -409,6 +424,14 @@ void Wavefunction::CreateObservable(PetscInt observable_idx, PetscInt elec_idx,
   {
     CreateObservable(0, 0, 0);
   }
+  else if (observable_idx == 3) /* r */
+  {
+    for (PetscInt idx = low; idx < high; idx++)
+    {
+      val = GetGobblerVal(idx);
+      VecSetValues(psi_tmp, 1, &idx, &val, INSERT_VALUES);
+    }
+  }
   else
   {
     EndRun("Bad observable index in Wavefunction");
@@ -462,6 +485,28 @@ dcomp Wavefunction::GetPositionVal(PetscInt idx, PetscInt elec_idx,
   /* idx for return */
   std::vector< PetscInt > idx_array = GetIntArray(idx);
   ret_val += x_value[dim_idx][idx_array[elec_idx * num_dims + dim_idx]];
+  return ret_val;
+}
+
+dcomp Wavefunction::GetGobblerVal(PetscInt idx)
+{
+  /* Value to be returned */
+  dcomp ret_val(0.0, 0.0);
+  /* idx for return */
+  std::vector< PetscInt > idx_array = GetIntArray(idx);
+  for (int elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
+  {
+    for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+    {
+      PetscInt current_idx = idx_array[elec_idx * num_dims + dim_idx];
+      if (current_idx >= gobbler_idx[dim_idx][1] or
+          (dim_idx != 0 and coordinate_system_idx != 1 and
+           current_idx <= gobbler_idx[dim_idx][0]))
+      {
+        ret_val = dcomp(1.0, 0.0);
+      }
+    }
+  }
   return ret_val;
 }
 
@@ -563,7 +608,7 @@ double Wavefunction::GetEnergy(Mat* h, Vec& p)
   }
   else
   {
-    MatMult(*h, p , psi_tmp);
+    MatMult(*h, p, psi_tmp);
     VecDot(p, psi_tmp, &energy);
   }
   return energy.real();
@@ -609,6 +654,25 @@ double Wavefunction::GetDipoleAcceration(PetscInt elec_idx, PetscInt dim_idx)
   return expectation.real();
 }
 
+double Wavefunction::GetGobbler()
+{
+  PetscComplex expectation;
+  if (coordinate_system_idx == 1)
+  {
+    CreateObservable(2, 0, 0); /* pho */
+    VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi);
+    CreateObservable(3, 0, 0); /* gobbler */
+    VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
+  }
+  else
+  {
+    CreateObservable(3, 0, 0); /* gobbler */
+    VecPointwiseMult(psi_tmp, psi_tmp, psi);
+  }
+  VecDot(psi, psi_tmp, &expectation);
+  return expectation.real();
+}
+
 void Wavefunction::ResetPsi()
 {
   CreatePsi();
@@ -624,6 +688,8 @@ PetscInt Wavefunction::GetNumPsiBuild() { return num_psi_build; }
 Vec* Wavefunction::GetPsi() { return &psi; }
 
 double** Wavefunction::GetXValue() { return x_value; }
+
+PetscInt** Wavefunction::GetGobblerIdx() { return gobbler_idx; }
 
 PetscInt Wavefunction::GetWrieCounterCheckpoint()
 {
