@@ -23,7 +23,6 @@ for i, psi in enumerate(psi_value):
         max_val_tmp = np.max(np.absolute(psi))
         if (max_val_tmp > max_val):
             max_val = max_val_tmp
-max_val = 1
 
 if len(shape) == 3:
     from mayavi import mlab

@@ -9,9 +9,20 @@ psi_value = target["psi"]
 energy = target["Energy"]
 psi_time = f["Wavefunction"]["time"][:]
 shape = f["Wavefunction"]["num_x"][:]
+gobbler = f["Parameters"]["gobbler"][0]
+upper_idx = (shape * gobbler - 1).astype(int)
+lower_idx = shape - upper_idx
 print shape
 x = f["Wavefunction"]["x_value_0"][:]
 y = f["Wavefunction"]["x_value_1"][:]
+
+max_val = 0
+# calculate color bounds
+for i, psi in enumerate(psi_value):
+    psi = psi[:, 0] + 1j * psi[:, 1]
+    max_val_tmp = np.max(np.absolute(psi))
+    if (max_val_tmp > max_val):
+        max_val = max_val_tmp
 
 if len(shape) == 3:
     from mayavi import mlab
@@ -45,46 +56,45 @@ elif len(shape) == 2:
     from matplotlib.colors import LogNorm
     fig = plt.figure()
     for i, psi in enumerate(psi_value):
-        if i > 0:  # the zeroth wave function is the guess and not relevant
-            print "plotting", i
-            # set up initial figure with color bar
-            psi = psi[:, 0] + 1j * psi[:, 1]
-            psi.shape = tuple(shape)
-            if f["Parameters"]["coordinate_system_idx"][0] == 1:
-                x_min_idx = 0
-            else:
-                x_min_idx = lower_idx[0]
-            x_max_idx = upper_idx[0]
-            y_min_idx = lower_idx[1]
-            y_max_idx = upper_idx[1]
-            psi = psi[x_min_idx:x_max_idx, y_min_idx:y_max_idx]
-            if f["Parameters"]["coordinate_system_idx"][0] == 1:
-                psi = np.absolute(
-                    np.multiply(
-                        np.conjugate(psi),
-                        np.multiply(x[x_min_idx:x_max_idx], psi.transpose())
-                        .transpose()))
-                plt.imshow(
-                    psi,
-                    cmap='viridis',
-                    origin='lower',
-                    extent=[
-                        y[y_min_idx], y[y_max_idx], x[x_min_idx], x[x_max_idx]
-                    ],
-                    norm=LogNorm(vmin=1e-12, vmax=max_val))
-            else:
-                plt.imshow(
-                    np.absolute(psi),
-                    cmap='viridis',
-                    origin='lower',
-                    extent=[
-                        y[y_min_idx], y[y_max_idx], x[x_min_idx], x[x_max_idx]
-                    ],
-                    norm=LogNorm(vmin=1e-12, vmax=max_val))
-            # color bar doesn't change during the video so only set it here
-            plt.colorbar()
-            plt.xlabel("X-axis (a.u.)")
-            plt.ylabel("Y-axis  (a.u.)")
-            plt.title("Wave Function - Energy " + str(energy[i]))
-            fig.savefig("figs/" + target_name + "_log_state_" + str(i).zfill(3)
-                        + ".jpg")
+        print "plotting", i
+        # set up initial figure with color bar
+        psi = psi[:, 0] + 1j * psi[:, 1]
+        psi.shape = tuple(shape)
+        if f["Parameters"]["coordinate_system_idx"][0] == 1:
+            x_min_idx = 0
+        else:
+            x_min_idx = lower_idx[0]
+        x_max_idx = upper_idx[0]
+        y_min_idx = lower_idx[1]
+        y_max_idx = upper_idx[1]
+        psi = psi[x_min_idx:x_max_idx, y_min_idx:y_max_idx]
+        if f["Parameters"]["coordinate_system_idx"][0] == 1:
+            psi = np.absolute(
+                np.multiply(
+                    np.conjugate(psi),
+                    np.multiply(x[x_min_idx:x_max_idx], psi.transpose())
+                    .transpose()))
+            plt.imshow(
+                psi,
+                cmap='viridis',
+                origin='lower',
+                extent=[
+                    y[y_min_idx], y[y_max_idx], x[x_min_idx], x[x_max_idx]
+                ],
+                norm=LogNorm(vmin=1e-12, vmax=max_val))
+        else:
+            plt.imshow(
+                np.absolute(psi),
+                cmap='viridis',
+                origin='lower',
+                extent=[
+                    y[y_min_idx], y[y_max_idx], x[x_min_idx], x[x_max_idx]
+                ],
+                norm=LogNorm(vmin=1e-12, vmax=max_val))
+        # color bar doesn't change during the video so only set it here
+        plt.colorbar()
+        plt.xlabel("X-axis (a.u.)")
+        plt.ylabel("Y-axis  (a.u.)")
+        plt.title("Wave Function - Energy " + str(energy[i]))
+        fig.savefig("figs/" + target_name + "_log_state_" + str(i).zfill(3) +
+                    ".jpg")
