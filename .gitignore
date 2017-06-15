@@ -74,3 +74,7 @@ aclocal.m4
 
 # plots and such
 figs/
+
+# documentation
+doc/html/
+doc/latex/

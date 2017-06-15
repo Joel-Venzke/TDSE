@@ -1,15 +1,18 @@
 ALL: TDSE
 
+include ${SLEPC_DIR}/lib/slepc/conf/slepc_rules
+include ${SLEPC_DIR}/lib/slepc/conf/slepc_variables
+#include ${PETSC_DIR}/lib/petsc/conf/variables
+#include ${PETSC_DIR}/lib/petsc/conf/rules
+
 CFLAGS = ${PETSC_CC_INCLUDES}
 #CXXFLAGS= ${PETSC_CXX_INCLUDES} -Wall -I/projects/jove7731/local/intel/hdf5/include -I/curc/sw/boost/1.61.0/impi/5.1.3.210/intel/16.0.3/include
 CXXFLAGS= ${PETSC_CXX_INCLUDES} -std=c++14 -Wall -I/projects/jove7731/local/gcc/hdf5/include -I${CURC_BOOST_INC}
 FFLAGS = ${PETSC_FC_INCLUDES}
-INCLUDES = -lhdf5_hl_cpp -lhdf5_cpp -lboost_mpi -L${CURC_BOOST_LIB}
-CXX = /usr/local/bin/mpicxx
+CXX = mpicxx
+CC = mpicc
+INCLUDES = -lhdf5_hl_cpp -lhdf5_cpp -lboost_mpi -L${CURC_BOOST_LIB} ${SLEPC_EPS_LIB}
 OBJECTS = TDSE.o Parameters.o ViewWrapper.o HDF5Wrapper.o Pulse.o PETSCWrapper.o Wavefunction.o Hamiltonian.o Simulation.o Utils.o
-
-include ${PETSC_DIR}/lib/petsc/conf/variables
-include ${PETSC_DIR}/lib/petsc/conf/rules
 
 TDSE: ${OBJECTS}
 	${CXX} -o TDSE ${OBJECTS} ${PETSC_LIB} ${INCLUDES}

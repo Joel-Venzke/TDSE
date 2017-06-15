@@ -1,5 +1,12 @@
-// #include "config.h"
-#include <petsc.h>
+/**
+ * @file TDSE.cpp
+ * @brief Solves the Time-Dependent Schrodinger Equation for ultrafast laser
+ * pulses
+ * @author Joel Venzke
+ * @date 06/13/2017
+ */
+
+#include <slepc.h>
 #include <iostream>
 #include "HDF5Wrapper.h"
 #include "Hamiltonian.h"
@@ -10,6 +17,12 @@
 #include "ViewWrapper.h"
 #include "Wavefunction.h"
 
+/**
+ * @brief Solves the Time-Dependent Schrodinger Equation for ultrafast laser
+ * pulses
+ * @details Creates the needed objects, controls the structure of each
+ * calculation using the Parameter class and controls the petsc timing stages
+ */
 int main(int argc, char** argv)
 {
   PETSCWrapper p_wrap(argc, argv);
@@ -29,20 +42,26 @@ int main(int argc, char** argv)
                parameters);
   p_wrap.PopStage(); /* Set up */
 
-  p_wrap.Print(
-      "\n****************** Eigen State Calculation ******************\n\n");
-
-  p_wrap.PushStage("Eigen State");
-  /* get ground states */
-  switch (parameters.GetStateSolverIdx())
+  if (parameters.GetRestart() != 1)
   {
-    case 0: /* File */
-      break;
-    case 2: /* Power */
-      s.PowerMethod(parameters.GetNumStates());
-      break;
+    p_wrap.Print(
+        "\n****************** Eigen State Calculation ******************\n\n");
+
+    p_wrap.PushStage("Eigen State");
+    /* get ground states */
+    switch (parameters.GetStateSolverIdx())
+    {
+      case 0: /* File */
+        break;
+      case 2: /* Power */
+        s.PowerMethod(parameters.GetNumStates(), parameters.GetNumStates() - 1);
+        break;
+      case 3: /* SLEPC */
+        s.EigenSolve(parameters.GetNumStates(), parameters.GetNumStates() - 1);
+        break;
+    }
+    p_wrap.PopStage(); /* Eigen State */
   }
-  p_wrap.PopStage(); /* Eigen State */
 
   p_wrap.PushStage("Propagation");
   if (parameters.GetPropagate() == 1)
@@ -50,9 +69,9 @@ int main(int argc, char** argv)
     p_wrap.Print(
         "\n************************ Propagation ************************\n\n");
     s.Propagate();
+    // s.SplitOpperator();
   }
   p_wrap.PopStage(); /* Propagation */
-
   p_wrap.Print(
       "\n******************** Simulation Complete ********************\n\n");
 

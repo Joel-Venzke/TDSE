@@ -7,8 +7,8 @@ std::string FileToString(std::string file_name)
 {
   // TODO(jove7731): check if file exists
   std::ifstream t(file_name);
-  std::string str((std::istreambuf_iterator<char>(t)),
-                  std::istreambuf_iterator<char>());
+  std::string str((std::istreambuf_iterator< char >(t)),
+                  std::istreambuf_iterator< char >());
   return str;
 }
 
@@ -41,14 +41,29 @@ void Parameters::Setup(std::string file_name)
   json data = FileToJson(file_name);
 
   /* get numeric information */
-  delta_t       = data["delta_t"];
-  num_dims      = data["dimensions"].size();
-  num_electrons = data["num_electrons"];
-  dim_size      = std::make_unique<double[]>(num_dims);
-  delta_x       = std::make_unique<double[]>(num_dims);
-  delta_x_2     = std::make_unique<double[]>(num_dims);
+  delta_t           = data["delta_t"];
+  num_dims          = data["dimensions"].size();
+  num_electrons     = data["num_electrons"];
+  coordinate_system = data["coordinate_system"];
 
-  for (int i = 0; i < num_dims; ++i)
+  if (coordinate_system == "Cartesian")
+  {
+    coordinate_system_idx = 0;
+  }
+  else if (coordinate_system == "Cylindrical")
+  {
+    coordinate_system_idx = 1;
+  }
+  else
+  {
+    coordinate_system_idx = -1;
+  }
+
+  dim_size  = std::make_unique< double[] >(num_dims);
+  delta_x   = std::make_unique< double[] >(num_dims);
+  delta_x_2 = std::make_unique< double[] >(num_dims);
+
+  for (PetscInt i = 0; i < num_dims; ++i)
   {
     dim_size[i]  = data["dimensions"][i]["dim_size"];
     delta_x[i]   = data["dimensions"][i]["delta_x"];
@@ -64,27 +79,28 @@ void Parameters::Setup(std::string file_name)
   write_frequency_observables = data["write_frequency_observables"];
   write_frequency_eigin_state = data["write_frequency_eigin_state"];
   gobbler                     = data["gobbler"];
+  order                       = data["order"];
   sigma                       = data["sigma"];
   tol                         = data["tol"];
   state_solver                = data["state_solver"];
   num_states                  = data["states"].size();
 
-  state_energy = std::make_unique<double[]>(num_states);
+  state_energy = std::make_unique< double[] >(num_states);
 
-  for (int i = 0; i < num_states; i++)
+  for (PetscInt i = 0; i < num_states; i++)
   {
     state_energy[i] = data["states"][i]["energy"];
   }
 
-  z        = std::make_unique<double[]>(num_nuclei);
-  z_c      = std::make_unique<double[]>(num_nuclei);
-  c0       = std::make_unique<double[]>(num_nuclei);
-  r0       = std::make_unique<double[]>(num_nuclei);
-  sae_size = std::make_unique<int[]>(num_nuclei);
+  z        = std::make_unique< double[] >(num_nuclei);
+  z_c      = std::make_unique< double[] >(num_nuclei);
+  c0       = std::make_unique< double[] >(num_nuclei);
+  r0       = std::make_unique< double[] >(num_nuclei);
+  sae_size = std::make_unique< PetscInt[] >(num_nuclei);
   a        = new double*[num_nuclei];
   b        = new double*[num_nuclei];
   location = new double*[num_nuclei];
-  for (int i = 0; i < num_nuclei; ++i)
+  for (PetscInt i = 0; i < num_nuclei; ++i)
   {
     z[i] = data["target"]["nuclei"][i]["z"];
 
@@ -103,7 +119,7 @@ void Parameters::Setup(std::string file_name)
 
       a[i] = new double[sae_size[i]];
       b[i] = new double[sae_size[i]];
-      for (int j = 0; j < sae_size[i]; ++j)
+      for (PetscInt j = 0; j < sae_size[i]; ++j)
       {
         a[i][j] = data["target"]["nuclei"][i]["SAE"]["a"][j];
         b[i][j] = data["target"]["nuclei"][i]["SAE"]["b"][j];
@@ -130,7 +146,7 @@ void Parameters::Setup(std::string file_name)
       EndRun("Nuclei " + std::to_string(i) +
              " location has to small of a dimension");
     }
-    for (int j = 0; j < num_dims; ++j)
+    for (PetscInt j = 0; j < num_dims; ++j)
     {
       location[i][j] = data["target"]["nuclei"][i]["location"][j];
     }
@@ -163,6 +179,10 @@ void Parameters::Setup(std::string file_name)
   {
     state_solver_idx = 2;
   }
+  else if (state_solver == "SLEPC")
+  {
+    state_solver_idx = 3;
+  }
 
   propagate      = data["propagate"];
   free_propagate = data["free_propagate"];
@@ -171,23 +191,23 @@ void Parameters::Setup(std::string file_name)
   num_pulses = data["laser"]["pulses"].size();
 
   /* allocate memory */
-  pulse_shape         = std::make_unique<std::string[]>(num_pulses);
-  pulse_shape_idx     = std::make_unique<int[]>(num_pulses);
-  cycles_on           = std::make_unique<double[]>(num_pulses);
-  cycles_plateau      = std::make_unique<double[]>(num_pulses);
-  cycles_off          = std::make_unique<double[]>(num_pulses);
-  cycles_delay        = std::make_unique<double[]>(num_pulses);
-  cep                 = std::make_unique<double[]>(num_pulses);
-  energy              = std::make_unique<double[]>(num_pulses);
-  field_max           = std::make_unique<double[]>(num_pulses);
-  ellipticity         = std::make_unique<double[]>(num_pulses);
-  helicity            = std::make_unique<std::string[]>(num_pulses);
-  helicity_idx        = std::make_unique<int[]>(num_pulses);
+  pulse_shape         = std::make_unique< std::string[] >(num_pulses);
+  pulse_shape_idx     = std::make_unique< PetscInt[] >(num_pulses);
+  cycles_on           = std::make_unique< double[] >(num_pulses);
+  cycles_plateau      = std::make_unique< double[] >(num_pulses);
+  cycles_off          = std::make_unique< double[] >(num_pulses);
+  cycles_delay        = std::make_unique< double[] >(num_pulses);
+  cep                 = std::make_unique< double[] >(num_pulses);
+  energy              = std::make_unique< double[] >(num_pulses);
+  field_max           = std::make_unique< double[] >(num_pulses);
+  ellipticity         = std::make_unique< double[] >(num_pulses);
+  helicity            = std::make_unique< std::string[] >(num_pulses);
+  helicity_idx        = std::make_unique< PetscInt[] >(num_pulses);
   polarization_vector = new double*[num_pulses];
   if (num_dims == 3) poynting_vector = new double*[num_pulses];
 
   /* read data */
-  for (int pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
+  for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
   {
     pulse_shape[pulse_idx] = data["laser"]["pulses"][pulse_idx]["pulse_shape"];
 
@@ -196,9 +216,13 @@ void Parameters::Setup(std::string file_name)
     {
       pulse_shape_idx[pulse_idx] = 0;
     }
-    else if (pulse_shape[pulse_idx] == "linear")
+    else if (pulse_shape[pulse_idx] == "gaussian")
     {
       pulse_shape_idx[pulse_idx] = 1;
+    }
+    else
+    {
+      pulse_shape_idx[pulse_idx] = -1;
     }
 
     if (data["laser"]["pulses"][pulse_idx]["polarization_vector"].size() <
@@ -215,7 +239,7 @@ void Parameters::Setup(std::string file_name)
       poynting_vector[pulse_idx] = new double[num_dims];
       poynting_norm              = 0.0;
     }
-    for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+    for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
     {
       polarization_vector[pulse_idx][dim_idx] =
           data["laser"]["pulses"][pulse_idx]["polarization_vector"][dim_idx];
@@ -233,7 +257,7 @@ void Parameters::Setup(std::string file_name)
     /* normalize the polarization vector*/
     polar_norm                       = sqrt(polar_norm);
     if (num_dims == 3) poynting_norm = sqrt(poynting_norm);
-    for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+    for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
     {
       polarization_vector[pulse_idx][dim_idx] /= polar_norm;
       if (num_dims == 3 and poynting_norm > 1e-10)
@@ -279,7 +303,7 @@ void Parameters::Setup(std::string file_name)
 
 Parameters::~Parameters()
 {
-  for (int i = 0; i < num_nuclei; ++i)
+  for (PetscInt i = 0; i < num_nuclei; ++i)
   {
     delete location[i];
     delete a[i];
@@ -288,7 +312,7 @@ Parameters::~Parameters()
   delete[] location;
   delete[] a;
   delete[] b;
-  for (int pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
+  for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
   {
     delete polarization_vector[pulse_idx];
     if (num_dims == 3) delete poynting_vector[pulse_idx];
@@ -308,11 +332,69 @@ void Parameters::Validate()
   bool error_found = false; /* set to true if error is found */
   double total;
 
+  /* coordinate system checks */
+  if (coordinate_system_idx == -1)
+  {
+    error_found = true;
+    err_str += "\nUnsupported coordinate system: ";
+    err_str += coordinate_system;
+    err_str += "\nSupported coordinate systems are:\n";
+    err_str += "\"Cartesian\" and \"Cylindrical\"\n";
+  }
+  if (coordinate_system_idx == 1)
+  {
+    if (num_dims != 2)
+    {
+      error_found = true;
+      err_str +=
+          "\nCylindrical coordinate systems only supports 2D simulations\n";
+    }
+    if (num_electrons != 1)
+    {
+      error_found = true;
+      err_str +=
+          "\nCylindrical coordinate systems only supports single electron "
+          "simulations\n";
+    }
+    for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; pulse_idx++)
+    {
+      if (polarization_vector[pulse_idx][0] > 1e-14)
+      {
+        std::cout << polarization_vector[pulse_idx][0] << "\n";
+        error_found = true;
+        err_str +=
+            "\nCylindrical coordinate systems only supports polarization "
+            "vectors\npointing in the z direction (i.e. [0.0,1.0])\nPulse " +
+            std::to_string(pulse_idx) + " does not meet this requirement\n";
+      }
+      if (ellipticity[pulse_idx] > 1e-14)
+      {
+        error_found = true;
+        err_str +=
+            "\nCylindrical coordinate systems only supports linear polarized "
+            "light\nPulse " +
+            std::to_string(pulse_idx) + " has a non zero ellipticity\n";
+      }
+    }
+    for (PetscInt nuclei_idx = 0; nuclei_idx < num_nuclei; ++nuclei_idx)
+    {
+      if (location[nuclei_idx][0] > 1e-14)
+      {
+        error_found = true;
+        err_str +=
+            "\nCylindrical coordinate systems only supports nuclei on the z "
+            "axis (i.e. [0.0, z_value])\nNuclei " +
+            std::to_string(nuclei_idx) + " has a non zero radial coordinate\n";
+      }
+    }
+  }
+
   /* Check pulses */
-  for (int pulse_idx = 0; pulse_idx < num_pulses; pulse_idx++)
+  for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; pulse_idx++)
   {
     /* Check pulse shapes */
-    if (pulse_shape[pulse_idx] != "sin2")
+    if (pulse_shape[pulse_idx] != "sin2" and
+        pulse_shape[pulse_idx] != "gaussian")
     {
       error_found = true;
       err_str += "\nPulse ";
@@ -320,19 +402,19 @@ void Parameters::Validate()
       err_str += " has unsupported pulse shape: \"";
       err_str += pulse_shape[pulse_idx] + "\"\n";
       err_str += "Current support includes: ";
-      err_str += "\"sin2\"\n";
+      err_str += "\"sin2\" and \"gaussian\"\n";
     }
 
     /* check field_max */
-    if (field_max[pulse_idx] <= 0)
-    {
-      error_found = true;
-      err_str += "\nPulse ";
-      err_str += std::to_string(pulse_idx);
-      err_str += " has unsupported field_max: \"";
-      err_str += std::to_string(field_max[pulse_idx]) + "\"\n";
-      err_str += "field_max should be greater than 0\n";
-    }
+    // if (field_max[pulse_idx] <= 0)
+    // {
+    //   error_found = true;
+    //   err_str += "\nPulse ";
+    //   err_str += std::to_string(pulse_idx);
+    //   err_str += " has unsupported field_max: \"";
+    //   err_str += std::to_string(field_max[pulse_idx]) + "\"\n";
+    //   err_str += "field_max should be greater than 0\n";
+    // }
 
     /* check cycles_on */
     if (cycles_on[pulse_idx] < 0)
@@ -383,7 +465,7 @@ void Parameters::Validate()
     if (num_dims == 3)
     {
       total = 0.0;
-      for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+      for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
       {
         total += polarization_vector[pulse_idx][dim_idx] *
                  poynting_vector[pulse_idx][dim_idx];
@@ -423,12 +505,20 @@ void Parameters::Validate()
     err_str += "\nInvalid state solver: \"";
     err_str += "States from file is not supported yet\"";
   }
-  else if (state_solver != "ITP" && state_solver != "Power")
+  else if (state_solver == "ITP")
   {
     error_found = true;
     err_str += "\nInvalid state solver: \"";
     err_str += state_solver;
-    err_str += "\"\nvalid solvers are \"ITP\" and \"Power\"\n";
+    err_str += "\"\nITP sucks, so I dropped support for it\n";
+    err_str += "\nvalid solvers are \"SLEPC\" and \"Power\"\n";
+  }
+  else if (state_solver != "Power" && state_solver != "SLEPC")
+  {
+    error_found = true;
+    err_str += "\nInvalid state solver: \"";
+    err_str += state_solver;
+    err_str += "\"\nvalid solvers are \"SLEPC\" and \"Power\"\n";
   }
 
   /* exit here to get all errors in one run */
@@ -448,17 +538,19 @@ void Parameters::Validate()
 /* getters */
 double Parameters::GetDeltaT() { return delta_t; }
 
-int Parameters::GetNumDims() { return num_dims; }
+PetscInt Parameters::GetNumDims() { return num_dims; }
 
-int Parameters::GetNumElectrons() { return num_electrons; }
+PetscInt Parameters::GetNumElectrons() { return num_electrons; }
 
-int Parameters::GetRestart() { return restart; }
+PetscInt Parameters::GetCoordinateSystemIdx() { return coordinate_system_idx; }
+
+PetscInt Parameters::GetRestart() { return restart; }
 
 std::string Parameters::GetTarget() { return target; }
 
-int Parameters::GetTargetIdx() { return target_idx; }
+PetscInt Parameters::GetTargetIdx() { return target_idx; }
 
-int Parameters::GetNumNuclei() { return num_nuclei; }
+PetscInt Parameters::GetNumNuclei() { return num_nuclei; }
 
 double** Parameters::GetLocation() { return location; }
 
@@ -468,38 +560,40 @@ double** Parameters::GetB() { return b; }
 
 double Parameters::GetAlpha() { return alpha; }
 
-int Parameters::GetWriteFrequencyCheckpoint()
+PetscInt Parameters::GetWriteFrequencyCheckpoint()
 {
   return write_frequency_checkpoint;
 }
 
-int Parameters::GetWriteFrequencyObservables()
+PetscInt Parameters::GetWriteFrequencyObservables()
 {
   return write_frequency_observables;
 }
 
-int Parameters::GetWriteFrequencyEigenState()
+PetscInt Parameters::GetWriteFrequencyEigenState()
 {
   return write_frequency_eigin_state;
 }
 
 double Parameters::GetGobbler() { return gobbler; }
 
+PetscInt Parameters::GetOrder() { return order; }
+
 double Parameters::GetSigma() { return sigma; }
 
-int Parameters::GetNumStates() { return num_states; }
+PetscInt Parameters::GetNumStates() { return num_states; }
 
 double Parameters::GetTol() { return tol; }
 
-int Parameters::GetStateSolverIdx() { return state_solver_idx; }
+PetscInt Parameters::GetStateSolverIdx() { return state_solver_idx; }
 
 std::string Parameters::GetStateSolver() { return state_solver; }
 
-int Parameters::GetPropagate() { return propagate; }
+PetscInt Parameters::GetPropagate() { return propagate; }
 
-int Parameters::GetFreePropagate() { return free_propagate; }
+PetscInt Parameters::GetFreePropagate() { return free_propagate; }
 
-int Parameters::GetNumPulses() { return num_pulses; }
+PetscInt Parameters::GetNumPulses() { return num_pulses; }
 
 double** Parameters::GetPolarizationVector() { return polarization_vector; }
 

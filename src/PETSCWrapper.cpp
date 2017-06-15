@@ -4,6 +4,7 @@ PETSCWrapper::PETSCWrapper(int argc, char** argv)
 {
   ierr  = PetscInitialize(&argc, &argv, (char*)0, "TDSE");
   ierr  = PetscInitializeFortran();
+  ierr  = SlepcInitialize(&argc, &argv, (char*)0, "SLEPC");
   setup = true;
 }
 
@@ -14,6 +15,7 @@ PETSCWrapper::~PETSCWrapper()
 {
   if (setup)
   {
+    ierr = SlepcFinalize();
     ierr = PetscFinalize();
   }
 }

@@ -27,10 +27,9 @@ module list
   --with-hdf5-dir=/jilasoft/software/intel-2017.1/openmpi-2.0/hdf5/1.10.0-patch1/ \
   --download-fblaslapack=1 \
   --download-fftw=yes \
-  --download-superlu_dist=yes \
-  --download-superlu=yes \
   --download-suitesparse=yes \
   --download-metis=yes \
   --download-parmetis=yes \
   --download-scalapack=yes \
-  --download-mumps=yes
+#  --with-64-bit-indices \
+
