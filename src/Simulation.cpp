@@ -459,7 +459,7 @@ void Simulation::EigenSolve(PetscInt num_states, PetscInt return_state_idx)
   EPS eps; /* eigen solver */
   EPSCreate(PETSC_COMM_WORLD, &eps);
 
-  EPSSetOperators(eps, *(hamiltonian->GetTimeIndependent()), NULL);
+  EPSSetOperators(eps, *(hamiltonian->GetTimeIndependent(false)), NULL);
   EPSSetProblemType(eps, EPS_NHEP);
   EPSSetTolerances(eps, tol, PETSC_DECIDE);
   EPSSetWhichEigenpairs(eps, EPS_SMALLEST_REAL);
@@ -590,7 +590,8 @@ void Simulation::PowerMethod(PetscInt num_states, PetscInt return_state_idx)
   for (PetscInt iter = 0; iter < num_states; iter++)
   {
     /* Get Hamiltonian */
-    MatCopy(*(hamiltonian->GetTimeIndependent()), left, SAME_NONZERO_PATTERN);
+    MatCopy(*(hamiltonian->GetTimeIndependent(false)), left,
+            SAME_NONZERO_PATTERN);
     /* Shift by eigen value */
     MatShift(left, -1.0 * state_energy[iter]);
 
