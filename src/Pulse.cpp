@@ -164,6 +164,8 @@ void Pulse::InitializePulse(PetscInt n)
   PetscInt on_start, plateau_start, off_start, off_end;
   double period = 2 * pi / energy[n];
   double s1;
+  double current_cep = cep[n] + (((int)cycles_on[n]) - cycles_on[n]);
+  std::cout << n << ": " << current_cep << "\n";
 
   /* index that turns pulse on */
   on_start = ceil(period * cycles_delay[n] / (delta_t));
@@ -229,14 +231,16 @@ void Pulse::InitializePulse(PetscInt n)
       /* calculate the actual pulse */
       pulse_value[n][dim_idx][time_idx] =
           polarization_vector_major[n][dim_idx] * pulse_envelope[n][time_idx] *
-          sin(energy[n] * delta_t * (time_idx - on_start) + cep[n] * 2 * pi);
+          sin(energy[n] * delta_t * (time_idx - on_start) +
+              current_cep * 2 * pi);
       if (helicity_idx[n] == 0) /* right */
       {
         /* We want cos(...) */
         pulse_value[n][dim_idx][time_idx] +=
             polarization_vector_minor[n][dim_idx] *
             pulse_envelope[n][time_idx] *
-            cos(energy[n] * delta_t * (time_idx - on_start) + cep[n] * 2 * pi);
+            cos(energy[n] * delta_t * (time_idx - on_start) +
+                current_cep * 2 * pi);
       }
       else if (helicity_idx[n] == 1) /* left */
       {
@@ -244,7 +248,8 @@ void Pulse::InitializePulse(PetscInt n)
         pulse_value[n][dim_idx][time_idx] -=
             polarization_vector_minor[n][dim_idx] *
             pulse_envelope[n][time_idx] *
-            cos(energy[n] * delta_t * (time_idx - on_start) + cep[n] * 2 * pi);
+            cos(energy[n] * delta_t * (time_idx - on_start) +
+                current_cep * 2 * pi);
       }
     }
   }

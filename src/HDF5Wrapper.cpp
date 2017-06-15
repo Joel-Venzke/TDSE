@@ -565,7 +565,8 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
                 "Number of cycles before the pulse starts");
     WriteObject(p.cep.get(), num_pulses, "/Parameters/cep",
                 "The carrying phase envelope of the pulse. It is defined at "
-                "the time the pulse starts to turn on in fractions of a cycle");
+                "the end of cycles on as a fraction of a cycle (i.e. 0.5 -> "
+                "90^0 or pi phase)");
     WriteObject(p.energy.get(), num_pulses, "/Parameters/energy",
                 "The fundamental angular frequency of the pulse. Corresponds "
                 "to the energy of the photons in atomic units.");

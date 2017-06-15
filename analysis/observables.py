@@ -50,12 +50,13 @@ plt.clf()
 # Gobbler
 print "Plotting ECS Population"
 fig = plt.figure()
-plt.semilogy(time, observables["gobbler"][1:])
-plt.xlabel("Time (a.u.)")
-plt.ylabel("ECS Population")
-plt.title("ECS Population")
-plt.tight_layout()
-fig.savefig("figs/ECS_population.png")
+if np.max(observables["gobbler"][1:]) > 1e-10:
+    plt.semilogy(time, observables["gobbler"][1:])
+    plt.xlabel("Time (a.u.)")
+    plt.ylabel("ECS Population")
+    plt.title("ECS Population")
+    plt.tight_layout()
+    fig.savefig("figs/ECS_population.png")
 plt.clf()
 
 # Dipole
@@ -100,8 +101,8 @@ for pulse_idx in range(num_pulses):
 ax1.set_xlabel("Time a.u.")
 ax1.set_ylabel("Dipole (a.u.)")
 ax2.set_ylabel("Field (a.u.)")
-ax1.legend(loc=1)
-ax2.legend(loc=2)
+ax1.legend(loc=2)
+ax2.legend(loc=1)
 fig2.savefig("figs/Dipole_with_field_envelope.png")
 
 # Dipole acceleration
@@ -133,19 +134,20 @@ for elec_idx in range(num_electrons):
                  f["Parameters"]["coordinate_system_idx"][0] == 1)):
             data = observables["dipole_acceleration_" +
                                str(elec_idx) + "_" + str(dim_idx)][1:]
+            data = data * np.blackman(data.shape[0])
             if np.max(data) > 1e-10:
                 plt.semilogy(
                     np.absolute(
                         np.fft.fft(
                             np.lib.pad(
-                                data, (10 * data.shape[0], 10 * data.shape[0]),
+                                data, (2 * data.shape[0], 2 * data.shape[0]),
                                 'constant',
                                 constant_values=(0.0, 0.0)))),
                     label="Electron " + str(elec_idx) + " Dim " + str(dim_idx))
 plt.ylabel("HHG Spectrum (a.u.)")
 plt.title("HHG Spectrum")
 plt.legend()
-plt.xlim([0, 1000])
+plt.xlim([0, 500])
 plt.tight_layout()
 fig.savefig("figs/HHG_Spectrum.png")
 plt.clf()
@@ -172,8 +174,8 @@ for pulse_idx in range(num_pulses):
 ax1.set_xlabel("Time (a.u.)")
 ax1.set_ylabel("Dipole Acceleration (a.u.)")
 ax2.set_ylabel("Field (a.u.)")
-ax1.legend(loc=1)
-ax2.legend(loc=2)
+ax1.legend(loc=2)
+ax2.legend(loc=1)
 fig2.savefig("figs/Dipole_acceleration_with_field_envelope.png")
 
 # Linearity
@@ -191,7 +193,7 @@ for elec_idx in range(num_electrons):
                 label="Electron " + str(elec_idx) + " Dim " + str(dim_idx))
 plt.xlabel("Field in (a.u.)")
 plt.ylabel("Dipole Acceleration (a.u.)")
-plt.ylabel("Linearity")
+plt.title("Linearity")
 plt.legend()
 plt.tight_layout()
 fig.savefig("figs/Linearity.png")
@@ -210,6 +212,24 @@ plt.ylabel("Field (a.u.)")
 plt.title("Field")
 plt.legend()
 fig.savefig("figs/Pulse_field.png")
+
+# Field Plot
+print "Plotting Pulses"
+fig = plt.figure()
+for pulse_idx in range(num_pulses):
+    plt.plot(p_time, pulses["Pulse_envelope_" + str(pulse_idx)][:], 'r--')
+    plt.plot(p_time, -1.0 * pulses["Pulse_envelope_" + str(pulse_idx)][:],
+             'r--')
+    for dim_idx in range(num_dims):
+        plt.plot(
+            p_time,
+            pulses["Pulse_value_" + str(pulse_idx) + "_" + str(dim_idx)][:],
+            label="Pulse " + str(pulse_idx) + " Dim " + str(dim_idx))
+plt.xlabel("Time (a.u.)")
+plt.ylabel("Field (a.u.)")
+plt.title("Pulses")
+plt.legend()
+fig.savefig("figs/Pulses.png")
 
 # Spectrum
 print "Plotting Spectrum"
