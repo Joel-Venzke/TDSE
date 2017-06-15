@@ -1,6 +1,6 @@
 import numpy as np
 import h5py
-target_name = "He-SAE"
+target_name = "Ar-SAE"
 # read data
 target = h5py.File(target_name + ".h5", "r")
 f = h5py.File("TDSE.h5", "r")
@@ -67,6 +67,9 @@ elif len(shape) == 2:
         x_max_idx = upper_idx[0]
         y_min_idx = lower_idx[1]
         y_max_idx = upper_idx[1]
+        x_max_idx = -1
+        y_min_idx = 0
+        y_max_idx = -1
         psi = psi[x_min_idx:x_max_idx, y_min_idx:y_max_idx]
         if f["Parameters"]["coordinate_system_idx"][0] == 1:
             psi = np.absolute(
@@ -81,7 +84,7 @@ elif len(shape) == 2:
                 extent=[
                     y[y_min_idx], y[y_max_idx], x[x_min_idx], x[x_max_idx]
                 ],
-                norm=LogNorm(vmin=1e-12, vmax=max_val))
+                norm=LogNorm(vmin=1e-12, vmax=np.max(psi)))
         else:
             plt.imshow(
                 np.absolute(psi),
@@ -98,3 +101,4 @@ elif len(shape) == 2:
         plt.title("Wave Function - Energy " + str(energy[i]))
         fig.savefig("figs/" + target_name + "_log_state_" + str(i).zfill(3) +
                     ".jpg")
+        plt.clf()
