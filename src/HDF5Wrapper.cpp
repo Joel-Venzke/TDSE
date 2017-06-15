@@ -464,15 +464,17 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
 {
   if (world.rank() == 0)
   {
-    int num_dims   = p.GetNumDims();
-    int num_pulses = p.GetNumPulses();
-    header         = true;
+    PetscInt num_dims   = p.GetNumDims();
+    PetscInt num_pulses = p.GetNumPulses();
+    header              = true;
 
     CreateGroup("/Parameters/");
 
     /* write out header values */
     WriteObject(num_dims, "/Parameters/num_dims",
                 "Number of dimension in simulation");
+    WriteObject(p.GetNumElectrons(), "/Parameters/num_electrons",
+                "Number of electrons in the simulation");
     WriteObject(p.dim_size.get(), num_dims, "/Parameters/dim_size",
                 "The length of that dimension in atomic units.");
     WriteObject(p.delta_x.get(), num_dims, "/Parameters/delta_x",
@@ -551,7 +553,7 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
     }
     WriteObject(p.pulse_shape_idx.get(), num_pulses,
                 "/Parameters/pulse_shape_idx",
-                "The index of the pulse shape. Sin2:0");
+                "The index of the pulse shape. sin2:0, gaussian:1");
     WriteObject(p.cycles_on.get(), num_pulses, "/Parameters/cycles_on",
                 "Number of cycles the pulse ramps on for");
     WriteObject(p.cycles_plateau.get(), num_pulses,
@@ -563,7 +565,8 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
                 "Number of cycles before the pulse starts");
     WriteObject(p.cep.get(), num_pulses, "/Parameters/cep",
                 "The carrying phase envelope of the pulse. It is defined at "
-                "the time the pulse starts to turn on in fractions of a cycle");
+                "the end of cycles on as a fraction of a cycle (i.e. 0.5 -> "
+                "90^0 or pi phase)");
     WriteObject(p.energy.get(), num_pulses, "/Parameters/energy",
                 "The fundamental angular frequency of the pulse. Corresponds "
                 "to the energy of the photons in atomic units.");

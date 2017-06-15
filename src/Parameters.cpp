@@ -216,9 +216,13 @@ void Parameters::Setup(std::string file_name)
     {
       pulse_shape_idx[pulse_idx] = 0;
     }
-    else if (pulse_shape[pulse_idx] == "linear")
+    else if (pulse_shape[pulse_idx] == "gaussian")
     {
       pulse_shape_idx[pulse_idx] = 1;
+    }
+    else
+    {
+      pulse_shape_idx[pulse_idx] = -1;
     }
 
     if (data["laser"]["pulses"][pulse_idx]["polarization_vector"].size() <
@@ -356,7 +360,7 @@ void Parameters::Validate()
     {
       if (polarization_vector[pulse_idx][0] > 1e-14)
       {
-        std::cout <<polarization_vector[pulse_idx][0] <<"\n";
+        std::cout << polarization_vector[pulse_idx][0] << "\n";
         error_found = true;
         err_str +=
             "\nCylindrical coordinate systems only supports polarization "
@@ -389,7 +393,8 @@ void Parameters::Validate()
   for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; pulse_idx++)
   {
     /* Check pulse shapes */
-    if (pulse_shape[pulse_idx] != "sin2")
+    if (pulse_shape[pulse_idx] != "sin2" and
+        pulse_shape[pulse_idx] != "gaussian")
     {
       error_found = true;
       err_str += "\nPulse ";
@@ -397,7 +402,7 @@ void Parameters::Validate()
       err_str += " has unsupported pulse shape: \"";
       err_str += pulse_shape[pulse_idx] + "\"\n";
       err_str += "Current support includes: ";
-      err_str += "\"sin2\"\n";
+      err_str += "\"sin2\" and \"gaussian\"\n";
     }
 
     /* check field_max */

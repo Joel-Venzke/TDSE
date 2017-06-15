@@ -1,0 +1,14 @@
+#!/bin/bash
+export SLEPC_DIR=`pwd`
+
+module purge 
+module load intel 
+module load openmpi
+module load hdf5 
+module load cmake
+module load blas
+module list
+
+./configure \
+  --prefix=/users/becker/jove7731/local/intel/slepc \
+

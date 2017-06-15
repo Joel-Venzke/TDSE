@@ -28,15 +28,7 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
   eta                   = pi / 4.0;
   order                 = p.GetOrder();
   order_middle_idx      = order / 2;
-
-  gobbler_idx = new PetscInt*[num_dims];
-  for (PetscInt i = 0; i < num_dims; ++i)
-  {
-    gobbler_idx[i] = new PetscInt[2];
-    gobbler_idx[i][0] =
-        (num_x[i] - PetscInt(num_x[i] * p.GetGobbler())) / 2 - 1;
-    gobbler_idx[i][1] = num_x[i] - 1 - gobbler_idx[i][0];
-  }
+  gobbler_idx           = w.GetGobblerIdx();
 
   /* call this after setting gobbler and before creating the Hamiltonian */
   SetUpCoefficients();
@@ -62,12 +54,13 @@ void Hamiltonian::CreateHamlitonian()
                  num_dims * num_electrons * order + 1, NULL,
                  num_dims * num_electrons * order + 1, NULL, &hamiltonian);
   }
-  CalculateHamlitonian(-1, -1);
+  CalculateHamlitonian(-1, -1, true);
   // MatView(hamiltonian, PETSC_VIEWER_STDOUT_WORLD);
   // EndRun("lsdkjf");
 }
 
-void Hamiltonian::CalculateHamlitonian(PetscInt time_idx, PetscInt only_dim_idx)
+void Hamiltonian::CalculateHamlitonian(PetscInt time_idx, PetscInt only_dim_idx,
+                                       bool ecs)
 {
   dcomp val(0.0, 0.0);  /* diagonal terms */
   PetscInt j_val;       /* j index for matrix */
@@ -91,7 +84,7 @@ void Hamiltonian::CalculateHamlitonian(PetscInt time_idx, PetscInt only_dim_idx)
     /* Diagonal element */
     j_val = i_val;
     val   = GetVal(i_val, j_val, time_dependent, time_idx, insert_val,
-                 only_dim_idx);
+                 only_dim_idx, ecs);
     if (insert_val)
     {
       MatSetValues(hamiltonian, 1, &i_val, 1, &j_val, &val, INSERT_VALUES);
@@ -120,7 +113,7 @@ void Hamiltonian::CalculateHamlitonian(PetscInt time_idx, PetscInt only_dim_idx)
             {
               j_val = i_val - offset;
               val   = GetVal(i_val, j_val, time_dependent, time_idx, insert_val,
-                           only_dim_idx);
+                           only_dim_idx, ecs);
               if (insert_val)
               {
                 MatSetValues(hamiltonian, 1, &i_val, 1, &j_val, &val,
@@ -133,7 +126,7 @@ void Hamiltonian::CalculateHamlitonian(PetscInt time_idx, PetscInt only_dim_idx)
             {
               j_val = i_val + offset;
               val   = GetVal(i_val, j_val, time_dependent, time_idx, insert_val,
-                           only_dim_idx);
+                           only_dim_idx, ecs);
               if (insert_val)
               {
                 MatSetValues(hamiltonian, 1, &i_val, 1, &j_val, &val,
@@ -154,7 +147,7 @@ void Hamiltonian::CalculateHamlitonian(PetscInt time_idx, PetscInt only_dim_idx)
             {
               j_val = i_val - offset;
               val   = GetVal(i_val, j_val, time_dependent, time_idx, insert_val,
-                           only_dim_idx);
+                           only_dim_idx, ecs);
               if (insert_val)
               {
                 MatSetValues(hamiltonian, 1, &i_val, 1, &j_val, &val,
@@ -167,7 +160,7 @@ void Hamiltonian::CalculateHamlitonian(PetscInt time_idx, PetscInt only_dim_idx)
             {
               j_val = i_val + offset;
               val   = GetVal(i_val, j_val, time_dependent, time_idx, insert_val,
-                           only_dim_idx);
+                           only_dim_idx, ecs);
               if (insert_val)
               {
                 MatSetValues(hamiltonian, 1, &i_val, 1, &j_val, &val,
@@ -267,9 +260,10 @@ void Hamiltonian::SetUpCoefficients()
   }
 }
 
-Mat* Hamiltonian::GetTotalHamiltonian(PetscInt time_idx, PetscInt only_dim_idx)
+Mat* Hamiltonian::GetTotalHamiltonian(PetscInt time_idx, PetscInt only_dim_idx,
+                                      bool ecs)
 {
-  CalculateHamlitonian(time_idx, only_dim_idx);
+  CalculateHamlitonian(time_idx, only_dim_idx, ecs);
   // if (only_dim_idx==-1 and time_idx==419) {
   //   MatView(hamiltonian, PETSC_VIEWER_STDOUT_WORLD);
   //   CalculateHamlitonian(time_idx, 0);
@@ -283,7 +277,7 @@ Mat* Hamiltonian::GetTotalHamiltonian(PetscInt time_idx, PetscInt only_dim_idx)
 
 dcomp Hamiltonian::GetVal(PetscInt idx_i, PetscInt idx_j, bool time_dep,
                           PetscInt time_idx, bool& insert_val,
-                          PetscInt only_dim_idx)
+                          PetscInt only_dim_idx, bool ecs)
 {
   /* Get arrays */
   std::vector< PetscInt > idx_array  = GetIndexArray(idx_i, idx_j);
@@ -295,7 +289,7 @@ dcomp Hamiltonian::GetVal(PetscInt idx_i, PetscInt idx_j, bool time_dep,
   /* Diagonal elements */
   if (idx_i == idx_j)
   {
-    return GetDiagonal(idx_array, time_dep, time_idx, only_dim_idx);
+    return GetDiagonal(idx_array, time_dep, time_idx, only_dim_idx, ecs);
   }
 
   /* Make sure there is exactly 1 non zero index so we can take care of the
@@ -312,13 +306,13 @@ dcomp Hamiltonian::GetVal(PetscInt idx_i, PetscInt idx_j, bool time_dep,
     if (sum <= order / 2)
     {
       return GetOffDiagonal(idx_array, diff_array, time_dep, time_idx,
-                            only_dim_idx);
+                            only_dim_idx, ecs);
     }
     else if (coordinate_system_idx == 1 and diff_array[0] > 0 and
              sum < order + 1)
     {
       return GetOffDiagonal(idx_array, diff_array, time_dep, time_idx,
-                            only_dim_idx);
+                            only_dim_idx, ecs);
     }
   }
 
@@ -392,7 +386,7 @@ void Hamiltonian::FDWeights(std::vector< dcomp >& x_vals,
 dcomp Hamiltonian::GetOffDiagonal(std::vector< PetscInt >& idx_array,
                                   std::vector< PetscInt >& diff_array,
                                   bool time_dep, PetscInt time_idx,
-                                  PetscInt only_dim_idx)
+                                  PetscInt only_dim_idx, bool ecs)
 {
   dcomp off_diagonal(0.0, 0.0);
   PetscInt discontinuity_idx = 0;
@@ -443,7 +437,8 @@ dcomp Hamiltonian::GetOffDiagonal(std::vector< PetscInt >& idx_array,
             }
             /* right ECS */
             else if (idx_array[2 * (elec_idx * num_dims + dim_idx)] >=
-                     gobbler_idx[dim_idx][1])
+                         gobbler_idx[dim_idx][1] and
+                     ecs)
             {
               discontinuity_idx =
                   fmin(idx_array[2 * (elec_idx * num_dims + dim_idx)] -
@@ -476,23 +471,6 @@ dcomp Hamiltonian::GetOffDiagonal(std::vector< PetscInt >& idx_array,
                   (2.0 *
                    x_value[dim_idx]
                           [idx_array[2 * (elec_idx * num_dims + dim_idx)]]);
-
-              // std::cout << order_middle_idx << " "
-              //           << diff_array[elec_idx * num_dims + dim_idx] << " "
-              //           << real_coef[order_middle_idx][1]
-              //                       [order_middle_idx +
-              //                        diff_array[elec_idx * num_dims +
-              //                        dim_idx]]
-              //           << " "
-              //           << real_coef[order_middle_idx][2]
-              //                       [order_middle_idx +
-              //                        diff_array[elec_idx * num_dims +
-              //                        dim_idx]]
-              //           << " "
-              //           << x_value[dim_idx]
-              //                     [idx_array[2 * (elec_idx * num_dims +
-              //                     dim_idx)]]
-              //           << "\n";
             }
           }
           else if (abs(diff_array[elec_idx * num_dims + dim_idx]) <
@@ -500,7 +478,8 @@ dcomp Hamiltonian::GetOffDiagonal(std::vector< PetscInt >& idx_array,
           {
             /* left ECS */
             if (idx_array[2 * (elec_idx * num_dims + dim_idx)] <=
-                gobbler_idx[dim_idx][0])
+                    gobbler_idx[dim_idx][0] and
+                ecs)
             {
               discontinuity_idx =
                   fmin(gobbler_idx[dim_idx][0] -
@@ -514,7 +493,8 @@ dcomp Hamiltonian::GetOffDiagonal(std::vector< PetscInt >& idx_array,
             }
             /* right ECS */
             else if (idx_array[2 * (elec_idx * num_dims + dim_idx)] >=
-                     gobbler_idx[dim_idx][1])
+                         gobbler_idx[dim_idx][1] and
+                     ecs)
             {
               discontinuity_idx =
                   fmin(idx_array[2 * (elec_idx * num_dims + dim_idx)] -
@@ -544,11 +524,11 @@ dcomp Hamiltonian::GetOffDiagonal(std::vector< PetscInt >& idx_array,
 
 dcomp Hamiltonian::GetDiagonal(std::vector< PetscInt >& idx_array,
                                bool time_dep, PetscInt time_idx,
-                               PetscInt only_dim_idx)
+                               PetscInt only_dim_idx, bool ecs)
 {
   dcomp diagonal(0.0, 0.0);
   /* kinetic term */
-  diagonal += GetKineticTerm(idx_array, only_dim_idx);
+  diagonal += GetKineticTerm(idx_array, only_dim_idx, ecs);
   /* nuclei term */
   if (only_dim_idx == -1)
   {
@@ -566,7 +546,7 @@ dcomp Hamiltonian::GetDiagonal(std::vector< PetscInt >& idx_array,
 }
 
 dcomp Hamiltonian::GetKineticTerm(std::vector< PetscInt >& idx_array,
-                                  PetscInt only_dim_idx)
+                                  PetscInt only_dim_idx, bool ecs)
 {
   dcomp kinetic(0.0, 0.0);
   PetscInt discontinuity_idx = 0;
@@ -600,7 +580,8 @@ dcomp Hamiltonian::GetKineticTerm(std::vector< PetscInt >& idx_array,
           }
           /* right ECS */
           else if (idx_array[2 * (elec_idx * num_dims + dim_idx)] >=
-                   gobbler_idx[dim_idx][1])
+                       gobbler_idx[dim_idx][1] and
+                   ecs)
           {
             discontinuity_idx =
                 fmin(idx_array[2 * (elec_idx * num_dims + dim_idx)] -
@@ -628,7 +609,8 @@ dcomp Hamiltonian::GetKineticTerm(std::vector< PetscInt >& idx_array,
         {
           /* left ECS */
           if (idx_array[2 * (elec_idx * num_dims + dim_idx)] <=
-              gobbler_idx[dim_idx][0])
+                  gobbler_idx[dim_idx][0] and
+              ecs)
           {
             discontinuity_idx =
                 fmin(gobbler_idx[dim_idx][0] -
@@ -640,7 +622,8 @@ dcomp Hamiltonian::GetKineticTerm(std::vector< PetscInt >& idx_array,
           }
           /* right ECS */
           else if (idx_array[2 * (elec_idx * num_dims + dim_idx)] >=
-                   gobbler_idx[dim_idx][1])
+                       gobbler_idx[dim_idx][1] and
+                   ecs)
           {
             discontinuity_idx =
                 fmin(idx_array[2 * (elec_idx * num_dims + dim_idx)] -
@@ -810,9 +793,9 @@ std::vector< PetscInt > Hamiltonian::GetDiffArray(
   return diff_array;
 }
 
-Mat* Hamiltonian::GetTimeIndependent(PetscInt only_dim_idx)
+Mat* Hamiltonian::GetTimeIndependent(PetscInt only_dim_idx, bool ecs)
 {
-  CalculateHamlitonian(-1, -1);
+  CalculateHamlitonian(-1, -1, ecs);
   return &hamiltonian;
 }
 
