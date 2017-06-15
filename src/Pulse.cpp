@@ -176,7 +176,6 @@ void Pulse::InitializePulse(PetscInt n)
   double period = 2 * pi / energy[n];
   double s1;
   double current_cep = cep[n] + (((int)cycles_on[n]) - cycles_on[n]);
-  std::cout << n << ": " << current_cep << "\n";
 
   /* index that turns pulse on */
   on_start = ceil(period * cycles_delay[n] / (delta_t));
