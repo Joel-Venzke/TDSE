@@ -11,17 +11,18 @@ class Pulse : protected Utils
   double delta_t;            /* time step */
   PetscInt max_pulse_length; /* length of longest pulse; */
   PetscInt *pulse_shape_idx; /* index of pulse shape */
-  double *cycles_on;         /* ramp on cycles */
-  double *cycles_plateau;    /* plateau cycles */
-  double *cycles_off;        /* ramp off cycles */
-  double *cycles_delay;      /* cycles till it starts */
-  double *cycles_total;      /* cycles in pulse */
-  double *cep;               /* carrier envelope phase */
-  double *energy;            /* photon energy */
-  double *field_max;         /* max amplitude */
-  double *time;              /* stores the time at each point */
-  double ***pulse_value;     /* pulse value */
-  double **pulse_envelope;   /* envelope function of pulse */
+  double gaussian_sigma;  /* number of std before you stop the gaussian pulse */
+  double *cycles_on;      /* ramp on cycles */
+  double *cycles_plateau; /* plateau cycles */
+  double *cycles_off;     /* ramp off cycles */
+  double *cycles_delay;   /* cycles till it starts */
+  double *cycles_total;   /* cycles in pulse */
+  double *cep;            /* carrier envelope phase */
+  double *energy;         /* photon energy */
+  double *field_max;      /* max amplitude */
+  double *time;           /* stores the time at each point */
+  double ***pulse_value;  /* pulse value */
+  double **pulse_envelope; /* envelope function of pulse */
   /* polarization for major axis of the field */
   double **polarization_vector_major;
   /* polarization for minor axis of the field */
