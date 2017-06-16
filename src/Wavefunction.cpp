@@ -255,6 +255,7 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
   VecSetSizes(psi_proj, PETSC_DECIDE, num_psi);
   VecSetFromOptions(psi_proj);
   ierr = PetscObjectSetName((PetscObject)psi_proj, "psi");
+  ierr = PetscObjectSetName((PetscObject)psi_tmp_cyl, "psi");
 
   viewer_file.Open("r");
   for (int state_idx = 0; state_idx < num_states; ++state_idx)
@@ -284,14 +285,14 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
       viewer_file.ReadObject(psi_proj);
       Normalize(psi_proj, 0.0);
       viewer_file.SetTime(state_idx_2);
-      /* Read psi*/
-      viewer_file.ReadObject(psi);
+      /* Read psi */
+      viewer_file.ReadObject(psi_tmp_cyl);
       Normalize(psi, 0.0);
 
       if (coordinate_system_idx == 1)
       {
         CreateObservable(2, 0, 0);
-        VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi);
+        VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi_tmp_cyl);
       }
       VecDot(psi_proj, psi_tmp_cyl, &projection_val);
       std::cout << state_idx << state_idx_2 << projection_val << "\n";
