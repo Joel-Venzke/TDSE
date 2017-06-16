@@ -680,7 +680,7 @@ void Wavefunction::Normalize() { Normalize(psi, delta_x[0]); }
 void Wavefunction::Normalize(Vec& data, double dv)
 {
   PetscReal total = Norm(data, dv);
-  VecScale(data, 1.0 / sqrt(total));
+  VecScale(data, 1.0 / total);
 }
 
 /* returns norm of psi */
@@ -696,7 +696,7 @@ double Wavefunction::Norm(Vec& data, double dv)
     CreateObservable(2, 0, 0);
     VecPointwiseMult(psi_tmp, psi_tmp, psi);
     VecDot(psi, psi_tmp, &dot_product);
-    total = std::norm(dot_product);
+    total = sqrt(std::norm(dot_product));
   }
   else
   {
