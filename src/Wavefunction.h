@@ -21,7 +21,6 @@ class Wavefunction : protected Utils
   Vec psi;                /* wavefunction for 2 electron system */
   Vec psi_tmp;            /* wavefunction for 2 electron system */
   Vec psi_tmp_cyl;        /* wavefunction for 2 electron system */
-  Vec psi_proj;           /* Used for projections */
   bool psi_alloc_build;
   bool psi_alloc;
   /* false if its not the first time checkpointing the wavefunction */
