@@ -233,6 +233,122 @@ void Wavefunction::LoadRestart(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   write_counter_checkpoint++;
 }
 
+/**
+ * @brief Returns a vector of projections based on the states the given file
+ *
+ * @param file_name name of the file containing the eigen states
+ * @return A vector of projections corresponding to that state
+ */
+std::vector< dcomp > Wavefunction::Projections(std::string file_name)
+{
+  /* Get write index for last checkpoint */
+  HDF5Wrapper h5_file(file_name);
+  ViewWrapper viewer_file(file_name);
+
+  PetscInt num_states = h5_file.GetTime("/psi") + 1;
+  std::cout << num_states << " states\n";
+  std::vector< dcomp > ret_vec;
+  dcomp projection_val;
+  Vec psi_proj;
+
+  VecCreate(PETSC_COMM_WORLD, &psi_proj);
+  VecSetSizes(psi_proj, PETSC_DECIDE, num_psi);
+  VecSetFromOptions(psi_proj);
+  ierr = PetscObjectSetName((PetscObject)psi_proj, "psi");
+
+  viewer_file.Open("r");
+  for (int state_idx = 0; state_idx < num_states; ++state_idx)
+  {
+    /* Set time idx */
+    viewer_file.SetTime(state_idx);
+    /* Read psi*/
+    viewer_file.ReadObject(psi_proj);
+    Normalize(psi_proj, 0.0);
+
+    if (coordinate_system_idx == 1)
+    {
+      CreateObservable(2, 0, 0); /* pho */
+      VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi);
+    }
+    VecDot(psi_proj, psi_tmp_cyl, &projection_val);
+    // std::cout << projection_val << " ";
+    ret_vec.push_back(projection_val);
+  }
+  for (int state_idx = 0; state_idx < num_states; ++state_idx)
+  {
+    for (int state_idx_2 = state_idx; state_idx_2 < num_states; ++state_idx_2)
+    {
+      /* Set time idx */
+      viewer_file.SetTime(state_idx);
+      /* Read psi*/
+      viewer_file.ReadObject(psi_proj);
+      Normalize(psi_proj, 0.0);
+      viewer_file.SetTime(state_idx_2);
+      /* Read psi*/
+      viewer_file.ReadObject(psi);
+      Normalize(psi, 0.0);
+
+      if (coordinate_system_idx == 1)
+      {
+        CreateObservable(2, 0, 0);
+        VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi);
+      }
+      VecDot(psi_proj, psi_tmp_cyl, &projection_val);
+      std::cout << state_idx << state_idx_2 << projection_val << "\n";
+    }
+  }
+
+  /* Close file */
+  viewer_file.Close();
+
+  return ret_vec;
+}
+
+/**
+ * @brief Returns a vector of projections based on the states the given file
+ *
+ * @param file_name name of the file containing the eigen states
+ * @return A vector of projections corresponding to that state
+ */
+void Wavefunction::ProjectOut(std::string file_name)
+{
+  /* Get write index for last checkpoint */
+  HDF5Wrapper h5_file(file_name);
+  ViewWrapper viewer_file(file_name);
+
+  PetscInt num_states = h5_file.GetTime("/psi") + 1;
+  std::cout << num_states << " states\n";
+  std::vector< dcomp > ret_vec;
+  dcomp projection_val;
+
+  VecCreate(PETSC_COMM_WORLD, &psi_proj);
+  VecSetSizes(psi_proj, PETSC_DECIDE, num_psi);
+  VecSetFromOptions(psi_proj);
+  ierr = PetscObjectSetName((PetscObject)psi_proj, "psi");
+
+  viewer_file.Open("r");
+  for (int state_idx = 0; state_idx < num_states; ++state_idx)
+  {
+    /* Set time idx */
+    viewer_file.SetTime(state_idx);
+    /* Read psi*/
+    viewer_file.ReadObject(psi_proj);
+    Normalize(psi_proj, 0.0);
+
+    if (coordinate_system_idx == 1)
+    {
+      CreateObservable(2, 0, 0); /* pho */
+      VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi);
+    }
+    VecDot(psi_proj, psi_tmp_cyl, &projection_val);
+    VecAXPY(psi, -1.0 * projection_val, psi_proj);
+    ret_vec.push_back(projection_val);
+  }
+
+  /* Close file */
+  viewer_file.Close();
+}
+
 void Wavefunction::CheckpointPsi(ViewWrapper& viewer_file, PetscInt write_idx)
 {
   // if (world.rank() == 0)
