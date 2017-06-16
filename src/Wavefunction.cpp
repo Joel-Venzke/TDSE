@@ -249,22 +249,28 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
   std::vector< dcomp > ret_vec;
   dcomp projection_val;
   ierr = PetscObjectSetName((PetscObject)psi_tmp_cyl, "psi");
+  ierr = PetscObjectSetName((PetscObject)psi_tmp, "psi");
 
   viewer_file.Open("r");
   for (int state_idx = 0; state_idx < num_states; ++state_idx)
   {
     /* Set time idx */
     viewer_file.SetTime(state_idx);
-    /* Read psi*/
-    viewer_file.ReadObject(psi_tmp_cyl);
-    Normalize(psi_tmp_cyl, 0.0);
 
-    // if (coordinate_system_idx == 1)
-    // {
-    //   CreateObservable(2, 0, 0);
-    //   VecPointwiseMult(psi_tmp, psi_tmp, psi);
-    // }
-    VecDot(psi_tmp_cyl, psi_tmp, &projection_val);
+    if (coordinate_system_idx == 1)
+    {
+      /* Read psi*/
+      viewer_file.ReadObject(psi_tmp_cyl);
+      Normalize(psi_tmp_cyl, 0.0);
+      CreateObservable(2, 0, 0);
+      VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
+    }
+    else
+    {
+      viewer_file.ReadObject(psi_tmp);
+      Normalize(psi_tmp, 0.0);
+    }
+    VecDot(psi, psi_tmp, &projection_val);
     ret_vec.push_back(projection_val);
     if (world.rank() == 0) std::cout << projection_val << " ";
   }
@@ -292,21 +298,27 @@ void Wavefunction::ProjectOut(std::string file_name)
   dcomp projection_val;
 
   ierr = PetscObjectSetName((PetscObject)psi_tmp_cyl, "psi");
+  ierr = PetscObjectSetName((PetscObject)psi_tmp, "psi");
 
   viewer_file.Open("r");
   for (int state_idx = 0; state_idx < num_states; ++state_idx)
   {
     /* Set time idx */
     viewer_file.SetTime(state_idx);
-    /* Read psi*/
-    viewer_file.ReadObject(psi_tmp_cyl);
-    Normalize(psi_tmp_cyl, 0.0);
 
-    // if (coordinate_system_idx == 1)
-    // {
-    //   CreateObservable(2, 0, 0);
-    //   VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
-    // }
+    if (coordinate_system_idx == 1)
+    {
+      /* Read psi*/
+      viewer_file.ReadObject(psi_tmp_cyl);
+      Normalize(psi_tmp_cyl, 0.0);
+      CreateObservable(2, 0, 0);
+      VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
+    }
+    else
+    {
+      viewer_file.ReadObject(psi_tmp);
+      Normalize(psi_tmp, 0.0);
+    }
     VecDot(psi, psi_tmp, &projection_val);
     VecAXPY(psi, -1.0 * projection_val, psi_tmp_cyl);
     ret_vec.push_back(projection_val);
