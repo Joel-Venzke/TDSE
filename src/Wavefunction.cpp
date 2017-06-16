@@ -246,7 +246,6 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
   ViewWrapper viewer_file(file_name);
 
   PetscInt num_states = h5_file.GetTime("/psi") + 1;
-  std::cout << num_states << " states\n";
   std::vector< dcomp > ret_vec;
   dcomp projection_val;
   ierr = PetscObjectSetName((PetscObject)psi_tmp_cyl, "psi");
@@ -260,11 +259,11 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
     viewer_file.ReadObject(psi_tmp_cyl);
     Normalize(psi_tmp_cyl, 0.0);
 
-    if (coordinate_system_idx == 1)
-    {
-      CreateObservable(2, 0, 0); /* pho */
-      VecPointwiseMult(psi_tmp, psi_tmp, psi);
-    }
+    // if (coordinate_system_idx == 1)
+    // {
+    //   CreateObservable(2, 0, 0);
+    //   VecPointwiseMult(psi_tmp, psi_tmp, psi);
+    // }
     VecDot(psi_tmp_cyl, psi_tmp, &projection_val);
     ret_vec.push_back(projection_val);
     if (world.rank() == 0) std::cout << projection_val << " ";
@@ -289,7 +288,6 @@ void Wavefunction::ProjectOut(std::string file_name)
   ViewWrapper viewer_file(file_name);
 
   PetscInt num_states = h5_file.GetTime("/psi") + 1;
-  std::cout << num_states << " states\n";
   std::vector< dcomp > ret_vec;
   dcomp projection_val;
 
@@ -304,11 +302,11 @@ void Wavefunction::ProjectOut(std::string file_name)
     viewer_file.ReadObject(psi_tmp_cyl);
     Normalize(psi_tmp_cyl, 0.0);
 
-    if (coordinate_system_idx == 1)
-    {
-      CreateObservable(2, 0, 0); /* pho */
-      VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
-    }
+    // if (coordinate_system_idx == 1)
+    // {
+    //   CreateObservable(2, 0, 0);
+    //   VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
+    // }
     VecDot(psi, psi_tmp, &projection_val);
     VecAXPY(psi, -1.0 * projection_val, psi_tmp_cyl);
     ret_vec.push_back(projection_val);
