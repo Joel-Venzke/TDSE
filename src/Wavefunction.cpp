@@ -324,9 +324,10 @@ void Wavefunction::ProjectOut(std::string file_name, HDF5Wrapper& h5_file_in,
       Normalize(psi_tmp, 0.0);
     }
     VecDot(psi_tmp, psi, &projection_val);
-    if (world.rank() == 0)
-      std::cout << std::norm(projection_val) << " " << projection_val << "\n";
     ret_vec.push_back(projection_val);
+    if (world.rank() == 0)
+      std::cout << std::norm(projection_val) << " " << projection_val << " "
+                << -1.0 * ret_vec[state_idx] << "\n";
     VecAXPY(psi, -1.0 * ret_vec[state_idx], psi_tmp_cyl);
     Checkpoint(h5_file_in, viewer_file_in, -1 * state_idx);
   }
