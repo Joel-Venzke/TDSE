@@ -119,6 +119,8 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
     h5_file.WriteObject(time, "/Wavefunction/time",
                         "Time step that psi was written to disk",
                         write_counter_checkpoint);
+    h5_file.WriteObject(Norm(), "/Wavefunction/norm", "Norm of wavefunction",
+                        write_counter_checkpoint);
 
     /* write observables */
     h5_file.CreateGroup("/Observables/");
@@ -175,6 +177,8 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
 
       /* write time */
       h5_file.WriteObject(time, "/Wavefunction/time", write_counter_checkpoint);
+      h5_file.WriteObject(Norm(), "/Observables/norm",
+                          write_counter_checkpoint);
       write_counter_checkpoint++;
     }
     else
