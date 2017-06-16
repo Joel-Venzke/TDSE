@@ -302,6 +302,7 @@ void Wavefunction::ProjectOut(std::string file_name, HDF5Wrapper& h5_file_in,
   PetscInt num_states = h5_file.GetTime("/psi") + 1;
   std::vector< dcomp > ret_vec;
   dcomp projection_val;
+  dcomp sum = 0.0;
 
   ierr = PetscObjectSetName((PetscObject)psi_tmp_cyl, "psi");
   ierr = PetscObjectSetName((PetscObject)psi_tmp, "psi");
@@ -328,9 +329,14 @@ void Wavefunction::ProjectOut(std::string file_name, HDF5Wrapper& h5_file_in,
     if (world.rank() == 0)
       std::cout << std::norm(projection_val) << " " << projection_val << " "
                 << -1.0 * ret_vec[state_idx] << "\n";
+    sum += projection_val;
+  }
+  for (int state_idx = 0; state_idx < num_states; ++state_idx)
+  {
     VecAXPY(psi, -1.0 * ret_vec[state_idx], psi_tmp_cyl);
     Checkpoint(h5_file_in, viewer_file_in, -1 * state_idx);
   }
+  std::cout << sum << " sum\n";
   /* Close file */
   viewer_file.Close();
 }
