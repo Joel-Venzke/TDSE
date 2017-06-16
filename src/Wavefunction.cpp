@@ -288,7 +288,8 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
  * @param file_name name of the file containing the eigen states
  * @return A vector of projections corresponding to that state
  */
-void Wavefunction::ProjectOut(std::string file_name)
+void Wavefunction::ProjectOut(std::string file_name, HDF5Wrapper& h5_file_in,
+                              ViewWrapper& viewer_file_in)
 {
   /* Get write index for last checkpoint */
   HDF5Wrapper h5_file(file_name);
@@ -323,6 +324,7 @@ void Wavefunction::ProjectOut(std::string file_name)
       std::cout << std::norm(projection_val) << " " << projection_val << "\n";
     ret_vec.push_back(projection_val);
     VecAXPY(psi, -1.0 * ret_vec[state_idx], psi_tmp_cyl);
+    Checkpoint(h5_file_in, viewer_file_in, -1 * state_idx);
   }
   /* Close file */
   viewer_file.Close();

@@ -75,7 +75,8 @@ class Wavefunction : protected Utils
   double GetDipoleAcceration(PetscInt elec_idx, PetscInt dim_idx);
   double GetGobbler();
   std::vector< dcomp > Projections(std::string file_name);
-  void ProjectOut(std::string file_name);
+  void ProjectOut(std::string file_name, HDF5Wrapper &h5_file,
+                  ViewWrapper &viewer_file);
   void ResetPsi();
 
   PetscInt *GetNumX();

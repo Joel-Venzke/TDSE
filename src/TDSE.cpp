@@ -73,8 +73,7 @@ int main(int argc, char** argv)
     s.Propagate();
     // s.SplitOpperator();
     wavefunction.Projections("H.h5");
-    wavefunction.ProjectOut("H.h5");
-    wavefunction.Checkpoint(h5_file, viewer_file, 0.0);
+    wavefunction.ProjectOut("H.h5", h5_file, viewer_file);
   }
   p_wrap.PopStage(); /* Propagation */
   p_wrap.Print(
