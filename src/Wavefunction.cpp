@@ -257,19 +257,19 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
     /* Set time idx */
     viewer_file.SetTime(state_idx);
 
-    if (coordinate_system_idx == 1)
-    {
-      /* Read psi*/
-      viewer_file.ReadObject(psi_tmp_cyl);
-      Normalize(psi_tmp_cyl, 0.0);
-      CreateObservable(2, 0, 0);
-      VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
-    }
-    else
-    {
-      viewer_file.ReadObject(psi_tmp);
-      Normalize(psi_tmp, 0.0);
-    }
+    // if (coordinate_system_idx == 1)
+    // {
+    //   /* Read psi*/
+    //   viewer_file.ReadObject(psi_tmp_cyl);
+    //   Normalize(psi_tmp_cyl, 0.0);
+    //   CreateObservable(2, 0, 0);
+    //   VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
+    // }
+    // else
+    // {
+    viewer_file.ReadObject(psi_tmp);
+    Normalize(psi_tmp, 0.0);
+    // }
     VecDot(psi, psi_tmp, &projection_val);
     ret_vec.push_back(projection_val);
     if (world.rank() == 0) std::cout << projection_val << " ";
