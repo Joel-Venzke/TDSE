@@ -271,7 +271,9 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
       Normalize(psi_tmp, 0.0);
     }
     VecDot(psi, psi_tmp, &projection_val);
-    if (world.rank() == 0) std::cout << projection_val << " ";
+    if (world.rank() == 0)
+      std::cout << std::norm(projection_val) << " " << std::norm(projection_val)
+                << "\n";
     ret_vec.push_back(projection_val);
   }
   if (world.rank() == 0) std::cout << "\n";
@@ -320,11 +322,18 @@ void Wavefunction::ProjectOut(std::string file_name)
       Normalize(psi_tmp, 0.0);
     }
     VecDot(psi, psi_tmp, &projection_val);
-    if (world.rank() == 0) std::cout << projection_val << " ";
-    VecAXPY(psi, -1.0 * projection_val, psi_tmp_cyl);
+    if (world.rank() == 0)
+      std::cout << std::norm(projection_val) << " " << std::norm(projection_val)
+                << "\n";
     ret_vec.push_back(projection_val);
   }
-
+  for (int state_idx = 0; state_idx < num_states; ++state_idx)
+  {
+    viewer_file.SetTime(state_idx);
+    viewer_file.ReadObject(psi_tmp_cyl);
+    Normalize(psi_tmp_cyl, 0.0);
+    VecAXPY(psi, -1.0 * ret_vec[state_idx], psi_tmp_cyl);
+  }
   /* Close file */
   viewer_file.Close();
 }
