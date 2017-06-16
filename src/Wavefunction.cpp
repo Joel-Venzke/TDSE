@@ -333,6 +333,8 @@ void Wavefunction::ProjectOut(std::string file_name, HDF5Wrapper& h5_file_in,
   }
   for (int state_idx = 0; state_idx < num_states; ++state_idx)
   {
+    viewer_file.ReadObject(psi_tmp_cyl);
+    Normalize(psi_tmp_cyl, 0.0);
     VecAXPY(psi, -1.0 * ret_vec[state_idx], psi_tmp_cyl);
     Checkpoint(h5_file_in, viewer_file_in, -1 * state_idx);
   }
