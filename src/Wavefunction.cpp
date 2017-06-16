@@ -270,7 +270,7 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
       viewer_file.ReadObject(psi_tmp);
       Normalize(psi_tmp, 0.0);
     }
-    VecDot(psi, psi_tmp, &projection_val);
+    VecDot(psi_tmp, psi, &projection_val);
     if (world.rank() == 0)
       std::cout << std::norm(projection_val) << " " << projection_val << "\n";
     ret_vec.push_back(projection_val);
@@ -318,7 +318,7 @@ void Wavefunction::ProjectOut(std::string file_name)
       viewer_file.ReadObject(psi_tmp);
       Normalize(psi_tmp, 0.0);
     }
-    VecDot(psi, psi_tmp, &projection_val);
+    VecDot(psi_tmp, psi, &projection_val);
     if (world.rank() == 0)
       std::cout << std::norm(projection_val) << " " << projection_val << "\n";
     ret_vec.push_back(projection_val);
