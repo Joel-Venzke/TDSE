@@ -306,12 +306,10 @@ void Wavefunction::ProjectOut(std::string file_name)
   {
     /* Set time idx */
     viewer_file.SetTime(state_idx);
-
+    viewer_file.ReadObject(psi_tmp_cyl);
+    Normalize(psi_tmp_cyl, 0.0);
     if (coordinate_system_idx == 1)
     {
-      /* Read psi*/
-      viewer_file.ReadObject(psi_tmp_cyl);
-      Normalize(psi_tmp_cyl, 0.0);
       CreateObservable(2, 0, 0);
       VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
     }
@@ -324,12 +322,6 @@ void Wavefunction::ProjectOut(std::string file_name)
     if (world.rank() == 0)
       std::cout << std::norm(projection_val) << " " << projection_val << "\n";
     ret_vec.push_back(projection_val);
-  }
-  for (int state_idx = 0; state_idx < num_states; ++state_idx)
-  {
-    viewer_file.SetTime(state_idx);
-    viewer_file.ReadObject(psi_tmp_cyl);
-    Normalize(psi_tmp_cyl, 0.0);
     VecAXPY(psi, -1.0 * ret_vec[state_idx], psi_tmp_cyl);
   }
   /* Close file */
