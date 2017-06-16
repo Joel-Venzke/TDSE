@@ -693,7 +693,7 @@ double Wavefunction::Norm(Vec& data, double dv)
     CreateObservable(2, 0, 0);
     VecPointwiseMult(psi_tmp, psi_tmp, psi);
     VecDot(psi, psi_tmp, &dot_product);
-    total = sqrt(dot_product.real());
+    total = sqrt(std::norm(dot_product));
   }
   else
   {
