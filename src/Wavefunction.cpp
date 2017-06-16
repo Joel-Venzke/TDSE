@@ -177,7 +177,7 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
 
       /* write time */
       h5_file.WriteObject(time, "/Wavefunction/time", write_counter_checkpoint);
-      h5_file.WriteObject(Norm(), "/Observables/norm",
+      h5_file.WriteObject(Norm(), "/Wavefunction/norm",
                           write_counter_checkpoint);
       write_counter_checkpoint++;
     }
