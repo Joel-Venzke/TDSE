@@ -330,19 +330,13 @@ void Wavefunction::ProjectOut(std::string file_name, HDF5Wrapper& h5_file_in,
       std::cout << std::norm(projection_val) << " " << projection_val << " "
                 << -1.0 * ret_vec[state_idx] << "\n";
     sum += projection_val;
+    viewer_file.SetTime(state_idx);
+    viewer_file.ReadObject(psi_tmp_cyl);
+    Normalize(psi_tmp_cyl, 0.0);
+    VecAXPY(psi, -1.0 * ret_vec[state_idx], psi_tmp_cyl);
+    Checkpoint(h5_file_in, viewer_file_in, -1 * state_idx);
   }
-  for (int state_idx = 0; state_idx < num_states; ++state_idx)
-  {
-    if (std::norm(ret_vec[state_idx]) * std::norm(ret_vec[state_idx]) > 1e-10)
-    {
-      viewer_file.SetTime(state_idx);
-      viewer_file.ReadObject(psi_tmp_cyl);
-      Normalize(psi_tmp_cyl, 0.0);
-      VecAXPY(psi, -1.0 * ret_vec[state_idx], psi_tmp_cyl);
-      Checkpoint(h5_file_in, viewer_file_in, -1 * state_idx);
-    }
-  }
-  std::cout << sum << " sum\n";
+  if (world.rank() == 0) std::cout << sum << " sum\n";
   /* Close file */
   viewer_file.Close();
 }
