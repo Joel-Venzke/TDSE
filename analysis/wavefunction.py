@@ -117,7 +117,7 @@ elif len(shape) == 2:
                     extent=[
                         y[y_min_idx], y[y_max_idx], x[x_min_idx], x[x_max_idx]
                     ],
-                    norm=LogNorm(vmin=1e-18, vmax=max_val))
+                    norm=LogNorm(vmin=1e-15, vmax=max_val))
             else:
                 plt.imshow(
                     np.absolute(psi),
@@ -126,7 +126,7 @@ elif len(shape) == 2:
                     extent=[
                         y[y_min_idx], y[y_max_idx], x[x_min_idx], x[x_max_idx]
                     ],
-                    norm=LogNorm(vmin=1e-10, vmax=max_val))
+                    norm=LogNorm(vmin=1e-15, vmax=max_val))
             plt.text(
                 time_x,
                 time_y,
