@@ -89,13 +89,13 @@ for elec_idx in range(num_electrons):
                  f["Parameters"]["coordinate_system_idx"][0] == 1)):
             ax1.plot(
                 time,
-                np.abs(observables["position_expectation_" + str(elec_idx) +
-                                   "_" + str(dim_idx)][1:]),
+                observables["position_expectation_" +
+                            str(elec_idx) + "_" + str(dim_idx)][1:],
                 label="Electron " + str(elec_idx) + " Dim " + str(dim_idx))
 ax2.plot(time, 1.0 - observables["norm"][1:], 'r--', label="Ionization")
 ax1.set_xlabel("Time a.u.")
 ax1.set_ylabel("Dipole (a.u.)")
-ax2.set_ylabel("Ionization")
+ax2.set_ylim(ymin=0)
 ax1.legend(loc=2)
 ax2.legend(loc=1)
 fig2.savefig("figs/Dipole_with_ionization.png")
