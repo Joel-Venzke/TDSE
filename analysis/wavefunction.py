@@ -127,7 +127,6 @@ elif len(shape) == 2:
                         y[y_min_idx], y[y_max_idx], x[x_min_idx], x[x_max_idx]
                     ],
                     norm=LogNorm(vmin=1e-15, vmax=max_val))
-                print max_val
             else:
                 data = plt.imshow(
                     np.absolute(psi),
@@ -136,7 +135,12 @@ elif len(shape) == 2:
                     extent=[
                         y[y_min_idx], y[y_max_idx], x[x_min_idx], x[x_max_idx]
                     ],
-                    norm=LogNorm(vmin=1e-10, vmax=max_val))
+                    norm=LogNorm(vmin=1e-15, vmax=max_val))
+            plt.text(
+                time_x,
+                time_y,
+                "Time: " + str(psi_time[i]) + " a.u.",
+                color='white')
             # color bar doesn't change during the video so only set it here
             plt.xlabel("X-axis (a.u.)")
             plt.ylabel("Y-axis  (a.u.)")

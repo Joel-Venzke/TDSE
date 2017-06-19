@@ -79,6 +79,27 @@ plt.tight_layout()
 fig.savefig("figs/Dipole.png")
 plt.clf()
 
+# dipole with ionization
+print "Plotting Dipole with ionization"
+fig2, ax1 = plt.subplots()
+ax2 = ax1.twinx()
+for elec_idx in range(num_electrons):
+    for dim_idx in range(num_dims):
+        if (not (dim_idx == 0 and
+                 f["Parameters"]["coordinate_system_idx"][0] == 1)):
+            ax1.plot(
+                time,
+                observables["position_expectation_" +
+                            str(elec_idx) + "_" + str(dim_idx)][1:],
+                label="Electron " + str(elec_idx) + " Dim " + str(dim_idx))
+ax2.plot(time, 1.0 - observables["norm"][1:], 'r--', label="Ionization")
+ax1.set_xlabel("Time a.u.")
+ax1.set_ylabel("Dipole (a.u.)")
+ax2.set_ylim(ymin=0)
+ax1.legend(loc=2)
+ax2.legend(loc=1)
+fig2.savefig("figs/Dipole_with_ionization.png")
+
 # Dipole with envelope
 print "Plotting Dipole with field Envelope"
 fig2, ax1 = plt.subplots()
@@ -198,55 +219,3 @@ plt.legend()
 plt.tight_layout()
 fig.savefig("figs/Linearity.png")
 plt.clf()
-
-# Field Plot
-print "Plotting Field"
-fig = plt.figure()
-for dim_idx in range(num_dims):
-    plt.plot(
-        p_time,
-        pulses["field_" + str(dim_idx)][:],
-        label="field " + str(dim_idx))
-plt.xlabel("Time (a.u.)")
-plt.ylabel("Field (a.u.)")
-plt.title("Field")
-plt.legend()
-fig.savefig("figs/Pulse_field.png")
-
-# Field Plot
-print "Plotting Pulses"
-fig = plt.figure()
-for pulse_idx in range(num_pulses):
-    plt.plot(p_time, pulses["Pulse_envelope_" + str(pulse_idx)][:], 'r--')
-    plt.plot(p_time, -1.0 * pulses["Pulse_envelope_" + str(pulse_idx)][:],
-             'r--')
-    for dim_idx in range(num_dims):
-        plt.plot(
-            p_time,
-            pulses["Pulse_value_" + str(pulse_idx) + "_" + str(dim_idx)][:],
-            label="Pulse " + str(pulse_idx) + " Dim " + str(dim_idx))
-plt.xlabel("Time (a.u.)")
-plt.ylabel("Field (a.u.)")
-plt.title("Pulses")
-plt.legend()
-fig.savefig("figs/Pulses.png")
-
-# Spectrum
-print "Plotting Spectrum"
-fig = plt.figure()
-for dim_idx in range(num_dims):
-    data = pulses["field_" + str(dim_idx)][:]
-    if np.max(data) > 1e-10:
-        plt.semilogy(
-            np.absolute(
-                np.fft.fft(
-                    np.lib.pad(
-                        data, (10 * data.shape[0], 10 * data.shape[0]),
-                        'constant',
-                        constant_values=(0.0, 0.0)))),
-            label="field " + str(dim_idx))
-plt.ylabel("Field Spectrum")
-plt.title("Field Spectrum")
-plt.xlim([0, 1000])
-plt.legend()
-fig.savefig("figs/Spectrum.png")
