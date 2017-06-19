@@ -98,7 +98,7 @@ ax1.set_ylabel("Dipole (a.u.)")
 ax2.set_ylabel("Ionization")
 ax1.legend(loc=2)
 ax2.legend(loc=1)
-fig2.savefig("figs/Dipole_with_field_envelope.png")
+fig2.savefig("figs/Dipole_with_ionization.png")
 
 # Dipole with envelope
 print "Plotting Dipole with field Envelope"
