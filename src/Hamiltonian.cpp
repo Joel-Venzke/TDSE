@@ -342,12 +342,12 @@ dcomp Hamiltonian::GetVal(PetscInt idx_i, PetscInt idx_j, bool time_dep,
       return GetOffDiagonal(idx_array, diff_array, time_dep, time_idx,
                             only_dim_idx, ecs);
     }
-    else if (coordinate_system_idx == 1 and diff_array[0] > 0 and
-             sum < order + 1)
-    {
-      return GetOffDiagonal(idx_array, diff_array, time_dep, time_idx,
-                            only_dim_idx, ecs);
-    }
+    // else if (coordinate_system_idx == 1 and diff_array[0] > 0 and
+    //          sum < order + 1)
+    // {
+    //   return GetOffDiagonal(idx_array, diff_array, time_dep, time_idx,
+    //                         only_dim_idx, ecs);
+    // }
   }
 
   /* This is a true zero of the matrix */
@@ -829,7 +829,7 @@ std::vector< PetscInt > Hamiltonian::GetDiffArray(
 
 Mat* Hamiltonian::GetTimeIndependent(PetscInt only_dim_idx, bool ecs)
 {
-  CalculateHamlitonian(-1, -1, ecs);
+  CalculateHamlitonian(-1, only_dim_idx, ecs);
   return &hamiltonian;
 }
 
