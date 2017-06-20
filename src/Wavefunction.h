@@ -13,6 +13,8 @@ class Wavefunction : protected Utils
   double *dim_size;       /* sizes of each dimension in a.u. */
   double *delta_x;        /* step sizes of each dimension in a.u. */
   PetscInt coordinate_system_idx;
+  std::string target_file_name;
+  PetscInt num_states;
   PetscInt *num_x;        /* number of grid points in each dimension */
   PetscInt num_psi_build; /* number of points in psi_1 and psi_2 */
   PetscInt num_psi;       /* number of points in psi */

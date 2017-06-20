@@ -262,7 +262,6 @@ void Hamiltonian::SetUpCoefficients()
     {
       for (int derivative_idx = 0; derivative_idx < 3; ++derivative_idx)
       {
-        std::cout << "\n" << derivative_idx << "\n";
         for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
         {
           radial_bc_coef[discontinuity_idx][derivative_idx][coef_idx] = 0.0;
@@ -278,18 +277,8 @@ void Hamiltonian::SetUpCoefficients()
                 real_coef[0][derivative_idx]
                          [(order / 2) - discontinuity_idx - 1 - coef_idx];
           }
-          std::cout
-              << radial_bc_coef[discontinuity_idx][derivative_idx][coef_idx]
-              << " ";
         }
-        std::cout << "\n";
-        for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
-        {
-          std::cout << real_coef[0][derivative_idx][coef_idx] << " ";
-        }
-        std::cout << "\n";
       }
-      std::cout << "\n";
     }
   }
 }

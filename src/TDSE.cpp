@@ -54,10 +54,10 @@ int main(int argc, char** argv)
       case 0: /* File */
         break;
       case 2: /* Power */
-        s.PowerMethod(parameters.GetNumStates(), parameters.GetNumStates() - 1);
+        s.PowerMethod(parameters.GetNumStates(), parameters.GetStartState());
         break;
       case 3: /* SLEPC */
-        s.EigenSolve(parameters.GetNumStates(), parameters.GetNumStates() - 1);
+        s.EigenSolve(parameters.GetNumStates(), parameters.GetStartState());
         break;
     }
     p_wrap.PopStage(); /* Eigen State */

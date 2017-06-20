@@ -14,6 +14,8 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   dim_size                  = p.dim_size.get();
   delta_x                   = p.delta_x.get();
   coordinate_system_idx     = p.GetCoordinateSystemIdx();
+  target_file_name          = p.GetTarget() + ".h5";
+  num_states                = p.GetNumStates();
   sigma                     = p.GetSigma();
   num_psi_build             = 1.0;
   write_counter_checkpoint  = 0;
@@ -122,6 +124,12 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
     h5_file.WriteObject(Norm(), "/Wavefunction/norm", "Norm of wavefunction",
                         write_counter_checkpoint);
 
+    std::vector< dcomp > projections;
+    projections.resize(num_states, dcomp(0.0, 0.0));
+    h5_file.WriteObject(
+        &projections[0], projections.size(), "/Wavefunction/projections",
+        "Projection onto the various excited states", write_counter_checkpoint);
+
     /* write observables */
     h5_file.CreateGroup("/Observables/");
     h5_file.WriteObject(time, "/Observables/time",
@@ -178,6 +186,10 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
       /* write time */
       h5_file.WriteObject(time, "/Wavefunction/time", write_counter_checkpoint);
       h5_file.WriteObject(Norm(), "/Wavefunction/norm",
+                          write_counter_checkpoint);
+      std::vector< dcomp > projections = Projections(target_file_name);
+      h5_file.WriteObject(&projections[0], projections.size(),
+                          "/Wavefunction/projections",
                           write_counter_checkpoint);
       write_counter_checkpoint++;
     }
@@ -249,11 +261,9 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
   HDF5Wrapper h5_file(file_name);
   ViewWrapper viewer_file(file_name);
 
-  PetscInt num_states = h5_file.GetTime("/psi") + 1;
+  PetscInt num_states = h5_file.GetTime("/psi/") + 1;
   std::vector< dcomp > ret_vec;
   dcomp projection_val;
-  ierr = PetscObjectSetName((PetscObject)psi_tmp_cyl, "psi");
-  ierr = PetscObjectSetName((PetscObject)psi_tmp, "psi");
 
   viewer_file.Open("r");
   for (int state_idx = 0; state_idx < num_states; ++state_idx)
@@ -275,11 +285,8 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
       Normalize(psi_tmp, 0.0);
     }
     VecDot(psi, psi_tmp, &projection_val);
-    if (world.rank() == 0)
-      std::cout << std::norm(projection_val) << " " << projection_val << "\n";
     ret_vec.push_back(projection_val);
   }
-  if (world.rank() == 0) std::cout << "\n";
 
   /* Close file */
   viewer_file.Close();
@@ -483,10 +490,12 @@ void Wavefunction::CreatePsi()
     VecCreate(PETSC_COMM_WORLD, &psi_tmp);
     VecSetSizes(psi_tmp, PETSC_DECIDE, num_psi);
     VecSetFromOptions(psi_tmp);
+    ierr = PetscObjectSetName((PetscObject)psi_tmp, "psi");
 
     VecCreate(PETSC_COMM_WORLD, &psi_tmp_cyl);
     VecSetSizes(psi_tmp_cyl, PETSC_DECIDE, num_psi);
     VecSetFromOptions(psi_tmp_cyl);
+    ierr = PetscObjectSetName((PetscObject)psi_tmp_cyl, "psi");
 
     psi_alloc = true;
   }
