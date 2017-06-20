@@ -412,17 +412,6 @@ void Parameters::Validate()
       err_str += "\"sin2\" and \"gaussian\"\n";
     }
 
-    /* check field_max */
-    // if (field_max[pulse_idx] <= 0)
-    // {
-    //   error_found = true;
-    //   err_str += "\nPulse ";
-    //   err_str += std::to_string(pulse_idx);
-    //   err_str += " has unsupported field_max: \"";
-    //   err_str += std::to_string(field_max[pulse_idx]) + "\"\n";
-    //   err_str += "field_max should be greater than 0\n";
-    // }
-
     /* check cycles_on */
     if (cycles_on[pulse_idx] < 0)
     {
@@ -526,6 +515,14 @@ void Parameters::Validate()
     err_str += "\nInvalid state solver: \"";
     err_str += state_solver;
     err_str += "\"\nvalid solvers are \"SLEPC\" and \"Power\"\n";
+  }
+
+  if (start_state >= num_states)
+  {
+    error_found = true;
+    err_str +=
+        "\nThe start_state must be less than the total number of states you "
+        "wish to calculate\n";
   }
 
   /* exit here to get all errors in one run */
