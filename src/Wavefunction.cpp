@@ -264,7 +264,7 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
   PetscInt file_states = h5_file.GetTime("/psi/") + 1;
   if (file_name < num_states)
   {
-    EndRun("Not enough states in the target file")
+    EndRun("Not enough states in the target file");
   }
   std::vector< dcomp > ret_vec;
   dcomp projection_val;
