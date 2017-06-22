@@ -310,7 +310,11 @@ void Wavefunction::ProjectOut(std::string file_name, HDF5Wrapper& h5_file_in,
   HDF5Wrapper h5_file(file_name);
   ViewWrapper viewer_file(file_name);
 
-  PetscInt num_states = h5_file.GetTime("/psi") + 1;
+  PetscInt file_states = h5_file.GetTime("/psi/") + 1;
+  if (file_states < num_states)
+  {
+    EndRun("Not enough states in the target file");
+  }
   std::vector< dcomp > ret_vec;
   dcomp projection_val;
   dcomp sum = 0.0;
