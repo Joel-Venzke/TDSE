@@ -262,7 +262,7 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
   ViewWrapper viewer_file(file_name);
 
   PetscInt file_states = h5_file.GetTime("/psi/") + 1;
-  if (file_name < num_states)
+  if (file_states < num_states)
   {
     EndRun("Not enough states in the target file");
   }
