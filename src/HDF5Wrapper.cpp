@@ -587,7 +587,13 @@ void HDF5Wrapper::WriteObject(T data, int size, H5std_string var_path,
       }
 
       /* extend data set */
+      for (int i = 0; i < num_dims; ++i)
+      {
+        std::cout << h5_size[i] << " ";
+      }
+      std::cout << "\n";
       data_set.extend(h5_size);
+      std::cout << "not getting here";
 
       /* get hyperslab */
       H5::DataSpace filespace(data_set.getSpace());
