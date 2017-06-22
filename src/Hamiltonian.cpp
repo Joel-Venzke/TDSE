@@ -253,7 +253,7 @@ void Hamiltonian::SetUpCoefficients()
     // for (int discontinuity_idx = 0; discontinuity_idx < order / 2;
     //      ++discontinuity_idx)
     // {
-    //   /* Get real coefficients for 2nd derivative (order+2 terms)*/
+    //   /* Get real coefficients for 2nd derivative (order+2 terms) */
     //   FDWeights(x_vals, 2, radial_bc_coef[discontinuity_idx],
     //             discontinuity_idx);
     // }

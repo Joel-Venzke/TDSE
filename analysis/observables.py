@@ -153,8 +153,10 @@ for elec_idx in range(num_electrons):
     for dim_idx in range(num_dims):
         if (not (dim_idx == 0 and
                  f["Parameters"]["coordinate_system_idx"][0] == 1)):
-            data = observables["dipole_acceleration_" +
-                               str(elec_idx) + "_" + str(dim_idx)][1:]
+            data = observables[
+                "dipole_acceleration_" + str(elec_idx) + "_" + str(dim_idx)][
+                    1:len(pulses["field_" + str(dim_idx)]
+                          [checkpoint_frequency::checkpoint_frequency]) + 1]
             data = data * np.blackman(data.shape[0])
             if np.max(data) > 1e-10:
                 plt.semilogy(
@@ -208,7 +210,9 @@ for elec_idx in range(num_electrons):
                  f["Parameters"]["coordinate_system_idx"][0] == 1)):
             plt.plot(
                 observables["dipole_acceleration_" +
-                            str(elec_idx) + "_" + str(dim_idx)][1:],
+                            str(elec_idx) + "_" + str(dim_idx)]
+                [1:len(pulses["field_" + str(dim_idx)]
+                       [checkpoint_frequency::checkpoint_frequency]) + 1],
                 pulses["field_" + str(dim_idx)][checkpoint_frequency::
                                                 checkpoint_frequency],
                 label="Electron " + str(elec_idx) + " Dim " + str(dim_idx))
