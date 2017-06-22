@@ -188,15 +188,6 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
       h5_file.WriteObject(Norm(), "/Wavefunction/norm",
                           write_counter_checkpoint);
       std::vector< dcomp > projections = Projections(target_file_name);
-      if (world.rank() == 0)
-      {
-        for (int i = 0; i < projections.size(); ++i)
-        {
-          std::cout << projections[i] << " ";
-        }
-        std::cout << "\n";
-        std::cout << write_counter_checkpoint << "\n";
-      }
       h5_file.WriteObject(&projections[0], projections.size(),
                           "/Wavefunction/projections",
                           write_counter_checkpoint);
@@ -270,7 +261,11 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
   HDF5Wrapper h5_file(file_name);
   ViewWrapper viewer_file(file_name);
 
-  PetscInt num_states = h5_file.GetTime("/psi/") + 1;
+  PetscInt file_states = h5_file.GetTime("/psi/") + 1;
+  if (file_name < num_states)
+  {
+    EndRun("Not enough states in the target file")
+  }
   std::vector< dcomp > ret_vec;
   dcomp projection_val;
 
