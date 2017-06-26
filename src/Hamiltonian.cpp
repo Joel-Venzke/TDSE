@@ -84,6 +84,7 @@ void Hamiltonian::CalculateHamlitonian(PetscInt time_idx, PetscInt only_dim_idx,
   }
   for (PetscInt i_val = start; i_val < end; i_val++)
   {
+    j_val     = i_val;
     idx_array = GetIndexArray(i_val, j_val);
     for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
     {
@@ -106,8 +107,7 @@ void Hamiltonian::CalculateHamlitonian(PetscInt time_idx, PetscInt only_dim_idx,
     }
 
     /* Diagonal element */
-    j_val = i_val;
-    val   = GetVal(i_val, j_val, time_dependent, time_idx, insert_val,
+    val = GetVal(i_val, j_val, time_dependent, time_idx, insert_val,
                  only_dim_idx, ecs);
     if (insert_val)
     {
@@ -255,14 +255,17 @@ void Hamiltonian::SetUpCoefficients()
 
   if (coordinate_system_idx == 1) /* Cylindrical boundary conditions */
   {
-    radial_bc_coef.resize(order / 2,
-                          std::vector< std::vector< dcomp > >(
-                              3, std::vector< dcomp >(order + 1, 0.0)));
-    /* Set up real gird for 1st and 2nd order derivatives */
+    /* Set up real gird */
     for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
     {
       x_vals[coef_idx] = delta_x_min[0] * coef_idx;
     }
+    /* Get real coefficients for each dimension */
+    FDWeights(x_vals, 2, real_coef[0]);
+
+    radial_bc_coef.resize(order / 2,
+                          std::vector< std::vector< dcomp > >(
+                              3, std::vector< dcomp >(order + 1, 0.0)));
     for (int discontinuity_idx = 0; discontinuity_idx < order / 2;
          ++discontinuity_idx)
     {
@@ -609,10 +612,10 @@ dcomp Hamiltonian::GetKineticTerm(std::vector< PetscInt >& idx_array,
             // std::cout << discontinuity_idx << " "
             //           << " "
             //           <<
-            // radial_bc_coef[discontinuity_idx][1][discontinuity_idx]
+            //           radial_bc_coef[discontinuity_idx][1][discontinuity_idx]
             //           << " "
             //           <<
-            // radial_bc_coef[discontinuity_idx][2][discontinuity_idx]
+            //           radial_bc_coef[discontinuity_idx][2][discontinuity_idx]
             //           << " " << x_value[dim_idx][discontinuity_idx] << " "
             //           << x_value[dim_idx + 1][discontinuity_idx] << "\n";
           }

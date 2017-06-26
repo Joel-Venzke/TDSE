@@ -771,6 +771,8 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
                 "The length of that dimension in atomic units.");
     WriteObject(p.delta_x_min.get(), num_dims, "/Parameters/delta_x_min",
                 "The minimum step sizes in that dimension in atomic units.");
+    WriteObject(p.delta_x_max.get(), num_dims, "/Parameters/delta_x_max",
+                "The maximum step sizes in that dimension in atomic units.");
     WriteObject(
         p.delta_x_min_end.get(), num_dims, "/Parameters/delta_x_min_end",
         "The minimum step sizes ends in that dimension in atomic units.");

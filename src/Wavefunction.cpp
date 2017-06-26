@@ -462,8 +462,8 @@ void Wavefunction::CreateGrid()
       center = num_x[dim_idx] / 2;
 
       /* store center */
-      x_value[dim_idx][center]     = delta_x_min[dim_idx] / 2.0;
       x_value[dim_idx][center - 1] = -1.0 * delta_x_min[dim_idx] / 2.0;
+      x_value[dim_idx][center]     = delta_x_min[dim_idx] / 2.0;
 
       /* loop over all others */
       for (PetscInt x_idx = center - 1; x_idx >= 0; x_idx--)
@@ -827,8 +827,8 @@ double Wavefunction::Norm(Vec& data, double dv)
   {
     CreateObservable(2, 0, 0);
     VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi);
-    // CreateObservable(4, 0, 0);
-    // VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi_tmp_cyl);
+    CreateObservable(4, 0, 0);
+    VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi_tmp_cyl);
     VecDot(psi, psi_tmp_cyl, &dot_product);
     total = sqrt(dot_product.real());
   }
@@ -852,8 +852,8 @@ double Wavefunction::GetEnergy(Mat* h, Vec& p)
     MatMult(*h, p, psi_tmp_cyl);
     CreateObservable(2, 0, 0); /* pho */
     VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi_tmp_cyl);
-    // CreateObservable(4, 0, 0); /* pho */
-    // VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi_tmp_cyl);
+    CreateObservable(4, 0, 0); /* pho */
+    VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi_tmp_cyl);
     VecDot(p, psi_tmp_cyl, &energy);
   }
   else
@@ -874,13 +874,17 @@ double Wavefunction::GetPosition(PetscInt elec_idx, PetscInt dim_idx)
   {
     CreateObservable(2, elec_idx, dim_idx); /* pho */
     VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi);
+    CreateObservable(4, 0, 0);
+    VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi_tmp_cyl);
     CreateObservable(0, elec_idx, dim_idx); /* dim */
     VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
   }
   else
   {
     CreateObservable(0, elec_idx, dim_idx); /* dim */
-    VecPointwiseMult(psi_tmp, psi_tmp, psi);
+    VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi);
+    CreateObservable(4, 0, 0);
+    VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
   }
   VecDot(psi, psi_tmp, &expectation);
   return expectation.real();
@@ -894,13 +898,17 @@ double Wavefunction::GetDipoleAcceration(PetscInt elec_idx, PetscInt dim_idx)
   {
     CreateObservable(2, elec_idx, dim_idx); /* pho */
     VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi);
+    CreateObservable(4, 0, 0);
+    VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi_tmp_cyl);
     CreateObservable(1, elec_idx, dim_idx); /* dim */
     VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
   }
   else
   {
     CreateObservable(1, elec_idx, dim_idx); /* dim */
-    VecPointwiseMult(psi_tmp, psi_tmp, psi);
+    VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi);
+    CreateObservable(4, 0, 0);
+    VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
   }
   VecDot(psi, psi_tmp, &expectation);
   return expectation.real();
@@ -913,13 +921,17 @@ double Wavefunction::GetGobbler()
   {
     CreateObservable(2, 0, 0); /* pho */
     VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi);
+    CreateObservable(4, 0, 0);
+    VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi_tmp_cyl);
     CreateObservable(3, 0, 0); /* gobbler */
     VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
   }
   else
   {
     CreateObservable(3, 0, 0); /* gobbler */
-    VecPointwiseMult(psi_tmp, psi_tmp, psi);
+    VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi);
+    CreateObservable(4, 0, 0);
+    VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
   }
   VecDot(psi, psi_tmp, &expectation);
   return expectation.real();
