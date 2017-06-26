@@ -8,10 +8,13 @@ class Wavefunction : protected Utils
 {
  private:
   PetscInt ierr;
-  PetscInt num_dims;      /* number of dimensions */
-  PetscInt num_electrons; /* number of electrons in the system */
-  double *dim_size;       /* sizes of each dimension in a.u. */
-  double *delta_x;        /* step sizes of each dimension in a.u. */
+  PetscInt num_dims;         /* number of dimensions */
+  PetscInt num_electrons;    /* number of electrons in the system */
+  double *dim_size;          /* sizes of each dimension in a.u. */
+  double *delta_x_min;       /* step sizes of each dimension in a.u. */
+  double *delta_x_min_end;   /* step sizes of each dimension in a.u. */
+  double *delta_x_max;       /* step sizes of each dimension in a.u. */
+  double *delta_x_max_start; /* step sizes of each dimension in a.u. */
   PetscInt coordinate_system_idx;
   std::string target_file_name;
   PetscInt num_states;
@@ -45,6 +48,7 @@ class Wavefunction : protected Utils
   dcomp GetDipoleAccerationVal(PetscInt idx, PetscInt elec_idx,
                                PetscInt dim_idx);
   dcomp GetGobblerVal(PetscInt idx);
+  dcomp GetVolumeElement(PetscInt idx);
 
   double GetDistance(std::vector< PetscInt > idx_array, PetscInt elec_idx);
 

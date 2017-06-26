@@ -55,10 +55,14 @@ class Parameters : protected Utils
   void Setup(std::string file_name);
 
  public:
-  std::unique_ptr< double[] > dim_size;    ///< size of nth dimension in a.u.
-  std::unique_ptr< double[] > delta_x;     ///< size of grid step
-  std::unique_ptr< double[] > delta_x_2;   ///< size of grid step squared
-  std::unique_ptr< double[] > z;           ///< atomic number for each nuclei
+  std::unique_ptr< double[] > dim_size;     ///< size of nth dimension in a.u.
+  std::unique_ptr< double[] > delta_x_min;  ///< size of minimum grid step
+  std::unique_ptr< double[] >
+      delta_x_min_end;  ///< point in space grid step starts to increase
+  std::unique_ptr< double[] > delta_x_max;  ///< largest grid step
+  std::unique_ptr< double[] >
+      delta_x_max_start;          ///< point in space grid step stops increasing
+  std::unique_ptr< double[] > z;  ///< atomic number for each nuclei
   std::unique_ptr< double[] > r0;          ///< SAE r_0 for each nuclei
   std::unique_ptr< double[] > c0;          ///< SAE C_0 for each nuclei
   std::unique_ptr< double[] > z_c;         ///< SAE z_0 for each nuclei

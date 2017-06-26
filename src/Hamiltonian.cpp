@@ -11,8 +11,10 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
   num_x                 = w.GetNumX();
   num_psi               = w.GetNumPsi();
   num_psi_build         = w.GetNumPsiBuild();
-  delta_x               = p.delta_x.get();
-  delta_x_2             = p.delta_x_2.get();
+  delta_x_min           = p.delta_x_min.get();
+  delta_x_min_end       = p.delta_x_min_end.get();
+  delta_x_max           = p.delta_x_max.get();
+  delta_x_max_start     = p.delta_x_max_start.get();
   x_value               = w.GetXValue();
   z                     = p.z.get();
   location              = p.GetLocation();
@@ -69,6 +71,7 @@ void Hamiltonian::CalculateHamlitonian(PetscInt time_idx, PetscInt only_dim_idx,
   PetscInt start, end;  /* start end rows */
   bool time_dependent, insert_val;
   std::vector< PetscInt > idx_array;
+  std::vector< dcomp > x_vals(order + 1, 0.0);
 
   MatGetOwnershipRange(hamiltonian, &start, &end);
   if (time_idx < 0)
@@ -81,6 +84,27 @@ void Hamiltonian::CalculateHamlitonian(PetscInt time_idx, PetscInt only_dim_idx,
   }
   for (PetscInt i_val = start; i_val < end; i_val++)
   {
+    idx_array = GetIndexArray(i_val, j_val);
+    for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
+    {
+      /* Set up real gird */
+      for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
+      {
+        if (idx_array[dim_idx * 2] < (order / 2 + 1) or
+            num_x[dim_idx] - 1 - idx_array[dim_idx * 2] < (order / 2 + 1))
+        {
+          x_vals[coef_idx] = delta_x_max[dim_idx] * coef_idx;
+        }
+        else
+        {
+          x_vals[coef_idx] =
+              x_value[dim_idx][coef_idx - order / 2 + idx_array[dim_idx * 2]];
+        }
+      }
+      /* Get real coefficients for each dimension */
+      FDWeights(x_vals, 2, real_coef[dim_idx]);
+    }
+
     /* Diagonal element */
     j_val = i_val;
     val   = GetVal(i_val, j_val, time_dependent, time_idx, insert_val,
@@ -88,11 +112,6 @@ void Hamiltonian::CalculateHamlitonian(PetscInt time_idx, PetscInt only_dim_idx,
     if (insert_val)
     {
       MatSetValues(hamiltonian, 1, &i_val, 1, &j_val, &val, INSERT_VALUES);
-    }
-
-    if (coordinate_system_idx == 1)
-    {
-      idx_array = GetIndexArray(i_val, j_val);
     }
 
     /* Loop over off diagonal elements */
@@ -196,13 +215,6 @@ void Hamiltonian::SetUpCoefficients()
 
   for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
   {
-    /* Set up real gird */
-    for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
-    {
-      x_vals[coef_idx] = delta_x[dim_idx] * coef_idx;
-    }
-    /* Get real coefficients for each dimension */
-    FDWeights(x_vals, 2, real_coef[dim_idx]);
     for (int discontinuity_idx = 0; discontinuity_idx < order;
          ++discontinuity_idx)
     {
@@ -211,13 +223,14 @@ void Hamiltonian::SetUpCoefficients()
       {
         if (coef_idx < real_split)
         {
-          x_vals[coef_idx] = delta_x[dim_idx] * coef_idx;
+          x_vals[coef_idx] = delta_x_max[dim_idx] * coef_idx;
         }
         else
         {
-          x_vals[coef_idx] = delta_x[dim_idx] * (real_split - 1 +
-                                                 (coef_idx - real_split + 1) *
-                                                     std::exp(imag * eta));
+          x_vals[coef_idx] =
+              delta_x_max[dim_idx] *
+              (real_split - 1 +
+               (coef_idx - real_split + 1) * std::exp(imag * eta));
         }
       }
       FDWeights(x_vals, 2, right_ecs_coef[dim_idx][discontinuity_idx]);
@@ -226,12 +239,12 @@ void Hamiltonian::SetUpCoefficients()
       {
         if (coef_idx > discontinuity_idx)
         {
-          x_vals[coef_idx] = delta_x[dim_idx] * coef_idx;
+          x_vals[coef_idx] = delta_x_max[dim_idx] * coef_idx;
         }
         else
         {
           x_vals[coef_idx] =
-              delta_x[dim_idx] *
+              delta_x_max[dim_idx] *
               (discontinuity_idx + 1.0 -
                (discontinuity_idx - coef_idx + 1.0) * std::exp(imag * eta));
         }
@@ -246,17 +259,10 @@ void Hamiltonian::SetUpCoefficients()
                           std::vector< std::vector< dcomp > >(
                               3, std::vector< dcomp >(order + 1, 0.0)));
     /* Set up real gird for 1st and 2nd order derivatives */
-    // for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
-    // {
-    //   x_vals[coef_idx] = delta_x[0] * coef_idx;
-    // }
-    // for (int discontinuity_idx = 0; discontinuity_idx < order / 2;
-    //      ++discontinuity_idx)
-    // {
-    //   /* Get real coefficients for 2nd derivative (order+2 terms) */
-    //   FDWeights(x_vals, 2, radial_bc_coef[discontinuity_idx],
-    //             discontinuity_idx);
-    // }
+    for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
+    {
+      x_vals[coef_idx] = delta_x_min[0] * coef_idx;
+    }
     for (int discontinuity_idx = 0; discontinuity_idx < order / 2;
          ++discontinuity_idx)
     {
@@ -367,6 +373,15 @@ void Hamiltonian::FDWeights(std::vector< dcomp >& x_vals,
   dcomp last_product, current_product, x_distance, z_distance,
       previous_z_distance;
   PetscInt mn;
+
+  for (int derivative_idx = 0; derivative_idx < max_derivative + 1;
+       ++derivative_idx)
+  {
+    for (int i = 0; i < x_size; ++i)
+    {
+      coef[derivative_idx][i] = 0.0;
+    }
+  }
 
   /* Start algorithm */
   last_product = 1.0;

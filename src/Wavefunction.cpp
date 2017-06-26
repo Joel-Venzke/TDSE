@@ -12,7 +12,10 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   num_dims                  = p.GetNumDims();
   num_electrons             = p.GetNumElectrons();
   dim_size                  = p.dim_size.get();
-  delta_x                   = p.delta_x.get();
+  delta_x_min               = p.delta_x_min.get();
+  delta_x_min_end           = p.delta_x_min_end.get();
+  delta_x_max               = p.delta_x_max.get();
+  delta_x_max_start         = p.delta_x_max_start.get();
   coordinate_system_idx     = p.GetCoordinateSystemIdx();
   target_file_name          = p.GetTarget() + ".h5";
   num_states                = p.GetNumStates();
@@ -187,10 +190,10 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
       h5_file.WriteObject(time, "/Wavefunction/time", write_counter_checkpoint);
       h5_file.WriteObject(Norm(), "/Wavefunction/norm",
                           write_counter_checkpoint);
-      std::vector< dcomp > projections = Projections(target_file_name);
-      h5_file.WriteObject(&projections[0], projections.size(),
-                          "/Wavefunction/projections",
-                          write_counter_checkpoint);
+      // std::vector< dcomp > projections = Projections(target_file_name);
+      // h5_file.WriteObject(&projections[0], projections.size(),
+      //                     "/Wavefunction/projections",
+      //                     write_counter_checkpoint);
       write_counter_checkpoint++;
     }
     else
@@ -376,6 +379,7 @@ void Wavefunction::CreateGrid()
 {
   PetscInt center;  /* idx of the 0.0 in the grid */
   double current_x; /* used for setting grid */
+  double slope;
 
   /* allocation */
   num_x   = new PetscInt[num_dims];
@@ -387,7 +391,34 @@ void Wavefunction::CreateGrid()
   /* build grid */
   for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
   {
-    num_x[dim_idx] = ceil((dim_size[dim_idx]) / delta_x[dim_idx]);
+    if (coordinate_system_idx == 1 and dim_idx == 0)
+    {
+      /* zero to delta_x__min_end */
+      num_x[dim_idx] = ceil((delta_x_min_end[dim_idx]) / delta_x_min[dim_idx]);
+      /* delta_x_min_end to delta_x_max_start */
+      num_x[dim_idx] +=
+          ceil((delta_x_max_start[dim_idx] - delta_x_min_end[dim_idx]) /
+               ((delta_x_min[dim_idx] + delta_x_max[dim_idx]) / 2.0));
+      /* delta_x_max_start to dim_size */
+      num_x[dim_idx] +=
+          ceil(((dim_size[dim_idx]) - delta_x_max_start[dim_idx]) /
+               delta_x_max[dim_idx]);
+    }
+    else
+    {
+      /* zero to delta_x__min_end */
+      num_x[dim_idx] = ceil((delta_x_min_end[dim_idx]) / delta_x_min[dim_idx]);
+      /* delta_x_min_end to delta_x_max_start */
+      num_x[dim_idx] +=
+          ceil((delta_x_max_start[dim_idx] - delta_x_min_end[dim_idx]) /
+               ((delta_x_min[dim_idx] + delta_x_max[dim_idx]) / 2.0));
+      /* delta_x_max_start to dim_size */
+      num_x[dim_idx] +=
+          ceil(((dim_size[dim_idx] / 2) - delta_x_max_start[dim_idx]) /
+               delta_x_max[dim_idx]);
+      /* need both sides of zero */
+      num_x[dim_idx] *= 2.0;
+    }
 
     /* odd number so it is even on both sides */
     if (num_x[dim_idx] % 2 != 0) num_x[dim_idx]++;
@@ -398,12 +429,31 @@ void Wavefunction::CreateGrid()
     /* size of 1d array for psi */
     num_psi_build *= num_x[dim_idx];
 
+    slope = (delta_x_max[dim_idx] - delta_x_min[dim_idx]) /
+            (delta_x_max_start[dim_idx] - delta_x_min_end[dim_idx]);
+
     if (coordinate_system_idx == 1 and dim_idx == 0)
     {
-      for (int x_idx = 0; x_idx < num_x[dim_idx]; ++x_idx)
+      x_value[dim_idx][0] = delta_x_min[dim_idx] / 2.0;
+      for (int x_idx = 1; x_idx < num_x[dim_idx]; ++x_idx)
       {
-        x_value[dim_idx][x_idx] =
-            x_idx * delta_x[dim_idx] + delta_x[dim_idx] / 2.0;
+        if (x_value[dim_idx][x_idx - 1] < delta_x_min_end[dim_idx])
+        {
+          x_value[dim_idx][x_idx] =
+              x_value[dim_idx][x_idx - 1] + delta_x_min[dim_idx];
+        }
+        else if (x_value[dim_idx][x_idx - 1] < delta_x_max_start[dim_idx])
+        {
+          x_value[dim_idx][x_idx] =
+              x_value[dim_idx][x_idx - 1] +
+              slope * (x_value[dim_idx][x_idx - 1] - delta_x_min_end[dim_idx]) +
+              delta_x_min[dim_idx];
+        }
+        else
+        {
+          x_value[dim_idx][x_idx] =
+              x_value[dim_idx][x_idx - 1] + delta_x_max[dim_idx];
+        }
       }
     }
     else
@@ -412,19 +462,37 @@ void Wavefunction::CreateGrid()
       center = num_x[dim_idx] / 2;
 
       /* store center */
-      x_value[dim_idx][center] = 0.0;
+      x_value[dim_idx][center]     = delta_x_min[dim_idx] / 2.0;
+      x_value[dim_idx][center - 1] = -1.0 * delta_x_min[dim_idx] / 2.0;
 
       /* loop over all others */
-      for (PetscInt x_idx = center; x_idx >= 0; x_idx--)
+      for (PetscInt x_idx = center - 1; x_idx >= 0; x_idx--)
       {
-        /* get x value */
-        current_x =
-            (x_idx - center) * delta_x[dim_idx] + delta_x[dim_idx] / 2.0;
+        // /* get x value */
+        // current_x =
+        //     (x_idx - center) * delta_x[dim_idx] + delta_x[dim_idx] / 2.0;
 
         /* double checking index */
         if (x_idx < 0 || num_x[dim_idx] - x_idx - 1 >= num_x[dim_idx])
         {
           EndRun("Allocation error in grid");
+        }
+
+        if (std::abs(x_value[dim_idx][x_idx + 1]) < delta_x_min_end[dim_idx])
+        {
+          current_x = x_value[dim_idx][x_idx + 1] - delta_x_min[dim_idx];
+        }
+        else if (std::abs(x_value[dim_idx][x_idx + 1]) <
+                 delta_x_max_start[dim_idx])
+        {
+          current_x = x_value[dim_idx][x_idx + 1] -
+                      (slope * (std::abs(x_value[dim_idx][x_idx + 1]) -
+                                delta_x_min_end[dim_idx]) +
+                       delta_x_min[dim_idx]);
+        }
+        else
+        {
+          current_x = x_value[dim_idx][x_idx + 1] - delta_x_max[dim_idx];
         }
 
         /* set negative side */
@@ -557,6 +625,14 @@ void Wavefunction::CreateObservable(PetscInt observable_idx, PetscInt elec_idx,
       VecSetValues(psi_tmp, 1, &idx, &val, INSERT_VALUES);
     }
   }
+  else if (observable_idx == 4) /* volume element */
+  {
+    for (PetscInt idx = low; idx < high; idx++)
+    {
+      val = GetVolumeElement(idx);
+      VecSetValues(psi_tmp, 1, &idx, &val, INSERT_VALUES);
+    }
+  }
   else
   {
     EndRun("Bad observable index in Wavefunction");
@@ -596,6 +672,31 @@ dcomp Wavefunction::GetPsiVal(dcomp*** data, PetscInt idx)
     {
       ret_val *=
           data[elec_idx][dim_idx][idx_array[elec_idx * num_dims + dim_idx]];
+    }
+  }
+  return ret_val;
+}
+
+dcomp Wavefunction::GetVolumeElement(PetscInt idx)
+{
+  /* Value to be returned */
+  dcomp ret_val(1.0, 0.0);
+  /* idx for return */
+  std::vector< PetscInt > idx_array = GetIntArray(idx);
+  for (PetscInt elec_idx = 0; elec_idx < num_electrons; elec_idx++)
+  {
+    for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
+    {
+      if (idx_array[elec_idx * num_dims + dim_idx] > 0)
+      {
+        ret_val *=
+            x_value[dim_idx][idx_array[elec_idx * num_dims + dim_idx]] -
+            x_value[dim_idx][idx_array[elec_idx * num_dims + dim_idx] - 1];
+      }
+      else
+      {
+        ret_val *= delta_x_min[dim_idx];
+      }
     }
   }
   return ret_val;
@@ -705,7 +806,7 @@ std::vector< PetscInt > Wavefunction::GetIntArray(PetscInt idx)
 }
 
 /* normalize psi_1, psi_2, and psi */
-void Wavefunction::Normalize() { Normalize(psi, delta_x[0]); }
+void Wavefunction::Normalize() { Normalize(psi, 0.0); }
 
 /* normalizes the array provided */
 void Wavefunction::Normalize(Vec& data, double dv)
@@ -715,7 +816,7 @@ void Wavefunction::Normalize(Vec& data, double dv)
 }
 
 /* returns norm of psi */
-double Wavefunction::Norm() { return Norm(psi, delta_x[0]); }
+double Wavefunction::Norm() { return Norm(psi, 0.0); }
 
 /* returns norm of array using trapezoidal rule */
 double Wavefunction::Norm(Vec& data, double dv)
@@ -725,13 +826,18 @@ double Wavefunction::Norm(Vec& data, double dv)
   if (coordinate_system_idx == 1)
   {
     CreateObservable(2, 0, 0);
-    VecPointwiseMult(psi_tmp, psi_tmp, psi);
-    VecDot(psi, psi_tmp, &dot_product);
+    VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi);
+    // CreateObservable(4, 0, 0);
+    // VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi_tmp_cyl);
+    VecDot(psi, psi_tmp_cyl, &dot_product);
     total = sqrt(dot_product.real());
   }
   else
   {
-    VecNorm(data, NORM_2, &total);
+    CreateObservable(4, 0, 0);
+    VecPointwiseMult(psi_tmp, psi_tmp, psi);
+    VecDot(psi, psi_tmp, &dot_product);
+    total = sqrt(dot_product.real());
   }
   return total;
 }
@@ -746,11 +852,15 @@ double Wavefunction::GetEnergy(Mat* h, Vec& p)
     MatMult(*h, p, psi_tmp_cyl);
     CreateObservable(2, 0, 0); /* pho */
     VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi_tmp_cyl);
+    // CreateObservable(4, 0, 0); /* pho */
+    // VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi_tmp_cyl);
     VecDot(p, psi_tmp_cyl, &energy);
   }
   else
   {
     MatMult(*h, p, psi_tmp);
+    CreateObservable(4, 0, 0); /* pho */
+    VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi_tmp_cyl);
     VecDot(p, psi_tmp, &energy);
   }
   return energy.real();
