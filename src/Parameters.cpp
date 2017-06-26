@@ -83,13 +83,37 @@ void Parameters::Setup(std::string file_name)
   sigma                       = data["sigma"];
   tol                         = data["tol"];
   state_solver                = data["state_solver"];
-  num_states                  = data["states"].size();
-
-  state_energy = std::make_unique< double[] >(num_states);
-
-  for (PetscInt i = 0; i < num_states; i++)
+  if (state_solver == "File")
   {
-    state_energy[i] = data["states"][i]["energy"];
+    state_solver_idx = 0;
+  }
+  else if (state_solver == "ITP")
+  {
+    state_solver_idx = 1;
+  }
+  else if (state_solver == "Power")
+  {
+    state_solver_idx = 2;
+  }
+  else if (state_solver == "SLEPC")
+  {
+    state_solver_idx = 3;
+  }
+  start_state = data["start_state"];
+  if (state_solver_idx != 2)
+  {
+    num_states = data["states"];
+  }
+  else
+  {
+    num_states = data["states"].size();
+
+    state_energy = std::make_unique< double[] >(num_states);
+
+    for (PetscInt i = 0; i < num_states; i++)
+    {
+      state_energy[i] = data["states"][i]["energy"];
+    }
   }
 
   z        = std::make_unique< double[] >(num_nuclei);
@@ -165,23 +189,6 @@ void Parameters::Setup(std::string file_name)
   else
   {
     target_idx = -1;
-  }
-
-  if (state_solver == "File")
-  {
-    state_solver_idx = 0;
-  }
-  else if (state_solver == "ITP")
-  {
-    state_solver_idx = 1;
-  }
-  else if (state_solver == "Power")
-  {
-    state_solver_idx = 2;
-  }
-  else if (state_solver == "SLEPC")
-  {
-    state_solver_idx = 3;
   }
 
   propagate      = data["propagate"];
@@ -405,17 +412,6 @@ void Parameters::Validate()
       err_str += "\"sin2\" and \"gaussian\"\n";
     }
 
-    /* check field_max */
-    // if (field_max[pulse_idx] <= 0)
-    // {
-    //   error_found = true;
-    //   err_str += "\nPulse ";
-    //   err_str += std::to_string(pulse_idx);
-    //   err_str += " has unsupported field_max: \"";
-    //   err_str += std::to_string(field_max[pulse_idx]) + "\"\n";
-    //   err_str += "field_max should be greater than 0\n";
-    // }
-
     /* check cycles_on */
     if (cycles_on[pulse_idx] < 0)
     {
@@ -521,6 +517,14 @@ void Parameters::Validate()
     err_str += "\"\nvalid solvers are \"SLEPC\" and \"Power\"\n";
   }
 
+  if (start_state >= num_states)
+  {
+    error_found = true;
+    err_str +=
+        "\nThe start_state must be less than the total number of states you "
+        "wish to calculate\n";
+  }
+
   /* exit here to get all errors in one run */
   if (error_found)
   {
@@ -582,6 +586,7 @@ PetscInt Parameters::GetOrder() { return order; }
 double Parameters::GetSigma() { return sigma; }
 
 PetscInt Parameters::GetNumStates() { return num_states; }
+PetscInt Parameters::GetStartState() { return start_state; }
 
 double Parameters::GetTol() { return tol; }
 

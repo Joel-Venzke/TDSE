@@ -13,6 +13,8 @@ class Wavefunction : protected Utils
   double *dim_size;       /* sizes of each dimension in a.u. */
   double *delta_x;        /* step sizes of each dimension in a.u. */
   PetscInt coordinate_system_idx;
+  std::string target_file_name;
+  PetscInt num_states;
   PetscInt *num_x;        /* number of grid points in each dimension */
   PetscInt num_psi_build; /* number of points in psi_1 and psi_2 */
   PetscInt num_psi;       /* number of points in psi */
@@ -74,6 +76,9 @@ class Wavefunction : protected Utils
   double GetPosition(PetscInt elec_idx, PetscInt dim_idx);
   double GetDipoleAcceration(PetscInt elec_idx, PetscInt dim_idx);
   double GetGobbler();
+  std::vector< dcomp > Projections(std::string file_name);
+  void ProjectOut(std::string file_name, HDF5Wrapper &h5_file,
+                  ViewWrapper &viewer_file);
   void ResetPsi();
 
   PetscInt *GetNumX();

@@ -54,10 +54,10 @@ int main(int argc, char** argv)
       case 0: /* File */
         break;
       case 2: /* Power */
-        s.PowerMethod(parameters.GetNumStates(), parameters.GetNumStates() - 1);
+        s.PowerMethod(parameters.GetNumStates(), parameters.GetStartState());
         break;
       case 3: /* SLEPC */
-        s.EigenSolve(parameters.GetNumStates(), parameters.GetNumStates() - 1);
+        s.EigenSolve(parameters.GetNumStates(), parameters.GetStartState());
         break;
     }
     p_wrap.PopStage(); /* Eigen State */
@@ -68,8 +68,12 @@ int main(int argc, char** argv)
   {
     p_wrap.Print(
         "\n************************ Propagation ************************\n\n");
+    // wavefunction.Projections("H.h5");
+
     s.Propagate();
     // s.SplitOpperator();
+    // wavefunction.Projections("H.h5");
+    // wavefunction.ProjectOut("H.h5", h5_file, viewer_file);
   }
   p_wrap.PopStage(); /* Propagation */
   p_wrap.Print(

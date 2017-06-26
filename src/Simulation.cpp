@@ -778,8 +778,9 @@ void Simulation::CheckpointState(HDF5Wrapper &h_file, ViewWrapper &v_file,
 {
   wavefunction->Normalize();
   wavefunction->CheckpointPsi(v_file, write_idx);
-  h_file.WriteObject(wavefunction->GetEnergy(hamiltonian->GetTimeIndependent()),
-                     "/Energy", "Energy of the corresponding state", write_idx);
+  h_file.WriteObject(
+      wavefunction->GetEnergy(hamiltonian->GetTimeIndependent(-1, false)),
+      "/Energy", "Energy of the corresponding state", write_idx);
 }
 
 /**

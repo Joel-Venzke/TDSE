@@ -93,6 +93,11 @@ elif len(shape) == 2:
     for i, psi in enumerate(psi_value):
         if i > 0:  # the zeroth wave function is the guess and not relevant
             print "plotting", i
+            plt.text(
+                time_x,
+                time_y,
+                "Time: " + str(psi_time[i]) + " a.u.",
+                color='white')
             # set up initial figure with color bar
             psi = psi[:, 0] + 1j * psi[:, 1]
             psi.shape = tuple(shape)
@@ -103,39 +108,43 @@ elif len(shape) == 2:
             x_max_idx = upper_idx[0]
             y_min_idx = lower_idx[1]
             y_max_idx = upper_idx[1]
+            x_max_idx = -1
+            y_min_idx = 0
+            y_max_idx = -1
             psi = psi[x_min_idx:x_max_idx, y_min_idx:y_max_idx]
+            data = None
             if f["Parameters"]["coordinate_system_idx"][0] == 1:
                 psi = np.absolute(
                     np.multiply(
                         np.conjugate(psi),
                         np.multiply(x[x_min_idx:x_max_idx], psi.transpose())
                         .transpose()))
-                plt.imshow(
+                data = plt.imshow(
                     psi,
                     cmap='viridis',
                     origin='lower',
                     extent=[
                         y[y_min_idx], y[y_max_idx], x[x_min_idx], x[x_max_idx]
                     ],
-                    norm=LogNorm(vmin=1e-18, vmax=max_val))
+                    norm=LogNorm(vmin=1e-15, vmax=max_val))
             else:
-                plt.imshow(
+                data = plt.imshow(
                     np.absolute(psi),
                     cmap='viridis',
                     origin='lower',
                     extent=[
                         y[y_min_idx], y[y_max_idx], x[x_min_idx], x[x_max_idx]
                     ],
-                    norm=LogNorm(vmin=1e-10, vmax=max_val))
+                    norm=LogNorm(vmin=1e-15, vmax=max_val))
             plt.text(
                 time_x,
                 time_y,
                 "Time: " + str(psi_time[i]) + " a.u.",
                 color='white')
             # color bar doesn't change during the video so only set it here
-            plt.colorbar()
             plt.xlabel("X-axis (a.u.)")
             plt.ylabel("Y-axis  (a.u.)")
             # plt.axis('off')
+            plt.colorbar()
             fig.savefig("figs/Wave_" + str(i).zfill(8) + ".png")
             plt.clf()

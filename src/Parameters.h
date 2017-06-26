@@ -34,11 +34,12 @@ class Parameters : protected Utils
   PetscInt write_frequency_eigin_state;  ///< how many steps between checkpoints
                                          /// during eigen state calculations
 
-  double gobbler;       ///< percent (1=100% and .9=90%) gobbler turns on at
-  PetscInt order;       ///< What order finite differences (2,4,6,8,...)
-  double sigma;         ///< std of wave function guess
-  PetscInt num_states;  ///< number of ground states
-  double tol;           ///< tolerance in error
+  double gobbler;        ///< percent (1=100% and .9=90%) gobbler turns on at
+  PetscInt order;        ///< What order finite differences (2,4,6,8,...)
+  double sigma;          ///< std of wave function guess
+  PetscInt num_states;   ///< number of ground states
+  PetscInt start_state;  ///< number of ground states
+  double tol;            ///< tolerance in error
   std::string state_solver;   ///< name of the solver used to get states
   PetscInt state_solver_idx;  ///< index of state solver
 
@@ -108,6 +109,7 @@ class Parameters : protected Utils
   PetscInt GetOrder();
   double GetSigma();
   PetscInt GetNumStates();
+  PetscInt GetStartState();
   double GetTol();
   PetscInt GetStateSolverIdx();
   std::string GetStateSolver();

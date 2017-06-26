@@ -12,13 +12,13 @@ class HDF5Wrapper : protected Utils
 {
  private:
   mpi::communicator world;
-  std::shared_ptr<H5::H5File> data_file;
+  std::shared_ptr< H5::H5File > data_file;
   std::string file_name;
   bool file_open;
   bool header;
 
-  std::unique_ptr<hsize_t[]> GetHsizeT(int &size, int *dims);
-  std::unique_ptr<hsize_t[]> GetHsizeT(int &size);
+  std::unique_ptr< hsize_t[] > GetHsizeT(int size, int *dims, bool complex);
+  std::unique_ptr< hsize_t[] > GetHsizeT(int size, bool complex);
   void WriteAttribute(H5std_string &var_path, H5std_string &attribute);
 
  public:
@@ -33,7 +33,7 @@ class HDF5Wrapper : protected Utils
   void Open();
   void Close();
 
-  template <typename T>
+  template < typename T >
   H5::PredType getter(T &data);
 
   void SetHeader(bool h);
@@ -41,30 +41,36 @@ class HDF5Wrapper : protected Utils
   void CreateGroup(H5std_string group_path);
 
   /* begin template*/
-  template <typename T>
+  template < typename T >
   void WriteObject(T data, H5std_string var_path);
-  template <typename T>
+  template < typename T >
   void WriteObject(T data, H5std_string var_path, H5std_string attribute);
 
-  template <typename T>
+  template < typename T >
   void WriteObject(T data, int size, H5std_string var_path);
-  template <typename T>
+  template < typename T >
   void WriteObject(T data, int size, H5std_string var_path,
                    H5std_string attribute);
 
-  template <typename T>
+  template < typename T >
   void WriteObject(T data, int size, int *dims, H5std_string var_path);
-  template <typename T>
+  template < typename T >
   void WriteObject(T data, int size, int *dims, H5std_string var_path,
                    H5std_string attribute);
 
-  template <typename T>
+  template < typename T >
   void WriteObject(T data, H5std_string var_path, int write_idx);
-  template <typename T>
+  template < typename T >
   void WriteObject(T data, H5std_string var_path, H5std_string attribute,
                    int write_idx);
 
-  PetscInt GetTime(H5std_string var_path);
+  template < typename T >
+  void WriteObject(T data, int size, H5std_string var_path, int write_idx);
+  template < typename T >
+  void WriteObject(T data, int size, H5std_string var_path,
+                   H5std_string attribute, int write_idx);
+
+  PetscInt GetTime(H5std_string var_path, bool complex = false);
 
   /* write for parameters */
   void WriteHeader(Parameters &p);

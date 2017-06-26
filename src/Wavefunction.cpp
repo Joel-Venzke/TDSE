@@ -14,6 +14,8 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   dim_size                  = p.dim_size.get();
   delta_x                   = p.delta_x.get();
   coordinate_system_idx     = p.GetCoordinateSystemIdx();
+  target_file_name          = p.GetTarget() + ".h5";
+  num_states                = p.GetNumStates();
   sigma                     = p.GetSigma();
   num_psi_build             = 1.0;
   write_counter_checkpoint  = 0;
@@ -119,6 +121,14 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
     h5_file.WriteObject(time, "/Wavefunction/time",
                         "Time step that psi was written to disk",
                         write_counter_checkpoint);
+    h5_file.WriteObject(Norm(), "/Wavefunction/norm", "Norm of wavefunction",
+                        write_counter_checkpoint);
+
+    std::vector< dcomp > projections;
+    projections.resize(num_states, dcomp(0.0, 0.0));
+    h5_file.WriteObject(
+        &projections[0], projections.size(), "/Wavefunction/projections",
+        "Projection onto the various excited states", write_counter_checkpoint);
 
     /* write observables */
     h5_file.CreateGroup("/Observables/");
@@ -175,6 +185,12 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
 
       /* write time */
       h5_file.WriteObject(time, "/Wavefunction/time", write_counter_checkpoint);
+      h5_file.WriteObject(Norm(), "/Wavefunction/norm",
+                          write_counter_checkpoint);
+      std::vector< dcomp > projections = Projections(target_file_name);
+      h5_file.WriteObject(&projections[0], projections.size(),
+                          "/Wavefunction/projections",
+                          write_counter_checkpoint);
       write_counter_checkpoint++;
     }
     else
@@ -231,6 +247,113 @@ void Wavefunction::LoadRestart(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   /* Increment both counters */
   write_counter_observables++;
   write_counter_checkpoint++;
+}
+
+/**
+ * @brief Returns a vector of projections based on the states the given file
+ *
+ * @param file_name name of the file containing the eigen states
+ * @return A vector of projections corresponding to that state
+ */
+std::vector< dcomp > Wavefunction::Projections(std::string file_name)
+{
+  /* Get write index for last checkpoint */
+  HDF5Wrapper h5_file(file_name);
+  ViewWrapper viewer_file(file_name);
+
+  PetscInt file_states = h5_file.GetTime("/psi/") + 1;
+  if (file_states < num_states)
+  {
+    EndRun("Not enough states in the target file");
+  }
+  std::vector< dcomp > ret_vec;
+  dcomp projection_val;
+
+  viewer_file.Open("r");
+  for (int state_idx = 0; state_idx < num_states; ++state_idx)
+  {
+    /* Set time idx */
+    viewer_file.SetTime(state_idx);
+
+    if (coordinate_system_idx == 1)
+    {
+      /* Read psi*/
+      viewer_file.ReadObject(psi_tmp_cyl);
+      Normalize(psi_tmp_cyl, 0.0);
+      CreateObservable(2, 0, 0);
+      VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
+    }
+    else
+    {
+      viewer_file.ReadObject(psi_tmp);
+      Normalize(psi_tmp, 0.0);
+    }
+    VecDot(psi, psi_tmp, &projection_val);
+    ret_vec.push_back(projection_val);
+  }
+
+  /* Close file */
+  viewer_file.Close();
+  return ret_vec;
+}
+
+/**
+ * @brief Returns a vector of projections based on the states the given file
+ *
+ * @param file_name name of the file containing the eigen states
+ * @return A vector of projections corresponding to that state
+ */
+void Wavefunction::ProjectOut(std::string file_name, HDF5Wrapper& h5_file_in,
+                              ViewWrapper& viewer_file_in)
+{
+  /* Get write index for last checkpoint */
+  HDF5Wrapper h5_file(file_name);
+  ViewWrapper viewer_file(file_name);
+
+  PetscInt file_states = h5_file.GetTime("/psi/") + 1;
+  if (file_states < num_states)
+  {
+    EndRun("Not enough states in the target file");
+  }
+  std::vector< dcomp > ret_vec;
+  dcomp projection_val;
+  dcomp sum = 0.0;
+
+  ierr = PetscObjectSetName((PetscObject)psi_tmp_cyl, "psi");
+  ierr = PetscObjectSetName((PetscObject)psi_tmp, "psi");
+
+  viewer_file.Open("r");
+  for (int state_idx = 0; state_idx < num_states; ++state_idx)
+  {
+    /* Set time idx */
+    viewer_file.SetTime(state_idx);
+    viewer_file.ReadObject(psi_tmp_cyl);
+    Normalize(psi_tmp_cyl, 0.0);
+    if (coordinate_system_idx == 1)
+    {
+      CreateObservable(2, 0, 0);
+      VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
+    }
+    else
+    {
+      viewer_file.ReadObject(psi_tmp);
+      Normalize(psi_tmp, 0.0);
+    }
+    VecDot(psi, psi_tmp, &projection_val);
+    ret_vec.push_back(projection_val);
+    if (world.rank() == 0)
+      std::cout << std::norm(projection_val) << " " << projection_val << " "
+                << -1.0 * ret_vec[state_idx] << "\n";
+    sum += projection_val;
+    viewer_file.SetTime(state_idx);
+    viewer_file.ReadObject(psi_tmp_cyl);
+    Normalize(psi_tmp_cyl, 0.0);
+    VecAXPY(psi, -1.0 * ret_vec[state_idx], psi_tmp_cyl);
+    Checkpoint(h5_file_in, viewer_file_in, -1 * state_idx);
+  }
+  if (world.rank() == 0) std::cout << sum << " sum\n";
+  /* Close file */
+  viewer_file.Close();
 }
 
 void Wavefunction::CheckpointPsi(ViewWrapper& viewer_file, PetscInt write_idx)
@@ -375,10 +498,12 @@ void Wavefunction::CreatePsi()
     VecCreate(PETSC_COMM_WORLD, &psi_tmp);
     VecSetSizes(psi_tmp, PETSC_DECIDE, num_psi);
     VecSetFromOptions(psi_tmp);
+    ierr = PetscObjectSetName((PetscObject)psi_tmp, "psi");
 
     VecCreate(PETSC_COMM_WORLD, &psi_tmp_cyl);
     VecSetSizes(psi_tmp_cyl, PETSC_DECIDE, num_psi);
     VecSetFromOptions(psi_tmp_cyl);
+    ierr = PetscObjectSetName((PetscObject)psi_tmp_cyl, "psi");
 
     psi_alloc = true;
   }
@@ -484,7 +609,24 @@ dcomp Wavefunction::GetPositionVal(PetscInt idx, PetscInt elec_idx,
   dcomp ret_val(0.0, 0.0);
   /* idx for return */
   std::vector< PetscInt > idx_array = GetIntArray(idx);
-  ret_val += x_value[dim_idx][idx_array[elec_idx * num_dims + dim_idx]];
+  ret_val = x_value[dim_idx][idx_array[elec_idx * num_dims + dim_idx]];
+  // if (dim_idx == 0 and coordinate_system_idx == 1)
+  // {
+  //   /* see appendix A of https://arxiv.org/pdf/1604.00947.pdf using Lagrange
+  //    * interpolation polynomials */
+  //   if (idx_array[elec_idx * num_dims + dim_idx] == 0)
+  //     ret_val *= 19087.0 / 60480.0;
+  //   else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
+  //     ret_val *= 84199.0 / 60480.0;
+  //   else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
+  //     ret_val *= 18869.0 / 30240.0;
+  //   else if (idx_array[elec_idx * num_dims + dim_idx] == 3)
+  //     ret_val *= 37621.0 / 30240.0;
+  //   else if (idx_array[elec_idx * num_dims + dim_idx] == 4)
+  //     ret_val *= 55031.0 / 60480.0;
+  //   else if (idx_array[elec_idx * num_dims + dim_idx] == 5)
+  //     ret_val *= 61343.0 / 60480.0;
+  // }
   return ret_val;
 }
 
