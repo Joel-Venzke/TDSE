@@ -4,6 +4,7 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
                            Parameters& p)
 {
   if (world.rank() == 0) std::cout << "Creating Wavefunction\n";
+  double ecs = ((1 - p.GetGobbler()) / 2.0) + p.GetGobbler();
 
   /* initialize values */
   psi_alloc_build           = false;
@@ -31,12 +32,54 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   CreatePsi();
 
   gobbler_idx = new PetscInt*[num_dims];
-  for (PetscInt i = 0; i < num_dims; ++i)
+  for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
   {
-    gobbler_idx[i] = new PetscInt[2];
-    gobbler_idx[i][0] =
-        (num_x[i] - PetscInt(num_x[i] * p.GetGobbler())) / 2 - 1;
-    gobbler_idx[i][1] = num_x[i] - 1 - gobbler_idx[i][0];
+    gobbler_idx[dim_idx]    = new PetscInt[2];
+    gobbler_idx[dim_idx][0] = 0;
+    gobbler_idx[dim_idx][1] = 0;
+
+    if (coordinate_system_idx == 1 and dim_idx == 0)
+    {
+      if (dim_size[dim_idx] * ecs < delta_x_max_start[dim_idx])
+      {
+        EndRun("ECS (gobbler) starts inside delta_x_max_start");
+      }
+      if (delta_x_min_end[dim_idx] / delta_x_min[dim_idx] < p.GetOrder() + 1)
+      {
+        EndRun(
+            "delta_x_min_end must be more than $order + 1$ grid points from "
+            "the origin in the radial component");
+      }
+    }
+    else
+    {
+      if (dim_size[dim_idx] / 2.0 * ecs < delta_x_max_start[dim_idx])
+      {
+        EndRun("ECS (gobbler) starts inside delta_x_max_start");
+      }
+    }
+
+    for (int i = 0; i < num_x[dim_idx]; ++i)
+    {
+      if (x_value[dim_idx][i] < -1.0 * dim_size[dim_idx] / 2.0 * ecs)
+      {
+        gobbler_idx[dim_idx][0] = i;
+      }
+      if (coordinate_system_idx == 1 and dim_idx == 0)
+      {
+        if (x_value[dim_idx][i] < dim_size[dim_idx] * ecs)
+        {
+          gobbler_idx[dim_idx][1] = i;
+        }
+      }
+      else
+      {
+        if (x_value[dim_idx][i] < dim_size[dim_idx] / 2.0 * ecs)
+        {
+          gobbler_idx[dim_idx][1] = i;
+        }
+      }
+    }
   }
 
   if (p.GetRestart() == 1)
