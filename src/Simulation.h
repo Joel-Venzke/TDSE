@@ -41,6 +41,10 @@ class Simulation : protected Utils
   Mat right;                  ///< matrix on left side of Ax=Cb
   KSP ksp;                    ///< solver for Ax=b
   KSPConvergedReason reason;  ///< reason for convergence check
+  PetscLogEvent time_step;
+  PetscLogEvent create_matrix;
+  PetscLogEvent create_observables;
+  PetscLogEvent create_checkpoint;
 
   /* destroys psi_old*/
   bool CheckConvergance(Vec &psi_1, Vec &psi_2, double tol);
