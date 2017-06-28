@@ -190,10 +190,10 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
       h5_file.WriteObject(time, "/Wavefunction/time", write_counter_checkpoint);
       h5_file.WriteObject(Norm(), "/Wavefunction/norm",
                           write_counter_checkpoint);
-      // std::vector< dcomp > projections = Projections(target_file_name);
-      // h5_file.WriteObject(&projections[0], projections.size(),
-      //                     "/Wavefunction/projections",
-      //                     write_counter_checkpoint);
+      std::vector< dcomp > projections = Projections(target_file_name);
+      h5_file.WriteObject(&projections[0], projections.size(),
+                          "/Wavefunction/projections",
+                          write_counter_checkpoint);
       write_counter_checkpoint++;
     }
     else
@@ -380,6 +380,12 @@ void Wavefunction::CreateGrid()
   PetscInt center;  /* idx of the 0.0 in the grid */
   double current_x; /* used for setting grid */
   double slope;
+  double x_total;
+  double max_x;
+  double amplitude;
+  double w;
+  double s1;
+  PetscInt count;
 
   /* allocation */
   num_x   = new PetscInt[num_dims];
@@ -391,33 +397,43 @@ void Wavefunction::CreateGrid()
   /* build grid */
   for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
   {
+    amplitude = delta_x_max[dim_idx] - delta_x_min[dim_idx];
+    w = pi / (2.0 * (delta_x_max_start[dim_idx] - delta_x_min_end[dim_idx]));
+    x_total = delta_x_min[dim_idx] / 2.0;
+    count   = 0;
     if (coordinate_system_idx == 1 and dim_idx == 0)
     {
-      /* zero to delta_x__min_end */
-      num_x[dim_idx] = ceil((delta_x_min_end[dim_idx]) / delta_x_min[dim_idx]);
-      /* delta_x_min_end to delta_x_max_start */
-      num_x[dim_idx] +=
-          ceil((delta_x_max_start[dim_idx] - delta_x_min_end[dim_idx]) /
-               ((delta_x_min[dim_idx] + delta_x_max[dim_idx]) / 2.0));
-      /* delta_x_max_start to dim_size */
-      num_x[dim_idx] +=
-          ceil(((dim_size[dim_idx]) - delta_x_max_start[dim_idx]) /
-               delta_x_max[dim_idx]);
+      max_x = dim_size[dim_idx];
     }
     else
     {
-      /* zero to delta_x__min_end */
-      num_x[dim_idx] = ceil((delta_x_min_end[dim_idx]) / delta_x_min[dim_idx]);
-      /* delta_x_min_end to delta_x_max_start */
-      num_x[dim_idx] +=
-          ceil((delta_x_max_start[dim_idx] - delta_x_min_end[dim_idx]) /
-               ((delta_x_min[dim_idx] + delta_x_max[dim_idx]) / 2.0));
-      /* delta_x_max_start to dim_size */
-      num_x[dim_idx] +=
-          ceil(((dim_size[dim_idx] / 2) - delta_x_max_start[dim_idx]) /
-               delta_x_max[dim_idx]);
-      /* need both sides of zero */
-      num_x[dim_idx] *= 2.0;
+      max_x = dim_size[dim_idx] / 2.0;
+    }
+
+    while (x_total < max_x)
+    {
+      if (x_total < delta_x_min_end[dim_idx])
+      {
+        x_total += delta_x_min[dim_idx];
+      }
+      else if (x_total < delta_x_max_start[dim_idx])
+      {
+        s1 = std::sin(w * (x_total - delta_x_min_end[dim_idx]));
+        x_total += amplitude * s1 * s1 + delta_x_min[dim_idx];
+      }
+      else
+      {
+        x_total += delta_x_max[dim_idx];
+      }
+      count++;
+    }
+    if (coordinate_system_idx == 1 and dim_idx == 0)
+    {
+      num_x[dim_idx] = count;
+    }
+    else
+    {
+      num_x[dim_idx] = count * 2.0;
     }
 
     /* odd number so it is even on both sides */
@@ -444,10 +460,10 @@ void Wavefunction::CreateGrid()
         }
         else if (x_value[dim_idx][x_idx - 1] < delta_x_max_start[dim_idx])
         {
-          x_value[dim_idx][x_idx] =
-              x_value[dim_idx][x_idx - 1] +
-              slope * (x_value[dim_idx][x_idx - 1] - delta_x_min_end[dim_idx]) +
-              delta_x_min[dim_idx];
+          s1 = std::sin(
+              w * (x_value[dim_idx][x_idx - 1] - delta_x_min_end[dim_idx]));
+          x_value[dim_idx][x_idx] = x_value[dim_idx][x_idx - 1] +
+                                    amplitude * s1 * s1 + delta_x_min[dim_idx];
         }
         else
         {
@@ -485,10 +501,10 @@ void Wavefunction::CreateGrid()
         else if (std::abs(x_value[dim_idx][x_idx + 1]) <
                  delta_x_max_start[dim_idx])
         {
+          s1 = std::sin(w * (std::abs(x_value[dim_idx][x_idx + 1]) -
+                             delta_x_min_end[dim_idx]));
           current_x = x_value[dim_idx][x_idx + 1] -
-                      (slope * (std::abs(x_value[dim_idx][x_idx + 1]) -
-                                delta_x_min_end[dim_idx]) +
-                       delta_x_min[dim_idx]);
+                      (amplitude * s1 * s1 + delta_x_min[dim_idx]);
         }
         else
         {
