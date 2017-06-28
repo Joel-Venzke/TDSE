@@ -82,6 +82,18 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
         }
       }
     }
+    else
+    {
+      if (coordinate_system_idx == 1 and dim_idx == 0)
+      {
+        if (delta_x_min_end[dim_idx] / delta_x_min[dim_idx] < p.GetOrder() + 1)
+        {
+          EndRun(
+              "delta_x_min_end must be more than $order + 1$ grid points from "
+              "the origin in the radial component");
+        }
+      }
+    }
   }
 
   if (p.GetRestart() == 1)
