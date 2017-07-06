@@ -334,19 +334,20 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
   {
     /* Set time idx */
     viewer_file.SetTime(state_idx);
-
+    viewer_file.ReadObject(psi_tmp_cyl);
+    Normalize(psi_tmp_cyl, 0.0);
     if (coordinate_system_idx == 1)
     {
       /* Read psi*/
-      viewer_file.ReadObject(psi_tmp_cyl);
-      Normalize(psi_tmp_cyl, 0.0);
+      CreateObservable(4, 0, 0);
+      VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi_tmp_cyl);
       CreateObservable(2, 0, 0);
       VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
     }
     else
     {
-      viewer_file.ReadObject(psi_tmp);
-      Normalize(psi_tmp, 0.0);
+      CreateObservable(4, 0, 0);
+      VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
     }
     VecDot(psi, psi_tmp, &projection_val);
     ret_vec.push_back(projection_val);
@@ -367,51 +368,24 @@ void Wavefunction::ProjectOut(std::string file_name, HDF5Wrapper& h5_file_in,
                               ViewWrapper& viewer_file_in)
 {
   /* Get write index for last checkpoint */
+  std::vector< dcomp > ret_vec = Projections(file_name);
   HDF5Wrapper h5_file(file_name);
   ViewWrapper viewer_file(file_name);
 
-  PetscInt file_states = h5_file.GetTime("/psi/") + 1;
-  if (file_states < num_states)
-  {
-    EndRun("Not enough states in the target file");
-  }
-  std::vector< dcomp > ret_vec;
-  dcomp projection_val;
-  dcomp sum = 0.0;
-
   ierr = PetscObjectSetName((PetscObject)psi_tmp_cyl, "psi");
-  ierr = PetscObjectSetName((PetscObject)psi_tmp, "psi");
 
   viewer_file.Open("r");
   for (int state_idx = 0; state_idx < num_states; ++state_idx)
   {
-    /* Set time idx */
     viewer_file.SetTime(state_idx);
     viewer_file.ReadObject(psi_tmp_cyl);
     Normalize(psi_tmp_cyl, 0.0);
-    if (coordinate_system_idx == 1)
-    {
-      CreateObservable(2, 0, 0);
-      VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
-    }
-    else
-    {
-      viewer_file.ReadObject(psi_tmp);
-      Normalize(psi_tmp, 0.0);
-    }
-    VecDot(psi, psi_tmp, &projection_val);
-    ret_vec.push_back(projection_val);
-    if (world.rank() == 0)
-      std::cout << std::norm(projection_val) << " " << projection_val << " "
-                << -1.0 * ret_vec[state_idx] << "\n";
-    sum += projection_val;
-    viewer_file.SetTime(state_idx);
-    viewer_file.ReadObject(psi_tmp_cyl);
-    Normalize(psi_tmp_cyl, 0.0);
+    std::cout << state_idx << " " << std::abs(ret_vec[state_idx]) << " "
+              << Norm(psi_tmp_cyl, 0.0) << " " << Norm(psi, 0.0) << " ";
     VecAXPY(psi, -1.0 * ret_vec[state_idx], psi_tmp_cyl);
+    std::cout << Norm(psi, 0.0) << "\n";
     Checkpoint(h5_file_in, viewer_file_in, -1 * state_idx);
   }
-  if (world.rank() == 0) std::cout << sum << " sum\n";
   /* Close file */
   viewer_file.Close();
 }
@@ -885,7 +859,7 @@ void Wavefunction::Normalize() { Normalize(psi, 0.0); }
 void Wavefunction::Normalize(Vec& data, double dv)
 {
   PetscReal total = Norm(data, dv);
-  VecScale(data, 1.0 / total);
+  VecScale(data, 1.0 / sqrt(total));
 }
 
 /* returns norm of psi */
@@ -899,18 +873,18 @@ double Wavefunction::Norm(Vec& data, double dv)
   if (coordinate_system_idx == 1)
   {
     CreateObservable(2, 0, 0);
-    VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi);
+    VecPointwiseMult(psi_tmp_cyl, psi_tmp, data);
     CreateObservable(4, 0, 0);
     VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi_tmp_cyl);
-    VecDot(psi, psi_tmp_cyl, &dot_product);
-    total = sqrt(dot_product.real());
+    VecDot(data, psi_tmp_cyl, &dot_product);
+    total = dot_product.real();
   }
   else
   {
     CreateObservable(4, 0, 0);
-    VecPointwiseMult(psi_tmp, psi_tmp, psi);
-    VecDot(psi, psi_tmp, &dot_product);
-    total = sqrt(dot_product.real());
+    VecPointwiseMult(psi_tmp, psi_tmp, data);
+    VecDot(data, psi_tmp, &dot_product);
+    total = dot_product.real();
   }
   return total;
 }
@@ -931,9 +905,9 @@ double Wavefunction::GetEnergy(Mat* h, Vec& p)
   }
   else
   {
-    MatMult(*h, p, psi_tmp);
+    MatMult(*h, p, psi_tmp_cyl);
     CreateObservable(4, 0, 0); /* pho */
-    VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi_tmp_cyl);
+    VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
     VecDot(p, psi_tmp, &energy);
   }
   return energy.real();

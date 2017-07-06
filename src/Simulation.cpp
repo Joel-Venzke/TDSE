@@ -95,7 +95,8 @@ void Simulation::Propagate()
   }
 
   if (world.rank() == 0)
-    std::cout << "Total writes: " << time_length / write_frequency_checkpoint
+    std::cout << "Total writes: "
+              << time_length / write_frequency_checkpoint + 1
               << "\nStarting propagation\n"
               << std::flush;
 
@@ -278,7 +279,8 @@ void Simulation::SplitOpperator()
   }
 
   if (world.rank() == 0)
-    std::cout << "Total writes: " << time_length / write_frequency_checkpoint
+    std::cout << "Total writes: "
+              << time_length / write_frequency_checkpoint + 1
               << "\nStarting propagation\n"
               << std::flush;
 
