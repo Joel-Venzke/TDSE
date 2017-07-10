@@ -373,15 +373,16 @@ void Wavefunction::ProjectOut(std::string file_name, HDF5Wrapper& h5_file_in,
   ViewWrapper viewer_file(file_name);
 
   viewer_file.Open("r");
-  for (int state_idx = 0; state_idx < num_states; ++state_idx)
+  for (int state_idx = num_states; state_idx >= 0; --state_idx)
   {
     viewer_file.SetTime(state_idx);
     viewer_file.ReadObject(psi_proj);
     Normalize(psi_proj, 0.0);
-    std::cout << state_idx << " " << std::abs(ret_vec[state_idx]) << " "
-              << Norm(psi_proj, 0.0) << " " << Norm(psi, 0.0) << " ";
+    if (world.rank() == 0)
+      std::cout << state_idx << " " << std::abs(ret_vec[state_idx]) << " "
+                << Norm(psi_proj, 0.0) << " " << Norm(psi, 0.0) << " ";
     VecAXPY(psi, -1.0 * ret_vec[state_idx], psi_proj);
-    std::cout << Norm(psi, 0.0) << "\n";
+    if (world.rank() == 0) std::cout << Norm(psi, 0.0) << "\n";
     Checkpoint(h5_file_in, viewer_file_in, -1 * state_idx);
   }
   /* Close file */
