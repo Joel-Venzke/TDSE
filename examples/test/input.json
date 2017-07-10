@@ -40,6 +40,9 @@
   "states": [
     {"energy": -0.5},
     {"energy": -0.15},
+    {"energy": -0.15},
+    {"energy": -0.15},
+    {"energy": -0.15},
     {"energy": -0.15}],
   "tol":        1e-10,
   "laser": {
@@ -49,9 +52,9 @@
       "helicity" : "left",
       "ellipticity" : 0.0,
       "pulse_shape":   "sin2",
-      "cycles_on":      0.5,
+      "cycles_on":      2.0,
       "cycles_plateau": 0.0,
-      "cycles_off":     0.5,
+      "cycles_off":     2.0,
       "cycles_delay":   0.0,
       "cep":            0.0,
       "energy":         1.5,

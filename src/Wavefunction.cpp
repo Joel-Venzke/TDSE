@@ -334,20 +334,20 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
   {
     /* Set time idx */
     viewer_file.SetTime(state_idx);
-    viewer_file.ReadObject(psi_tmp_cyl);
-    Normalize(psi_tmp_cyl, 0.0);
+    viewer_file.ReadObject(psi_proj);
+    Normalize(psi_proj, 0.0);
     if (coordinate_system_idx == 1)
     {
       /* Read psi*/
       CreateObservable(4, 0, 0);
-      VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi_tmp_cyl);
+      VecPointwiseMult(psi_proj, psi_tmp, psi_proj);
       CreateObservable(2, 0, 0);
-      VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
+      VecPointwiseMult(psi_tmp, psi_tmp, psi_proj);
     }
     else
     {
       CreateObservable(4, 0, 0);
-      VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
+      VecPointwiseMult(psi_tmp, psi_tmp, psi_proj);
     }
     VecDot(psi, psi_tmp, &projection_val);
     ret_vec.push_back(projection_val);
@@ -372,17 +372,15 @@ void Wavefunction::ProjectOut(std::string file_name, HDF5Wrapper& h5_file_in,
   HDF5Wrapper h5_file(file_name);
   ViewWrapper viewer_file(file_name);
 
-  ierr = PetscObjectSetName((PetscObject)psi_tmp_cyl, "psi");
-
   viewer_file.Open("r");
   for (int state_idx = 0; state_idx < num_states; ++state_idx)
   {
     viewer_file.SetTime(state_idx);
-    viewer_file.ReadObject(psi_tmp_cyl);
-    Normalize(psi_tmp_cyl, 0.0);
+    viewer_file.ReadObject(psi_proj);
+    Normalize(psi_proj, 0.0);
     std::cout << state_idx << " " << std::abs(ret_vec[state_idx]) << " "
-              << Norm(psi_tmp_cyl, 0.0) << " " << Norm(psi, 0.0) << " ";
-    VecAXPY(psi, -1.0 * ret_vec[state_idx], psi_tmp_cyl);
+              << Norm(psi_proj, 0.0) << " " << Norm(psi, 0.0) << " ";
+    VecAXPY(psi, -1.0 * ret_vec[state_idx], psi_proj);
     std::cout << Norm(psi, 0.0) << "\n";
     Checkpoint(h5_file_in, viewer_file_in, -1 * state_idx);
   }
@@ -619,6 +617,11 @@ void Wavefunction::CreatePsi()
     VecSetSizes(psi_tmp_cyl, PETSC_DECIDE, num_psi);
     VecSetFromOptions(psi_tmp_cyl);
     ierr = PetscObjectSetName((PetscObject)psi_tmp_cyl, "psi");
+
+    VecCreate(PETSC_COMM_WORLD, &psi_proj);
+    VecSetSizes(psi_proj, PETSC_DECIDE, num_psi);
+    VecSetFromOptions(psi_proj);
+    ierr = PetscObjectSetName((PetscObject)psi_proj, "psi");
 
     psi_alloc = true;
   }
