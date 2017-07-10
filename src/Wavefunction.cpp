@@ -373,7 +373,7 @@ void Wavefunction::ProjectOut(std::string file_name, HDF5Wrapper& h5_file_in,
   ViewWrapper viewer_file(file_name);
 
   viewer_file.Open("r");
-  for (int state_idx = num_states - 1; state_idx >= 0; --state_idx)
+  for (int state_idx = 0; state_idx < num_states; ++state_idx)
   {
     viewer_file.SetTime(state_idx);
     viewer_file.ReadObject(psi_proj);
