@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Agg')
 import numpy as np
 from scipy.signal import stft, chebwin
 import matplotlib.pyplot as plt
