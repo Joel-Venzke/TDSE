@@ -34,7 +34,7 @@ for i in range(10):
             observables["position_expectation_0_1"][:],
             fs=1.0 / (f["Parameters"]["delta_t"][0] * f["Parameters"][
                 "write_frequency_observables"][0]),
-            noverlap=int(window_size * 0.999),
+            noverlap=int(window_size * 0.98),
             nperseg=window_size,
             window=chebwin(window_size, 80))
         freq, t, pulse_fft = stft(
@@ -44,7 +44,7 @@ for i in range(10):
             7.2973525664e-3,
             fs=1.0 / (f["Parameters"]["delta_t"][0] * f["Parameters"][
                 "write_frequency_observables"][0]),
-            noverlap=int(window_size * 0.999),
+            noverlap=int(window_size * 0.98),
             nperseg=window_size,
             window=chebwin(window_size, 80))
         data = np.abs(dipole_fft / pulse_fft)
