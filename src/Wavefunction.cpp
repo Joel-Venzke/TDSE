@@ -31,9 +31,17 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   for (PetscInt i = 0; i < num_dims; ++i)
   {
     gobbler_idx[i] = new PetscInt[2];
-    gobbler_idx[i][0] =
-        (num_x[i] - PetscInt(num_x[i] * p.GetGobbler())) / 2 - 1;
-    gobbler_idx[i][1] = num_x[i] - 1 - gobbler_idx[i][0];
+    if (coordinate_system_idx == 1 and i == 0)
+    {
+      gobbler_idx[i][0] = (num_x[i] - PetscInt(num_x[i] * p.GetGobbler())) - 1;
+      gobbler_idx[i][1] = num_x[i] - 1 - gobbler_idx[i][0];
+    }
+    else
+    {
+      gobbler_idx[i][0] =
+          (num_x[i] - PetscInt(num_x[i] * p.GetGobbler())) / 2 - 1;
+      gobbler_idx[i][1] = num_x[i] - 1 - gobbler_idx[i][0];
+    }
   }
 
   if (p.GetRestart() == 1)
@@ -549,7 +557,7 @@ void Wavefunction::CreateObservable(PetscInt observable_idx, PetscInt elec_idx,
   {
     CreateObservable(0, 0, 0);
   }
-  else if (observable_idx == 3) /* r */
+  else if (observable_idx == 3) /* ecs */
   {
     for (PetscInt idx = low; idx < high; idx++)
     {
@@ -610,23 +618,23 @@ dcomp Wavefunction::GetPositionVal(PetscInt idx, PetscInt elec_idx,
   /* idx for return */
   std::vector< PetscInt > idx_array = GetIntArray(idx);
   ret_val = x_value[dim_idx][idx_array[elec_idx * num_dims + dim_idx]];
-  // if (dim_idx == 0 and coordinate_system_idx == 1)
-  // {
-  //   /* see appendix A of https://arxiv.org/pdf/1604.00947.pdf using Lagrange
-  //    * interpolation polynomials */
-  //   if (idx_array[elec_idx * num_dims + dim_idx] == 0)
-  //     ret_val *= 19087.0 / 60480.0;
-  //   else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
-  //     ret_val *= 84199.0 / 60480.0;
-  //   else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
-  //     ret_val *= 18869.0 / 30240.0;
-  //   else if (idx_array[elec_idx * num_dims + dim_idx] == 3)
-  //     ret_val *= 37621.0 / 30240.0;
-  //   else if (idx_array[elec_idx * num_dims + dim_idx] == 4)
-  //     ret_val *= 55031.0 / 60480.0;
-  //   else if (idx_array[elec_idx * num_dims + dim_idx] == 5)
-  //     ret_val *= 61343.0 / 60480.0;
-  // }
+  if (dim_idx == 0 and coordinate_system_idx == 1)
+  {
+    /* see appendix A of https://arxiv.org/pdf/1604.00947.pdf using Lagrange
+     * interpolation polynomials */
+    if (idx_array[elec_idx * num_dims + dim_idx] == 0)
+      ret_val *= 19087.0 / 60480.0;
+    else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
+      ret_val *= 84199.0 / 60480.0;
+    else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
+      ret_val *= 18869.0 / 30240.0;
+    else if (idx_array[elec_idx * num_dims + dim_idx] == 3)
+      ret_val *= 37621.0 / 30240.0;
+    else if (idx_array[elec_idx * num_dims + dim_idx] == 4)
+      ret_val *= 55031.0 / 60480.0;
+    else if (idx_array[elec_idx * num_dims + dim_idx] == 5)
+      ret_val *= 61343.0 / 60480.0;
+  }
   return ret_val;
 }
 
@@ -727,11 +735,12 @@ double Wavefunction::Norm(Vec& data, double dv)
     CreateObservable(2, 0, 0);
     VecPointwiseMult(psi_tmp, psi_tmp, data);
     VecDot(data, psi_tmp, &dot_product);
-    total = sqrt(dot_product.real());
+    total = sqrt(std::abs(dot_product.real()));
   }
   else
   {
     VecNorm(data, NORM_2, &total);
+    total *= total;
   }
   return total;
 }
