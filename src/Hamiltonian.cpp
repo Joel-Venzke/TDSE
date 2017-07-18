@@ -279,8 +279,7 @@ void Hamiltonian::SetUpCoefficients()
         std::cout << "\n";
         for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
         {
-          std::cout << 12.0 * radial_bc_coef[discontinuity_idx][2][coef_idx]
-                    << " ";
+          std::cout << radial_bc_coef[discontinuity_idx][2][coef_idx] << " ";
         }
         std::cout << "\n";
       }
