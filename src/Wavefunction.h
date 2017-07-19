@@ -29,6 +29,7 @@ class Wavefunction : protected Utils
   bool first_pass;
   double sigma;           /* std of gaussian guess */
   PetscInt **gobbler_idx; /* distance that starts gobbler */
+  PetscInt order;
 
   PetscInt write_counter_checkpoint;
   PetscInt write_counter_observables;

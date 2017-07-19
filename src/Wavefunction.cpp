@@ -20,6 +20,7 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   num_psi_build             = 1.0;
   write_counter_checkpoint  = 0;
   write_counter_observables = 0;
+  order                     = p.GetOrder();
 
   /* allocate grid */
   CreateGrid();
@@ -618,22 +619,22 @@ dcomp Wavefunction::GetPositionVal(PetscInt idx, PetscInt elec_idx,
   /* idx for return */
   std::vector< PetscInt > idx_array = GetIntArray(idx);
   ret_val = x_value[dim_idx][idx_array[elec_idx * num_dims + dim_idx]];
-  if (dim_idx == 0 and coordinate_system_idx == 1)
+  if (order > 2 and dim_idx == 0 and coordinate_system_idx == 1)
   {
     /* see appendix A of https://arxiv.org/pdf/1604.00947.pdf using Lagrange
      * interpolation polynomials */
-    // if (idx_array[elec_idx * num_dims + dim_idx] == 0)
-    //   ret_val *= 19087.0 / 60480.0;
-    // else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
-    //   ret_val *= 84199.0 / 60480.0;
-    // else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
-    //   ret_val *= 18869.0 / 30240.0;
-    // else if (idx_array[elec_idx * num_dims + dim_idx] == 3)
-    //   ret_val *= 37621.0 / 30240.0;
-    // else if (idx_array[elec_idx * num_dims + dim_idx] == 4)
-    //   ret_val *= 55031.0 / 60480.0;
-    // else if (idx_array[elec_idx * num_dims + dim_idx] == 5)
-    //   ret_val *= 61343.0 / 60480.0;
+    if (idx_array[elec_idx * num_dims + dim_idx] == 0)
+      ret_val *= 19087.0 / 60480.0;
+    else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
+      ret_val *= 84199.0 / 60480.0;
+    else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
+      ret_val *= 18869.0 / 30240.0;
+    else if (idx_array[elec_idx * num_dims + dim_idx] == 3)
+      ret_val *= 37621.0 / 30240.0;
+    else if (idx_array[elec_idx * num_dims + dim_idx] == 4)
+      ret_val *= 55031.0 / 60480.0;
+    else if (idx_array[elec_idx * num_dims + dim_idx] == 5)
+      ret_val *= 61343.0 / 60480.0;
   }
   return ret_val;
 }

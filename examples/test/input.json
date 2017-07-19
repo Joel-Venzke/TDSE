@@ -21,7 +21,7 @@
         "b" : [4.073942]}
       }]},
   "alpha":   0.0,
-  "gobbler": 1.0,
+  "gobbler": 0.9,
   "order":   2,
   "sigma":   3.0,
   "write_frequency_checkpoint": 100,
@@ -29,7 +29,7 @@
   "write_frequency_eigin_state": 1,
   "state_solver":    "Power",
   "propagate": 1,
-  "free_propagate": 1000,
+  "free_propagate": 0,
   "start_state": 0,
   "states": [{"energy": -0.5}],
   "tol":        1e-10,
@@ -46,6 +46,6 @@
       "cycles_delay":   0.0,
       "cep":            0.0,
       "energy":         1.5,
-      "field_max":      0.0}]
+      "field_max":      12.8}]
   }
 }
