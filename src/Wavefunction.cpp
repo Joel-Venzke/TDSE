@@ -745,9 +745,8 @@ dcomp Wavefunction::GetVolumeElement(PetscInt idx)
           idx_array[elec_idx * num_dims + dim_idx] < num_x[dim_idx] - 1)
       {
         ret_val *=
-            (x_value[dim_idx][idx_array[elec_idx * num_dims + dim_idx] + 1] -
-             x_value[dim_idx][idx_array[elec_idx * num_dims + dim_idx] - 1]) /
-            2.0;
+            (x_value[dim_idx][idx_array[elec_idx * num_dims + dim_idx]] -
+             x_value[dim_idx][idx_array[elec_idx * num_dims + dim_idx] - 1]);
       }
       else if (idx_array[elec_idx * num_dims + dim_idx] == 0 and
                dim_idx == 0 and coordinate_system_idx == 1)
