@@ -758,6 +758,13 @@ dcomp Wavefunction::GetVolumeElement(PetscInt idx)
       {
         ret_val *= delta_x_max[dim_idx];
       }
+
+      /* Trapezoidal rule */
+      if (idx_array[elec_idx * num_dims + dim_idx] == 0 or
+          idx_array[elec_idx * num_dims + dim_idx] == num_x[dim_idx] - 1)
+      {
+        ret_val *= 0.5;
+      }
     }
   }
   return ret_val;
