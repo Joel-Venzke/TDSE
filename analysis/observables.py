@@ -50,7 +50,7 @@ plt.clf()
 # Gobbler
 print "Plotting ECS Population"
 fig = plt.figure()
-if np.max(observables["gobbler"][1:]) > 1e-10:
+if np.max(observables["gobbler"][1:]) > 1e-19:
     plt.semilogy(time, observables["gobbler"][1:])
     plt.xlabel("Time (a.u.)")
     plt.ylabel("ECS Population")
@@ -158,7 +158,7 @@ for elec_idx in range(num_electrons):
                     1:len(pulses["field_" + str(dim_idx)]
                           [checkpoint_frequency::checkpoint_frequency]) + 1]
             data = data * np.blackman(data.shape[0])
-            if np.max(data) > 1e-10:
+            if np.max(data) > 1e-19:
                 plt.semilogy(
                     np.absolute(
                         np.fft.fft(

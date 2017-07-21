@@ -22,7 +22,7 @@
       }]},
   "alpha":   0.0,
   "gobbler": 0.9,
-  "order":   4,
+  "order":   2,
   "sigma":   3.0,
   "write_frequency_checkpoint": 100,
   "write_frequency_observables": 2,
@@ -46,6 +46,6 @@
       "cycles_delay":   0.0,
       "cep":            0.0,
       "energy":         1.5,
-      "field_max":      12.3}]
+      "field_max":      12.8}]
   }
 }

@@ -57,6 +57,7 @@ for i in range(10):
             d_idx_max = -1
         max_data.append(data[idx, d_idx_min:d_idx_max].max())
         min_data.append(data[idx, d_idx_min:d_idx_max].min())
+        data = data * max_data[0] / max_data[i - 1]
         print i, window_size, t[1] - t[0], t[d_idx_min:d_idx_max][data[
             idx, d_idx_min:d_idx_max].argmax()], p_time[p_time.shape[0] /
                                                         2], max_data[-1]
@@ -66,4 +67,5 @@ for i in range(10):
         ], [data[idx, d_idx_min:d_idx_max].max()])
 ax2.plot(o_time[1:], 1.0 - observables["norm"][1:], 'r--', label="Ionization")
 plt.axvline(color='k', x=p_time[-1] / 2.0)
+# ax1.legend()
 fig.savefig("figs/td_susceptible.png")

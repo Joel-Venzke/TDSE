@@ -20,6 +20,7 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   num_psi_build             = 1.0;
   write_counter_checkpoint  = 0;
   write_counter_observables = 0;
+  order                     = p.GetOrder();
 
   /* allocate grid */
   CreateGrid();
@@ -31,9 +32,17 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   for (PetscInt i = 0; i < num_dims; ++i)
   {
     gobbler_idx[i] = new PetscInt[2];
-    gobbler_idx[i][0] =
-        (num_x[i] - PetscInt(num_x[i] * p.GetGobbler())) / 2 - 1;
-    gobbler_idx[i][1] = num_x[i] - 1 - gobbler_idx[i][0];
+    if (coordinate_system_idx == 1 and i == 0)
+    {
+      gobbler_idx[i][0] = (num_x[i] - PetscInt(num_x[i] * p.GetGobbler())) - 1;
+      gobbler_idx[i][1] = num_x[i] - 1 - gobbler_idx[i][0];
+    }
+    else
+    {
+      gobbler_idx[i][0] =
+          (num_x[i] - PetscInt(num_x[i] * p.GetGobbler())) / 2 - 1;
+      gobbler_idx[i][1] = num_x[i] - 1 - gobbler_idx[i][0];
+    }
   }
 
   if (p.GetRestart() == 1)
@@ -549,7 +558,7 @@ void Wavefunction::CreateObservable(PetscInt observable_idx, PetscInt elec_idx,
   {
     CreateObservable(0, 0, 0);
   }
-  else if (observable_idx == 3) /* r */
+  else if (observable_idx == 3) /* ecs */
   {
     for (PetscInt idx = low; idx < high; idx++)
     {
@@ -610,7 +619,7 @@ dcomp Wavefunction::GetPositionVal(PetscInt idx, PetscInt elec_idx,
   /* idx for return */
   std::vector< PetscInt > idx_array = GetIntArray(idx);
   ret_val = x_value[dim_idx][idx_array[elec_idx * num_dims + dim_idx]];
-  // if (dim_idx == 0 and coordinate_system_idx == 1)
+  // if (order > 2 and dim_idx == 0 and coordinate_system_idx == 1)
   // {
   //   /* see appendix A of https://arxiv.org/pdf/1604.00947.pdf using Lagrange
   //    * interpolation polynomials */
