@@ -469,8 +469,16 @@ void Wavefunction::CreateGrid()
       num_x[dim_idx] = count * 2.0;
     }
 
+    if (coordinate_system_idx == 1)
+    {
+      /* Odd number for simpsons rule */
+      if (num_x[dim_idx] % 2 != 1) num_x[dim_idx]++;
+    }
     /* odd number so it is even on both sides */
-    if (num_x[dim_idx] % 2 != 0) num_x[dim_idx]++;
+    else if (num_x[dim_idx] % 2 != 0)
+    {
+      num_x[dim_idx]++;
+    }
 
     /* allocate grid */
     x_value[dim_idx] = new double[num_x[dim_idx]];
@@ -511,8 +519,16 @@ void Wavefunction::CreateGrid()
       center = num_x[dim_idx] / 2;
 
       /* store center */
-      x_value[dim_idx][center - 1] = -1.0 * delta_x_min[dim_idx] / 2.0;
-      x_value[dim_idx][center]     = delta_x_min[dim_idx] / 2.0;
+      if (coordinate_system_idx == 1)
+      {
+        /* for simpsons rule */
+        x_value[dim_idx][center] = 0.0;
+      }
+      else
+      {
+        x_value[dim_idx][center - 1] = -1.0 * delta_x_min[dim_idx] / 2.0;
+        x_value[dim_idx][center]     = delta_x_min[dim_idx] / 2.0;
+      }
 
       /* loop over all others */
       for (PetscInt x_idx = center - 1; x_idx >= 0; x_idx--)
@@ -758,11 +774,27 @@ dcomp Wavefunction::GetVolumeElement(PetscInt idx)
         ret_val *= delta_x_max[dim_idx];
       }
 
-      /* Trapezoidal rule */
-      if (idx_array[elec_idx * num_dims + dim_idx] == 0 or
-          idx_array[elec_idx * num_dims + dim_idx] == num_x[dim_idx] - 1)
+      // /* Trapezoidal rule */
+      // if (idx_array[elec_idx * num_dims + dim_idx] == 0 or
+      //     idx_array[elec_idx * num_dims + dim_idx] == num_x[dim_idx] - 1)
+      // {
+      //   ret_val *= 0.5;
+      // }
+      if (coordinate_system_idx == 1)
       {
-        ret_val *= 0.5;
+        if (idx_array[elec_idx * num_dims + dim_idx] == 0 or
+            idx_array[elec_idx * num_dims + dim_idx] == num_x[dim_idx] - 1)
+        {
+          ret_val *= 1.0 / 3.0;
+        }
+        else if (idx_array[elec_idx * num_dims + dim_idx] % 2 == 0)
+        {
+          ret_val *= 2.0 / 3.0;
+        }
+        else
+        {
+          ret_val *= 4.0 / 3.0;
+        }
       }
     }
   }
