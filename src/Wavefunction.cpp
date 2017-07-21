@@ -774,28 +774,27 @@ dcomp Wavefunction::GetVolumeElement(PetscInt idx)
         ret_val *= delta_x_max[dim_idx];
       }
 
-      // /* Trapezoidal rule */
-      // if (idx_array[elec_idx * num_dims + dim_idx] == 0 or
-      //     idx_array[elec_idx * num_dims + dim_idx] == num_x[dim_idx] - 1)
-      // {
-      //   ret_val *= 0.5;
-      // }
-      if (coordinate_system_idx == 1)
+      /* Trapezoidal rule */
+      if (dim_idx == 0 and idx_array[elec_idx * num_dims + dim_idx] == 0)
       {
-        if (idx_array[elec_idx * num_dims + dim_idx] == 0 or
-            idx_array[elec_idx * num_dims + dim_idx] == num_x[dim_idx] - 1)
-        {
-          ret_val *= 1.0 / 3.0;
-        }
-        else if (idx_array[elec_idx * num_dims + dim_idx] % 2 == 0)
-        {
-          ret_val *= 2.0 / 3.0;
-        }
-        else
-        {
-          ret_val *= 4.0 / 3.0;
-        }
+        ret_val *= 0.5;
       }
+      // if (coordinate_system_idx == 1)
+      // {
+      //   if (idx_array[elec_idx * num_dims + dim_idx] == 0 or
+      //       idx_array[elec_idx * num_dims + dim_idx] == num_x[dim_idx] - 1)
+      //   {
+      //     ret_val *= 1.0 / 3.0;
+      //   }
+      //   else if (idx_array[elec_idx * num_dims + dim_idx] % 2 == 0)
+      //   {
+      //     ret_val *= 2.0 / 3.0;
+      //   }
+      //   else
+      //   {
+      //     ret_val *= 4.0 / 3.0;
+      //   }
+      // }
     }
   }
   return ret_val;
