@@ -618,10 +618,35 @@ dcomp Wavefunction::GetPositionVal(PetscInt idx, PetscInt elec_idx,
   /* idx for return */
   std::vector< PetscInt > idx_array = GetIntArray(idx);
   ret_val = x_value[dim_idx][idx_array[elec_idx * num_dims + dim_idx]];
-  if (dim_idx == 0 and coordinate_system_idx == 1)
+  if (order > 2 and dim_idx == 0 and coordinate_system_idx == 1)
   {
     /* see appendix A of https://arxiv.org/pdf/1604.00947.pdf using Lagrange
-     * interpolation polynomials */
+     * interpolation polynomials and
+     * http://slideflix.net/doc/4183369/gregory-s-quadrature-method*/
+    // if (idx_array[elec_idx * num_dims + dim_idx] == 0) ret_val *= 13.0 /
+    // 12.0;
+
+    // if (idx_array[elec_idx * num_dims + dim_idx] == 0)
+    //   ret_val *= 7.0 / 6.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
+    //   ret_val *= 23.0 / 24.0;
+
+    // if (idx_array[elec_idx * num_dims + dim_idx] == 0)
+    //   ret_val *= 299.0 / 240.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
+    //   ret_val *= 211.0 / 240.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
+    //   ret_val *= 739.0 / 720.0;
+
+    // if (idx_array[elec_idx * num_dims + dim_idx] == 0)
+    //   ret_val *= 317.0 / 240.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
+    //   ret_val *= 23.0 / 30.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
+    //   ret_val *= 793.0 / 720.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 3)
+    //   ret_val *= 147.0 / 160.0;
+
     if (idx_array[elec_idx * num_dims + dim_idx] == 0)
       ret_val *= 84199.0 / 60480.0;
     else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
@@ -634,17 +659,17 @@ dcomp Wavefunction::GetPositionVal(PetscInt idx, PetscInt elec_idx,
       ret_val *= 61343.0 / 60480.0;
 
     // if (idx_array[elec_idx * num_dims + dim_idx] == 0)
-    //   ret_val *= 19087.0 / 60480.0;
+    //   ret_val *= 22081.0 / 15120.0;
     // else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
-    //   ret_val *= 84199.0 / 60480.0;
+    //   ret_val *= 54851.0 / 120960.0;
     // else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
-    //   ret_val *= 18869.0 / 30240.0;
+    //   ret_val *= 103.0 / 70.0;
     // else if (idx_array[elec_idx * num_dims + dim_idx] == 3)
-    //   ret_val *= 37621.0 / 30240.0;
+    //   ret_val *= 89437.0 / 120960.0;
     // else if (idx_array[elec_idx * num_dims + dim_idx] == 4)
-    //   ret_val *= 55031.0 / 60480.0;
+    //   ret_val *= 16367.0 / 15120.0;
     // else if (idx_array[elec_idx * num_dims + dim_idx] == 5)
-    //   ret_val *= 61343.0 / 60480.0;
+    //   ret_val *= 23917.0 / 24192.0;
   }
   return ret_val;
 }

@@ -36,6 +36,7 @@ void Parameters::Setup(std::string file_name)
 
   double polar_norm    = 0.0; /* the norm for the polarization vector */
   double poynting_norm = 0.0; /* the norm for the poynting vector */
+  double intensity     = 0.0; /* the norm for the poynting vector */
 
   /* read data from file */
   json data = FileToJson(file_name);
@@ -281,9 +282,13 @@ void Parameters::Setup(std::string file_name)
         data["laser"]["pulses"][pulse_idx]["cycles_delay"];
     cep[pulse_idx]         = data["laser"]["pulses"][pulse_idx]["cep"];
     energy[pulse_idx]      = data["laser"]["pulses"][pulse_idx]["energy"];
-    field_max[pulse_idx]   = data["laser"]["pulses"][pulse_idx]["field_max"];
     ellipticity[pulse_idx] = data["laser"]["pulses"][pulse_idx]["ellipticity"];
     helicity[pulse_idx]    = data["laser"]["pulses"][pulse_idx]["helicity"];
+
+    intensity = data["laser"]["pulses"][pulse_idx]["intensity"];
+    field_max[pulse_idx] =
+        std::sqrt(intensity / 3.51e16) * c / energy[pulse_idx];
+    std::cout << field_max[pulse_idx] << "\n";
 
     if (helicity[pulse_idx] == "right")
     {

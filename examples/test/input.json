@@ -45,7 +45,7 @@
       "cycles_off":     1.0,
       "cycles_delay":   0.0,
       "cep":            0.0,
-      "energy":         1.5,
-      "field_max":      12.8}]
+      "energy":         0.057,
+      "intensity":      1e14}]
   }
 }
