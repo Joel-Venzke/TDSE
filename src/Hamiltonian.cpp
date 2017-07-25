@@ -249,7 +249,7 @@ void Hamiltonian::SetUpCoefficients()
     /* Set up real gird for 1st and 2nd order derivatives */
     for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
     {
-      if (coef_idx == 0)
+      if (coef_idx == 0 and order > 2)
         x_vals_bc[coef_idx] = 0.0;
       else
         x_vals_bc[coef_idx] = delta_x[0] * (coef_idx + 1);

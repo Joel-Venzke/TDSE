@@ -411,7 +411,15 @@ void Wavefunction::CreateGrid()
     {
       for (int x_idx = 0; x_idx < num_x[dim_idx]; ++x_idx)
       {
-        x_value[dim_idx][x_idx] = (x_idx + 1) * delta_x[dim_idx];
+        if (order > 2)
+        {
+          x_value[dim_idx][x_idx] = (x_idx + 1) * delta_x[dim_idx];
+        }
+        else
+        {
+          x_value[dim_idx][x_idx] =
+              (x_idx)*delta_x[dim_idx] + delta_x[dim_idx] / 2.0;
+        }
       }
     }
     else
@@ -624,7 +632,7 @@ dcomp Wavefunction::GetPositionVal(PetscInt idx, PetscInt elec_idx,
   ret_val = x_value[dim_idx][idx_array[elec_idx * num_dims + dim_idx]];
   if (integrate and order > 2 and dim_idx == 0 and coordinate_system_idx == 1)
   {
-    std::cout << "using integrate\n";
+    // std::cout << "using integrate\n";
     /* see appendix A of https://arxiv.org/pdf/1604.00947.pdf using Lagrange
      * interpolation polynomials and
      * http://slideflix.net/doc/4183369/gregory-s-quadrature-method*/
