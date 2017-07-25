@@ -158,14 +158,20 @@ for elec_idx in range(num_electrons):
                     1:len(pulses["field_" + str(dim_idx)]
                           [checkpoint_frequency::checkpoint_frequency]) + 1]
             data = data * np.blackman(data.shape[0])
+            padd2 = 2**np.ceil(np.log2(data.shape[0] * 4))
+            paddT = np.max(time) * padd2 / data.shape[0]
+            dH = 2 * np.pi / paddT / energy
             if np.max(data) > 1e-19:
+                data = np.absolute(
+                    np.fft.fft(
+                        np.lib.pad(
+                            data, (int(np.floor((padd2 - data.shape[0]) / 2)),
+                                   int(np.ceil((padd2 - data.shape[0]) / 2))),
+                            'constant',
+                            constant_values=(0.0, 0.0))))
                 plt.semilogy(
-                    np.absolute(
-                        np.fft.fft(
-                            np.lib.pad(
-                                data, (2 * data.shape[0], 2 * data.shape[0]),
-                                'constant',
-                                constant_values=(0.0, 0.0)))),
+                    np.arange(data.shape[0]) * dH,
+                    data,
                     label="Electron " + str(elec_idx) + " Dim " + str(dim_idx))
 plt.ylabel("HHG Spectrum (a.u.)")
 plt.title("HHG Spectrum")
