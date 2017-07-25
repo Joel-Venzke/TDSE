@@ -227,6 +227,7 @@ for fold in folders:
                         [checkpoint_frequency::checkpoint_frequency]) + 1]
                 data = data * np.blackman(data.shape[0])
                 padd2 = 2**np.ceil(np.log2(data.shape[0]) * 4)
+                print padd2, data.shape[0]
                 paddT = np.max(time) * padd2 / data.shape[0]
                 dH = 2 * np.pi / paddT / energy
                 print int(np.floor((padd2 - data.shape[0]) / 2)), int(
