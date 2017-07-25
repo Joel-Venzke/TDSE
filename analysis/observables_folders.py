@@ -226,12 +226,9 @@ for fold in folders:
                         pulses["field_" + str(dim_idx)]
                         [checkpoint_frequency::checkpoint_frequency]) + 1]
                 data = data * np.blackman(data.shape[0])
-                padd2 = 2**np.ceil(np.log2(data.shape[0]) * 4)
-                print padd2, data.shape[0]
+                padd2 = 2**np.ceil(np.log2(data.shape[0] * 4))
                 paddT = np.max(time) * padd2 / data.shape[0]
                 dH = 2 * np.pi / paddT / energy
-                print int(np.floor((padd2 - data.shape[0]) / 2)), int(
-                    np.ceil((padd2 - data.shape[0]) / 2))
                 if np.max(data) > 1e-19:
                     data = np.absolute(
                         np.fft.fft(
