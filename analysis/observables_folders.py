@@ -233,8 +233,9 @@ for fold in folders:
                     data = np.absolute(
                         np.fft.fft(
                             np.lib.pad(
-                                data, (np.floor((padd2 - data.shape[0]) / 2),
-                                       np.ceil((padd2 - data.shape[0]) / 2)),
+                                data,
+                                (int(np.floor((padd2 - data.shape[0]) / 2)),
+                                 int(np.ceil((padd2 - data.shape[0]) / 2))),
                                 'constant',
                                 constant_values=(0.0, 0.0))))
                     plt.semilogy(
