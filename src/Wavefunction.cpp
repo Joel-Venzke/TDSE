@@ -647,16 +647,16 @@ dcomp Wavefunction::GetPositionVal(PetscInt idx, PetscInt elec_idx,
     // else if (idx_array[elec_idx * num_dims + dim_idx] == 3)
     //   ret_val *= 147.0 / 160.0;
 
-    if (idx_array[elec_idx * num_dims + dim_idx] == 0)
-      ret_val *= 84199.0 / 60480.0;
-    else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
-      ret_val *= 18869.0 / 30240.0;
-    else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
-      ret_val *= 37621.0 / 30240.0;
-    else if (idx_array[elec_idx * num_dims + dim_idx] == 3)
-      ret_val *= 55031.0 / 60480.0;
-    else if (idx_array[elec_idx * num_dims + dim_idx] == 4)
-      ret_val *= 61343.0 / 60480.0;
+    // if (idx_array[elec_idx * num_dims + dim_idx] == 0)
+    //   ret_val *= 84199.0 / 60480.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
+    //   ret_val *= 18869.0 / 30240.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
+    //   ret_val *= 37621.0 / 30240.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 3)
+    //   ret_val *= 55031.0 / 60480.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 4)
+    //   ret_val *= 61343.0 / 60480.0;
 
     // if (idx_array[elec_idx * num_dims + dim_idx] == 0)
     //   ret_val *= 22081.0 / 15120.0;
@@ -670,6 +670,38 @@ dcomp Wavefunction::GetPositionVal(PetscInt idx, PetscInt elec_idx,
     //   ret_val *= 16367.0 / 15120.0;
     // else if (idx_array[elec_idx * num_dims + dim_idx] == 5)
     //   ret_val *= 23917.0 / 24192.0;
+
+    if (idx_array[elec_idx * num_dims + dim_idx] == 0)
+      ret_val *= 5537111.0 / 3628800.0;
+    else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
+      ret_val *= 103613.0 / 403200.0;
+    else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
+      ret_val *= 261115.0 / 145152.0;
+    else if (idx_array[elec_idx * num_dims + dim_idx] == 3)
+      ret_val *= 298951.0 / 725760.0;
+    else if (idx_array[elec_idx * num_dims + dim_idx] == 4)
+      ret_val *= 515677.0 / 403200.0;
+    else if (idx_array[elec_idx * num_dims + dim_idx] == 5)
+      ret_val *= 3349879.0 / 3628800.0;
+    else if (idx_array[elec_idx * num_dims + dim_idx] == 6)
+      ret_val *= 3662753.0 / 3628800.0;
+
+    // if (idx_array[elec_idx * num_dims + dim_idx] == 0)
+    //   ret_val *= 1153247.0 / 725760.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
+    //   ret_val *= 130583.0 / 3628800.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
+    //   ret_val *= 903527.0 / 403200.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 3)
+    //   ret_val *= -797.0 / 5670.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 4)
+    //   ret_val *= 6244961.0 / 3628800.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 5)
+    //   ret_val *= 56621.0 / 80640.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 6)
+    //   ret_val *= 3891877.0 / 3628800.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 7)
+    //   ret_val *= 1028617.0 / 1036800.0;
   }
   return ret_val;
 }
