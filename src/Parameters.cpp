@@ -288,7 +288,6 @@ void Parameters::Setup(std::string file_name)
     intensity = data["laser"]["pulses"][pulse_idx]["intensity"];
     field_max[pulse_idx] =
         std::sqrt(intensity / 3.51e16) * c / energy[pulse_idx];
-    std::cout << field_max[pulse_idx] << "\n";
 
     if (helicity[pulse_idx] == "right")
     {
