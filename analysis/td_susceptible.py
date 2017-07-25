@@ -10,6 +10,12 @@ observables = f["Observables"]
 o_time = observables["time"][:]
 pulses = f["Pulse"]
 p_time = pulses["time"][:]
+energy = f["Parameters"]["energy"][0]
+cycles = int(f["Parameters"]["cycles_on"][0] +
+             f["Parameters"]["cycles_off"][0])
+ts_per_cycle = 2 * np.pi / energy / (o_time[2] - o_time[1])
+print cycles, ts_per_cycle, observables["position_expectation_0_1"][:].shape[0]
+
 if f["Parameters"]["pulse_shape_idx"][0] == 1:
     idx_min = p_time.shape[0] / 2 - p_time.shape[0] / 6
     idx_max = p_time.shape[0] / 2 + p_time.shape[0] / 6
@@ -17,18 +23,14 @@ else:
     idx_min = 0
     idx_max = -1
 
-# plt.plot(o_time, observables["position_expectation_0_1"][:])
-# plt.show()
-# plt.plot(p_time, pulses["field_1"][:])
-# plt.show()
 max_data = []
 min_data = []
 fig, ax1 = plt.subplots()
 ax2 = ax1.twinx()
-for i in range(10):
+for i in range(cycles):
     if i != 0:
         window_size = int(
-            22046 / f["Parameters"]["write_frequency_observables"][0] *
+            ts_per_cycle / f["Parameters"]["write_frequency_observables"][0] *
             (i + 1))
         freq, t, dipole_fft = stft(
             observables["position_expectation_0_1"][:],

@@ -149,6 +149,7 @@ plt.clf()
 # HHG Spectrum
 print "Plotting HHG Spectrum"
 fig = plt.figure()
+energy = f["Parameters"]["energy"][0]
 for elec_idx in range(num_electrons):
     for dim_idx in range(num_dims):
         if (not (dim_idx == 0 and
