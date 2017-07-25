@@ -42,7 +42,8 @@ class Wavefunction : protected Utils
   void CleanUp();
 
   dcomp GetPsiVal(dcomp ***data, PetscInt idx);
-  dcomp GetPositionVal(PetscInt idx, PetscInt elec_idx, PetscInt dim_idx);
+  dcomp GetPositionVal(PetscInt idx, PetscInt elec_idx, PetscInt dim_idx,
+                       bool integrate);
   dcomp GetDipoleAccerationVal(PetscInt idx, PetscInt elec_idx,
                                PetscInt dim_idx);
   dcomp GetGobblerVal(PetscInt idx);

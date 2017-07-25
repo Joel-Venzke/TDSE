@@ -541,7 +541,7 @@ void Wavefunction::CreateObservable(PetscInt observable_idx, PetscInt elec_idx,
   {
     for (PetscInt idx = low; idx < high; idx++)
     {
-      val = GetPositionVal(idx, elec_idx, dim_idx);
+      val = GetPositionVal(idx, elec_idx, dim_idx, false);
       VecSetValues(psi_tmp, 1, &idx, &val, INSERT_VALUES);
     }
   }
@@ -555,7 +555,11 @@ void Wavefunction::CreateObservable(PetscInt observable_idx, PetscInt elec_idx,
   }
   else if (observable_idx == 2) /* r */
   {
-    CreateObservable(0, 0, 0);
+    for (PetscInt idx = low; idx < high; idx++)
+    {
+      val = GetPositionVal(idx, 0, 0, true);
+      VecSetValues(psi_tmp, 1, &idx, &val, INSERT_VALUES);
+    }
   }
   else if (observable_idx == 3) /* ecs */
   {
@@ -611,15 +615,16 @@ dcomp Wavefunction::GetPsiVal(dcomp*** data, PetscInt idx)
 
 /* returns values for global position vector */
 dcomp Wavefunction::GetPositionVal(PetscInt idx, PetscInt elec_idx,
-                                   PetscInt dim_idx)
+                                   PetscInt dim_idx, bool integrate)
 {
   /* Value to be returned */
   dcomp ret_val(0.0, 0.0);
   /* idx for return */
   std::vector< PetscInt > idx_array = GetIntArray(idx);
   ret_val = x_value[dim_idx][idx_array[elec_idx * num_dims + dim_idx]];
-  if (order > 2 and dim_idx == 0 and coordinate_system_idx == 1)
+  if (integrate and order > 2 and dim_idx == 0 and coordinate_system_idx == 1)
   {
+    std::cout << "using integrate\n";
     /* see appendix A of https://arxiv.org/pdf/1604.00947.pdf using Lagrange
      * interpolation polynomials and
      * http://slideflix.net/doc/4183369/gregory-s-quadrature-method*/
