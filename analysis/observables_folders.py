@@ -33,10 +33,6 @@ for dx in ["0.1", "0.15", "0.2", "0.3", "0.4"]:
 
         plot_lines[key] = line_style
 
-print folders
-print plot_lines
-exit()
-
 for fold in folders:
     f = h5py.File(fold + "TDSE.h5", "r")
     observables = f["Observables"]
