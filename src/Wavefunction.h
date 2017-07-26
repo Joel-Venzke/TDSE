@@ -12,6 +12,7 @@ class Wavefunction : protected Utils
   PetscInt num_electrons; /* number of electrons in the system */
   double *dim_size;       /* sizes of each dimension in a.u. */
   double *delta_x;        /* step sizes of each dimension in a.u. */
+  double delta_t;         /* time step in a.u. */
   PetscInt coordinate_system_idx;
   std::string target_file_name;
   PetscInt num_states;

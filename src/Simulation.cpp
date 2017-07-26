@@ -81,8 +81,6 @@ void Simulation::Propagate()
   if (parameters->GetRestart() == 1)
   {
     /* set current iteration */
-    /* The -2 is from the already increased counter and the fact that psi[0] is
-     * written during simulation setup */
     i = h5_file->GetLast("/Wavefunction/time") / delta_t;
     i++;
     /* only checkpoint end of pulse if the simulation isn't in free propagation
@@ -93,7 +91,7 @@ void Simulation::Propagate()
     }
     if (world.rank() == 0)
     {
-      std::cout << "Restarting from time step: " << i << "\n";
+      std::cout << "Restarting at time step: " << i << "\n";
     }
   }
 

@@ -13,6 +13,7 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   num_electrons             = p.GetNumElectrons();
   dim_size                  = p.dim_size.get();
   delta_x                   = p.delta_x.get();
+  delta_t                   = p.GetDeltaT();
   coordinate_system_idx     = p.GetCoordinateSystemIdx();
   target_file_name          = p.GetTarget() + ".h5";
   num_states                = p.GetNumStates();
@@ -248,10 +249,10 @@ void Wavefunction::LoadRestart(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   viewer_file.ReadObject(psi);
   /* Close file */
   viewer_file.Close();
+
   /* Calculate observable counters */
-  write_counter_observables =
-      ((write_counter_checkpoint - 1) * write_frequency_checkpoint) /
-      write_frequency_observables;
+  write_counter_observables = h5_file.GetLast("/Wavefunction/time") / delta_t;
+  write_counter_observables /= write_frequency_observables;
 
   /* Increment both counters */
   write_counter_observables++;

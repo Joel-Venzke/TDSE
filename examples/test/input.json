@@ -7,7 +7,7 @@
     "delta_x":   0.1}],
   "coordinate_system": "Cylindrical",
   "num_electrons": 1,
-  "restart": 0,
+  "restart": 1,
   "target": {
     "name":  "He",
     "nuclei" : [
@@ -29,7 +29,7 @@
   "write_frequency_eigin_state": 1,
   "state_solver":    "File",
   "propagate": 1,
-  "free_propagate": 10000,
+  "free_propagate": 0,
   "start_state": 0,
   "states": 3,
   "tol":        1e-10,
