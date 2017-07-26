@@ -81,6 +81,8 @@ class Wavefunction : protected Utils
   std::vector< dcomp > Projections(std::string file_name);
   void ProjectOut(std::string file_name, HDF5Wrapper &h5_file,
                   ViewWrapper &viewer_file);
+  void LoadPsi(std::string file_name, PetscInt num_states,
+               PetscInt return_state_idx);
   void ResetPsi();
 
   PetscInt *GetNumX();

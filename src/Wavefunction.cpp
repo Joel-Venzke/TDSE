@@ -237,7 +237,7 @@ void Wavefunction::LoadRestart(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   first_pass             = false;
   std::string group_name = "/Wavefunction/";
   /* Get write index for last checkpoint */
-  write_counter_checkpoint = h5_file.GetTime("/Wavefunction/psi");
+  write_counter_checkpoint = h5_file.GetTimeIdx("/Wavefunction/psi");
   /* Open file */
   viewer_file.Open("r");
   /* Set time idx */
@@ -270,7 +270,7 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
   HDF5Wrapper h5_file(file_name);
   ViewWrapper viewer_file(file_name);
 
-  PetscInt file_states = h5_file.GetTime("/psi/") + 1;
+  PetscInt file_states = h5_file.GetTimeIdx("/psi/") + 1;
   if (file_states < num_states)
   {
     EndRun("Not enough states in the target file");
@@ -319,7 +319,7 @@ void Wavefunction::ProjectOut(std::string file_name, HDF5Wrapper& h5_file_in,
   HDF5Wrapper h5_file(file_name);
   ViewWrapper viewer_file(file_name);
 
-  PetscInt file_states = h5_file.GetTime("/psi/") + 1;
+  PetscInt file_states = h5_file.GetTimeIdx("/psi/") + 1;
   if (file_states < num_states)
   {
     EndRun("Not enough states in the target file");
@@ -361,6 +361,49 @@ void Wavefunction::ProjectOut(std::string file_name, HDF5Wrapper& h5_file_in,
     Checkpoint(h5_file_in, viewer_file_in, -1 * state_idx);
   }
   if (world.rank() == 0) std::cout << sum << " sum\n";
+  /* Close file */
+  viewer_file.Close();
+}
+
+/**
+ * @brief Uses the "target".h5 file to read in the ground state
+ * @details Uses the "target".h5 file to read in the ground state. It also makes
+ * sure you have enough states for the projections
+ *
+ * @param num_states The number of states you wish to use for projections
+ * @param return_state_idx the index of the state you want the Wavefunction
+ * class to be set to upon return
+ */
+void Wavefunction::LoadPsi(std::string file_name, PetscInt num_states,
+                           PetscInt return_state_idx)
+{
+  if (world.rank() == 0)
+    std::cout << "Loading wavefunction from " << file_name << "\n";
+  /* Get write index for last checkpoint */
+  HDF5Wrapper h5_file(file_name);
+  ViewWrapper viewer_file(file_name);
+
+  PetscInt file_states = h5_file.GetTimeIdx("/psi/") + 1;
+  if (file_states < num_states)
+  {
+    EndRun("Not enough states in the target file");
+  }
+
+  if (return_state_idx >= num_states)
+  {
+    EndRun("The start state must be less than the total number of states");
+  }
+
+  /* Open File */
+  viewer_file.Open("r");
+
+  /* Read psi */
+  viewer_file.SetTime(return_state_idx);
+  viewer_file.ReadObject(psi);
+
+  /* Normalize */
+  Normalize(psi, 0.0);
+
   /* Close file */
   viewer_file.Close();
 }

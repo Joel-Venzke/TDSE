@@ -70,7 +70,8 @@ class HDF5Wrapper : protected Utils
   void WriteObject(T data, int size, H5std_string var_path,
                    H5std_string attribute, int write_idx);
 
-  PetscInt GetTime(H5std_string var_path, bool complex = false);
+  PetscInt GetTimeIdx(H5std_string var_path, bool complex = false);
+  double GetLast(H5std_string var_path);
 
   /* write for parameters */
   void WriteHeader(Parameters &p);

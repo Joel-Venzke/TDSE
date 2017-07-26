@@ -52,6 +52,7 @@ int main(int argc, char** argv)
     switch (parameters.GetStateSolverIdx())
     {
       case 0: /* File */
+        s.FromFile(parameters.GetNumStates(), parameters.GetStartState());
         break;
       case 2: /* Power */
         s.PowerMethod(parameters.GetNumStates(), parameters.GetStartState());

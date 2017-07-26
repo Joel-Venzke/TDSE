@@ -499,26 +499,21 @@ void Parameters::Validate()
   }
 
   /* state_solver issues*/
-  if (state_solver == "file")
-  {
-    error_found = true;
-    err_str += "\nInvalid state solver: \"";
-    err_str += "States from file is not supported yet\"";
-  }
-  else if (state_solver == "ITP")
+  if (state_solver == "ITP")
   {
     error_found = true;
     err_str += "\nInvalid state solver: \"";
     err_str += state_solver;
     err_str += "\"\nITP sucks, so I dropped support for it\n";
-    err_str += "\nvalid solvers are \"SLEPC\" and \"Power\"\n";
+    err_str += "\nvalid solvers are \"File\", \"SLEPC\", and \"Power\"\n";
   }
-  else if (state_solver != "Power" && state_solver != "SLEPC")
+  else if (state_solver != "Power" and state_solver != "SLEPC" and
+           state_solver != "File")
   {
     error_found = true;
     err_str += "\nInvalid state solver: \"";
     err_str += state_solver;
-    err_str += "\"\nvalid solvers are \"SLEPC\" and \"Power\"\n";
+    err_str += "\"\nvalid solvers are \"File\", \"SLEPC\", and \"Power\"\n";
   }
 
   if (start_state >= num_states)
