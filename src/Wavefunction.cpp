@@ -250,7 +250,7 @@ void Wavefunction::LoadRestart(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   /* Close file */
   viewer_file.Close();
 
-  /* Calculate observable counters */
+  /* Calculate observable counter */
   write_counter_observables = h5_file.GetLast("/Wavefunction/time") / delta_t;
   write_counter_observables /= write_frequency_observables;
 

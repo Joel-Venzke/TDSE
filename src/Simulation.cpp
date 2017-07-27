@@ -223,7 +223,7 @@ void Simulation::Propagate()
       }
       i++;
     }
-    /* Save last Wavefunction since it might not by on a write frequency*/
+    /* Save last Wavefunction since it might not end on a write frequency*/
     wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
   }
 
