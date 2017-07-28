@@ -29,7 +29,7 @@
   "alpha":   0.0,
   "gobbler": 0.9,
   "order":   2,
-  "sigma":   2.0,
+  "sigma":   3.0,
   "write_frequency_checkpoint": 100,
   "write_frequency_observables": 2,
   "write_frequency_eigin_state": 1,
@@ -55,6 +55,6 @@
       "cycles_delay":   0.0,
       "cep":            0.0,
       "energy":         1.5,
-      "field_max":      12.83}]
+      "intensity":      1e16}]
   }
 }

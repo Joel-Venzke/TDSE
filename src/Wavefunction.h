@@ -15,6 +15,7 @@ class Wavefunction : protected Utils
   double *delta_x_min_end;   /* step sizes of each dimension in a.u. */
   double *delta_x_max;       /* step sizes of each dimension in a.u. */
   double *delta_x_max_start; /* step sizes of each dimension in a.u. */
+  double delta_t;            /* time step in a.u. */
   PetscInt coordinate_system_idx;
   std::string target_file_name;
   PetscInt num_states;
@@ -33,6 +34,7 @@ class Wavefunction : protected Utils
   bool first_pass;
   double sigma;           /* std of gaussian guess */
   PetscInt **gobbler_idx; /* distance that starts gobbler */
+  PetscInt order;
 
   PetscInt write_counter_checkpoint;
   PetscInt write_counter_observables;
@@ -45,7 +47,8 @@ class Wavefunction : protected Utils
   void CleanUp();
 
   dcomp GetPsiVal(dcomp ***data, PetscInt idx);
-  dcomp GetPositionVal(PetscInt idx, PetscInt elec_idx, PetscInt dim_idx);
+  dcomp GetPositionVal(PetscInt idx, PetscInt elec_idx, PetscInt dim_idx,
+                       bool integrate);
   dcomp GetDipoleAccerationVal(PetscInt idx, PetscInt elec_idx,
                                PetscInt dim_idx);
   dcomp GetGobblerVal(PetscInt idx);
@@ -84,6 +87,8 @@ class Wavefunction : protected Utils
   std::vector< dcomp > Projections(std::string file_name);
   void ProjectOut(std::string file_name, HDF5Wrapper &h5_file,
                   ViewWrapper &viewer_file);
+  void LoadPsi(std::string file_name, PetscInt num_states,
+               PetscInt return_state_idx);
   void ResetPsi();
 
   PetscInt *GetNumX();

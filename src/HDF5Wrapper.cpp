@@ -719,7 +719,7 @@ void HDF5Wrapper::WriteObject(T data, int size, H5std_string var_path,
   }
 }
 
-PetscInt HDF5Wrapper::GetTime(H5std_string var_path, bool complex)
+PetscInt HDF5Wrapper::GetTimeIdx(H5std_string var_path, bool complex)
 {
   PetscInt ret_val;
   if (world.rank() == 0)
@@ -735,6 +735,32 @@ PetscInt HDF5Wrapper::GetTime(H5std_string var_path, bool complex)
   }
   mpi::broadcast(world, ret_val, 0);
 
+  return ret_val;
+}
+
+double HDF5Wrapper::GetLast(H5std_string var_path)
+{
+  double ret_val;
+  std::unique_ptr< double[] > read_buff;
+  PetscInt data_size = 1;
+  if (world.rank() == 0)
+  {
+    Open();
+    H5::DataSet data_set(data_file->openDataSet(var_path));
+    H5::DataSpace memspace               = data_set.getSpace();
+    PetscInt ndims                       = memspace.getSimpleExtentNdims();
+    std::unique_ptr< hsize_t[] > h5_size = std::make_unique< hsize_t[] >(ndims);
+    memspace.getSimpleExtentDims(h5_size.get());
+    for (int dim_idx = 0; dim_idx < ndims; ++dim_idx)
+    {
+      data_size *= h5_size[dim_idx];
+    }
+    read_buff = std::make_unique< double[] >(data_size);
+    data_set.read(read_buff.get(), H5::PredType::NATIVE_DOUBLE);
+    ret_val = read_buff[data_size - 1];
+    Close();
+  }
+  mpi::broadcast(world, ret_val, 0);
   return ret_val;
 }
 

@@ -52,6 +52,7 @@ int main(int argc, char** argv)
     switch (parameters.GetStateSolverIdx())
     {
       case 0: /* File */
+        s.FromFile(parameters.GetNumStates(), parameters.GetStartState());
         break;
       case 2: /* Power */
         s.PowerMethod(parameters.GetNumStates(), parameters.GetStartState());
@@ -73,8 +74,8 @@ int main(int argc, char** argv)
     s.Propagate();
     // s.SplitOpperator();
     // wavefunction.Projections("H.h5");
-    wavefunction.ProjectOut(parameters.GetTarget() + ".h5", h5_file,
-                            viewer_file);
+    // wavefunction.ProjectOut(parameters.GetTarget() + ".h5", h5_file,
+    //                         viewer_file);
   }
   p_wrap.PopStage(); /* Propagation */
   p_wrap.Print(

@@ -56,6 +56,7 @@ class Simulation : protected Utils
              HDF5Wrapper &h_file, ViewWrapper &v_file, Parameters &p);
   ~Simulation();
 
+  void FromFile(PetscInt num_states, PetscInt return_state_idx = 0);
   void EigenSolve(PetscInt num_states, PetscInt return_state_idx = 0);
   void PowerMethod(PetscInt num_states, PetscInt return_state_idx = 0);
   void Propagate();

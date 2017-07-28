@@ -17,6 +17,7 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   delta_x_min_end           = p.delta_x_min_end.get();
   delta_x_max               = p.delta_x_max.get();
   delta_x_max_start         = p.delta_x_max_start.get();
+  delta_t                   = p.GetDeltaT();
   coordinate_system_idx     = p.GetCoordinateSystemIdx();
   target_file_name          = p.GetTarget() + ".h5";
   num_states                = p.GetNumStates();
@@ -24,6 +25,7 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   num_psi_build             = 1.0;
   write_counter_checkpoint  = 0;
   write_counter_observables = 0;
+  order                     = p.GetOrder();
 
   /* allocate grid */
   CreateGrid();
@@ -288,7 +290,7 @@ void Wavefunction::LoadRestart(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   first_pass             = false;
   std::string group_name = "/Wavefunction/";
   /* Get write index for last checkpoint */
-  write_counter_checkpoint = h5_file.GetTime("/Wavefunction/psi");
+  write_counter_checkpoint = h5_file.GetTimeIdx("/Wavefunction/psi");
   /* Open file */
   viewer_file.Open("r");
   /* Set time idx */
@@ -299,10 +301,10 @@ void Wavefunction::LoadRestart(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   viewer_file.ReadObject(psi);
   /* Close file */
   viewer_file.Close();
-  /* Calculate observable counters */
-  write_counter_observables =
-      ((write_counter_checkpoint - 1) * write_frequency_checkpoint) /
-      write_frequency_observables;
+
+  /* Calculate observable counter */
+  write_counter_observables = h5_file.GetLast("/Wavefunction/time") / delta_t;
+  write_counter_observables /= write_frequency_observables;
 
   /* Increment both counters */
   write_counter_observables++;
@@ -321,7 +323,7 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
   HDF5Wrapper h5_file(file_name);
   ViewWrapper viewer_file(file_name);
 
-  PetscInt file_states = h5_file.GetTime("/psi/") + 1;
+  PetscInt file_states = h5_file.GetTimeIdx("/psi/") + 1;
   if (file_states < num_states)
   {
     EndRun("Not enough states in the target file");
@@ -388,6 +390,49 @@ void Wavefunction::ProjectOut(std::string file_name, HDF5Wrapper& h5_file_in,
     Checkpoint(h5_file_in, viewer_file_in, -1 * state_idx);
   }
   std::cout << "Sum: " << sum << "\n";
+  /* Close file */
+  viewer_file.Close();
+}
+
+/**
+ * @brief Uses the "target".h5 file to read in the ground state
+ * @details Uses the "target".h5 file to read in the ground state. It also makes
+ * sure you have enough states for the projections
+ *
+ * @param num_states The number of states you wish to use for projections
+ * @param return_state_idx the index of the state you want the Wavefunction
+ * class to be set to upon return
+ */
+void Wavefunction::LoadPsi(std::string file_name, PetscInt num_states,
+                           PetscInt return_state_idx)
+{
+  if (world.rank() == 0)
+    std::cout << "Loading wavefunction from " << file_name << "\n";
+  /* Get write index for last checkpoint */
+  HDF5Wrapper h5_file(file_name);
+  ViewWrapper viewer_file(file_name);
+
+  PetscInt file_states = h5_file.GetTimeIdx("/psi/") + 1;
+  if (file_states < num_states)
+  {
+    EndRun("Not enough states in the target file");
+  }
+
+  if (return_state_idx >= num_states)
+  {
+    EndRun("The start state must be less than the total number of states");
+  }
+
+  /* Open File */
+  viewer_file.Open("r");
+
+  /* Read psi */
+  viewer_file.SetTime(return_state_idx);
+  viewer_file.ReadObject(psi);
+
+  /* Normalize */
+  Normalize(psi, 0.0);
+
   /* Close file */
   viewer_file.Close();
 }
@@ -491,7 +536,14 @@ void Wavefunction::CreateGrid()
 
     if (coordinate_system_idx == 1 and dim_idx == 0)
     {
-      x_value[dim_idx][0] = delta_x_min[dim_idx] / 2.0;
+      if (order > 2)
+      {
+        x_value[dim_idx][0] = delta_x_min[dim_idx];
+      }
+      else
+      {
+        x_value[dim_idx][0] = delta_x_min[dim_idx] / 2.0;
+      }
       for (int x_idx = 1; x_idx < num_x[dim_idx]; ++x_idx)
       {
         if (x_value[dim_idx][x_idx - 1] < delta_x_min_end[dim_idx])
@@ -671,7 +723,7 @@ void Wavefunction::CreateObservable(PetscInt observable_idx, PetscInt elec_idx,
   {
     for (PetscInt idx = low; idx < high; idx++)
     {
-      val = GetPositionVal(idx, elec_idx, dim_idx);
+      val = GetPositionVal(idx, elec_idx, dim_idx, false);
       VecSetValues(psi_tmp, 1, &idx, &val, INSERT_VALUES);
     }
   }
@@ -685,9 +737,13 @@ void Wavefunction::CreateObservable(PetscInt observable_idx, PetscInt elec_idx,
   }
   else if (observable_idx == 2) /* r */
   {
-    CreateObservable(0, 0, 0);
+    for (PetscInt idx = low; idx < high; idx++)
+    {
+      val = GetPositionVal(idx, 0, 0, true);
+      VecSetValues(psi_tmp, 1, &idx, &val, INSERT_VALUES);
+    }
   }
-  else if (observable_idx == 3) /* r */
+  else if (observable_idx == 3) /* ecs */
   {
     for (PetscInt idx = low; idx < high; idx++)
     {
@@ -802,30 +858,99 @@ dcomp Wavefunction::GetVolumeElement(PetscInt idx)
 
 /* returns values for global position vector */
 dcomp Wavefunction::GetPositionVal(PetscInt idx, PetscInt elec_idx,
-                                   PetscInt dim_idx)
+                                   PetscInt dim_idx, bool integrate)
 {
   /* Value to be returned */
   dcomp ret_val(0.0, 0.0);
   /* idx for return */
   std::vector< PetscInt > idx_array = GetIntArray(idx);
   ret_val = x_value[dim_idx][idx_array[elec_idx * num_dims + dim_idx]];
-  // if (dim_idx == 0 and coordinate_system_idx == 1)
-  // {
-  //   /* see appendix A of https://arxiv.org/pdf/1604.00947.pdf using Lagrange
-  //    * interpolation polynomials */
-  //   if (idx_array[elec_idx * num_dims + dim_idx] == 0)
-  //     ret_val *= 19087.0 / 60480.0;
-  //   else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
-  //     ret_val *= 84199.0 / 60480.0;
-  //   else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
-  //     ret_val *= 18869.0 / 30240.0;
-  //   else if (idx_array[elec_idx * num_dims + dim_idx] == 3)
-  //     ret_val *= 37621.0 / 30240.0;
-  //   else if (idx_array[elec_idx * num_dims + dim_idx] == 4)
-  //     ret_val *= 55031.0 / 60480.0;
-  //   else if (idx_array[elec_idx * num_dims + dim_idx] == 5)
-  //     ret_val *= 61343.0 / 60480.0;
-  // }
+  if (integrate and order > 2 and dim_idx == 0 and coordinate_system_idx == 1)
+  {
+    // std::cout << "using integrate\n";
+    /* see appendix A of https://arxiv.org/pdf/1604.00947.pdf using Lagrange
+     * interpolation polynomials and
+     * http://slideflix.net/doc/4183369/gregory-s-quadrature-method*/
+    // if (idx_array[elec_idx * num_dims + dim_idx] == 0) ret_val *= 13.0 /
+    // 12.0;
+
+    // if (idx_array[elec_idx * num_dims + dim_idx] == 0)
+    //   ret_val *= 7.0 / 6.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
+    //   ret_val *= 23.0 / 24.0;
+
+    // if (idx_array[elec_idx * num_dims + dim_idx] == 0)
+    //   ret_val *= 299.0 / 240.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
+    //   ret_val *= 211.0 / 240.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
+    //   ret_val *= 739.0 / 720.0;
+
+    // if (idx_array[elec_idx * num_dims + dim_idx] == 0)
+    //   ret_val *= 317.0 / 240.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
+    //   ret_val *= 23.0 / 30.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
+    //   ret_val *= 793.0 / 720.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 3)
+    //   ret_val *= 147.0 / 160.0;
+
+    // if (idx_array[elec_idx * num_dims + dim_idx] == 0)
+    //   ret_val *= 84199.0 / 60480.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
+    //   ret_val *= 18869.0 / 30240.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
+    //   ret_val *= 37621.0 / 30240.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 3)
+    //   ret_val *= 55031.0 / 60480.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 4)
+    //   ret_val *= 61343.0 / 60480.0;
+
+    if (idx_array[elec_idx * num_dims + dim_idx] == 0)
+      ret_val *= 22081.0 / 15120.0;
+    else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
+      ret_val *= 54851.0 / 120960.0;
+    else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
+      ret_val *= 103.0 / 70.0;
+    else if (idx_array[elec_idx * num_dims + dim_idx] == 3)
+      ret_val *= 89437.0 / 120960.0;
+    else if (idx_array[elec_idx * num_dims + dim_idx] == 4)
+      ret_val *= 16367.0 / 15120.0;
+    else if (idx_array[elec_idx * num_dims + dim_idx] == 5)
+      ret_val *= 23917.0 / 24192.0;
+
+    // if (idx_array[elec_idx * num_dims + dim_idx] == 0)
+    //   ret_val *= 5537111.0 / 3628800.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
+    //   ret_val *= 103613.0 / 403200.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
+    //   ret_val *= 261115.0 / 145152.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 3)
+    //   ret_val *= 298951.0 / 725760.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 4)
+    //   ret_val *= 515677.0 / 403200.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 5)
+    //   ret_val *= 3349879.0 / 3628800.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 6)
+    //   ret_val *= 3662753.0 / 3628800.0;
+
+    // if (idx_array[elec_idx * num_dims + dim_idx] == 0)
+    //   ret_val *= 1153247.0 / 725760.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
+    //   ret_val *= 130583.0 / 3628800.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
+    //   ret_val *= 903527.0 / 403200.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 3)
+    //   ret_val *= -797.0 / 5670.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 4)
+    //   ret_val *= 6244961.0 / 3628800.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 5)
+    //   ret_val *= 56621.0 / 80640.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 6)
+    //   ret_val *= 3891877.0 / 3628800.0;
+    // else if (idx_array[elec_idx * num_dims + dim_idx] == 7)
+    //   ret_val *= 1028617.0 / 1036800.0;
+  }
   return ret_val;
 }
 
@@ -910,7 +1035,7 @@ void Wavefunction::Normalize() { Normalize(psi, 0.0); }
 void Wavefunction::Normalize(Vec& data, double dv)
 {
   PetscReal total = Norm(data, dv);
-  VecScale(data, 1.0 / sqrt(total));
+  VecScale(data, 1.0 / total);
 }
 
 /* returns norm of psi */
@@ -928,14 +1053,14 @@ double Wavefunction::Norm(Vec& data, double dv)
     CreateObservable(4, 0, 0);
     VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi_tmp_cyl);
     VecDot(data, psi_tmp_cyl, &dot_product);
-    total = dot_product.real();
+    total = sqrt(dot_product.real());
   }
   else
   {
     CreateObservable(4, 0, 0);
     VecPointwiseMult(psi_tmp, psi_tmp, data);
     VecDot(data, psi_tmp, &dot_product);
-    total = dot_product.real();
+    total = sqrt(dot_product.real());
   }
   return total;
 }

@@ -262,7 +262,10 @@ void Hamiltonian::SetUpCoefficients()
     /* Set up real gird for 1st and 2nd order derivatives */
     for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
     {
-      x_vals_bc[coef_idx] = delta_x_min[0] * coef_idx;
+      if (coef_idx == 0 and order > 2)
+        x_vals_bc[coef_idx] = 0.0;
+      else
+        x_vals_bc[coef_idx] = delta_x_min[0] * (coef_idx + 1);
     }
     for (int discontinuity_idx = 0; discontinuity_idx < order / 2;
          ++discontinuity_idx)
@@ -283,19 +286,6 @@ void Hamiltonian::SetUpCoefficients()
       }
       radial_bc_coef[discontinuity_idx][1][order] = 0.0;
       radial_bc_coef[discontinuity_idx][2][order] = 0.0;
-      if (world.rank() == 0)
-      {
-        for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
-        {
-          std::cout << radial_bc_coef[discontinuity_idx][1][coef_idx] << " ";
-        }
-        std::cout << "\n";
-        for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
-        {
-          std::cout << radial_bc_coef[discontinuity_idx][2][coef_idx] << " ";
-        }
-        std::cout << "\n";
-      }
     }
   }
 }

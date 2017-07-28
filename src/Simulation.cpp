@@ -61,6 +61,8 @@ void Simulation::Propagate()
   clock_t t;
   /* if we are converged */
   bool converged = false;
+  /* If we need end of pulse checkpoint */
+  bool checkpoint_eof = true;
   /* error in norm */
   double norm = 1.0;
   /* how often do we write data */
@@ -77,7 +79,6 @@ void Simulation::Propagate()
   VecDuplicate(*psi, &psi_old);
   /* time step */
   double delta_t = parameters->GetDeltaT();
-
   KSPDestroy(&ksp);
   KSPCreate(PETSC_COMM_WORLD, &ksp);
   KSPSetOptionsPrefix(ksp, "prop_");
@@ -86,12 +87,18 @@ void Simulation::Propagate()
   if (parameters->GetRestart() == 1)
   {
     /* set current iteration */
-    /* The -2 is from the already increased counter and the fact that psi[0] is
-     * written during simulation setup */
-    i = (wavefunction->GetWrieCounterCheckpoint() - 2) *
-        write_frequency_checkpoint;
+    i = h5_file->GetLast("/Wavefunction/time") / delta_t;
     i++;
-    if (i >= time_length) EndRun("Restart needs work for free prop restarts");
+    /* only checkpoint end of pulse if the simulation isn't in free propagation
+     * already*/
+    if (i > time_length)
+    {
+      checkpoint_eof = false;
+    }
+    if (world.rank() == 0)
+    {
+      std::cout << "Restarting at time step: " << i << "\n";
+    }
   }
 
   if (world.rank() == 0)
@@ -142,8 +149,11 @@ void Simulation::Propagate()
     PetscLogEventEnd(time_step, 0, 0, 0, 0);
   }
 
-  /* Save frame after pulse ends*/
-  wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
+  if (checkpoint_eof)
+  {
+    /* Save frame after pulse ends*/
+    wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
+  }
 
   if (free_propagate == -1) /* until norm stops changing */
   {
@@ -227,7 +237,7 @@ void Simulation::Propagate()
       }
       i++;
     }
-    /* Save last Wavefunction since it might not by on a write frequency*/
+    /* Save last Wavefunction since it might not end on a write frequency*/
     wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
   }
 
@@ -438,6 +448,21 @@ void Simulation::SplitOpperator()
   }
 
   VecDestroy(&psi_old);
+}
+
+/**
+ * @brief Uses the "target".h5 file to read in the ground state
+ * @details Uses the "target".h5 file to read in the ground state. It also makes
+ * sure you have enough states for the projections
+ *
+ * @param num_states The number of states you wish to use for projections
+ * @param return_state_idx the index of the state you want the Wavefunction
+ * class to be set to upon return
+ */
+void Simulation::FromFile(PetscInt num_states, PetscInt return_state_idx)
+{
+  wavefunction->LoadPsi(parameters->GetTarget() + ".h5", num_states,
+                        return_state_idx);
 }
 
 /**
