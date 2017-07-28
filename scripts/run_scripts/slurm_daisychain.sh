@@ -3,10 +3,11 @@
 #------------------Scheduler Options--------------------
 #SBATCH -J TDSE                # Job name
 #SBATCH -N 1                   # Total number of nodes (16 cores/node)
-#SBATCH -n 16                  # Total number of tasks
-#SBATCH -p slow                # Queue name
+#SBATCH -n 1                  # Total number of tasks
+#SBATCH --partition slow                # Queue name
+#SBATCH --qos slow                # Queue name
 #SBATCH -o run_%j.log          # Name of stdout output file (%j expands to jobid)
-#SBATCH -t 00:01:00            # Run time (hh:mm:ss)
+#SBATCH -t 00:00:10            # Run time (hh:mm:ss)
 #------------------------------------------------------
 
 # To daisy chain jobs, the script must know the name of the job submission script.
@@ -16,8 +17,7 @@
 # their own unique job name.
 
 #----------------------User Options------------------------
-myJobScript=$(ls -t $SLURM_SUBMIT_DIR/*.slurm | tail -n 1 )
-loginNode="login1"
+myJobScript=/data/becker/jove7731/daisy_test/slurm_daisychain.sh
 #----------------------------------------------------------
 
 # check if we should already be finished
@@ -64,7 +64,11 @@ sbatch -J $nextSlurmJobName --dependency=afterany:$SLURM_JOB_ID ${myJobScript}
 if [ "$thisJobNumber" -eq "1" ]; then
  #first job
  echo "Starting First Job:"
- sleep 60
+ sleep 6000
+elif [ "$thisJobNumber" -eq "2" ]; then
+ #first job
+ echo "Starting Second Job:"
+ sleep 6000
 else
  #continuation
  echo "Starting Continuation Job:"
@@ -74,6 +78,7 @@ fi
 
 
 # if this runs, the job completed:
+echo "Daisy Chain Complete"
 touch ${SLURM_SUBMIT_DIR}/daisychain/finished
 
 # help catch runaway scripts
