@@ -11,13 +11,16 @@
 #------------------------------------------------------
 
 # To daisy chain jobs, the script must know the name of the job submission script.
-# 1) if the $myJobScript environment variable is set, that will be used
+# 1) if the $DAISYCHAIN_SCRIPT environment variable is set, that will be used
 # 2) by default, the script is set to look in the working directory for a *.slurm file
 # The use case is that daisychain jobs will all have their own directory and also 
 # their own unique job name.
 
 #----------------------User Options------------------------
-myJobScript=/data/becker/jove7731/daisy_test/slurm_daisychain.sh
+TDSE_DIR=/users/becker/jove7731/Repos/TDSE
+DAISYCHAIN_SCRIPT=${TDSE_DIR}/scripts/run_scripts/slurm_daisychain.sh
+RUN_FILE=${TDSE_DIR}/bin/TDSE
+RESTART=python ${TDSE_DIR}/scripts/run_scripts/restart_on.py
 #----------------------------------------------------------
 
 # check if we should already be finished
@@ -54,7 +57,7 @@ nextJobNumber=$(( thisJobNumber + 1 ))
 nextSlurmJobName=${baseSlurmJobName}$nextJobNumber
 
 echo "Submitting Dependent Job:"
-sbatch -J $nextSlurmJobName --dependency=afterany:$SLURM_JOB_ID ${myJobScript}
+sbatch -J $nextSlurmJobName --dependency=afterany:$SLURM_JOB_ID ${DAISYCHAIN_SCRIPT}
 
 
 
@@ -64,14 +67,13 @@ sbatch -J $nextSlurmJobName --dependency=afterany:$SLURM_JOB_ID ${myJobScript}
 if [ "$thisJobNumber" -eq "1" ]; then
  #first job
  echo "Starting First Job:"
- sleep 6000
-elif [ "$thisJobNumber" -eq "2" ]; then
- #first job
- echo "Starting Second Job:"
- sleep 6000
+ ${RUN_FILE}
 else
  #continuation
  echo "Starting Continuation Job:"
+ ${RESTART}
+ sleep 1
+ ${RUN_FILE}
 fi
 #----------------------------------------------------------
 
