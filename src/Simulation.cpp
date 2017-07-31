@@ -81,7 +81,7 @@ void Simulation::Propagate()
   if (parameters->GetRestart() == 1)
   {
     /* set current iteration */
-    i = h5_file->GetLast("/Wavefunction/time") / delta_t;
+    i = std::round(h5_file->GetLast("/Wavefunction/time") / delta_t);
     i++;
     /* only checkpoint end of pulse if the simulation isn't in free propagation
      * already*/
