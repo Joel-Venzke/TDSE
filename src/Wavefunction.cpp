@@ -251,7 +251,13 @@ void Wavefunction::LoadRestart(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   viewer_file.Close();
 
   /* Calculate observable counter */
-  write_counter_observables = h5_file.GetLast("/Wavefunction/time") / delta_t;
+  std::cout << "hows this counter? "
+            << h5_file.GetLast("/Wavefunction/time") / delta_t << " "
+            << (int)h5_file.GetLast("/Wavefunction/time") / delta_t << " "
+            << std::round(h5_file.GetLast("/Wavefunction/time") / delta_t)
+            << "\n";
+  write_counter_observables =
+      std::round(h5_file.GetLast("/Wavefunction/time") / delta_t);
   write_counter_observables /= write_frequency_observables;
 
   /* Increment both counters */
