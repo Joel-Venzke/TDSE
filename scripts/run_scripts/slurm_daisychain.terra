@@ -17,7 +17,7 @@
 
 #----------------------User Options------------------------
 TDSE_DIR=/users/becker/jove7731/Repos/TDSE
-DAISYCHAIN_SCRIPT=/data/becker/jove7731/daisy_H_High_order_fixed_grid_test/slurm_daisychain.sh
+DAISYCHAIN_SCRIPT=${TDSE_DIR}/scripts/run_scripts/slurm_daisychain.terra
 RUN_FILE=${TDSE_DIR}/bin/TDSE
 RESTART_FILE=${TDSE_DIR}/scripts/run_scripts/restart_on.py
 

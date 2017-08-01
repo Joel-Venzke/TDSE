@@ -1,6 +1,6 @@
 import numpy as np
 import h5py
-target_name = "He"
+target_name = "H"
 # read data
 target = h5py.File(target_name + ".h5", "r")
 f = h5py.File("TDSE.h5", "r")
