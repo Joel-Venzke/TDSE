@@ -49,38 +49,37 @@ class Parameters : protected Utils
 
   /* pulse data */
   PetscInt num_pulses;           ///< number of pulses
+  PetscInt delay_reference;      ///< which pulse to reference time delay
   double** polarization_vector;  ///< polarization vector for each pulse
   double** poynting_vector;      ///< poynting vector of the field
 
   void Setup(std::string file_name);
 
  public:
-  std::unique_ptr< double[] > dim_size;    ///< size of nth dimension in a.u.
-  std::unique_ptr< double[] > delta_x;     ///< size of grid step
-  std::unique_ptr< double[] > delta_x_2;   ///< size of grid step squared
-  std::unique_ptr< double[] > z;           ///< atomic number for each nuclei
-  std::unique_ptr< double[] > r0;          ///< SAE r_0 for each nuclei
-  std::unique_ptr< double[] > c0;          ///< SAE C_0 for each nuclei
-  std::unique_ptr< double[] > z_c;         ///< SAE z_0 for each nuclei
-  std::unique_ptr< PetscInt[] > sae_size;  ///< number of elements in a and b
-  std::unique_ptr< double[] >
+  std::unique_ptr<double[]> dim_size;    ///< size of nth dimension in a.u.
+  std::unique_ptr<double[]> delta_x;     ///< size of grid step
+  std::unique_ptr<double[]> delta_x_2;   ///< size of grid step squared
+  std::unique_ptr<double[]> z;           ///< atomic number for each nuclei
+  std::unique_ptr<double[]> r0;          ///< SAE r_0 for each nuclei
+  std::unique_ptr<double[]> c0;          ///< SAE C_0 for each nuclei
+  std::unique_ptr<double[]> z_c;         ///< SAE z_0 for each nuclei
+  std::unique_ptr<PetscInt[]> sae_size;  ///< number of elements in a and b
+  std::unique_ptr<double[]>
       state_energy;  ///< theoretical eigenvalues for each state
-  std::unique_ptr< std::string[] >
+  std::unique_ptr<std::string[]>
       pulse_shape;  ///< pulse shape {"sin2","linear"}
-  std::unique_ptr< PetscInt[] > pulse_shape_idx;  ///< index of pulse shape
-  std::unique_ptr< double[] > cycles_on;          ///< ramp on cycles
-  std::unique_ptr< double[] > cycles_plateau;     ///< plateau cycles
-  std::unique_ptr< double[] > cycles_off;         ///< ramp off cycles
-  std::unique_ptr< double[] > cycles_delay;       ///< delay in number of cycles
-  std::unique_ptr< double[] >
+  std::unique_ptr<PetscInt[]> pulse_shape_idx;  ///< index of pulse shape
+  std::unique_ptr<double[]> cycles_on;          ///< ramp on cycles
+  std::unique_ptr<double[]> cycles_plateau;     ///< plateau cycles
+  std::unique_ptr<double[]> cycles_off;         ///< ramp off cycles
+  std::unique_ptr<double[]> cycles_delay;       ///< delay in number of cycles
+  std::unique_ptr<double[]>
       cep;  ///< carrier envelope phase fractions of a cycle
-  std::unique_ptr< double[] > energy;     ///< photon energy
-  std::unique_ptr< double[] > field_max;  ///< max amplitude
-  std::unique_ptr< double[] >
-      ellipticity;  ///< major_min/minor_max of the field
-  std::unique_ptr< std::string[] > helicity;  ///< helicity of the field
-  std::unique_ptr< PetscInt[] >
-      helicity_idx;  ///< helicity index right:0 left:1
+  std::unique_ptr<double[]> energy;       ///< photon energy
+  std::unique_ptr<double[]> field_max;    ///< max amplitude
+  std::unique_ptr<double[]> ellipticity;  ///< major_min/minor_max of the field
+  std::unique_ptr<std::string[]> helicity;   ///< helicity of the field
+  std::unique_ptr<PetscInt[]> helicity_idx;  ///< helicity index right:0 left:1
 
   /* Constructors */
   Parameters(std::string file_name);
