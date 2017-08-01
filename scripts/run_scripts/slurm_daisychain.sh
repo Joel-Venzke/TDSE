@@ -3,11 +3,10 @@
 #------------------Scheduler Options--------------------
 #SBATCH -J TDSE                # Job name
 #SBATCH -N 1                   # Total number of nodes (16 cores/node)
-#SBATCH -n 1                  # Total number of tasks
-#SBATCH --partition slow                # Queue name
-#SBATCH --qos slow                # Queue name
+#SBATCH -n 32                  # Total number of tasks
+#SBATCH -p jila                # Queue name
 #SBATCH -o run_%j.log          # Name of stdout output file (%j expands to jobid)
-#SBATCH -t 00:00:10            # Run time (hh:mm:ss)
+#SBATCH -t 12:00:00            # Run time (hh:mm:ss)
 #------------------------------------------------------
 
 # To daisy chain jobs, the script must know the name of the job submission script.
@@ -18,9 +17,19 @@
 
 #----------------------User Options------------------------
 TDSE_DIR=/users/becker/jove7731/Repos/TDSE
-DAISYCHAIN_SCRIPT=${TDSE_DIR}/scripts/run_scripts/slurm_daisychain.sh
+DAISYCHAIN_SCRIPT=/data/becker/jove7731/daisy_H_High_order_fixed_grid_test/slurm_daisychain.sh
 RUN_FILE=${TDSE_DIR}/bin/TDSE
-RESTART=python ${TDSE_DIR}/scripts/run_scripts/restart_on.py
+RESTART_FILE=${TDSE_DIR}/scripts/run_scripts/restart_on.py
+
+module purge 
+module load intel
+module load openmpi
+module load hdf5
+module load boost
+module load cmake
+module load blas
+module load lapack
+module list 
 #----------------------------------------------------------
 
 # check if we should already be finished
@@ -67,13 +76,13 @@ sbatch -J $nextSlurmJobName --dependency=afterany:$SLURM_JOB_ID ${DAISYCHAIN_SCR
 if [ "$thisJobNumber" -eq "1" ]; then
  #first job
  echo "Starting First Job:"
- ${RUN_FILE}
+ mpiexec ${RUN_FILE} -log_view
 else
  #continuation
  echo "Starting Continuation Job:"
- ${RESTART}
+ python ${RESTART_FILE}
  sleep 1
- ${RUN_FILE}
+ mpiexec ${RUN_FILE} -log_view
 fi
 #----------------------------------------------------------
 
@@ -85,3 +94,4 @@ touch ${SLURM_SUBMIT_DIR}/daisychain/finished
 
 # help catch runaway scripts
 sleep 30
+
