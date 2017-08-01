@@ -65,6 +65,8 @@ Then back to the TDSE root directory and copy a `build.${SYSTEM}` file that is s
 
 Finally run `.\build` and the code will compile if everything is installed correctly.
 
+If there is crazy behavior with the code, run a `./clean` and `./build`
+
 # USAGE
 The code can be used by using the `TDSE` binary. Here is an example run command using 4 processors.
 
@@ -83,6 +85,12 @@ When using SLEPC for eigen states, it is nice to use the argument
 `-eps_monitor`
 
 to see how your eigen state calculation is coming along.
+
+If you want to try out various solvers for propagation use
+
+`-prop_ksp_type ${KSP_TYPE}`
+
+For more information on trying out different solvers, preconditions, and other optimizations, checkout PETSC's user manual.
 
 # Development 
 
