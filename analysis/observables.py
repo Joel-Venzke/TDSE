@@ -68,8 +68,8 @@ for elec_idx in range(num_electrons):
                  f["Parameters"]["coordinate_system_idx"][0] == 1)):
             plt.plot(
                 time,
-                observables["position_expectation_" +
-                            str(elec_idx) + "_" + str(dim_idx)][1:],
+                -1.0 * observables["position_expectation_" +
+                                   str(elec_idx) + "_" + str(dim_idx)][1:],
                 label="Electron " + str(elec_idx) + " Dim " + str(dim_idx))
 plt.xlabel("Time (a.u.)")
 plt.ylabel("Dipole (a.u.)")
@@ -89,8 +89,8 @@ for elec_idx in range(num_electrons):
                  f["Parameters"]["coordinate_system_idx"][0] == 1)):
             ax1.plot(
                 time,
-                observables["position_expectation_" +
-                            str(elec_idx) + "_" + str(dim_idx)][1:],
+                -1.0 * observables["position_expectation_" +
+                                   str(elec_idx) + "_" + str(dim_idx)][1:],
                 label="Electron " + str(elec_idx) + " Dim " + str(dim_idx))
 ax2.plot(time, 1.0 - observables["norm"][1:], 'r--', label="Ionization")
 ax1.set_xlabel("Time a.u.")
@@ -110,8 +110,9 @@ for elec_idx in range(num_electrons):
                  f["Parameters"]["coordinate_system_idx"][0] == 1)):
             ax1.plot(
                 time,
-                np.abs(observables["position_expectation_" + str(elec_idx) +
-                                   "_" + str(dim_idx)][1:]),
+                np.abs(-1.0 *
+                       observables["position_expectation_" +
+                                   str(elec_idx) + "_" + str(dim_idx)][1:]),
                 label="Electron " + str(elec_idx) + " Dim " + str(dim_idx))
 for pulse_idx in range(num_pulses):
     ax2.plot(
@@ -177,7 +178,7 @@ for elec_idx in range(num_electrons):
 plt.ylabel("HHG Spectrum (a.u.)")
 plt.title("HHG Spectrum")
 plt.legend()
-plt.xlim([0, 500])
+plt.xlim([0, 100])
 plt.tight_layout()
 fig.savefig("figs/HHG_Spectrum.png")
 plt.clf()
@@ -229,4 +230,111 @@ plt.title("Linearity")
 plt.legend()
 plt.tight_layout()
 fig.savefig("figs/Linearity.png")
+plt.clf()
+
+# Projection
+print "Plotting Projection"
+
+
+def state_single_name(state_number, shells):
+    # find the n value for this state
+    n_value = 0
+    for n, shell in enumerate(shells):
+        if state_number > shell:
+            n_value = n + 1
+
+    # calculate quantum number l
+    l_value = state_number - shells[n_value - 1]
+
+    # create label
+    if l_value == 1:
+        ret_val = str(n_value) + "s"
+    elif l_value == 2:
+        ret_val = str(n_value) + "p"
+    elif l_value == 3:
+        ret_val = str(n_value) + "d"
+    elif l_value == 4:
+        ret_val = str(n_value) + "f"
+    elif l_value > 24:  # anything greater that z is just a number
+        ret_val = str(n_value) + ",l=" + str(l_value - 1)
+    else:  # any
+        ret_val = str(n_value) + chr(ord('g') + l_value - 5)
+
+    return ret_val
+
+
+# return list of states up to state_number
+def state_name(state_number):
+    # get size of each shell
+    shells = [0]
+    while (state_number > shells[-1]):
+        shells.append(shells[-1] + len(shells))
+
+    # get list of names
+    name_list = []
+    for state in range(1, state_number + 1):
+        name_list.append(state_single_name(state, shells))
+
+    return name_list
+
+
+#0field generator
+def get_field_zeros(pulses):
+    # field starts at zero
+    field_zeros = [p_time[0]]
+
+    # use the string to access what you want
+    field = np.abs(pulses["field_1"])
+
+    # loop over field with i as your index
+    for i, p in enumerate(field):
+        # avoid issues at ends
+        if i > 0 and i < field.shape[0] - 1:
+            if (p < field[i - 1] and p < field[i + 1]):
+                field_zeros.append(p_time[i])
+
+    # field ends at zero
+    field_zeros.append(p_time[field.shape[0] - 1])
+
+    return np.array(field_zeros)
+
+
+#invoke projection and new time(for index to work)
+data = f["Wavefunction"]["projections"][:, :, :]
+w_time = f["Wavefunction"]["time"][:]
+
+# get square of projections
+data = np.absolute(data[:, :, 0] + 1j * data[:, :, 1])
+data *= data
+
+#plotting style/name set up
+linestyles = ['-.', '-', '--', ':']
+colors = ('b', 'g', 'r', 'c', 'm', 'y', 'k')
+state_labels = state_name(data.shape[1])
+
+# get projections nearest field zeros
+plot_time = []
+plot_data = []
+for zero in get_field_zeros(pulses):
+    idx = np.argmin(np.abs(w_time - zero))
+    plot_time.append(w_time[idx])
+    plot_data.append(data[idx])
+plot_time = np.array(plot_time)
+plot_data = np.array(plot_data)
+
+fig = plt.figure()
+for state_number in range(data.shape[1]):
+    plt.semilogy(
+        plot_time,
+        plot_data[:, state_number],
+        marker='o',
+        label=state_labels[state_number],
+        color=colors[state_number % len(colors)],
+        linestyle=linestyles[(state_number / len(colors)) % len(linestyles)])
+
+plt.ylabel("Population")
+plt.xlabel("Time (a.u.)")
+plt.ylim([1e-20, 10])
+plt.legend(loc=2)
+fig.savefig("figs/Projection.png")
 plt.clf()
