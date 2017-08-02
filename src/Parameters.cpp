@@ -7,8 +7,8 @@ std::string FileToString(std::string file_name)
 {
   // TODO(jove7731): check if file exists
   std::ifstream t(file_name);
-  std::string str((std::istreambuf_iterator< char >(t)),
-                  std::istreambuf_iterator< char >());
+  std::string str((std::istreambuf_iterator<char>(t)),
+                  std::istreambuf_iterator<char>());
   return str;
 }
 
@@ -60,9 +60,9 @@ void Parameters::Setup(std::string file_name)
     coordinate_system_idx = -1;
   }
 
-  dim_size  = std::make_unique< double[] >(num_dims);
-  delta_x   = std::make_unique< double[] >(num_dims);
-  delta_x_2 = std::make_unique< double[] >(num_dims);
+  dim_size  = std::make_unique<double[]>(num_dims);
+  delta_x   = std::make_unique<double[]>(num_dims);
+  delta_x_2 = std::make_unique<double[]>(num_dims);
 
   for (PetscInt i = 0; i < num_dims; ++i)
   {
@@ -109,7 +109,7 @@ void Parameters::Setup(std::string file_name)
   {
     num_states = data["states"].size();
 
-    state_energy = std::make_unique< double[] >(num_states);
+    state_energy = std::make_unique<double[]>(num_states);
 
     for (PetscInt i = 0; i < num_states; i++)
     {
@@ -117,11 +117,11 @@ void Parameters::Setup(std::string file_name)
     }
   }
 
-  z        = std::make_unique< double[] >(num_nuclei);
-  z_c      = std::make_unique< double[] >(num_nuclei);
-  c0       = std::make_unique< double[] >(num_nuclei);
-  r0       = std::make_unique< double[] >(num_nuclei);
-  sae_size = std::make_unique< PetscInt[] >(num_nuclei);
+  z        = std::make_unique<double[]>(num_nuclei);
+  z_c      = std::make_unique<double[]>(num_nuclei);
+  c0       = std::make_unique<double[]>(num_nuclei);
+  r0       = std::make_unique<double[]>(num_nuclei);
+  sae_size = std::make_unique<PetscInt[]>(num_nuclei);
   a        = new double*[num_nuclei];
   b        = new double*[num_nuclei];
   location = new double*[num_nuclei];
@@ -196,113 +196,263 @@ void Parameters::Setup(std::string file_name)
   free_propagate = data["free_propagate"];
 
   /* get pulse information */
-  num_pulses = data["laser"]["pulses"].size();
+  num_pulses      = data["laser"]["pulses"].size();
+  experiment_type = data["laser"]["experiment_type"];
 
   /* allocate memory */
-  pulse_shape         = std::make_unique< std::string[] >(num_pulses);
-  pulse_shape_idx     = std::make_unique< PetscInt[] >(num_pulses);
-  cycles_on           = std::make_unique< double[] >(num_pulses);
-  cycles_plateau      = std::make_unique< double[] >(num_pulses);
-  cycles_off          = std::make_unique< double[] >(num_pulses);
-  cycles_delay        = std::make_unique< double[] >(num_pulses);
-  cep                 = std::make_unique< double[] >(num_pulses);
-  energy              = std::make_unique< double[] >(num_pulses);
-  field_max           = std::make_unique< double[] >(num_pulses);
-  ellipticity         = std::make_unique< double[] >(num_pulses);
-  helicity            = std::make_unique< std::string[] >(num_pulses);
-  helicity_idx        = std::make_unique< PetscInt[] >(num_pulses);
+  pulse_shape         = std::make_unique<std::string[]>(num_pulses);
+  pulse_shape_idx     = std::make_unique<PetscInt[]>(num_pulses);
+  cycles_on           = std::make_unique<double[]>(num_pulses);
+  cycles_plateau      = std::make_unique<double[]>(num_pulses);
+  cycles_off          = std::make_unique<double[]>(num_pulses);
+  cycles_delay        = std::make_unique<double[]>(num_pulses);
+  cep                 = std::make_unique<double[]>(num_pulses);
+  energy              = std::make_unique<double[]>(num_pulses);
+  field_max           = std::make_unique<double[]>(num_pulses);
+  ellipticity         = std::make_unique<double[]>(num_pulses);
+  helicity            = std::make_unique<std::string[]>(num_pulses);
+  helicity_idx        = std::make_unique<PetscInt[]>(num_pulses);
   polarization_vector = new double*[num_pulses];
   if (num_dims == 3) poynting_vector = new double*[num_pulses];
 
-  /* read data */
-  for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
+  /* set pulses up by experiment type */
+
+  /* streaking */
+  if (experiment_type == "streaking")
   {
-    pulse_shape[pulse_idx] = data["laser"]["pulses"][pulse_idx]["pulse_shape"];
-
-    /* index used similar target_idx */
-    if (pulse_shape[pulse_idx] == "sin2")
+    /**/
+    if (num_pulses != 2)
     {
-      pulse_shape_idx[pulse_idx] = 0;
-    }
-    else if (pulse_shape[pulse_idx] == "gaussian")
-    {
-      pulse_shape_idx[pulse_idx] = 1;
-    }
-    else
-    {
-      pulse_shape_idx[pulse_idx] = -1;
+      EndRun(" streaking only allows 2 pulses");
     }
 
-    if (data["laser"]["pulses"][pulse_idx]["polarization_vector"].size() <
-        num_dims)
+    /* read in IR and XUV parameters */
+    for (PetscInt pulse_idx = 0; pulse_idx < 2; ++pulse_idx)
     {
-      EndRun("Polarization vector dimension is to small for pulse " +
-             std::to_string(pulse_idx));
-    }
+      pulse_shape[pulse_idx] =
+          data["laser"]["pulses"][pulse_idx]["pulse_shape"];
 
-    polarization_vector[pulse_idx] = new double[num_dims];
-    polar_norm                     = 0.0;
-    if (num_dims == 3)
-    {
-      poynting_vector[pulse_idx] = new double[num_dims];
-      poynting_norm              = 0.0;
-    }
-    for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
-    {
-      polarization_vector[pulse_idx][dim_idx] =
-          data["laser"]["pulses"][pulse_idx]["polarization_vector"][dim_idx];
-      polar_norm += polarization_vector[pulse_idx][dim_idx] *
-                    polarization_vector[pulse_idx][dim_idx];
+      /* index used similar target_idx */
+      if (pulse_shape[pulse_idx] == "sin2")
+      {
+        pulse_shape_idx[pulse_idx] = 0;
+      }
+      else if (pulse_shape[pulse_idx] == "gaussian")
+      {
+        pulse_shape_idx[pulse_idx] = 1;
+      }
+      else
+      {
+        pulse_shape_idx[pulse_idx] = -1;
+      }
 
+      if (data["laser"]["pulses"][pulse_idx]["polarization_vector"].size() <
+          num_dims)
+      {
+        EndRun("Polarization vector dimension is to small for pulse " +
+               std::to_string(pulse_idx));
+      }
+
+      polarization_vector[pulse_idx] = new double[num_dims];
+      polar_norm                     = 0.0;
       if (num_dims == 3)
       {
-        poynting_vector[pulse_idx][dim_idx] =
-            data["laser"]["pulses"][pulse_idx]["poynting_vector"][dim_idx];
-        poynting_norm += poynting_vector[pulse_idx][dim_idx] *
-                         poynting_vector[pulse_idx][dim_idx];
+        poynting_vector[pulse_idx] = new double[num_dims];
+        poynting_norm              = 0.0;
       }
-    }
-    /* normalize the polarization vector*/
-    polar_norm                       = sqrt(polar_norm);
-    if (num_dims == 3) poynting_norm = sqrt(poynting_norm);
-    for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
-    {
-      polarization_vector[pulse_idx][dim_idx] /= polar_norm;
-      if (num_dims == 3 and poynting_norm > 1e-10)
+      for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
       {
-        poynting_vector[pulse_idx][dim_idx] /= poynting_norm;
+        polarization_vector[pulse_idx][dim_idx] =
+            data["laser"]["pulses"][pulse_idx]["polarization_vector"][dim_idx];
+        polar_norm += polarization_vector[pulse_idx][dim_idx] *
+                      polarization_vector[pulse_idx][dim_idx];
+
+        if (num_dims == 3)
+        {
+          poynting_vector[pulse_idx][dim_idx] =
+              data["laser"]["pulses"][pulse_idx]["poynting_vector"][dim_idx];
+          poynting_norm += poynting_vector[pulse_idx][dim_idx] *
+                           poynting_vector[pulse_idx][dim_idx];
+        }
       }
-    }
+      /* normalize the polarization vector*/
+      polar_norm                       = sqrt(polar_norm);
+      if (num_dims == 3) poynting_norm = sqrt(poynting_norm);
+      for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+      {
+        polarization_vector[pulse_idx][dim_idx] /= polar_norm;
+        if (num_dims == 3 and poynting_norm > 1e-10)
+        {
+          poynting_vector[pulse_idx][dim_idx] /= poynting_norm;
+        }
+      }
 
-    cycles_on[pulse_idx] = data["laser"]["pulses"][pulse_idx]["cycles_on"];
-    cycles_plateau[pulse_idx] =
-        data["laser"]["pulses"][pulse_idx]["cycles_plateau"];
-    cycles_off[pulse_idx] = data["laser"]["pulses"][pulse_idx]["cycles_off"];
-    cycles_delay[pulse_idx] =
-        data["laser"]["pulses"][pulse_idx]["cycles_delay"];
-    cep[pulse_idx]         = data["laser"]["pulses"][pulse_idx]["cep"];
-    energy[pulse_idx]      = data["laser"]["pulses"][pulse_idx]["energy"];
-    ellipticity[pulse_idx] = data["laser"]["pulses"][pulse_idx]["ellipticity"];
-    helicity[pulse_idx]    = data["laser"]["pulses"][pulse_idx]["helicity"];
+      cep[pulse_idx]    = data["laser"]["pulses"][pulse_idx]["cep"];
+      energy[pulse_idx] = data["laser"]["pulses"][pulse_idx]["energy"];
+      ellipticity[pulse_idx] =
+          data["laser"]["pulses"][pulse_idx]["ellipticity"];
+      helicity[pulse_idx] = data["laser"]["pulses"][pulse_idx]["helicity"];
 
-    intensity = data["laser"]["pulses"][pulse_idx]["intensity"];
-    field_max[pulse_idx] =
-        std::sqrt(intensity / 3.51e16) * c / energy[pulse_idx];
+      intensity = data["laser"]["pulses"][pulse_idx]["intensity"];
+      field_max[pulse_idx] =
+          std::sqrt(intensity / 3.51e16) * c / energy[pulse_idx];
 
-    if (helicity[pulse_idx] == "right")
-    {
-      helicity_idx[pulse_idx] = 0;
-    }
-    else if (helicity[pulse_idx] == "left")
-    {
-      helicity_idx[pulse_idx] = 1;
-    }
-    else
-    {
-      helicity_idx[pulse_idx] = -1;
+      if (helicity[pulse_idx] == "right")
+      {
+        helicity_idx[pulse_idx] = 0;
+      }
+      else if (helicity[pulse_idx] == "left")
+      {
+        helicity_idx[pulse_idx] = 1;
+      }
+      else
+      {
+        helicity_idx[pulse_idx] = -1;
+      }
+
+      cycles_on[pulse_idx] = data["laser"]["pulses"][pulse_idx]["cycles_on"];
+      cycles_plateau[pulse_idx] =
+          data["laser"]["pulses"][pulse_idx]["cycles_plateau"];
+      cycles_off[pulse_idx] = data["laser"]["pulses"][pulse_idx]["cycles_off"];
+
+      /* IR specific */
+      if (pulse_idx == 0)
+      {
+        cycles_delay[pulse_idx] =
+            data["laser"]["pulses"][pulse_idx]["cycles_delay"];
+      }
+      /* XUV specific */
+      else if (pulse_idx == 1)
+      {
+        tau_delay = data["laser"]["pulses"][pulse_idx]["tau_delay"];
+
+        double center_IR =
+            2 * pi * (cycles_delay[pulse_idx - 1] + cycles_on[pulse_idx - 1]) /
+            energy[pulse_idx - 1];
+        double center_XUV        = center_IR + tau_delay;
+        double center_XUV_cycles = energy[pulse_idx] * center_XUV / (2 * pi);
+
+        if (pulse_shape_idx[pulse_idx] == 0)
+          cycles_delay[pulse_idx] = center_XUV_cycles - cycles_on[pulse_idx];
+        else if (pulse_shape_idx[pulse_idx] == 1)
+          cycles_delay[pulse_idx] =
+              center_XUV_cycles - 6 * cycles_on[pulse_idx];
+        else
+          EndRun(
+              "Streaking simulation: XUV does not have a valid "
+              "pulse_shape");
+
+        if (cycles_delay[pulse_idx] < 0)
+        {
+          cycles_delay[pulse_idx - 1] += -cycles_delay[pulse_idx] *
+                                         energy[pulse_idx - 1] /
+                                         energy[pulse_idx];
+          cycles_delay[pulse_idx] = 0;
+        }
+      }
     }
   }
 
+  /* transient absorption spectroscopy */
+  if (experiment_type == "transient")
+  {
+    EndRun("\ntransient absorption not supported yet\n");
+  }
+
+  /* default */
+  if (experiment_type == "default")
+  {
+    /* read data */
+    for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
+    {
+      pulse_shape[pulse_idx] =
+          data["laser"]["pulses"][pulse_idx]["pulse_shape"];
+
+      /* index used similar target_idx */
+      if (pulse_shape[pulse_idx] == "sin2")
+      {
+        pulse_shape_idx[pulse_idx] = 0;
+      }
+      else if (pulse_shape[pulse_idx] == "gaussian")
+      {
+        pulse_shape_idx[pulse_idx] = 1;
+      }
+      else
+      {
+        pulse_shape_idx[pulse_idx] = -1;
+      }
+
+      if (data["laser"]["pulses"][pulse_idx]["polarization_vector"].size() <
+          num_dims)
+      {
+        EndRun("Polarization vector dimension is to small for pulse " +
+               std::to_string(pulse_idx));
+      }
+
+      polarization_vector[pulse_idx] = new double[num_dims];
+      polar_norm                     = 0.0;
+      if (num_dims == 3)
+      {
+        poynting_vector[pulse_idx] = new double[num_dims];
+        poynting_norm              = 0.0;
+      }
+      for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+      {
+        polarization_vector[pulse_idx][dim_idx] =
+            data["laser"]["pulses"][pulse_idx]["polarization_vector"][dim_idx];
+        polar_norm += polarization_vector[pulse_idx][dim_idx] *
+                      polarization_vector[pulse_idx][dim_idx];
+
+        if (num_dims == 3)
+        {
+          poynting_vector[pulse_idx][dim_idx] =
+              data["laser"]["pulses"][pulse_idx]["poynting_vector"][dim_idx];
+          poynting_norm += poynting_vector[pulse_idx][dim_idx] *
+                           poynting_vector[pulse_idx][dim_idx];
+        }
+      }
+      /* normalize the polarization vector*/
+      polar_norm                       = sqrt(polar_norm);
+      if (num_dims == 3) poynting_norm = sqrt(poynting_norm);
+      for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+      {
+        polarization_vector[pulse_idx][dim_idx] /= polar_norm;
+        if (num_dims == 3 and poynting_norm > 1e-10)
+        {
+          poynting_vector[pulse_idx][dim_idx] /= poynting_norm;
+        }
+      }
+
+      cycles_on[pulse_idx] = data["laser"]["pulses"][pulse_idx]["cycles_on"];
+      cycles_plateau[pulse_idx] =
+          data["laser"]["pulses"][pulse_idx]["cycles_plateau"];
+      cycles_off[pulse_idx] = data["laser"]["pulses"][pulse_idx]["cycles_off"];
+      cycles_delay[pulse_idx] =
+          data["laser"]["pulses"][pulse_idx]["cycles_delay"];
+      cep[pulse_idx]    = data["laser"]["pulses"][pulse_idx]["cep"];
+      energy[pulse_idx] = data["laser"]["pulses"][pulse_idx]["energy"];
+      ellipticity[pulse_idx] =
+          data["laser"]["pulses"][pulse_idx]["ellipticity"];
+      helicity[pulse_idx] = data["laser"]["pulses"][pulse_idx]["helicity"];
+
+      intensity = data["laser"]["pulses"][pulse_idx]["intensity"];
+      field_max[pulse_idx] =
+          std::sqrt(intensity / 3.51e16) * c / energy[pulse_idx];
+
+      if (helicity[pulse_idx] == "right")
+      {
+        helicity_idx[pulse_idx] = 0;
+      }
+      else if (helicity[pulse_idx] == "left")
+      {
+        helicity_idx[pulse_idx] = 1;
+      }
+      else
+      {
+        helicity_idx[pulse_idx] = -1;
+      }
+    }
+  }
   /* ensure input is good */
   Validate();
 

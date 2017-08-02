@@ -34,6 +34,7 @@
   "states": [{"energy": -0.5},{"energy": -0.15},{"energy": -0.15}],
   "tol":        1e-10,
   "laser": {
+    "experiment_type": "default",
     "pulses": [
     { "polarization_vector": [0.0,1.0,0.0],
       "poynting_vector": [0.0,0.0,1.0],
