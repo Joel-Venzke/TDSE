@@ -7,7 +7,7 @@ import h5py
 folders = []
 plot_lines = {}
 
-for dx in ["0.1", "0.15", "0.2", "0.3", "0.4"]:
+for dx in ["0.15", "0.2", "0.3", "0.4", "0.5", "0.6"]:
     for order in ["2", "4", "6"]:
         key = dx + "/" + order + "/"
         folders.append(key)
@@ -23,6 +23,10 @@ for dx in ["0.1", "0.15", "0.2", "0.3", "0.4"]:
             line_style += "m"
         if dx == "0.4":
             line_style += "c"
+        if dx == "0.5":
+            line_style += "k"
+        if dx == "0.6":
+            line_style += "y"
 
         if order == "2":
             line_style += "-"
