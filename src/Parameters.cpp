@@ -218,7 +218,7 @@ void Parameters::Setup(std::string file_name)
   /* set pulses up by experiment type */
 
   /* streaking */
-  if (experiment_type == "streak")
+  if (experiment_type == "streaking")
   {
     /**/
     if (num_pulses != 2)
@@ -310,36 +310,33 @@ void Parameters::Setup(std::string file_name)
         helicity_idx[pulse_idx] = -1;
       }
 
+      cycles_on[pulse_idx] = data["laser"]["pulses"][pulse_idx]["cycles_on"];
+      cycles_plateau[pulse_idx] =
+          data["laser"]["pulses"][pulse_idx]["cycles_plateau"];
+      cycles_off[pulse_idx] = data["laser"]["pulses"][pulse_idx]["cycles_off"];
+
       /* IR specific */
       if (pulse_idx == 0)
       {
-        cycles_on[pulse_idx] = data["laser"]["pulses"][pulse_idx]["cycles_on"];
-        cycles_plateau[pulse_idx] =
-            data["laser"]["pulses"][pulse_idx]["cycles_plateau"];
-        cycles_off[pulse_idx] =
-            data["laser"]["pulses"][pulse_idx]["cycles_off"];
         cycles_delay[pulse_idx] =
             data["laser"]["pulses"][pulse_idx]["cycles_delay"];
       }
       /* XUV specific */
       else if (pulse_idx == 1)
       {
-        tau_delay = data["laser"][pulse_idx]["tau_delay"];
+        tau_delay = data["laser"]["pulses"][pulse_idx]["tau_delay"];
 
-        double cycles_total_IR =
-            cycles_plateau[pulse_idx - 1] + cycles_on[pulse_idx - 1] +
-            cycles_plateau[pulse_idx - 1] + cycles_off[pulse_idx - 1];
-        double cycles_total_XUV =
-            cycles_plateau[pulse_idx] + cycles_on[pulse_idx] +
-            cycles_plateau[pulse_idx] + cycles_off[pulse_idx];
+        double center_IR =
+            2 * pi * (cycles_delay[pulse_idx - 1] + cycles_on[pulse_idx - 1]) /
+            energy[pulse_idx - 1];
+        double center_XUV        = center_IR + tau_delay;
+        double center_XUV_cycles = energy[pulse_idx] * center_XUV / (2 * pi);
 
-        double cycles_relative =
-            energy[pulse_idx] * ((delta_t * tau_delay / pi) +
-                                 (cycles_total_IR / energy[pulse_idx - 1]));
         if (pulse_shape_idx[pulse_idx] == 0)
-          cycles_delay[pulse_idx] += cycles_relative - cycles_on[pulse_idx];
+          cycles_delay[pulse_idx] = center_XUV_cycles - cycles_on[pulse_idx];
         else if (pulse_shape_idx[pulse_idx] == 1)
-          cycles_delay[pulse_idx] += cycles_relative - 6 * cycles_on[pulse_idx];
+          cycles_delay[pulse_idx] =
+              center_XUV_cycles - 6 * cycles_on[pulse_idx];
         else
           EndRun(
               "Streaking simulation: XUV does not have a valid "
@@ -347,7 +344,7 @@ void Parameters::Setup(std::string file_name)
 
         if (cycles_delay[pulse_idx] < 0)
         {
-          cycles_delay[pulse_idx - 1] += cycles_delay[pulse_idx] *
+          cycles_delay[pulse_idx - 1] += -cycles_delay[pulse_idx] *
                                          energy[pulse_idx - 1] /
                                          energy[pulse_idx];
           cycles_delay[pulse_idx] = 0;
