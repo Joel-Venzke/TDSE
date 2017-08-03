@@ -326,11 +326,13 @@ void Parameters::Setup(std::string file_name)
       {
         tau_delay = data["laser"]["pulses"][pulse_idx]["tau_delay"];
 
-        double center_IR =
-            2 * pi * (cycles_delay[pulse_idx - 1] + cycles_on[pulse_idx - 1]) /
-            energy[pulse_idx - 1];
-        double center_XUV        = center_IR + tau_delay;
-        double center_XUV_cycles = energy[pulse_idx] * center_XUV / (2 * pi);
+        double center_XUV_cycles =
+            energy[pulse_idx] *
+            ((2 * pi *
+              (cycles_delay[pulse_idx - 1] + cycles_on[pulse_idx - 1]) /
+              energy[pulse_idx - 1]) +
+             tau_delay) /
+            (2 * pi);
 
         if (pulse_shape_idx[pulse_idx] == 0)
           cycles_delay[pulse_idx] = center_XUV_cycles - cycles_on[pulse_idx];
@@ -344,7 +346,7 @@ void Parameters::Setup(std::string file_name)
 
         if (cycles_delay[pulse_idx] < 0)
         {
-          cycles_delay[pulse_idx - 1] += -cycles_delay[pulse_idx] *
+          cycles_delay[pulse_idx - 1] -= cycles_delay[pulse_idx] *
                                          energy[pulse_idx - 1] /
                                          energy[pulse_idx];
           cycles_delay[pulse_idx] = 0;
