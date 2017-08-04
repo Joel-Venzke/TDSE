@@ -42,6 +42,12 @@ Simulation::Simulation(Hamiltonian &hamiltonian_in, Wavefunction &w,
   /* Create the solver */
   KSPCreate(PETSC_COMM_WORLD, &ksp);
 
+  PetscLogEventRegister("Time Step", PETSC_VIEWER_CLASSID, &time_step);
+  PetscLogEventRegister("Hamiltonian", PETSC_VIEWER_CLASSID, &create_matrix);
+  PetscLogEventRegister("Observables", PETSC_VIEWER_CLASSID,
+                        &create_observables);
+  PetscLogEventRegister("Checkpoint", PETSC_VIEWER_CLASSID, &create_checkpoint);
+
   if (world.rank() == 0) std::cout << "Simulation Created\n";
 }
 
@@ -109,18 +115,23 @@ void Simulation::Propagate()
   t = clock();
   for (; i < time_length; i++)
   {
+    PetscLogEventBegin(time_step, 0, 0, 0, 0);
     CrankNicolson(delta_t, i, -1);
 
     /* only calculate observables so often */
     if (i % write_frequency_observables == 0)
     {
+      PetscLogEventBegin(create_observables, 0, 0, 0, 0);
       /* write a checkpoint */
       wavefunction->Checkpoint(*h5_file, *viewer_file, time[i], false);
+      PetscLogEventEnd(create_observables, 0, 0, 0, 0);
     }
 
     /* only checkpoint so often */
     if (i % write_frequency_checkpoint == 0)
     {
+      PetscLogEventBegin(create_checkpoint, 0, 0, 0, 0);
+
       if (world.rank() == 0)
         std::cout << "\nIteration: " << i << "\nPulse ends: " << time_length
                   << "\n"
@@ -132,7 +143,9 @@ void Simulation::Propagate()
       /* write a checkpoint */
       wavefunction->Checkpoint(*h5_file, *viewer_file, time[i]);
       t = clock();
+      PetscLogEventEnd(create_checkpoint, 0, 0, 0, 0);
     }
+    PetscLogEventEnd(time_step, 0, 0, 0, 0);
   }
 
   if (checkpoint_eof)
