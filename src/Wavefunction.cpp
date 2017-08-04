@@ -591,6 +591,22 @@ void Wavefunction::CreatePsi()
     VecSetFromOptions(ECS);
     ierr = PetscObjectSetName((PetscObject)ECS, "psi");
 
+    position_expectation = new Vec[num_dims * num_electrons];
+    for (int elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
+    {
+      for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+      {
+        VecCreate(PETSC_COMM_WORLD,
+                  &position_expectation[elec_idx * num_dims + dim_idx]);
+        VecSetSizes(position_expectation[elec_idx * num_dims + dim_idx],
+                    PETSC_DECIDE, num_psi);
+        VecSetFromOptions(position_expectation[elec_idx * num_dims + dim_idx]);
+        ierr = PetscObjectSetName(
+            (PetscObject)position_expectation[elec_idx * num_dims + dim_idx],
+            "psi");
+      }
+    }
+
     psi_alloc = true;
   }
 
@@ -619,15 +635,7 @@ void Wavefunction::CreateObservable(PetscInt observable_idx, PetscInt elec_idx,
 
   /* Fill position vector*/
   VecGetOwnershipRange(psi_tmp, &low, &high);
-  if (observable_idx == 0) /* Position operator */
-  {
-    for (PetscInt idx = low; idx < high; idx++)
-    {
-      val = GetPositionVal(idx, elec_idx, dim_idx, false);
-      VecSetValues(psi_tmp, 1, &idx, &val, INSERT_VALUES);
-    }
-  }
-  else if (observable_idx == 1) /* Dipole acceleration */
+  if (observable_idx == 1) /* Dipole acceleration */
   {
     for (PetscInt idx = low; idx < high; idx++)
     {
@@ -651,15 +659,6 @@ void Wavefunction::CreateObservables()
   PetscInt low, high;
   PetscComplex val;
 
-  /* Fill position vector*/
-  // if (observable_idx == 0) /* Position operator */
-  // {
-  //   for (PetscInt idx = low; idx < high; idx++)
-  //   {
-  //     val = GetPositionVal(idx, elec_idx, dim_idx, false);
-  //     VecSetValues(psi_tmp, 1, &idx, &val, INSERT_VALUES);
-  //   }
-  // }
   // else if (observable_idx == 1) /* Dipole acceleration */
   // {
   //   for (PetscInt idx = low; idx < high; idx++)
@@ -685,6 +684,21 @@ void Wavefunction::CreateObservables()
   }
   VecAssemblyBegin(ECS);
   VecAssemblyEnd(ECS);
+
+  for (int elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
+  {
+    for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+    {
+      VecGetOwnershipRange(position_expectation[elec_idx * num_dims + dim_idx],
+                           &low, &high);
+      for (PetscInt idx = low; idx < high; idx++)
+      {
+        val = GetPositionVal(idx, elec_idx, dim_idx, false);
+        VecSetValues(position_expectation[elec_idx * num_dims + dim_idx], 1,
+                     &idx, &val, INSERT_VALUES);
+      }
+    }
+  }
 }
 
 void Wavefunction::CleanUp()
@@ -956,13 +970,14 @@ double Wavefunction::GetPosition(PetscInt elec_idx, PetscInt dim_idx)
   if (coordinate_system_idx == 1)
   {
     VecPointwiseMult(psi_tmp_cyl, jacobian, psi);
-    CreateObservable(0, elec_idx, dim_idx); /* dim */
-    VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
+    VecPointwiseMult(psi_tmp,
+                     position_expectation[elec_idx * num_dims + dim_idx],
+                     psi_tmp_cyl);
   }
   else
   {
-    CreateObservable(0, elec_idx, dim_idx); /* dim */
-    VecPointwiseMult(psi_tmp, psi_tmp, psi);
+    VecPointwiseMult(psi_tmp,
+                     position_expectation[elec_idx * num_dims + dim_idx], psi);
   }
   VecDot(psi, psi_tmp, &expectation);
   PetscLogEventEnd(time_position, 0, 0, 0, 0);

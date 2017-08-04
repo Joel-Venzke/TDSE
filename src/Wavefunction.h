@@ -26,6 +26,7 @@ class Wavefunction : protected Utils
   Vec psi_tmp_cyl;        /* wavefunction for 2 electron system */
   Vec jacobian;
   Vec ECS;
+  Vec *position_expectation;
   bool psi_alloc_build;
   bool psi_alloc;
   /* false if its not the first time checkpointing the wavefunction */
