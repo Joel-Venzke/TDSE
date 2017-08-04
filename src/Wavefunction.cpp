@@ -23,6 +23,15 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   write_counter_observables = 0;
   order                     = p.GetOrder();
 
+  PetscLogEventRegister("WaveNorm", PETSC_VIEWER_CLASSID, &time_norm);
+  PetscLogEventRegister("WaveEner", PETSC_VIEWER_CLASSID, &time_energy);
+  PetscLogEventRegister("WavePos", PETSC_VIEWER_CLASSID, &time_position);
+  PetscLogEventRegister("WaveDA", PETSC_VIEWER_CLASSID,
+                        &time_dipole_acceration);
+  PetscLogEventRegister("WaveECS", PETSC_VIEWER_CLASSID, &time_gobbler);
+  PetscLogEventRegister("WaveProj", PETSC_VIEWER_CLASSID, &time_projections);
+  PetscLogEventRegister("WaveObs", PETSC_VIEWER_CLASSID, &time_obs);
+
   /* allocate grid */
   CreateGrid();
 
@@ -273,6 +282,7 @@ void Wavefunction::LoadRestart(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
  */
 std::vector< dcomp > Wavefunction::Projections(std::string file_name)
 {
+  PetscLogEventBegin(time_projections, 0, 0, 0, 0);
   /* Get write index for last checkpoint */
   HDF5Wrapper h5_file(file_name);
   ViewWrapper viewer_file(file_name);
@@ -310,6 +320,7 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
 
   /* Close file */
   viewer_file.Close();
+  PetscLogEventEnd(time_projections, 0, 0, 0, 0);
   return ret_vec;
 }
 
@@ -590,6 +601,7 @@ void Wavefunction::CreatePsi()
 void Wavefunction::CreateObservable(PetscInt observable_idx, PetscInt elec_idx,
                                     PetscInt dim_idx)
 {
+  PetscLogEventBegin(time_obs, 0, 0, 0, 0);
   PetscInt low, high;
   PetscComplex val;
 
@@ -634,6 +646,7 @@ void Wavefunction::CreateObservable(PetscInt observable_idx, PetscInt elec_idx,
   /* Assemble position vector */
   VecAssemblyBegin(psi_tmp);
   VecAssemblyEnd(psi_tmp);
+  PetscLogEventEnd(time_obs, 0, 0, 0, 0);
 }
 
 void Wavefunction::CleanUp()
@@ -859,6 +872,7 @@ double Wavefunction::Norm() { return Norm(psi, delta_x[0]); }
 /* returns norm of array using trapezoidal rule */
 double Wavefunction::Norm(Vec& data, double dv)
 {
+  PetscLogEventBegin(time_norm, 0, 0, 0, 0);
   dcomp dot_product;
   double total = 0;
   if (coordinate_system_idx == 1)
@@ -872,6 +886,7 @@ double Wavefunction::Norm(Vec& data, double dv)
   {
     VecNorm(data, NORM_2, &total);
   }
+  PetscLogEventEnd(time_norm, 0, 0, 0, 0);
   return total;
 }
 
@@ -879,6 +894,7 @@ double Wavefunction::GetEnergy(Mat* h) { return GetEnergy(h, psi); }
 
 double Wavefunction::GetEnergy(Mat* h, Vec& p)
 {
+  PetscLogEventBegin(time_energy, 0, 0, 0, 0);
   PetscComplex energy;
   if (coordinate_system_idx == 1)
   {
@@ -892,12 +908,14 @@ double Wavefunction::GetEnergy(Mat* h, Vec& p)
     MatMult(*h, p, psi_tmp);
     VecDot(p, psi_tmp, &energy);
   }
+  PetscLogEventEnd(time_energy, 0, 0, 0, 0);
   return energy.real();
 }
 
 /* returns position expectation value <psi|x_{elec_idx,dim_idx}|psi> */
 double Wavefunction::GetPosition(PetscInt elec_idx, PetscInt dim_idx)
 {
+  PetscLogEventBegin(time_position, 0, 0, 0, 0);
   PetscComplex expectation;
   if (coordinate_system_idx == 1)
   {
@@ -912,12 +930,14 @@ double Wavefunction::GetPosition(PetscInt elec_idx, PetscInt dim_idx)
     VecPointwiseMult(psi_tmp, psi_tmp, psi);
   }
   VecDot(psi, psi_tmp, &expectation);
+  PetscLogEventEnd(time_position, 0, 0, 0, 0);
   return expectation.real();
 }
 
 /* returns dipole acceleration value <psi|x_{elec_idx,dim_idx}/r^3|psi> */
 double Wavefunction::GetDipoleAcceration(PetscInt elec_idx, PetscInt dim_idx)
 {
+  PetscLogEventBegin(time_dipole_acceration, 0, 0, 0, 0);
   PetscComplex expectation;
   if (coordinate_system_idx == 1)
   {
@@ -932,11 +952,13 @@ double Wavefunction::GetDipoleAcceration(PetscInt elec_idx, PetscInt dim_idx)
     VecPointwiseMult(psi_tmp, psi_tmp, psi);
   }
   VecDot(psi, psi_tmp, &expectation);
+  PetscLogEventEnd(time_dipole_acceration, 0, 0, 0, 0);
   return expectation.real();
 }
 
 double Wavefunction::GetGobbler()
 {
+  PetscLogEventBegin(time_gobbler, 0, 0, 0, 0);
   PetscComplex expectation;
   if (coordinate_system_idx == 1)
   {
@@ -951,6 +973,7 @@ double Wavefunction::GetGobbler()
     VecPointwiseMult(psi_tmp, psi_tmp, psi);
   }
   VecDot(psi, psi_tmp, &expectation);
+  PetscLogEventEnd(time_gobbler, 0, 0, 0, 0);
   return expectation.real();
 }
 

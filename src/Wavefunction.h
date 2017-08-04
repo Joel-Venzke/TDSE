@@ -35,6 +35,14 @@ class Wavefunction : protected Utils
   PetscInt write_counter_checkpoint;
   PetscInt write_counter_observables;
 
+  PetscLogEvent time_norm;
+  PetscLogEvent time_energy;
+  PetscLogEvent time_position;
+  PetscLogEvent time_dipole_acceration;
+  PetscLogEvent time_gobbler;
+  PetscLogEvent time_projections;
+  PetscLogEvent time_obs;
+
   /* hidden from user for safety */
   void CreateGrid();
   void CreatePsi();
