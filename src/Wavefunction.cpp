@@ -647,14 +647,6 @@ void Wavefunction::CreateObservables()
   PetscInt low, high;
   PetscComplex val;
 
-  // else if (observable_idx == 1) /* Dipole acceleration */
-  // {
-  //   for (PetscInt idx = low; idx < high; idx++)
-  //   {
-  //     val = GetDipoleAccerationVal(idx, elec_idx, dim_idx);
-  //     VecSetValues(psi_tmp, 1, &idx, &val, INSERT_VALUES);
-  //   }
-  // }
   VecGetOwnershipRange(jacobian, &low, &high);
   for (PetscInt idx = low; idx < high; idx++)
   {
@@ -692,7 +684,7 @@ void Wavefunction::CreateObservables()
                            &low, &high);
       for (PetscInt idx = low; idx < high; idx++)
       {
-        val = GetPositionVal(idx, elec_idx, dim_idx, false);
+        val = GetDipoleAccerationVal(idx, elec_idx, dim_idx);
         VecSetValues(dipole_acceleration[elec_idx * num_dims + dim_idx], 1,
                      &idx, &val, INSERT_VALUES);
       }
