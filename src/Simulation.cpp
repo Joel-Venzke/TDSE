@@ -534,6 +534,7 @@ void Simulation::CrankNicolson(double dt, PetscInt time_idx, PetscInt dim_idx)
   static PetscInt old_dim_idx  = -2;
   if (time_idx != old_time_idx or dim_idx != old_dim_idx)
   {
+    PetscLogEventBegin(create_matrix, 0, 0, 0, 0);
     /* factor = i*(-i*dt/2) */
     dcomp factor = dcomp(0.0, 1.0) * dcomp(dt / 2.0, 0.0);
     if (time_idx < 0)
@@ -559,6 +560,7 @@ void Simulation::CrankNicolson(double dt, PetscInt time_idx, PetscInt dim_idx)
 
     old_dim_idx  = dim_idx;
     old_time_idx = time_idx;
+    PetscLogEventEnd(create_matrix, 0, 0, 0, 0);
   }
 
   /* Get psi_right side */

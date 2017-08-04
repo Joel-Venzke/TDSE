@@ -30,7 +30,6 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
                         &time_dipole_acceration);
   PetscLogEventRegister("WaveECS", PETSC_VIEWER_CLASSID, &time_gobbler);
   PetscLogEventRegister("WaveProj", PETSC_VIEWER_CLASSID, &time_projections);
-  PetscLogEventRegister("WaveObs", PETSC_VIEWER_CLASSID, &time_obs);
 
   /* allocate grid */
   CreateGrid();
@@ -592,6 +591,7 @@ void Wavefunction::CreatePsi()
     ierr = PetscObjectSetName((PetscObject)ECS, "psi");
 
     position_expectation = new Vec[num_dims * num_electrons];
+    dipole_acceleration  = new Vec[num_dims * num_electrons];
     for (int elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
     {
       for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
@@ -603,6 +603,15 @@ void Wavefunction::CreatePsi()
         VecSetFromOptions(position_expectation[elec_idx * num_dims + dim_idx]);
         ierr = PetscObjectSetName(
             (PetscObject)position_expectation[elec_idx * num_dims + dim_idx],
+            "psi");
+
+        VecCreate(PETSC_COMM_WORLD,
+                  &dipole_acceleration[elec_idx * num_dims + dim_idx]);
+        VecSetSizes(dipole_acceleration[elec_idx * num_dims + dim_idx],
+                    PETSC_DECIDE, num_psi);
+        VecSetFromOptions(dipole_acceleration[elec_idx * num_dims + dim_idx]);
+        ierr = PetscObjectSetName(
+            (PetscObject)dipole_acceleration[elec_idx * num_dims + dim_idx],
             "psi");
       }
     }
@@ -629,29 +638,8 @@ void Wavefunction::CreatePsi()
 void Wavefunction::CreateObservable(PetscInt observable_idx, PetscInt elec_idx,
                                     PetscInt dim_idx)
 {
-  PetscLogEventBegin(time_obs, 0, 0, 0, 0);
-  PetscInt low, high;
-  PetscComplex val;
-
-  /* Fill position vector*/
-  VecGetOwnershipRange(psi_tmp, &low, &high);
-  if (observable_idx == 1) /* Dipole acceleration */
-  {
-    for (PetscInt idx = low; idx < high; idx++)
-    {
-      val = GetDipoleAccerationVal(idx, elec_idx, dim_idx);
-      VecSetValues(psi_tmp, 1, &idx, &val, INSERT_VALUES);
-    }
-  }
-  else
-  {
-    EndRun("Bad observable index in Wavefunction " +
-           std::to_string(observable_idx));
-  }
-  /* Assemble position vector */
-  VecAssemblyBegin(psi_tmp);
-  VecAssemblyEnd(psi_tmp);
-  PetscLogEventEnd(time_obs, 0, 0, 0, 0);
+  EndRun("Bad observable index in Wavefunction " +
+         std::to_string(observable_idx));
 }
 
 void Wavefunction::CreateObservables()
@@ -697,6 +685,19 @@ void Wavefunction::CreateObservables()
         VecSetValues(position_expectation[elec_idx * num_dims + dim_idx], 1,
                      &idx, &val, INSERT_VALUES);
       }
+      VecAssemblyBegin(position_expectation[elec_idx * num_dims + dim_idx]);
+      VecAssemblyEnd(position_expectation[elec_idx * num_dims + dim_idx]);
+
+      VecGetOwnershipRange(dipole_acceleration[elec_idx * num_dims + dim_idx],
+                           &low, &high);
+      for (PetscInt idx = low; idx < high; idx++)
+      {
+        val = GetPositionVal(idx, elec_idx, dim_idx, false);
+        VecSetValues(dipole_acceleration[elec_idx * num_dims + dim_idx], 1,
+                     &idx, &val, INSERT_VALUES);
+      }
+      VecAssemblyBegin(dipole_acceleration[elec_idx * num_dims + dim_idx]);
+      VecAssemblyEnd(dipole_acceleration[elec_idx * num_dims + dim_idx]);
     }
   }
 }
@@ -992,13 +993,14 @@ double Wavefunction::GetDipoleAcceration(PetscInt elec_idx, PetscInt dim_idx)
   if (coordinate_system_idx == 1)
   {
     VecPointwiseMult(psi_tmp_cyl, jacobian, psi);
-    CreateObservable(1, elec_idx, dim_idx); /* dim */
-    VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
+    VecPointwiseMult(psi_tmp,
+                     dipole_acceleration[elec_idx * num_dims + dim_idx],
+                     psi_tmp_cyl);
   }
   else
   {
-    CreateObservable(1, elec_idx, dim_idx); /* dim */
-    VecPointwiseMult(psi_tmp, psi_tmp, psi);
+    VecPointwiseMult(psi_tmp,
+                     dipole_acceleration[elec_idx * num_dims + dim_idx], psi);
   }
   VecDot(psi, psi_tmp, &expectation);
   PetscLogEventEnd(time_dipole_acceration, 0, 0, 0, 0);

@@ -27,6 +27,7 @@ class Wavefunction : protected Utils
   Vec jacobian;
   Vec ECS;
   Vec *position_expectation;
+  Vec *dipole_acceleration;
   bool psi_alloc_build;
   bool psi_alloc;
   /* false if its not the first time checkpointing the wavefunction */
@@ -44,7 +45,6 @@ class Wavefunction : protected Utils
   PetscLogEvent time_dipole_acceration;
   PetscLogEvent time_gobbler;
   PetscLogEvent time_projections;
-  PetscLogEvent time_obs;
 
   /* hidden from user for safety */
   void CreateGrid();
