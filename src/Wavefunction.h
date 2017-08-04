@@ -24,6 +24,8 @@ class Wavefunction : protected Utils
   Vec psi;                /* wavefunction for 2 electron system */
   Vec psi_tmp;            /* wavefunction for 2 electron system */
   Vec psi_tmp_cyl;        /* wavefunction for 2 electron system */
+  Vec jacobian;
+  Vec ECS;
   bool psi_alloc_build;
   bool psi_alloc;
   /* false if its not the first time checkpointing the wavefunction */
@@ -48,6 +50,7 @@ class Wavefunction : protected Utils
   void CreatePsi();
   void CreateObservable(PetscInt observable_idx, PetscInt elec_idx,
                         PetscInt dim_idx);
+  void CreateObservables();
   void CleanUp();
 
   dcomp GetPsiVal(dcomp ***data, PetscInt idx);

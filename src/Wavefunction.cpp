@@ -35,9 +35,6 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   /* allocate grid */
   CreateGrid();
 
-  /* allocate psi_1, psi_2, and psi */
-  CreatePsi();
-
   gobbler_idx = new PetscInt*[num_dims];
   for (PetscInt i = 0; i < num_dims; ++i)
   {
@@ -54,6 +51,9 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
       gobbler_idx[i][1] = num_x[i] - 1 - gobbler_idx[i][0];
     }
   }
+
+  /* allocate psi_1, psi_2, and psi */
+  CreatePsi();
 
   if (p.GetRestart() == 1)
   {
@@ -306,8 +306,7 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
       /* Read psi*/
       viewer_file.ReadObject(psi_tmp_cyl);
       Normalize(psi_tmp_cyl, 0.0);
-      CreateObservable(2, 0, 0);
-      VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
+      VecPointwiseMult(psi_tmp, jacobian, psi_tmp_cyl);
     }
     else
     {
@@ -582,6 +581,16 @@ void Wavefunction::CreatePsi()
     VecSetFromOptions(psi_tmp_cyl);
     ierr = PetscObjectSetName((PetscObject)psi_tmp_cyl, "psi");
 
+    VecCreate(PETSC_COMM_WORLD, &jacobian);
+    VecSetSizes(jacobian, PETSC_DECIDE, num_psi);
+    VecSetFromOptions(jacobian);
+    ierr = PetscObjectSetName((PetscObject)jacobian, "psi");
+
+    VecCreate(PETSC_COMM_WORLD, &ECS);
+    VecSetSizes(ECS, PETSC_DECIDE, num_psi);
+    VecSetFromOptions(ECS);
+    ierr = PetscObjectSetName((PetscObject)ECS, "psi");
+
     psi_alloc = true;
   }
 
@@ -594,6 +603,9 @@ void Wavefunction::CreatePsi()
   }
   VecAssemblyBegin(psi);
   VecAssemblyEnd(psi);
+
+  CreateObservables();
+
   /* normalize all psi */
   Normalize();
 }
@@ -623,30 +635,56 @@ void Wavefunction::CreateObservable(PetscInt observable_idx, PetscInt elec_idx,
       VecSetValues(psi_tmp, 1, &idx, &val, INSERT_VALUES);
     }
   }
-  else if (observable_idx == 2) /* r */
-  {
-    for (PetscInt idx = low; idx < high; idx++)
-    {
-      val = GetPositionVal(idx, 0, 0, true);
-      VecSetValues(psi_tmp, 1, &idx, &val, INSERT_VALUES);
-    }
-  }
-  else if (observable_idx == 3) /* ecs */
-  {
-    for (PetscInt idx = low; idx < high; idx++)
-    {
-      val = GetGobblerVal(idx);
-      VecSetValues(psi_tmp, 1, &idx, &val, INSERT_VALUES);
-    }
-  }
   else
   {
-    EndRun("Bad observable index in Wavefunction");
+    EndRun("Bad observable index in Wavefunction " +
+           std::to_string(observable_idx));
   }
   /* Assemble position vector */
   VecAssemblyBegin(psi_tmp);
   VecAssemblyEnd(psi_tmp);
   PetscLogEventEnd(time_obs, 0, 0, 0, 0);
+}
+
+void Wavefunction::CreateObservables()
+{
+  PetscInt low, high;
+  PetscComplex val;
+
+  /* Fill position vector*/
+  // if (observable_idx == 0) /* Position operator */
+  // {
+  //   for (PetscInt idx = low; idx < high; idx++)
+  //   {
+  //     val = GetPositionVal(idx, elec_idx, dim_idx, false);
+  //     VecSetValues(psi_tmp, 1, &idx, &val, INSERT_VALUES);
+  //   }
+  // }
+  // else if (observable_idx == 1) /* Dipole acceleration */
+  // {
+  //   for (PetscInt idx = low; idx < high; idx++)
+  //   {
+  //     val = GetDipoleAccerationVal(idx, elec_idx, dim_idx);
+  //     VecSetValues(psi_tmp, 1, &idx, &val, INSERT_VALUES);
+  //   }
+  // }
+  VecGetOwnershipRange(jacobian, &low, &high);
+  for (PetscInt idx = low; idx < high; idx++)
+  {
+    val = GetPositionVal(idx, 0, 0, true);
+    VecSetValues(jacobian, 1, &idx, &val, INSERT_VALUES);
+  }
+  VecAssemblyBegin(jacobian);
+  VecAssemblyEnd(jacobian);
+
+  VecGetOwnershipRange(ECS, &low, &high);
+  for (PetscInt idx = low; idx < high; idx++)
+  {
+    val = GetGobblerVal(idx);
+    VecSetValues(ECS, 1, &idx, &val, INSERT_VALUES);
+  }
+  VecAssemblyBegin(ECS);
+  VecAssemblyEnd(ECS);
 }
 
 void Wavefunction::CleanUp()
@@ -877,8 +915,7 @@ double Wavefunction::Norm(Vec& data, double dv)
   double total = 0;
   if (coordinate_system_idx == 1)
   {
-    CreateObservable(2, 0, 0);
-    VecPointwiseMult(psi_tmp, psi_tmp, data);
+    VecPointwiseMult(psi_tmp, jacobian, data);
     VecDot(data, psi_tmp, &dot_product);
     total = sqrt(dot_product.real());
   }
@@ -899,8 +936,7 @@ double Wavefunction::GetEnergy(Mat* h, Vec& p)
   if (coordinate_system_idx == 1)
   {
     MatMult(*h, p, psi_tmp_cyl);
-    CreateObservable(2, 0, 0); /* pho */
-    VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi_tmp_cyl);
+    VecPointwiseMult(psi_tmp_cyl, jacobian, psi_tmp_cyl);
     VecDot(p, psi_tmp_cyl, &energy);
   }
   else
@@ -919,8 +955,7 @@ double Wavefunction::GetPosition(PetscInt elec_idx, PetscInt dim_idx)
   PetscComplex expectation;
   if (coordinate_system_idx == 1)
   {
-    CreateObservable(2, elec_idx, dim_idx); /* pho */
-    VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi);
+    VecPointwiseMult(psi_tmp_cyl, jacobian, psi);
     CreateObservable(0, elec_idx, dim_idx); /* dim */
     VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
   }
@@ -941,8 +976,7 @@ double Wavefunction::GetDipoleAcceration(PetscInt elec_idx, PetscInt dim_idx)
   PetscComplex expectation;
   if (coordinate_system_idx == 1)
   {
-    CreateObservable(2, elec_idx, dim_idx); /* pho */
-    VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi);
+    VecPointwiseMult(psi_tmp_cyl, jacobian, psi);
     CreateObservable(1, elec_idx, dim_idx); /* dim */
     VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
   }
@@ -962,15 +996,12 @@ double Wavefunction::GetGobbler()
   PetscComplex expectation;
   if (coordinate_system_idx == 1)
   {
-    CreateObservable(2, 0, 0); /* pho */
-    VecPointwiseMult(psi_tmp_cyl, psi_tmp, psi);
-    CreateObservable(3, 0, 0); /* gobbler */
-    VecPointwiseMult(psi_tmp, psi_tmp, psi_tmp_cyl);
+    VecPointwiseMult(psi_tmp_cyl, jacobian, psi);
+    VecPointwiseMult(psi_tmp, ECS, psi_tmp_cyl);
   }
   else
   {
-    CreateObservable(3, 0, 0); /* gobbler */
-    VecPointwiseMult(psi_tmp, psi_tmp, psi);
+    VecPointwiseMult(psi_tmp, ECS, psi);
   }
   VecDot(psi, psi_tmp, &expectation);
   PetscLogEventEnd(time_gobbler, 0, 0, 0, 0);
