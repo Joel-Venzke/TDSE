@@ -811,6 +811,11 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
                 "C_0 in the SAE potential for each nuclei");
     WriteObject(p.r0.get(), p.GetNumNuclei(), "/Parameters/r0",
                 "R_0 in the SAE potential for each nuclei");
+
+    if (p.experiment_type == "streaking")
+    {
+      WriteObject(p.tau_delay, "/Parameters/tau_delay", "delay for streaking");
+    }
     for (int i = 0; i < p.GetNumNuclei(); ++i)
     {
       WriteObject(p.GetLocation()[i], p.GetNumDims(),
