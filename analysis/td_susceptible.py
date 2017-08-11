@@ -27,6 +27,11 @@ max_data = []
 min_data = []
 fig, ax1 = plt.subplots()
 ax2 = ax1.twinx()
+#ax2.plot(
+#    o_time[1:] / (2 * np.pi / energy),
+#    1.0 - observables["norm"][1:],
+#    'r--',
+#    label="Ionization")
 for i in range(min(6, cycles)):
     if i != 0:
         window_size = int(ts_per_cycle * (i + 1))
@@ -58,6 +63,8 @@ for i in range(min(6, cycles)):
         max_data.append(data[idx, d_idx_min:d_idx_max].max())
         min_data.append(data[idx, d_idx_min:d_idx_max].min())
         data = data * max_data[0] / max_data[i - 1]
+        max_data[-1] = data[idx, d_idx_min:d_idx_max].max()
+        min_data[-1] = data[idx, d_idx_min:d_idx_max].min()
         print i, window_size, t[1] - t[0], t[d_idx_min:d_idx_max][data[
             idx, d_idx_min:d_idx_max].argmax()], p_time[p_time.shape[0] /
                                                         2], max_data[-1]
@@ -68,12 +75,7 @@ for i in range(min(6, cycles)):
         ax1.scatter(
             [t[d_idx_min:d_idx_max][data[idx, d_idx_min:d_idx_max].argmax()]] /
             (2 * np.pi / energy), [data[idx, d_idx_min:d_idx_max].max()])
-ax2.plot(
-    o_time[1:] / (2 * np.pi / energy),
-    1.0 - observables["norm"][1:],
-    'r--',
-    label="Ionization")
 plt.axvline(color='k', x=p_time[-1] / (2 * np.pi / energy) / 2.0)
-ax1.legend()
-#ax1.set_ylim(bottom=0.675)
+ax1.legend(loc=2)
+ax1.set_ylim([min_data[-1]-0.05,max_data[-1]+0.02])
 fig.savefig("figs/td_susceptible.png")

@@ -68,8 +68,8 @@ elif len(shape) == 2:
         y_min_idx = lower_idx[1]
         y_max_idx = upper_idx[1]
         x_max_idx = -1
-        y_min_idx = 0
-        y_max_idx = -1
+        y_min_idx = (y.shape[0]-(2*x.shape[0]))/2
+        y_max_idx = -1*(y.shape[0]-(2*x.shape[0]))/2
         psi = psi[x_min_idx:x_max_idx, y_min_idx:y_max_idx]
         if f["Parameters"]["coordinate_system_idx"][0] == 1:
             psi = np.absolute(
