@@ -23,7 +23,12 @@ class Wavefunction : protected Utils
   dcomp ***psi_build;     /* used for allocating new wave functions */
   Vec psi;                /* wavefunction for 2 electron system */
   Vec psi_tmp;            /* wavefunction for 2 electron system */
+  Vec psi_proj;            /* wavefunction for 2 electron system */
   Vec psi_tmp_cyl;        /* wavefunction for 2 electron system */
+  Vec jacobian;
+  Vec ECS;
+  Vec *position_expectation;
+  Vec *dipole_acceleration;
   bool psi_alloc_build;
   bool psi_alloc;
   /* false if its not the first time checkpointing the wavefunction */
@@ -35,11 +40,19 @@ class Wavefunction : protected Utils
   PetscInt write_counter_checkpoint;
   PetscInt write_counter_observables;
 
+  PetscLogEvent time_norm;
+  PetscLogEvent time_energy;
+  PetscLogEvent time_position;
+  PetscLogEvent time_dipole_acceration;
+  PetscLogEvent time_gobbler;
+  PetscLogEvent time_projections;
+
   /* hidden from user for safety */
   void CreateGrid();
   void CreatePsi();
   void CreateObservable(PetscInt observable_idx, PetscInt elec_idx,
                         PetscInt dim_idx);
+  void CreateObservables();
   void CleanUp();
 
   dcomp GetPsiVal(dcomp ***data, PetscInt idx);

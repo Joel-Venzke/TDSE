@@ -65,6 +65,11 @@ class Parameters : protected Utils
   std::unique_ptr< PetscInt[] > sae_size;  ///< number of elements in a and b
   std::unique_ptr< double[] >
       state_energy;  ///< theoretical eigenvalues for each state
+
+  std::string
+      experiment_type;  ///< type of experiment ///{"default", "streaking",
+                        ///"transient"}
+  double tau_delay;     ///<if streaking or ATAS, XUV needs delay
   std::unique_ptr< std::string[] >
       pulse_shape;  ///< pulse shape {"sin2","linear"}
   std::unique_ptr< PetscInt[] > pulse_shape_idx;  ///< index of pulse shape

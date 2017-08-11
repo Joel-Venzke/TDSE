@@ -27,7 +27,7 @@ max_data = []
 min_data = []
 fig, ax1 = plt.subplots()
 ax2 = ax1.twinx()
-for i in range(min(6,cycles)):
+for i in range(min(6, cycles)):
     if i != 0:
         window_size = int(ts_per_cycle * (i + 1))
         freq, t, dipole_fft = stft(
@@ -61,12 +61,19 @@ for i in range(min(6,cycles)):
         print i, window_size, t[1] - t[0], t[d_idx_min:d_idx_max][data[
             idx, d_idx_min:d_idx_max].argmax()], p_time[p_time.shape[0] /
                                                         2], max_data[-1]
-        ax1.plot(t/(2 * np.pi / energy), np.abs(data[idx]), label=str((i + 1)) + " cycles")
-        ax1.scatter([
-            t[d_idx_min:d_idx_max][data[idx, d_idx_min:d_idx_max].argmax()]
-        ]/(2 * np.pi / energy), [data[idx, d_idx_min:d_idx_max].max()])
-ax2.plot(o_time[1:]/(2 * np.pi / energy), 1.0 - observables["norm"][1:], 'r--', label="Ionization")
-plt.axvline(color='k', x=p_time[-1]/(2 * np.pi / energy) / 2.0)
+        ax1.plot(
+            t / (2 * np.pi / energy),
+            np.abs(data[idx]),
+            label=str((i + 1)) + " cycles")
+        ax1.scatter(
+            [t[d_idx_min:d_idx_max][data[idx, d_idx_min:d_idx_max].argmax()]] /
+            (2 * np.pi / energy), [data[idx, d_idx_min:d_idx_max].max()])
+ax2.plot(
+    o_time[1:] / (2 * np.pi / energy),
+    1.0 - observables["norm"][1:],
+    'r--',
+    label="Ionization")
+plt.axvline(color='k', x=p_time[-1] / (2 * np.pi / energy) / 2.0)
 ax1.legend()
 #ax1.set_ylim(bottom=0.675)
 fig.savefig("figs/td_susceptible.png")

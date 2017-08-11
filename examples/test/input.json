@@ -25,15 +25,16 @@
   "order":   2,
   "sigma":   3.0,
   "write_frequency_checkpoint": 100,
-  "write_frequency_observables": 2,
+  "write_frequency_observables": 1,
   "write_frequency_eigin_state": 1,
   "state_solver":    "Power",
   "propagate": 1,
   "free_propagate": 0,
   "start_state": 0,
-  "states": [{"energy": -0.5},{"energy": -0.15},{"energy": -0.15}],
+  "states": [{"energy": -0.5}],
   "tol":        1e-10,
   "laser": {
+    "experiment_type": "default",
     "pulses": [
     { "polarization_vector": [0.0,1.0,0.0],
       "poynting_vector": [0.0,0.0,1.0],
