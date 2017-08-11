@@ -1,15 +1,15 @@
 {
   "delta_t": 0.005,
   "dimensions": [
-    {"dim_size": 20.0,
+    {"dim_size": 30.0,
     "delta_x":   0.1},
-    {"dim_size": 40.0,
+    {"dim_size": 60.0,
     "delta_x":   0.1}],
   "coordinate_system": "Cylindrical",
   "num_electrons": 1,
   "restart": 0,
   "target": {
-    "name":  "He",
+    "name":  "H",
     "nuclei" : [
       { "z": 1.0,
       "location": [0.0,0.0,0.0],
@@ -28,7 +28,7 @@
   "write_frequency_observables": 1,
   "write_frequency_eigin_state": 1,
   "state_solver":    "Power",
-  "propagate": 1,
+  "propagate": 0,
   "free_propagate": 0,
   "start_state": 0,
   "states": [{"energy": -0.5}],
