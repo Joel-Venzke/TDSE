@@ -141,9 +141,13 @@ elif len(shape) == 2:
                 norm=LogNorm(vmin=1e-12, vmax=max_val))
         # color bar doesn't change during the video so only set it here
         plt.colorbar()
-        plt.xlabel("X-axis (a.u.)")
-        plt.ylabel("Y-axis  (a.u.)")
-        plt.title(name_list[i] + " - Energy: " + str(energy[i]))
+        if f["Parameters"]["coordinate_system_idx"][0] == 1:
+            plt.xlabel("$\\rho$-axis (a.u.)")
+            plt.ylabel("Z-axis  (a.u.)")
+        else:
+            plt.xlabel("X-axis (a.u.)")
+            plt.ylabel("Y-axis  (a.u.)")
+        plt.title("Wave Function - Energy " + str(energy[i]))
         fig.savefig("figs/" + target_name + "_log_state_" + str(i).zfill(3) +
                     ".jpg")
         plt.clf()
