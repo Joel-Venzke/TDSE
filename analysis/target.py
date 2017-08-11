@@ -147,7 +147,7 @@ elif len(shape) == 2:
         else:
             plt.xlabel("X-axis (a.u.)")
             plt.ylabel("Y-axis  (a.u.)")
-        plt.title("Wave Function - Energy " + str(energy[i]))
+        plt.title(name_list[i]+" - Energy " + str(energy[i]))
         fig.savefig("figs/" + target_name + "_log_state_" + str(i).zfill(3) +
                     ".jpg")
         plt.clf()
