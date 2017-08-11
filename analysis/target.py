@@ -113,8 +113,8 @@ elif len(shape) == 2:
         y_min_idx = lower_idx[1]
         y_max_idx = upper_idx[1]
         x_max_idx = -1
-        y_min_idx = (y.shape[0]-(2*x.shape[0]))/2
-        y_max_idx = -1*(y.shape[0]-(2*x.shape[0]))/2
+        y_min_idx = 0
+        y_max_idx = -1
         psi = psi[x_min_idx:x_max_idx, y_min_idx:y_max_idx]
         if f["Parameters"]["coordinate_system_idx"][0] == 1:
             psi = np.absolute(
@@ -142,12 +142,12 @@ elif len(shape) == 2:
         # color bar doesn't change during the video so only set it here
         plt.colorbar()
         if f["Parameters"]["coordinate_system_idx"][0] == 1:
-            plt.xlabel("$\\rho$-axis (a.u.)")
-            plt.ylabel("Z-axis  (a.u.)")
+            plt.xlabel("z-axis (a.u.)")
+            plt.ylabel("$\\rho$-axis  (a.u.)")
         else:
             plt.xlabel("X-axis (a.u.)")
             plt.ylabel("Y-axis  (a.u.)")
-        plt.title(name_list[i]+" - Energy " + str(energy[i]))
+        plt.title(name_list[i] + " - Energy " + str(energy[i]))
         fig.savefig("figs/" + target_name + "_log_state_" + str(i).zfill(3) +
                     ".jpg")
         plt.clf()
