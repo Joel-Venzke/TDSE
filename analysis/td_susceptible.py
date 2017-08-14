@@ -52,7 +52,7 @@ for i in range(min(6, cycles)):
             noverlap=int(window_size * 0.999),
             nperseg=window_size,
             window=chebwin(window_size, 80))
-        data = np.abs(dipole_fft / pulse_fft)
+        data = np.abs(dipole_fft[:, :pulses_fft.shape[1]] / pulse_fft)
         idx = dipole_fft.max(axis=1).argmax()
         if f["Parameters"]["pulse_shape_idx"][0] == 1:
             d_idx_min = data.shape[1] / 2 - data.shape[1] / 6
@@ -77,5 +77,5 @@ for i in range(min(6, cycles)):
             (2 * np.pi / energy), [data[idx, d_idx_min:d_idx_max].max()])
 plt.axvline(color='k', x=p_time[-1] / (2 * np.pi / energy) / 2.0)
 ax1.legend(loc=2)
-ax1.set_ylim([min_data[-1]-0.05,max_data[-1]+0.02])
+ax1.set_ylim([min_data[-1] - 0.05, max_data[-1] + 0.02])
 fig.savefig("figs/td_susceptible.png")
