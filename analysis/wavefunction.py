@@ -142,8 +142,12 @@ elif len(shape) == 2:
                 "Time: " + str(psi_time[i]) + " a.u.",
                 color='white')
             # color bar doesn't change during the video so only set it here
-            plt.xlabel("X-axis (a.u.)")
-            plt.ylabel("Y-axis  (a.u.)")
+            if f["Parameters"]["coordinate_system_idx"][0] == 1:
+                plt.xlabel("z-axis (a.u.)")
+                plt.ylabel("$\\rho$-axis  (a.u.)")
+            else:
+                plt.xlabel("X-axis (a.u.)")
+                plt.ylabel("Y-axis  (a.u.)")
             # plt.axis('off')
             plt.colorbar()
             fig.savefig("figs/Wave_" + str(i).zfill(8) + ".png")
