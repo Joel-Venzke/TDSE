@@ -27,11 +27,11 @@
   "write_frequency_checkpoint": 100,
   "write_frequency_observables": 2,
   "write_frequency_eigin_state": 1,
-  "state_solver":    "Power",
+  "state_solver":    "SLEPC",
   "propagate": 1,
   "free_propagate": 0,
   "start_state": 0,
-  "states": [{"energy": -0.5},{"energy": -0.15},{"energy": -0.15}],
+  "states": 1,
   "tol":        1e-10,
   "laser": {
     "experiment_type": "streaking",
