@@ -1,6 +1,6 @@
 # Trivial Dynamics in Schrodinger Equation (TDSE)
 
-This code was developed by @Joel-Venzke during his PHD. It solves the Time Dependent Schroedinger Equation for ultrafast laser pulses interacting with matter.
+This code was developed at JILA in Boulder, CO by @Joel-Venzke during his PHD, and contributed to by Cory Goldsmith. It solves the Time Dependent Schroedinger Equation for ultrafast laser pulses interacting with matter.
 
 # Dependencies
 
