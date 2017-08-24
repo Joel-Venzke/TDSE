@@ -23,7 +23,7 @@ class Wavefunction : protected Utils
   dcomp ***psi_build;     /* used for allocating new wave functions */
   Vec psi;                /* wavefunction for 2 electron system */
   Vec psi_tmp;            /* wavefunction for 2 electron system */
-  Vec psi_proj;            /* wavefunction for 2 electron system */
+  Vec psi_proj;           /* wavefunction for 2 electron system */
   Vec psi_tmp_cyl;        /* wavefunction for 2 electron system */
   Vec jacobian;
   Vec ECS;
@@ -105,5 +105,5 @@ class Wavefunction : protected Utils
   Vec *GetPsi();
   double **GetXValue();
   PetscInt **GetGobblerIdx();
-  PetscInt GetWrieCounterCheckpoint();
+  PetscInt GetWriteCounterCheckpoint();
 };

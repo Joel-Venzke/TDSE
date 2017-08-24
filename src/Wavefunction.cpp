@@ -1,26 +1,27 @@
 #include "Wavefunction.h"
 
 Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
-                           Parameters& p) {
+                           Parameters& p)
+{
   if (world.rank() == 0) std::cout << "Creating Wavefunction\n";
 
   /* initialize values */
-  psi_alloc_build = false;
-  psi_alloc = false;
-  first_pass = true;
-  num_dims = p.GetNumDims();
-  num_electrons = p.GetNumElectrons();
-  dim_size = p.dim_size.get();
-  delta_x = p.delta_x.get();
-  delta_t = p.GetDeltaT();
-  coordinate_system_idx = p.GetCoordinateSystemIdx();
-  target_file_name = p.GetTarget() + ".h5";
-  num_states = p.GetNumStates();
-  sigma = p.GetSigma();
-  num_psi_build = 1.0;
-  write_counter_checkpoint = 0;
+  psi_alloc_build           = false;
+  psi_alloc                 = false;
+  first_pass                = true;
+  num_dims                  = p.GetNumDims();
+  num_electrons             = p.GetNumElectrons();
+  dim_size                  = p.dim_size.get();
+  delta_x                   = p.delta_x.get();
+  delta_t                   = p.GetDeltaT();
+  coordinate_system_idx     = p.GetCoordinateSystemIdx();
+  target_file_name          = p.GetTarget() + ".h5";
+  num_states                = p.GetNumStates();
+  sigma                     = p.GetSigma();
+  num_psi_build             = 1.0;
+  write_counter_checkpoint  = 0;
   write_counter_observables = 0;
-  order = p.GetOrder();
+  order                     = p.GetOrder();
 
   PetscLogEventRegister("WaveNorm", PETSC_VIEWER_CLASSID, &time_norm);
   PetscLogEventRegister("WaveEner", PETSC_VIEWER_CLASSID, &time_energy);
@@ -34,12 +35,16 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   CreateGrid();
 
   gobbler_idx = new PetscInt*[num_dims];
-  for (PetscInt i = 0; i < num_dims; ++i) {
+  for (PetscInt i = 0; i < num_dims; ++i)
+  {
     gobbler_idx[i] = new PetscInt[2];
-    if (coordinate_system_idx == 1 and i == 0) {
+    if (coordinate_system_idx == 1 and i == 0)
+    {
       gobbler_idx[i][0] = (num_x[i] - PetscInt(num_x[i] * p.GetGobbler())) - 1;
       gobbler_idx[i][1] = num_x[i] - 1 - gobbler_idx[i][0];
-    } else {
+    }
+    else
+    {
       gobbler_idx[i][0] =
           (num_x[i] - PetscInt(num_x[i] * p.GetGobbler())) / 2 - 1;
       gobbler_idx[i][1] = num_x[i] - 1 - gobbler_idx[i][0];
@@ -49,10 +54,13 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   /* allocate psi_1, psi_2, and psi */
   CreatePsi();
 
-  if (p.GetRestart() == 1) {
+  if (p.GetRestart() == 1)
+  {
     LoadRestart(h5_file, viewer_file, p.GetWriteFrequencyCheckpoint(),
                 p.GetWriteFrequencyObservables());
-  } else {
+  }
+  else
+  {
     /* write out data */
     Checkpoint(h5_file, viewer_file, -1.0);
   }
@@ -64,9 +72,12 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
 }
 
 void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
-                              double time, bool checkpoint_psi) {
-  if (world.rank() == 0) {
-    if (checkpoint_psi) {
+                              double time, bool checkpoint_psi)
+{
+  if (world.rank() == 0)
+  {
+    if (checkpoint_psi)
+    {
       std::cout << "Checkpointing Psi: " << write_counter_checkpoint << "\n"
                 << std::flush;
     }
@@ -77,7 +88,8 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   std::string group_name = "/Wavefunction/";
 
   /* only write out at start */
-  if (first_pass) {
+  if (first_pass)
+  {
     viewer_file.Open("a");
     /* move into group */
     viewer_file.PushGroup(group_name);
@@ -98,7 +110,8 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
                         "The number of physical dimension in the simulation");
 
     /* write each dims x values */
-    for (PetscInt i = 0; i < num_dims; i++) {
+    for (PetscInt i = 0; i < num_dims; i++)
+    {
       str = "x_value_" + std::to_string(i);
       h5_file.WriteObject(
           x_value[i], num_x[i], "/Wavefunction/" + str,
@@ -129,7 +142,7 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
     h5_file.WriteObject(Norm(), "/Wavefunction/norm", "Norm of wavefunction",
                         write_counter_checkpoint);
 
-    std::vector<dcomp> projections;
+    std::vector< dcomp > projections;
     projections.resize(num_states, dcomp(0.0, 0.0));
     h5_file.WriteObject(
         &projections[0], projections.size(), "/Wavefunction/projections",
@@ -146,8 +159,10 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
         GetGobbler(), "/Observables/gobbler",
         "Amount of wavefunction in absorbing boundary potential",
         write_counter_observables);
-    for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx) {
-      for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx) {
+    for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
+    {
+      for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+      {
         h5_file.WriteObject(GetPosition(elec_idx, dim_idx),
                             "/Observables/position_expectation_" +
                                 std::to_string(elec_idx) + "_" +
@@ -171,8 +186,11 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
     first_pass = false;
     write_counter_checkpoint++;
     write_counter_observables++;
-  } else {
-    if (checkpoint_psi) {
+  }
+  else
+  {
+    if (checkpoint_psi)
+    {
       viewer_file.Open("a");
       /* set time step */
       viewer_file.SetTime(write_counter_checkpoint);
@@ -187,19 +205,23 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
       h5_file.WriteObject(time, "/Wavefunction/time", write_counter_checkpoint);
       h5_file.WriteObject(Norm(), "/Wavefunction/norm",
                           write_counter_checkpoint);
-      std::vector<dcomp> projections = Projections(target_file_name);
+      std::vector< dcomp > projections = Projections(target_file_name);
       h5_file.WriteObject(&projections[0], projections.size(),
                           "/Wavefunction/projections",
                           write_counter_checkpoint);
       write_counter_checkpoint++;
-    } else {
+    }
+    else
+    {
       h5_file.WriteObject(time, "/Observables/time", write_counter_observables);
       h5_file.WriteObject(Norm(), "/Observables/norm",
                           write_counter_observables);
       h5_file.WriteObject(GetGobbler(), "/Observables/gobbler",
                           write_counter_observables);
-      for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx) {
-        for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx) {
+      for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
+      {
+        for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+        {
           h5_file.WriteObject(GetPosition(elec_idx, dim_idx),
                               "/Observables/position_expectation_" +
                                   std::to_string(elec_idx) + "_" +
@@ -219,8 +241,9 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
 
 void Wavefunction::LoadRestart(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
                                PetscInt write_frequency_checkpoint,
-                               PetscInt write_frequency_observables) {
-  first_pass = false;
+                               PetscInt write_frequency_observables)
+{
+  first_pass             = false;
   std::string group_name = "/Wavefunction/";
   /* Get write index for last checkpoint */
   write_counter_checkpoint = h5_file.GetTimeIdx("/Wavefunction/psi");
@@ -256,27 +279,33 @@ void Wavefunction::LoadRestart(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
  * @param file_name name of the file containing the eigen states
  * @return A vector of projections corresponding to that state
  */
-std::vector<dcomp> Wavefunction::Projections(std::string file_name) {
+std::vector< dcomp > Wavefunction::Projections(std::string file_name)
+{
   HDF5Wrapper h5_file(file_name);
   ViewWrapper viewer_file(file_name);
 
   PetscInt file_states = h5_file.GetTimeIdx("/psi/") + 1;
-  if (file_states < num_states) {
+  if (file_states < num_states)
+  {
     EndRun("Not enough states in the target file");
   }
-  std::vector<dcomp> ret_vec;
+  std::vector< dcomp > ret_vec;
   dcomp projection_val;
 
   viewer_file.Open("r");
-  for (int state_idx = 0; state_idx < num_states; ++state_idx) {
+  for (int state_idx = 0; state_idx < num_states; ++state_idx)
+  {
     /* Set time idx */
     viewer_file.SetTime(state_idx);
     viewer_file.ReadObject(psi_proj);
     Normalize(psi_proj, 0.0);
-    if (coordinate_system_idx == 1) {
+    if (coordinate_system_idx == 1)
+    {
       /* Read psi*/
       VecPointwiseMult(psi_tmp, jacobian, psi_proj);
-    } else {
+    }
+    else
+    {
       VecCopy(psi_proj, psi_tmp);
     }
     VecDot(psi, psi_tmp, &projection_val);
@@ -295,15 +324,17 @@ std::vector<dcomp> Wavefunction::Projections(std::string file_name) {
  * @return A vector of projections corresponding to that state
  */
 void Wavefunction::ProjectOut(std::string file_name, HDF5Wrapper& h5_file_in,
-                              ViewWrapper& viewer_file_in) {
+                              ViewWrapper& viewer_file_in)
+{
   /* Get write index for last checkpoint */
-  std::vector<dcomp> ret_vec = Projections(file_name);
-  double sum = 0.0;
+  std::vector< dcomp > ret_vec = Projections(file_name);
+  double sum                   = 0.0;
   HDF5Wrapper h5_file(file_name);
   ViewWrapper viewer_file(file_name);
 
   viewer_file.Open("r");
-  for (int state_idx = 0; state_idx < num_states; ++state_idx) {
+  for (int state_idx = 0; state_idx < num_states; ++state_idx)
+  {
     viewer_file.SetTime(state_idx);
     viewer_file.ReadObject(psi_proj);
     Normalize(psi_proj, 0.0);
@@ -330,7 +361,8 @@ void Wavefunction::ProjectOut(std::string file_name, HDF5Wrapper& h5_file_in,
  * class to be set to upon return
  */
 void Wavefunction::LoadPsi(std::string file_name, PetscInt num_states,
-                           PetscInt return_state_idx) {
+                           PetscInt return_state_idx)
+{
   if (world.rank() == 0)
     std::cout << "Loading wavefunction from " << file_name << "\n";
   /* Get write index for last checkpoint */
@@ -338,11 +370,13 @@ void Wavefunction::LoadPsi(std::string file_name, PetscInt num_states,
   ViewWrapper viewer_file(file_name);
 
   PetscInt file_states = h5_file.GetTimeIdx("/psi/") + 1;
-  if (file_states < num_states) {
+  if (file_states < num_states)
+  {
     EndRun("Not enough states in the target file");
   }
 
-  if (return_state_idx >= num_states) {
+  if (return_state_idx >= num_states)
+  {
     EndRun("The start state must be less than the total number of states");
   }
 
@@ -360,7 +394,8 @@ void Wavefunction::LoadPsi(std::string file_name, PetscInt num_states,
   viewer_file.Close();
 }
 
-void Wavefunction::CheckpointPsi(ViewWrapper& viewer_file, PetscInt write_idx) {
+void Wavefunction::CheckpointPsi(ViewWrapper& viewer_file, PetscInt write_idx)
+{
   // if (world.rank() == 0)
   if (world.rank() == 0)
     std::cout << "Checkpointing Wavefunction in " << viewer_file.file_name
@@ -375,19 +410,21 @@ void Wavefunction::CheckpointPsi(ViewWrapper& viewer_file, PetscInt write_idx) {
   viewer_file.Close();
 }
 
-void Wavefunction::CreateGrid() {
+void Wavefunction::CreateGrid()
+{
   PetscInt center;  /* idx of the 0.0 in the grid */
   double current_x; /* used for setting grid */
 
   /* allocation */
-  num_x = new PetscInt[num_dims];
+  num_x   = new PetscInt[num_dims];
   x_value = new double*[num_dims];
 
   /* initialize for loop */
   num_psi_build = 1.0;
 
   /* build grid */
-  for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++) {
+  for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
+  {
     num_x[dim_idx] = ceil((dim_size[dim_idx]) / delta_x[dim_idx]);
 
     /* odd number so it is even on both sides */
@@ -399,16 +436,23 @@ void Wavefunction::CreateGrid() {
     /* size of 1d array for psi */
     num_psi_build *= num_x[dim_idx];
 
-    if (coordinate_system_idx == 1 and dim_idx == 0) {
-      for (int x_idx = 0; x_idx < num_x[dim_idx]; ++x_idx) {
-        if (order > 2) {
+    if (coordinate_system_idx == 1 and dim_idx == 0)
+    {
+      for (int x_idx = 0; x_idx < num_x[dim_idx]; ++x_idx)
+      {
+        if (order > 2)
+        {
           x_value[dim_idx][x_idx] = (x_idx + 1) * delta_x[dim_idx];
-        } else {
+        }
+        else
+        {
           x_value[dim_idx][x_idx] =
               (x_idx)*delta_x[dim_idx] + delta_x[dim_idx] / 2.0;
         }
       }
-    } else {
+    }
+    else
+    {
       /* find center of grid */
       center = num_x[dim_idx] / 2;
 
@@ -416,13 +460,15 @@ void Wavefunction::CreateGrid() {
       x_value[dim_idx][center] = 0.0;
 
       /* loop over all others */
-      for (PetscInt x_idx = center; x_idx >= 0; x_idx--) {
+      for (PetscInt x_idx = center; x_idx >= 0; x_idx--)
+      {
         /* get x value */
         current_x =
             (x_idx - center) * delta_x[dim_idx] + delta_x[dim_idx] / 2.0;
 
         /* double checking index */
-        if (x_idx < 0 || num_x[dim_idx] - x_idx - 1 >= num_x[dim_idx]) {
+        if (x_idx < 0 || num_x[dim_idx] - x_idx - 1 >= num_x[dim_idx])
+        {
           EndRun("Allocation error in grid");
         }
 
@@ -436,7 +482,8 @@ void Wavefunction::CreateGrid() {
 }
 
 /* builds psi from 2 Gaussian psi (one for each electron) */
-void Wavefunction::CreatePsi() {
+void Wavefunction::CreatePsi()
+{
   double sigma2; /* variance squared for Gaussian in psi */
   double x;      /* x value squared */
   double x2;     /* x value squared */
@@ -445,24 +492,30 @@ void Wavefunction::CreatePsi() {
 
   sigma2 = sigma * sigma;
 
-  if (!psi_alloc_build) {
+  if (!psi_alloc_build)
+  {
     psi_build = new dcomp**[num_electrons];
 
-    for (PetscInt elec_idx = 0; elec_idx < num_electrons; elec_idx++) {
+    for (PetscInt elec_idx = 0; elec_idx < num_electrons; elec_idx++)
+    {
       psi_build[elec_idx] = new dcomp*[num_dims];
 
-      for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++) {
+      for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
+      {
         psi_build[elec_idx][dim_idx] = new dcomp[num_x[dim_idx]];
       }
     }
     psi_alloc_build = true;
   }
 
-  for (PetscInt elec_idx = 0; elec_idx < num_electrons; elec_idx++) {
-    for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++) {
-      for (PetscInt i = 0; i < num_x[dim_idx]; i++) {
+  for (PetscInt elec_idx = 0; elec_idx < num_electrons; elec_idx++)
+  {
+    for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
+    {
+      for (PetscInt i = 0; i < num_x[dim_idx]; i++)
+      {
         /* get x value squared */
-        x = x_value[dim_idx][i];
+        x  = x_value[dim_idx][i];
         x2 = x * x;
 
         /* Gaussian centered around 0.0 with variation sigma */
@@ -474,12 +527,14 @@ void Wavefunction::CreatePsi() {
 
   /* get size of psi */
   num_psi = 1.0;
-  for (PetscInt elec_idx = 0; elec_idx < num_electrons; elec_idx++) {
+  for (PetscInt elec_idx = 0; elec_idx < num_electrons; elec_idx++)
+  {
     num_psi *= num_psi_build;
   }
 
   /* allocate psi */
-  if (!psi_alloc) {
+  if (!psi_alloc)
+  {
     VecCreate(PETSC_COMM_WORLD, &psi);
     VecSetSizes(psi, PETSC_DECIDE, num_psi);
     VecSetFromOptions(psi);
@@ -511,9 +566,11 @@ void Wavefunction::CreatePsi() {
     ierr = PetscObjectSetName((PetscObject)ECS, "psi");
 
     position_expectation = new Vec[num_dims * num_electrons];
-    dipole_acceleration = new Vec[num_dims * num_electrons];
-    for (int elec_idx = 0; elec_idx < num_electrons; ++elec_idx) {
-      for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx) {
+    dipole_acceleration  = new Vec[num_dims * num_electrons];
+    for (int elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
+    {
+      for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+      {
         VecCreate(PETSC_COMM_WORLD,
                   &position_expectation[elec_idx * num_dims + dim_idx]);
         VecSetSizes(position_expectation[elec_idx * num_dims + dim_idx],
@@ -538,7 +595,8 @@ void Wavefunction::CreatePsi() {
   }
 
   VecGetOwnershipRange(psi, &low, &high);
-  for (PetscInt idx = low; idx < high; idx++) {
+  for (PetscInt idx = low; idx < high; idx++)
+  {
     /* set psi */
     val = GetPsiVal(psi_build, idx);
     VecSetValues(psi, 1, &idx, &val, INSERT_VALUES);
@@ -553,17 +611,20 @@ void Wavefunction::CreatePsi() {
 }
 
 void Wavefunction::CreateObservable(PetscInt observable_idx, PetscInt elec_idx,
-                                    PetscInt dim_idx) {
+                                    PetscInt dim_idx)
+{
   EndRun("Bad observable index in Wavefunction " +
          std::to_string(observable_idx));
 }
 
-void Wavefunction::CreateObservables() {
+void Wavefunction::CreateObservables()
+{
   PetscInt low, high;
   PetscComplex val;
 
   VecGetOwnershipRange(jacobian, &low, &high);
-  for (PetscInt idx = low; idx < high; idx++) {
+  for (PetscInt idx = low; idx < high; idx++)
+  {
     val = GetPositionVal(idx, 0, 0, true);
     VecSetValues(jacobian, 1, &idx, &val, INSERT_VALUES);
   }
@@ -571,18 +632,22 @@ void Wavefunction::CreateObservables() {
   VecAssemblyEnd(jacobian);
 
   VecGetOwnershipRange(ECS, &low, &high);
-  for (PetscInt idx = low; idx < high; idx++) {
+  for (PetscInt idx = low; idx < high; idx++)
+  {
     val = GetGobblerVal(idx);
     VecSetValues(ECS, 1, &idx, &val, INSERT_VALUES);
   }
   VecAssemblyBegin(ECS);
   VecAssemblyEnd(ECS);
 
-  for (int elec_idx = 0; elec_idx < num_electrons; ++elec_idx) {
-    for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx) {
+  for (int elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
+  {
+    for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+    {
       VecGetOwnershipRange(position_expectation[elec_idx * num_dims + dim_idx],
                            &low, &high);
-      for (PetscInt idx = low; idx < high; idx++) {
+      for (PetscInt idx = low; idx < high; idx++)
+      {
         val = GetPositionVal(idx, elec_idx, dim_idx, false);
         VecSetValues(position_expectation[elec_idx * num_dims + dim_idx], 1,
                      &idx, &val, INSERT_VALUES);
@@ -592,7 +657,8 @@ void Wavefunction::CreateObservables() {
 
       VecGetOwnershipRange(dipole_acceleration[elec_idx * num_dims + dim_idx],
                            &low, &high);
-      for (PetscInt idx = low; idx < high; idx++) {
+      for (PetscInt idx = low; idx < high; idx++)
+      {
         val = GetDipoleAccerationVal(idx, elec_idx, dim_idx);
         VecSetValues(dipole_acceleration[elec_idx * num_dims + dim_idx], 1,
                      &idx, &val, INSERT_VALUES);
@@ -603,10 +669,14 @@ void Wavefunction::CreateObservables() {
   }
 }
 
-void Wavefunction::CleanUp() {
-  if (psi_alloc_build) {
-    for (PetscInt elec_idx = 0; elec_idx < num_electrons; elec_idx++) {
-      for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++) {
+void Wavefunction::CleanUp()
+{
+  if (psi_alloc_build)
+  {
+    for (PetscInt elec_idx = 0; elec_idx < num_electrons; elec_idx++)
+    {
+      for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
+      {
         delete psi_build[elec_idx][dim_idx];
       }
       delete[] psi_build[elec_idx];
@@ -617,13 +687,16 @@ void Wavefunction::CleanUp() {
 }
 
 /* returns values for global psi */
-dcomp Wavefunction::GetPsiVal(dcomp*** data, PetscInt idx) {
+dcomp Wavefunction::GetPsiVal(dcomp*** data, PetscInt idx)
+{
   /* Value to be returned */
   dcomp ret_val(1.0, 0.0);
   /* idx for return */
-  std::vector<PetscInt> idx_array = GetIntArray(idx);
-  for (PetscInt elec_idx = 0; elec_idx < num_electrons; elec_idx++) {
-    for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++) {
+  std::vector< PetscInt > idx_array = GetIntArray(idx);
+  for (PetscInt elec_idx = 0; elec_idx < num_electrons; elec_idx++)
+  {
+    for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
+    {
       ret_val *=
           data[elec_idx][dim_idx][idx_array[elec_idx * num_dims + dim_idx]];
     }
@@ -633,13 +706,15 @@ dcomp Wavefunction::GetPsiVal(dcomp*** data, PetscInt idx) {
 
 /* returns values for global position vector */
 dcomp Wavefunction::GetPositionVal(PetscInt idx, PetscInt elec_idx,
-                                   PetscInt dim_idx, bool integrate) {
+                                   PetscInt dim_idx, bool integrate)
+{
   /* Value to be returned */
   dcomp ret_val(0.0, 0.0);
   /* idx for return */
-  std::vector<PetscInt> idx_array = GetIntArray(idx);
+  std::vector< PetscInt > idx_array = GetIntArray(idx);
   ret_val = x_value[dim_idx][idx_array[elec_idx * num_dims + dim_idx]];
-  if (integrate and order > 2 and dim_idx == 0 and coordinate_system_idx == 1) {
+  if (integrate and order > 2 and dim_idx == 0 and coordinate_system_idx == 1)
+  {
     // std::cout << "using integrate\n";
     /* see appendix A of https://arxiv.org/pdf/1604.00947.pdf using Lagrange
      * interpolation polynomials and
@@ -727,17 +802,21 @@ dcomp Wavefunction::GetPositionVal(PetscInt idx, PetscInt elec_idx,
   return ret_val;
 }
 
-dcomp Wavefunction::GetGobblerVal(PetscInt idx) {
+dcomp Wavefunction::GetGobblerVal(PetscInt idx)
+{
   /* Value to be returned */
   dcomp ret_val(0.0, 0.0);
   /* idx for return */
-  std::vector<PetscInt> idx_array = GetIntArray(idx);
-  for (int elec_idx = 0; elec_idx < num_electrons; ++elec_idx) {
-    for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx) {
+  std::vector< PetscInt > idx_array = GetIntArray(idx);
+  for (int elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
+  {
+    for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+    {
       PetscInt current_idx = idx_array[elec_idx * num_dims + dim_idx];
       if (current_idx >= gobbler_idx[dim_idx][1] or
           (dim_idx != 0 and coordinate_system_idx != 1 and
-           current_idx <= gobbler_idx[dim_idx][0])) {
+           current_idx <= gobbler_idx[dim_idx][0]))
+      {
         ret_val = dcomp(1.0, 0.0);
       }
     }
@@ -747,43 +826,50 @@ dcomp Wavefunction::GetGobblerVal(PetscInt idx) {
 
 /* returns values for global dipole acceleration */
 dcomp Wavefunction::GetDipoleAccerationVal(PetscInt idx, PetscInt elec_idx,
-                                           PetscInt dim_idx) {
+                                           PetscInt dim_idx)
+{
   /* Value to be returned */
   dcomp ret_val(0.0, 0.0);
   double r;
   /* idx for return */
-  std::vector<PetscInt> idx_array = GetIntArray(idx);
-  r = GetDistance(idx_array, elec_idx);
+  std::vector< PetscInt > idx_array = GetIntArray(idx);
+  r                                 = GetDistance(idx_array, elec_idx);
   ret_val +=
       x_value[dim_idx][idx_array[elec_idx * num_dims + dim_idx]] / (r * r * r);
   return ret_val;
 }
 
 /* Returns r component of that electron */
-double Wavefunction::GetDistance(std::vector<PetscInt> idx_array,
-                                 PetscInt elec_idx) {
+double Wavefunction::GetDistance(std::vector< PetscInt > idx_array,
+                                 PetscInt elec_idx)
+{
   double r = 0.0;
   double x;
-  for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++) {
+  for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
+  {
     x = x_value[dim_idx][idx_array[elec_idx * num_dims + dim_idx]];
     r += x * x;
   }
   return sqrt(r);
 }
 
-std::vector<PetscInt> Wavefunction::GetIntArray(PetscInt idx) {
+std::vector< PetscInt > Wavefunction::GetIntArray(PetscInt idx)
+{
   /* Total number of dims for total system*/
   PetscInt total_dims = num_electrons * num_dims;
   /* size of each dim */
-  std::vector<PetscInt> num(total_dims);
+  std::vector< PetscInt > num(total_dims);
   /* idx for return */
-  std::vector<PetscInt> idx_array(total_dims);
-  for (PetscInt elec_idx = 0; elec_idx < num_electrons; elec_idx++) {
-    for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++) {
+  std::vector< PetscInt > idx_array(total_dims);
+  for (PetscInt elec_idx = 0; elec_idx < num_electrons; elec_idx++)
+  {
+    for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
+    {
       num[elec_idx * num_dims + dim_idx] = num_x[dim_idx];
     }
   }
-  for (PetscInt i = total_dims - 1; i >= 0; --i) {
+  for (PetscInt i = total_dims - 1; i >= 0; --i)
+  {
     idx_array[i] = idx % num[i];
     idx /= num[i];
   }
@@ -794,7 +880,8 @@ std::vector<PetscInt> Wavefunction::GetIntArray(PetscInt idx) {
 void Wavefunction::Normalize() { Normalize(psi, delta_x[0]); }
 
 /* normalizes the array provided */
-void Wavefunction::Normalize(Vec& data, double dv) {
+void Wavefunction::Normalize(Vec& data, double dv)
+{
   PetscReal total = Norm(data, dv);
   VecScale(data, 1.0 / total);
 }
@@ -803,15 +890,19 @@ void Wavefunction::Normalize(Vec& data, double dv) {
 double Wavefunction::Norm() { return Norm(psi, delta_x[0]); }
 
 /* returns norm of array using trapezoidal rule */
-double Wavefunction::Norm(Vec& data, double dv) {
+double Wavefunction::Norm(Vec& data, double dv)
+{
   PetscLogEventBegin(time_norm, 0, 0, 0, 0);
   dcomp dot_product;
   double total = 0;
-  if (coordinate_system_idx == 1) {
+  if (coordinate_system_idx == 1)
+  {
     VecPointwiseMult(psi_tmp, jacobian, data);
     VecDot(data, psi_tmp, &dot_product);
     total = sqrt(dot_product.real());
-  } else {
+  }
+  else
+  {
     VecNorm(data, NORM_2, &total);
   }
   PetscLogEventEnd(time_norm, 0, 0, 0, 0);
@@ -820,14 +911,18 @@ double Wavefunction::Norm(Vec& data, double dv) {
 
 double Wavefunction::GetEnergy(Mat* h) { return GetEnergy(h, psi); }
 
-double Wavefunction::GetEnergy(Mat* h, Vec& p) {
+double Wavefunction::GetEnergy(Mat* h, Vec& p)
+{
   PetscLogEventBegin(time_energy, 0, 0, 0, 0);
   PetscComplex energy;
-  if (coordinate_system_idx == 1) {
+  if (coordinate_system_idx == 1)
+  {
     MatMult(*h, p, psi_tmp_cyl);
     VecPointwiseMult(psi_tmp_cyl, jacobian, psi_tmp_cyl);
     VecDot(p, psi_tmp_cyl, &energy);
-  } else {
+  }
+  else
+  {
     MatMult(*h, p, psi_tmp);
     VecDot(p, psi_tmp, &energy);
   }
@@ -836,15 +931,19 @@ double Wavefunction::GetEnergy(Mat* h, Vec& p) {
 }
 
 /* returns position expectation value <psi|x_{elec_idx,dim_idx}|psi> */
-double Wavefunction::GetPosition(PetscInt elec_idx, PetscInt dim_idx) {
+double Wavefunction::GetPosition(PetscInt elec_idx, PetscInt dim_idx)
+{
   PetscLogEventBegin(time_position, 0, 0, 0, 0);
   PetscComplex expectation;
-  if (coordinate_system_idx == 1) {
+  if (coordinate_system_idx == 1)
+  {
     VecPointwiseMult(psi_tmp_cyl, jacobian, psi);
     VecPointwiseMult(psi_tmp,
                      position_expectation[elec_idx * num_dims + dim_idx],
                      psi_tmp_cyl);
-  } else {
+  }
+  else
+  {
     VecPointwiseMult(psi_tmp,
                      position_expectation[elec_idx * num_dims + dim_idx], psi);
   }
@@ -854,15 +953,19 @@ double Wavefunction::GetPosition(PetscInt elec_idx, PetscInt dim_idx) {
 }
 
 /* returns dipole acceleration value <psi|x_{elec_idx,dim_idx}/r^3|psi> */
-double Wavefunction::GetDipoleAcceration(PetscInt elec_idx, PetscInt dim_idx) {
+double Wavefunction::GetDipoleAcceration(PetscInt elec_idx, PetscInt dim_idx)
+{
   PetscLogEventBegin(time_dipole_acceration, 0, 0, 0, 0);
   PetscComplex expectation;
-  if (coordinate_system_idx == 1) {
+  if (coordinate_system_idx == 1)
+  {
     VecPointwiseMult(psi_tmp_cyl, jacobian, psi);
     VecPointwiseMult(psi_tmp,
                      dipole_acceleration[elec_idx * num_dims + dim_idx],
                      psi_tmp_cyl);
-  } else {
+  }
+  else
+  {
     VecPointwiseMult(psi_tmp,
                      dipole_acceleration[elec_idx * num_dims + dim_idx], psi);
   }
@@ -871,13 +974,17 @@ double Wavefunction::GetDipoleAcceration(PetscInt elec_idx, PetscInt dim_idx) {
   return expectation.real();
 }
 
-double Wavefunction::GetGobbler() {
+double Wavefunction::GetGobbler()
+{
   PetscLogEventBegin(time_gobbler, 0, 0, 0, 0);
   PetscComplex expectation;
-  if (coordinate_system_idx == 1) {
+  if (coordinate_system_idx == 1)
+  {
     VecPointwiseMult(psi_tmp_cyl, jacobian, psi);
     VecPointwiseMult(psi_tmp, ECS, psi_tmp_cyl);
-  } else {
+  }
+  else
+  {
     VecPointwiseMult(psi_tmp, ECS, psi);
   }
   VecDot(psi, psi_tmp, &expectation);
@@ -885,7 +992,8 @@ double Wavefunction::GetGobbler() {
   return expectation.real();
 }
 
-void Wavefunction::ResetPsi() {
+void Wavefunction::ResetPsi()
+{
   CreatePsi();
   CleanUp();
 }
@@ -902,17 +1010,20 @@ double** Wavefunction::GetXValue() { return x_value; }
 
 PetscInt** Wavefunction::GetGobblerIdx() { return gobbler_idx; }
 
-PetscInt Wavefunction::GetWrieCounterCheckpoint() {
+PetscInt Wavefunction::GetWriteCounterCheckpoint()
+{
   return write_counter_checkpoint;
 }
 
 /* destructor */
-Wavefunction::~Wavefunction() {
+Wavefunction::~Wavefunction()
+{
   if (world.rank() == 0) std::cout << "Deleting Wavefunction\n";
   /* do not delete dim_size or delta_x since they belong to the Parameter
    * class and will be freed there*/
   delete num_x;
-  for (PetscInt i = 0; i < num_dims; i++) {
+  for (PetscInt i = 0; i < num_dims; i++)
+  {
     delete x_value[i];
   }
   delete[] x_value;

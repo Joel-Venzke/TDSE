@@ -23,7 +23,8 @@
  * @details Creates the needed objects, controls the structure of each
  * calculation using the Parameter class and controls the petsc timing stages
  */
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
   PETSCWrapper p_wrap(argc, argv);
   p_wrap.Print(
       "\n******************* Setting up Simulation *******************\n\n");
@@ -41,13 +42,15 @@ int main(int argc, char** argv) {
                parameters);
   p_wrap.PopStage(); /* Set up */
 
-  if (parameters.GetRestart() != 1) {
+  if (parameters.GetRestart() != 1)
+  {
     p_wrap.Print(
         "\n****************** Eigen State Calculation ******************\n\n");
 
     p_wrap.PushStage("Eigen State");
     /* get ground states */
-    switch (parameters.GetStateSolverIdx()) {
+    switch (parameters.GetStateSolverIdx())
+    {
       case 0: /* File */
         s.FromFile(parameters.GetNumStates(), parameters.GetStartState());
         break;
@@ -62,7 +65,8 @@ int main(int argc, char** argv) {
   }
 
   p_wrap.PushStage("Propagation");
-  if (parameters.GetPropagate() == 1) {
+  if (parameters.GetPropagate() == 1)
+  {
     p_wrap.Print(
         "\n************************ Propagation ************************\n\n");
     // wavefunction.Projections("H.h5");
