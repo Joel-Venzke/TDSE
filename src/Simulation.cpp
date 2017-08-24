@@ -281,7 +281,7 @@ void Simulation::SplitOpperator()
     /* set current iteration */
     /* The -2 is from the already increased counter and the fact that psi[0] is
      * written during simulation setup */
-    i = (wavefunction->GetWrieCounterCheckpoint() - 2) *
+    i = (wavefunction->GetWriteCounterCheckpoint() - 2) *
         write_frequency_checkpoint;
     i++;
     if (i >= time_length) EndRun("Restart needs work for free prop restarts");

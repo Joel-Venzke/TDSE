@@ -104,5 +104,5 @@ class Wavefunction : protected Utils
   Vec *GetPsi();
   double **GetXValue();
   PetscInt **GetGobblerIdx();
-  PetscInt GetWrieCounterCheckpoint();
+  PetscInt GetWriteCounterCheckpoint();
 };

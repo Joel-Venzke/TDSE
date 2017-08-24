@@ -1035,7 +1035,7 @@ double** Wavefunction::GetXValue() { return x_value; }
 
 PetscInt** Wavefunction::GetGobblerIdx() { return gobbler_idx; }
 
-PetscInt Wavefunction::GetWrieCounterCheckpoint()
+PetscInt Wavefunction::GetWriteCounterCheckpoint()
 {
   return write_counter_checkpoint;
 }
