@@ -610,13 +610,6 @@ void Wavefunction::CreatePsi()
   Normalize();
 }
 
-void Wavefunction::CreateObservable(PetscInt observable_idx, PetscInt elec_idx,
-                                    PetscInt dim_idx)
-{
-  EndRun("Bad observable index in Wavefunction " +
-         std::to_string(observable_idx));
-}
-
 void Wavefunction::CreateObservables()
 {
   PetscInt low, high;

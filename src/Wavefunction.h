@@ -50,8 +50,6 @@ class Wavefunction : protected Utils
   /* hidden from user for safety */
   void CreateGrid();
   void CreatePsi();
-  void CreateObservable(PetscInt observable_idx, PetscInt elec_idx,
-                        PetscInt dim_idx);
   void CreateObservables();
   void CleanUp();
 
