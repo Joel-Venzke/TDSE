@@ -47,7 +47,7 @@ class Simulation : protected Utils
   PetscLogEvent create_checkpoint;
 
   /* destroys psi_old*/
-  bool CheckConvergance(Vec &psi_1, Vec &psi_2, double tol);
+  bool CheckConvergence(Vec &psi_1, Vec &psi_2, double tol);
   void ModifiedGramSchmidt(std::vector< Vec > &states);
 
  public:

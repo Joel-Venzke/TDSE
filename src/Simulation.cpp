@@ -687,7 +687,7 @@ void Simulation::PowerMethod(PetscInt num_states, PetscInt return_state_idx)
       if (i % write_frequency == 0)
       {
         /* check convergence criteria */
-        converged = CheckConvergance(psi[0], psi_old, parameters->GetTol());
+        converged = CheckConvergence(psi[0], psi_old, parameters->GetTol());
         /* save this psi to ${target}.h5 */
         energy = wavefunction->GetEnergy(hamiltonian->GetTimeIndependent());
         if (world.rank() == 0)
@@ -748,7 +748,7 @@ void Simulation::PowerMethod(PetscInt num_states, PetscInt return_state_idx)
  * @param tol [description]
  * @return [description]
  */
-bool Simulation::CheckConvergance(Vec &psi_1, Vec &psi_2, double tol)
+bool Simulation::CheckConvergence(Vec &psi_1, Vec &psi_2, double tol)
 {
   Mat *h              = hamiltonian->GetTimeIndependent();
   double wave_error   = 0.0;
