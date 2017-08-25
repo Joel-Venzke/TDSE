@@ -151,7 +151,7 @@ void Simulation::Propagate()
   if (checkpoint_eof)
   {
     /* Save frame after pulse ends*/
-    wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
+    wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
   }
 
   if (free_propagate == -1) /* until norm stops changing */
@@ -172,7 +172,8 @@ void Simulation::Propagate()
       if (i % write_frequency_observables == 0)
       {
         /* write a checkpoint */
-        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i, false);
+        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1),
+                                 false);
       }
 
       /* only checkpoint so often */
@@ -196,7 +197,7 @@ void Simulation::Propagate()
           converged = true;
         }
         /* write a checkpoint */
-        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
+        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
         t = clock();
       }
       i++;
@@ -215,7 +216,8 @@ void Simulation::Propagate()
       if (i % write_frequency_observables == 0)
       {
         /* write a checkpoint */
-        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i, false);
+        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1),
+                                 false);
       }
 
       /* only checkpoint so often */
@@ -231,13 +233,13 @@ void Simulation::Propagate()
                     << "\n"
                     << std::flush;
         /* write a checkpoint */
-        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
+        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
         t = clock();
       }
       i++;
     }
     /* Save last Wavefunction since it might not end on a write frequency*/
-    wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
+    wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
   }
 
   VecDestroy(&psi_old);
@@ -337,7 +339,7 @@ void Simulation::SplitOpperator()
   }
 
   /* Save frame after pulse ends*/
-  wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
+  wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
 
   if (free_propagate == -1) /* until norm stops changing */
   {
@@ -367,7 +369,8 @@ void Simulation::SplitOpperator()
       if (i % write_frequency_observables == 0)
       {
         /* write a checkpoint */
-        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i, false);
+        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1),
+                                 false);
       }
 
       /* only checkpoint so often */
@@ -391,7 +394,7 @@ void Simulation::SplitOpperator()
           converged = true;
         }
         /* write a checkpoint */
-        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
+        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
         t = clock();
       }
       i++;
@@ -420,7 +423,8 @@ void Simulation::SplitOpperator()
       if (i % write_frequency_observables == 0)
       {
         /* write a checkpoint */
-        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i, false);
+        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1),
+                                 false);
       }
 
       /* only checkpoint so often */
@@ -436,13 +440,13 @@ void Simulation::SplitOpperator()
                     << "\n"
                     << std::flush;
         /* write a checkpoint */
-        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
+        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
         t = clock();
       }
       i++;
     }
     /* Save last Wavefunction since it might not by on a write frequency*/
-    wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
+    wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
   }
 
   VecDestroy(&psi_old);

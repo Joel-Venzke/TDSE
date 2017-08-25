@@ -1,13 +1,13 @@
 {
-  "delta_t": 0.005,
+  "delta_t": 0.02,
   "dimensions": [
-    {"dim_size": 20.0,
-    "delta_x":   0.5},
     {"dim_size": 40.0,
-    "delta_x":   0.5}],
+    "delta_x":   0.2},
+    {"dim_size": 80.0,
+    "delta_x":   0.2}],
   "coordinate_system": "Cylindrical",
   "num_electrons": 1,
-  "restart": 0,
+  "restart": 1,
   "target": {
     "name":  "H",
     "nuclei" : [
@@ -28,7 +28,7 @@
   "write_frequency_observables": 1,
   "write_frequency_eigin_state": 1,
   "state_solver":    "Power",
-  "propagate": 0,
+  "propagate": 1,
   "free_propagate": 0,
   "start_state": 0,
   "states": [{"energy": -0.5}],
@@ -41,12 +41,12 @@
       "helicity" : "left",
       "ellipticity" : 0.0,
       "pulse_shape":   "sin2",
-      "cycles_on":      5.0,
+      "cycles_on":      1.0,
       "cycles_plateau": 0.0,
-      "cycles_off":     5.0,
+      "cycles_off":     1.0,
       "cycles_delay":   0.0,
       "cep":            0.0,
-      "energy":         0.056986999999999996,
+      "energy":         0.375,
       "intensity":      1e14}]
   }
 }

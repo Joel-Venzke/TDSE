@@ -217,8 +217,7 @@ void Pulse::InitializePulse(PetscInt n)
                     gaussian_sigma * cycles_on[n] + cycles_delay[n]) /
                    (delta_t));
   }
-  std::cout << on_start << " " << plateau_start << " " << off_start << " "
-            << off_end << "\n";
+
   if (!pulse_alloc)
   {
     pulse_envelope[n] = new double[max_pulse_length];
