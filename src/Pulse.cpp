@@ -11,15 +11,18 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p)
   double polar_norm     = 0.0;
 
   /* get number of pulses and dt from Parameters */
-  pulse_alloc                        = false;
-  num_pulses                         = p.GetNumPulses();
-  num_dims                           = p.GetNumDims();
-  delta_t                            = p.GetDeltaT();
-  polarization_vector_major          = p.GetPolarizationVector();
-  if (num_dims == 3) poynting_vector = p.GetPoyntingVector();
-  ellipticity                        = p.ellipticity.get();
-  helicity_idx                       = p.helicity_idx.get();
-  max_pulse_length                   = 0; /* stores longest pulse */
+  pulse_alloc               = false;
+  num_pulses                = p.GetNumPulses();
+  num_dims                  = p.GetNumDims();
+  delta_t                   = p.GetDeltaT();
+  polarization_vector_major = p.GetPolarizationVector();
+  if (num_dims == 3)
+  {
+    poynting_vector = p.GetPoyntingVector();
+  }
+  ellipticity      = p.ellipticity.get();
+  helicity_idx     = p.helicity_idx.get();
+  max_pulse_length = 0; /* stores longest pulse */
 
   pulse_shape_idx = p.pulse_shape_idx.get();
   gaussian_sigma  = 5.0;
@@ -110,8 +113,7 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p)
 
     /* calculate length (number of array cells) of each pulse */
     pulse_length = ceil(2.0 * pi * cycles_total[pulse_idx] /
-                        (energy[pulse_idx] * delta_t)) +
-                   1;
+                        (energy[pulse_idx] * delta_t));
 
     /* find the largest */
     if (pulse_length > max_pulse_length)
@@ -172,8 +174,11 @@ void Pulse::InitializeTime()
 /* build the nth pulse */
 void Pulse::InitializePulse(PetscInt n)
 {
-  PetscInt on_start, plateau_start, off_start, off_end;
-  double period = 2 * pi / energy[n];
+  PetscInt on_start      = 0;
+  PetscInt plateau_start = 0;
+  PetscInt off_start     = 0;
+  PetscInt off_end       = 0;
+  double period          = 2.0 * pi / energy[n];
   double s1;
   double current_cep = cep[n] + (((int)cycles_on[n]) - cycles_on[n]);
 
@@ -212,7 +217,8 @@ void Pulse::InitializePulse(PetscInt n)
                     gaussian_sigma * cycles_on[n] + cycles_delay[n]) /
                    (delta_t));
   }
-
+  std::cout << on_start << " " << plateau_start << " " << off_start << " "
+            << off_end << "\n";
   if (!pulse_alloc)
   {
     pulse_envelope[n] = new double[max_pulse_length];
@@ -234,7 +240,7 @@ void Pulse::InitializePulse(PetscInt n)
       else if (pulse_shape_idx[n] == 1)
       {
         s1 = (energy[n] * delta_t * (plateau_start - time_idx)) /
-             (2 * pi * cycles_on[n]);
+             (2.0 * pi * cycles_on[n]);
         pulse_envelope[n][time_idx] = field_max[n] * exp(-1.0 * s1 * s1);
         // pulse_envelope[n][time_idx] = -1.0 * s1 * s1;
       }
@@ -249,7 +255,7 @@ void Pulse::InitializePulse(PetscInt n)
       {
         s1 = sin(energy[n] * delta_t * (time_idx - off_start) /
                  (4.0 * cycles_off[n]));
-        pulse_envelope[n][time_idx] = field_max[n] * (1 - (s1 * s1));
+        pulse_envelope[n][time_idx] = field_max[n] * (1.0 - (s1 * s1));
       }
       else if (pulse_shape_idx[n] == 1)
       {
