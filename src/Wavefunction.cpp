@@ -259,11 +259,6 @@ void Wavefunction::LoadRestart(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   viewer_file.Close();
 
   /* Calculate observable counter */
-  std::cout << "hows this counter? "
-            << h5_file.GetLast("/Wavefunction/time") / delta_t << " "
-            << (int)h5_file.GetLast("/Wavefunction/time") / delta_t << " "
-            << std::round(h5_file.GetLast("/Wavefunction/time") / delta_t)
-            << "\n";
   write_counter_observables =
       std::round(h5_file.GetLast("/Wavefunction/time") / delta_t);
   write_counter_observables /= write_frequency_observables;
@@ -328,7 +323,6 @@ void Wavefunction::ProjectOut(std::string file_name, HDF5Wrapper& h5_file_in,
 {
   /* Get write index for last checkpoint */
   std::vector< dcomp > ret_vec = Projections(file_name);
-  double sum                   = 0.0;
   HDF5Wrapper h5_file(file_name);
   ViewWrapper viewer_file(file_name);
 
@@ -338,15 +332,9 @@ void Wavefunction::ProjectOut(std::string file_name, HDF5Wrapper& h5_file_in,
     viewer_file.SetTime(state_idx);
     viewer_file.ReadObject(psi_proj);
     Normalize(psi_proj, 0.0);
-    sum += std::abs(ret_vec[state_idx]) * std::abs(ret_vec[state_idx]);
-    std::cout << state_idx << " "
-              << std::abs(ret_vec[state_idx]) * std::abs(ret_vec[state_idx])
-              << " " << Norm(psi_proj, 0.0) << " " << Norm(psi, 0.0) << " ";
     VecAXPY(psi, -1.0 * ret_vec[state_idx], psi_proj);
-    std::cout << Norm(psi, 0.0) << "\n";
     Checkpoint(h5_file_in, viewer_file_in, -1 * state_idx);
   }
-  std::cout << "Sum: " << sum << "\n";
   /* Close file */
   viewer_file.Close();
 }
