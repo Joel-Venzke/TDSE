@@ -263,13 +263,16 @@ def state_single_name(state_number, shells):
 
     return ret_val
 
+def get_shells(state_number):
+    shells = [0]
+    while (state_number > shells[-1]):
+        shells.append(shells[-1] + len(shells))
+    return shells
 
 # return list of states up to state_number
 def state_name(state_number):
     # get size of each shell
-    shells = [0]
-    while (state_number > shells[-1]):
-        shells.append(shells[-1] + len(shells))
+    shells = get_shells(state_number)
 
     # get list of names
     name_list = []
@@ -360,11 +363,110 @@ for state_number in range(data.shape[1]):
 fig = plt.figure()
 plt.semilogy(
     range(plot_data.shape[1]),
-    plot_data[-1, :],'o')
+    plot_data[-1, :],'o-')
 
 plt.ylabel("Population")
 plt.xlabel("Bound State")
 plt.xticks(range(plot_data.shape[1]),state_labels,rotation='vertical')
 plt.ylim([1e-20, 10])
 fig.savefig("figs/Projection_at_end.png")
+plt.clf()
+
+def sum_by_n(data):
+    ret_val = []
+    shells = get_shells(data.shape[1])
+    ret_val = np.zeros((data.shape[0], len(shells)))
+    for n in range(len(shells)):
+        for l in range(n):
+            if n>0:
+                ret_val[:,n] += data[:, shells[n-1]+l]
+            else:
+                ret_val[:,n] += data[:, l]
+    return ret_val
+
+fig = plt.figure()
+by_n_value = sum_by_n(plot_data)
+plt.semilogy(
+    range(len(by_n_value[-1])),
+    by_n_value[-1],'o-')
+plt.ylabel("Population")
+plt.xlabel("N value")
+plt.xticks(range(len(by_n_value[-1])))
+plt.ylim([1e-20, 10])
+plt.xlim([1,len(by_n_value[-1])])
+fig.savefig("figs/Projection_at_end_by_n.png")
+plt.clf()
+
+fig = plt.figure()
+for n_value in range(1,by_n_value.shape[1]):
+    plt.semilogy(
+        plot_time,
+        by_n_value[:, n_value],
+        marker='o',
+        label="n="+str(n_value),
+        color=colors[n_value % len(colors)],
+        linestyle=linestyles[(n_value / len(colors)) % len(linestyles)])
+
+plt.ylabel("Population")
+plt.xlabel("Time (a.u.)")
+plt.ylim([1e-20, 10])
+plt.legend(loc=2)
+fig.savefig("figs/Projection_vs_time_by_n.png")
+plt.clf()
+
+def sum_by_l(data):
+    ret_val = []
+    shells = get_shells(data.shape[1])
+    ret_val = np.zeros((data.shape[0], shells[-1]-1))
+    for n in range(len(shells)):
+        for l in range(n):
+            if n>0:
+                ret_val[:,l] += data[:, shells[n-1]+l]
+            else:
+                ret_val[:,l] += data[:, l]
+    return ret_val
+
+fig = plt.figure()
+by_l_value = sum_by_l(plot_data)
+plt.semilogy(
+    range(len(by_l_value[-1])),
+    by_l_value[-1],'o-')
+plt.ylabel("Population")
+plt.xlabel("l value")
+plt.xticks(range(len(by_l_value[-1])))
+plt.ylim([1e-20, 10])
+plt.xlim([0,len(by_l_value[-1])-1])
+fig.savefig("figs/Projection_at_end_by_l.png")
+plt.clf()
+
+fig = plt.figure()
+for l_value in range(by_l_value.shape[1]):
+    label = ""
+    # create label
+    if l_value == 0:
+        label = "s"
+    elif l_value == 1:
+        label = "p"
+    elif l_value == 2:
+        label = "d"
+    elif l_value == 3:
+        label = "f"
+    elif l_value > 23:  # anything greater that z is just a number
+        label = ",l=" + str(l_value)
+    else:  # any
+        label = chr(ord('g') + l_value - 4)
+
+    plt.semilogy(
+        plot_time,
+        by_l_value[:, l_value],
+        marker='o',
+        label=label,
+        color=colors[l_value % len(colors)],
+        linestyle=linestyles[(l_value / len(colors)) % len(linestyles)])
+
+plt.ylabel("Population")
+plt.xlabel("Time (a.u.)")
+plt.ylim([1e-20, 10])
+plt.legend(loc=2)
+fig.savefig("figs/Projection_vs_time_by_n.png")
 plt.clf()
