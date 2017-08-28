@@ -6,9 +6,10 @@ import matplotlib.pyplot as plt
 import h5py
 
 f = h5py.File("TDSE.h5", "r")
+p = h5py.File("Pulse.h5", "r")
 observables = f["Observables"]
 o_time = observables["time"][:]
-pulses = f["Pulse"]
+pulses = p["Pulse"]
 p_time = pulses["time"][:]
 energy = f["Parameters"]["energy"][0]
 cycles = int(f["Parameters"]["cycles_on"][0] +

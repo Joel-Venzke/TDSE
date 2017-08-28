@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 import h5py
 
 f = h5py.File("TDSE.h5", "r")
-pulses = f["Pulse"]
+p = h5py.File("Pulse.h5", "r")
+pulses = p["Pulse"]
 p_time = pulses["time"][:]
 dims = f["Parameters"]["num_dims"][:]
 

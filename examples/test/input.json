@@ -7,7 +7,7 @@
     "delta_x":   0.2}],
   "coordinate_system": "Cylindrical",
   "num_electrons": 1,
-  "restart": 1,
+  "restart": 0,
   "target": {
     "name":  "H",
     "nuclei" : [
@@ -41,9 +41,9 @@
       "helicity" : "left",
       "ellipticity" : 0.0,
       "pulse_shape":   "sin2",
-      "cycles_on":      1.0,
+      "cycles_on":      3.0,
       "cycles_plateau": 0.0,
-      "cycles_off":     1.0,
+      "cycles_off":     3.0,
       "cycles_delay":   0.0,
       "cep":            0.0,
       "energy":         0.375,

@@ -126,7 +126,7 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p)
   InitializePulse();
   InitializeField();
 
-  if (p.GetRestart() != 1) Checkpoint(data_file);
+  Checkpoint();
 
   DeallocatePulses();
 
@@ -349,8 +349,9 @@ void Pulse::InitializeField()
 }
 
 /* write out the state of the pulse */
-void Pulse::Checkpoint(HDF5Wrapper& data_file)
+void Pulse::Checkpoint()
 {
+  HDF5Wrapper data_file("Pulse.h5", "w");
   data_file.CreateGroup("/Pulse");
   /* write time, field, and field_envelope to hdf5 */
   data_file.WriteObject(time, max_pulse_length, "/Pulse/time",

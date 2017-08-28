@@ -5,8 +5,9 @@ import matplotlib.pyplot as plt
 import h5py
 
 f = h5py.File("TDSE.h5", "r")
+p = h5py.File("Pulse.h5", "r")
 observables = f["Observables"]
-pulses = f["Pulse"]
+pulses = p["Pulse"]
 p_time = pulses["time"][:]
 time = observables["time"][1:]
 num_dims = f["Parameters"]["num_dims"][0]
@@ -338,3 +339,20 @@ plt.ylim([1e-20, 10])
 plt.legend(loc=2)
 fig.savefig("figs/Projection.png")
 plt.clf()
+
+fig = plt.figure()
+for state_number in range(data.shape[1]):
+    plt.semilogy(
+        plot_time,
+        plot_data[:, state_number],
+        marker='o',
+        label=state_labels[state_number],
+        color=colors[state_number % len(colors)],
+        linestyle=linestyles[(state_number / len(colors)) % len(linestyles)])
+
+    plt.ylabel("Population")
+    plt.xlabel("Time (a.u.)")
+    plt.ylim([1e-20, 10])
+    plt.legend(loc=2)
+    fig.savefig("figs/Projection_"+str(state_number)+"_"+state_labels[state_number]+".png")
+    plt.clf()

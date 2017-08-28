@@ -39,8 +39,9 @@ for dx in ["0.15", "0.2", "0.3", "0.4", "0.5", "0.6"]:
 
 for fold in folders:
     f = h5py.File(fold + "TDSE.h5", "r")
+    p = h5py.File("Pulse.h5", "r")
     observables = f["Observables"]
-    pulses = f["Pulse"]
+    pulses = p["Pulse"]
     p_time = pulses["time"][:]
     time = observables["time"][1:]
     num_dims = f["Parameters"]["num_dims"][0]
@@ -53,8 +54,9 @@ print "Plotting Norm"
 fig = plt.figure()
 for fold in folders:
     f = h5py.File(fold + "TDSE.h5", "r")
+    p = h5py.File("Pulse.h5", "r")
     observables = f["Observables"]
-    pulses = f["Pulse"]
+    pulses = p["Pulse"]
     p_time = pulses["time"][:]
     time = observables["time"][1:]
     num_dims = f["Parameters"]["num_dims"][0]
@@ -75,8 +77,9 @@ print "Plotting Ionization"
 fig = plt.figure()
 for fold in folders:
     f = h5py.File(fold + "TDSE.h5", "r")
+    p = h5py.File("Pulse.h5", "r")
     observables = f["Observables"]
-    pulses = f["Pulse"]
+    pulses = p["Pulse"]
     p_time = pulses["time"][:]
     time = observables["time"][1:]
     num_dims = f["Parameters"]["num_dims"][0]
@@ -97,8 +100,9 @@ print "Plotting Ionization Rate"
 fig = plt.figure()
 for fold in folders:
     f = h5py.File(fold + "TDSE.h5", "r")
+    p = h5py.File("Pulse.h5", "r")
     observables = f["Observables"]
-    pulses = f["Pulse"]
+    pulses = p["Pulse"]
     p_time = pulses["time"][:]
     time = observables["time"][1:]
     num_dims = f["Parameters"]["num_dims"][0]
@@ -123,8 +127,9 @@ print "Plotting ECS Population"
 fig = plt.figure()
 for fold in folders:
     f = h5py.File(fold + "TDSE.h5", "r")
+    p = h5py.File("Pulse.h5", "r")
     observables = f["Observables"]
-    pulses = f["Pulse"]
+    pulses = p["Pulse"]
     p_time = pulses["time"][:]
     time = observables["time"][1:]
     num_dims = f["Parameters"]["num_dims"][0]
@@ -147,8 +152,9 @@ print "Plotting Dipole"
 fig = plt.figure()
 for fold in folders:
     f = h5py.File(fold + "TDSE.h5", "r")
+    p = h5py.File("Pulse.h5", "r")
     observables = f["Observables"]
-    pulses = f["Pulse"]
+    pulses = p["Pulse"]
     p_time = pulses["time"][:]
     time = observables["time"][1:]
     num_dims = f["Parameters"]["num_dims"][0]
@@ -179,8 +185,9 @@ print "Plotting Dipole Acceleration"
 fig = plt.figure()
 for fold in folders:
     f = h5py.File(fold + "TDSE.h5", "r")
+    p = h5py.File("Pulse.h5", "r")
     observables = f["Observables"]
-    pulses = f["Pulse"]
+    pulses = p["Pulse"]
     p_time = pulses["time"][:]
     time = observables["time"][1:]
     num_dims = f["Parameters"]["num_dims"][0]
@@ -213,8 +220,9 @@ count = 0
 harm_value = 0
 for fold in folders:
     f = h5py.File(fold + "TDSE.h5", "r")
+    p = h5py.File("Pulse.h5", "r")
     observables = f["Observables"]
-    pulses = f["Pulse"]
+    pulses = p["Pulse"]
     p_time = pulses["time"][:]
     time = observables["time"][1:]
     num_dims = f["Parameters"]["num_dims"][0]
@@ -273,8 +281,9 @@ print "Plotting Linearity"
 fig = plt.figure()
 for fold in folders:
     f = h5py.File(fold + "TDSE.h5", "r")
+    p = h5py.File("Pulse.h5", "r")
     observables = f["Observables"]
-    pulses = f["Pulse"]
+    pulses = p["Pulse"]
     p_time = pulses["time"][:]
     time = observables["time"][1:]
     num_dims = f["Parameters"]["num_dims"][0]
