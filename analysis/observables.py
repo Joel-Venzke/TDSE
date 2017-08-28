@@ -337,7 +337,7 @@ plt.ylabel("Population")
 plt.xlabel("Time (a.u.)")
 plt.ylim([1e-20, 10])
 plt.legend(loc=2)
-fig.savefig("figs/Projection.png")
+fig.savefig("figs/Projection_vs_time.png")
 plt.clf()
 
 fig = plt.figure()
@@ -356,3 +356,15 @@ for state_number in range(data.shape[1]):
     plt.legend(loc=2)
     fig.savefig("figs/Projection_"+str(state_number).zfill(4)+"_"+state_labels[state_number]+".png")
     plt.clf()
+
+fig = plt.figure()
+plt.semilogy(
+    range(plot_data.shape[1]),
+    plot_data[-1, :],'o')
+
+plt.ylabel("Population")
+plt.xlabel("Bound State")
+plt.xticks(range(plot_data.shape[1]),state_labels,rotation='vertical')
+plt.ylim([1e-20, 10])
+fig.savefig("figs/Projection_at_end.png")
+plt.clf()
