@@ -418,7 +418,7 @@ def sum_by_l(data):
     ret_val = []
     shells = get_shells(data.shape[1])
     if len(shells)>2:
-      ret_val = np.zeros((data.shape[0], shells[-1]-shells[-2]-1))
+      ret_val = np.zeros((data.shape[0], shells[-1]-shells[-2]))
     else:
       ret_val = np.zeros((data.shape[0], 3))
     for n in range(len(shells)):
@@ -431,13 +431,13 @@ def sum_by_l(data):
 
 fig = plt.figure()
 by_l_value = sum_by_l(plot_data)
-print by_l_value
 plt.semilogy(
     range(len(by_l_value[-1])),
     by_l_value[-1],'o-')
 plt.ylabel("Population")
 plt.xlabel("l value")
 plt.ylim([1e-20, 10])
+plt.xticks(range(len(by_l_value[-1])))
 fig.savefig("figs/Projection_at_end_by_l.png")
 plt.clf()
 
