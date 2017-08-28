@@ -417,7 +417,10 @@ plt.clf()
 def sum_by_l(data):
     ret_val = []
     shells = get_shells(data.shape[1])
-    ret_val = np.zeros((data.shape[0], shells[-1]-1))
+    if len(shells)>2:
+      ret_val = np.zeros((data.shape[0], shells[-1]-shells[-2]-1))
+    else:
+      ret_val = np.zeros((data.shape[0], 3))
     for n in range(len(shells)):
         for l in range(n):
             if n>0:
