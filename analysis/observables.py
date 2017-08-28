@@ -354,5 +354,5 @@ for state_number in range(data.shape[1]):
     plt.xlabel("Time (a.u.)")
     plt.ylim([1e-20, 10])
     plt.legend(loc=2)
-    fig.savefig("figs/Projection_"+str(state_number)+"_"+state_labels[state_number]+".png")
+    fig.savefig("figs/Projection_"+str(state_number).zfill(4)+"_"+state_labels[state_number]+".png")
     plt.clf()
