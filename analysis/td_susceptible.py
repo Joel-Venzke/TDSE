@@ -53,7 +53,7 @@ for i in range(min(6, cycles)):
             noverlap=int(window_size * 0.999),
             nperseg=window_size,
             window=chebwin(window_size, 80))
-        data = np.abs(dipole_fft[:, :pulses_fft.shape[1]] / pulse_fft)
+        data = np.abs(dipole_fft[:, :pulse_fft.shape[1]] / pulse_fft)
         idx = dipole_fft.max(axis=1).argmax()
         if f["Parameters"]["pulse_shape_idx"][0] == 1:
             d_idx_min = data.shape[1] / 2 - data.shape[1] / 6
