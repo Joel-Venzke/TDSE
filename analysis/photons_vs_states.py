@@ -23,7 +23,7 @@ energies = target["Energy"][:]
 
 
 print "Plotting Spectrum"
-fig = plt.figure()
+fig = plt.figure(figsize=(24, 18), dpi=80)
 data = pulses["field_1"][:]
 if np.max(data) > 1e-10:
     data_fft = np.absolute(
@@ -47,7 +47,7 @@ for energy in energies:
 plt.ylabel("Field Spectrum (arb)")
 plt.xlabel("$\omega$ (a.u.)")
 plt.title("Field Spectrum")
-plt.xlim([energies[0], -1.0*energies[0]])
-plt.ylim([1e-2, 1.0])
+plt.xlim([energies[0], 0.1])
+plt.ylim([1e-3,1.0])
 plt.legend()
 fig.savefig("figs/Photons.png")
