@@ -1,6 +1,11 @@
 import numpy as np
 import h5py
-target_name = "H"
+import json
+
+with open('input.json', 'r') as data_file:
+    data = json.load(data_file)
+
+target_name = data["target"]["name"]
 # read data
 target = h5py.File(target_name + ".h5", "r")
 f = h5py.File("TDSE.h5", "r")

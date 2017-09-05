@@ -1,10 +1,10 @@
 {
-  "delta_t": 0.02,
+  "delta_t": 0.005,
   "dimensions": [
-    {"dim_size": 40.0,
-    "delta_x":   0.2},
-    {"dim_size": 80.0,
-    "delta_x":   0.2}],
+    {"dim_size": 10.0,
+    "delta_x":   0.4},
+    {"dim_size": 20.0,
+    "delta_x":   0.4}],
   "coordinate_system": "Cylindrical",
   "num_electrons": 1,
   "restart": 0,
@@ -41,12 +41,12 @@
       "helicity" : "left",
       "ellipticity" : 0.0,
       "pulse_shape":   "sin2",
-      "cycles_on":      0.5,
+      "cycles_on":      10.0,
       "cycles_plateau": 0.0,
-      "cycles_off":     0.5,
+      "cycles_off":     10.0,
       "cycles_delay":   0.0,
       "cep":            0.0,
-      "energy":         0.375,
+      "energy":         0.057,
       "intensity":      1e14}]
   }
 }

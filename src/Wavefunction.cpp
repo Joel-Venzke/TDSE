@@ -699,7 +699,7 @@ dcomp Wavefunction::GetPositionVal(PetscInt idx, PetscInt elec_idx,
     // std::cout << "using integrate\n";
     /* see appendix A of https://arxiv.org/pdf/1604.00947.pdf using Lagrange
      * interpolation polynomials and
-     * http://slideflix.net/doc/4183369/gregory-s-quadrature-method*/
+     * http://slideflix.net/doc/4183369/gregory-s-quadrature-method */
     // if (idx_array[elec_idx * num_dims + dim_idx] == 0) ret_val *= 13.0 /
     // 12.0;
 
