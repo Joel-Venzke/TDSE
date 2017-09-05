@@ -39,7 +39,7 @@ if np.max(data) > 1e-10:
       print "Plotting:", n
       plt.semilogy(spec_time*n+energies[0],
           data_fft,
-          label="field*"+str(n))
+          label=str(n)+" photon")
 
 for energy in energies:
     print "Plotting:",energy
@@ -47,7 +47,7 @@ for energy in energies:
 plt.ylabel("Field Spectrum (arb)")
 plt.xlabel("$\omega$ (a.u.)")
 plt.title("Field Spectrum")
-plt.xlim([energies[0], 0.0])
-plt.ylim([1e-4, 1.0])
+plt.xlim([energies[0], -1.0*energies[0]])
+plt.ylim([1e-2, 1.0])
 plt.legend()
 fig.savefig("figs/Photons.png")
