@@ -32,13 +32,14 @@ if np.max(data) > 1e-10:
                     data, (10 * data.shape[0], 10 * data.shape[0]),
                     'constant',
                     constant_values=(0.0, 0.0))))
+    data_fft /= data_fft.max()
     # 2*pi/(dt*N)
     spec_time = np.arange(data_fft.shape[0])*2.0*np.pi/(data_fft.shape[0]*(p_time[1]-p_time[0]))
     for n in range(1,int(abs(energies[0]/spec_time[np.argmax(data_fft[:data_fft.shape[0]/2])]))+1):
       print "Plotting:", n
       plt.semilogy(spec_time*n+energies[0],
           data_fft,
-          label="field "+str(n))
+          label="field*"+str(n))
 
 for energy in energies:
     print "Plotting:",energy
@@ -46,6 +47,7 @@ for energy in energies:
 plt.ylabel("Field Spectrum (arb)")
 plt.xlabel("$\omega$ (a.u.)")
 plt.title("Field Spectrum")
-plt.xlim([energies[0], 0.5])
+plt.xlim([energies[0], 0.0])
+plt.ylim([1e-4, 1.0])
 plt.legend()
 fig.savefig("figs/Photons.png")
