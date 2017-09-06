@@ -47,8 +47,10 @@ plt.title("Pulses")
 plt.legend()
 fig.savefig("figs/Pulses.png")
 
+
 # Spectrum
 print "Plotting Spectrum"
+grid_max = 0.0
 fig = plt.figure()
 for dim_idx in range(num_dims):
     data = pulses["field_" + str(dim_idx)][:]
@@ -64,9 +66,11 @@ for dim_idx in range(num_dims):
         plt.semilogy(spec_time,
             data_fft,
             label="field " + str(dim_idx))
+        grid_max  = max(spec_time[np.argmax(data_fft[:data_fft.shape[0]/2])], grid_max)        
+
 plt.ylabel("Field Spectrum (arb)")
 plt.xlabel("$\omega$ (a.u.)")
 plt.title("Field Spectrum")
-plt.xlim([0, 1])
+plt.xlim([0, grid_max * 2.0])
 plt.legend()
 fig.savefig("figs/Spectrum.png")
