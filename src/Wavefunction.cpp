@@ -514,13 +514,7 @@ void Wavefunction::CreateGrid()
       num_x[dim_idx] = count * 2.0;
     }
 
-    if (coordinate_system_idx == 1)
-    {
-      /* Odd number for simpsons rule */
-      if (num_x[dim_idx] % 2 != 1) num_x[dim_idx]++;
-    }
-    /* odd number so it is even on both sides */
-    else if (num_x[dim_idx] % 2 != 0)
+    if (num_x[dim_idx] % 2 != 0)
     {
       num_x[dim_idx]++;
     }
@@ -570,17 +564,8 @@ void Wavefunction::CreateGrid()
       /* find center of grid */
       center = num_x[dim_idx] / 2;
 
-      /* store center */
-      if (coordinate_system_idx == 1)
-      {
-        /* for simpsons rule */
-        x_value[dim_idx][center] = 0.0;
-      }
-      else
-      {
-        x_value[dim_idx][center - 1] = -1.0 * delta_x_min[dim_idx] / 2.0;
-        x_value[dim_idx][center]     = delta_x_min[dim_idx] / 2.0;
-      }
+      x_value[dim_idx][center - 1] = -1.0 * delta_x_min[dim_idx] / 2.0;
+      x_value[dim_idx][center]     = delta_x_min[dim_idx] / 2.0;
 
       /* loop over all others */
       for (PetscInt x_idx = center - 1; x_idx >= 0; x_idx--)
@@ -602,7 +587,7 @@ void Wavefunction::CreateGrid()
         else if (std::abs(x_value[dim_idx][x_idx + 1]) <
                  delta_x_max_start[dim_idx])
         {
-          s1 = std::sin(w * (std::abs(x_value[dim_idx][x_idx + 1]) -
+          s1        = std::sin(w * (std::abs(x_value[dim_idx][x_idx + 1]) -
                              delta_x_min_end[dim_idx]));
           current_x = x_value[dim_idx][x_idx + 1] -
                       (amplitude * s1 * s1 + delta_x_min[dim_idx]);
