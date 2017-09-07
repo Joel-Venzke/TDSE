@@ -3,10 +3,11 @@
 #------------------Scheduler Options--------------------
 #SBATCH -J TDSE                # Job name
 #SBATCH -N 1                   # Total number of nodes (16 cores/node)
-#SBATCH -n 32                  # Total number of tasks
-#SBATCH -p jila                # Queue name
+#SBATCH -n 1                  # Total number of tasks
+#SBATCH --partition slow                # Queue name
+#SBATCH --qos slow                # Queue name
 #SBATCH -o run_%j.log          # Name of stdout output file (%j expands to jobid)
-#SBATCH -t 12:00:00            # Run time (hh:mm:ss)
+#SBATCH -t 00:00:10            # Run time (hh:mm:ss)
 #------------------------------------------------------
 
 # To daisy chain jobs, the script must know the name of the job submission script.
@@ -16,20 +17,10 @@
 # their own unique job name.
 
 #----------------------User Options------------------------
-TDSE_DIR=/users/becker/jove7731/Repos/TDSE
-DAISYCHAIN_SCRIPT=${TDSE_DIR}/scripts/run_scripts/slurm_daisychain.terra
+TDSE_DIR=/users/becker/cogo4490/repos/TDSE
+DAISYCHAIN_SCRIPT=${TDSE_DIR}/scripts/run_scripts/slurm_daisychain.sh
 RUN_FILE=${TDSE_DIR}/bin/TDSE
-RESTART_FILE=${TDSE_DIR}/scripts/run_scripts/restart_on.py
-
-module purge 
-module load intel
-module load openmpi
-module load hdf5
-module load boost
-module load cmake
-module load blas
-module load lapack
-module list 
+RESTART=python ${TDSE_DIR}/scripts/run_scripts/restart_on.py
 #----------------------------------------------------------
 
 # check if we should already be finished
@@ -76,13 +67,13 @@ sbatch -J $nextSlurmJobName --dependency=afterany:$SLURM_JOB_ID ${DAISYCHAIN_SCR
 if [ "$thisJobNumber" -eq "1" ]; then
  #first job
  echo "Starting First Job:"
- mpiexec ${RUN_FILE} -log_view
+ ${RUN_FILE}
 else
  #continuation
  echo "Starting Continuation Job:"
- python ${RESTART_FILE}
+ ${RESTART}
  sleep 1
- mpiexec ${RUN_FILE} -log_view
+ ${RUN_FILE}
 fi
 #----------------------------------------------------------
 
@@ -94,4 +85,3 @@ touch ${SLURM_SUBMIT_DIR}/daisychain/finished
 
 # help catch runaway scripts
 sleep 30
-
