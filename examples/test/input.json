@@ -1,10 +1,10 @@
 {
-  "delta_t": 0.005,
+  "delta_t": 0.125,
   "dimensions": [
-    {"dim_size": 10.0,
-    "delta_x":   0.4},
-    {"dim_size": 20.0,
-    "delta_x":   0.4}],
+    {"dim_size": 100.0,
+    "delta_x":   0.5},
+    {"dim_size": 200.0,
+    "delta_x":   0.5}],
   "coordinate_system": "Cylindrical",
   "num_electrons": 1,
   "restart": 0,
@@ -21,17 +21,17 @@
         "b" : [4.073942]}
       }]},
   "alpha":   0.0,
-  "gobbler": 0.9,
+  "gobbler": 0.7,
   "order":   2,
   "sigma":   3.0,
-  "write_frequency_checkpoint": 100,
+  "write_frequency_checkpoint": 90,
   "write_frequency_observables": 1,
   "write_frequency_eigin_state": 1,
   "state_solver":    "Power",
   "propagate": 1,
   "free_propagate": 0,
   "start_state": 0,
-  "states": [{"energy": -0.5},{"energy": -0.5},{"energy": -0.5}],
+  "states": [{"energy": -0.5}],
   "tol":        1e-10,
   "laser": {
     "experiment_type": "default",
@@ -41,12 +41,12 @@
       "helicity" : "left",
       "ellipticity" : 0.0,
       "pulse_shape":   "sin2",
-      "cycles_on":      10.0,
+      "cycles_on":      4.0,
       "cycles_plateau": 0.0,
-      "cycles_off":     10.0,
+      "cycles_off":     4.0,
       "cycles_delay":   0.0,
       "cep":            0.0,
       "energy":         0.057,
-      "intensity":      1e14}]
+      "intensity":      5e14}]
   }
 }
