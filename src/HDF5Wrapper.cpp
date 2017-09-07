@@ -794,8 +794,16 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
                 "Number of electrons in the simulation");
     WriteObject(p.dim_size.get(), num_dims, "/Parameters/dim_size",
                 "The length of that dimension in atomic units.");
-    WriteObject(p.delta_x.get(), num_dims, "/Parameters/delta_x",
-                "The step sizes in that dimension in atomic units.");
+    WriteObject(p.delta_x_min.get(), num_dims, "/Parameters/delta_x_min",
+                "The minimum step sizes in that dimension in atomic units.");
+    WriteObject(p.delta_x_max.get(), num_dims, "/Parameters/delta_x_max",
+                "The maximum step sizes in that dimension in atomic units.");
+    WriteObject(
+        p.delta_x_min_end.get(), num_dims, "/Parameters/delta_x_min_end",
+        "The minimum step sizes ends in that dimension in atomic units.");
+    WriteObject(p.delta_x_max_start.get(), num_dims,
+                "/Parameters/delta_x_max_start",
+                "The max step sizes begins in that dimension in atomic units.");
     WriteObject(p.GetCoordinateSystemIdx(), "/Parameters/coordinate_system_idx",
                 "Index of coordinate system: Cartesian:0, Cylindrical:1");
     WriteObject(p.GetDeltaT(), "/Parameters/delta_t",

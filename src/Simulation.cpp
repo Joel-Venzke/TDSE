@@ -102,7 +102,8 @@ void Simulation::Propagate()
   }
 
   if (world.rank() == 0)
-    std::cout << "Total writes: " << time_length / write_frequency_checkpoint
+    std::cout << "Total writes: "
+              << time_length / write_frequency_checkpoint + 1
               << "\nStarting propagation\n"
               << std::flush;
 
@@ -290,7 +291,8 @@ void Simulation::SplitOpperator()
   }
 
   if (world.rank() == 0)
-    std::cout << "Total writes: " << time_length / write_frequency_checkpoint
+    std::cout << "Total writes: "
+              << time_length / write_frequency_checkpoint + 1
               << "\nStarting propagation\n"
               << std::flush;
 
@@ -697,7 +699,7 @@ void Simulation::PowerMethod(PetscInt num_states, PetscInt return_state_idx)
         if (world.rank() == 0)
           std::cout << "Energy: " << energy << "\n" << std::flush;
         /* write a checkpoint */
-        // wavefunction->Checkpoint(*h5_file, *viewer_file, -1.0);
+        // wavefunction->Checkpoint(*h5_file, *viewer_file, -1.0, true);
         if (world.rank() == 0)
           std::cout << "Time: "
                     << ((float)clock() - t) / (CLOCKS_PER_SEC * write_frequency)

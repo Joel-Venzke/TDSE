@@ -60,15 +60,19 @@ void Parameters::Setup(std::string file_name)
     coordinate_system_idx = -1;
   }
 
-  dim_size  = std::make_unique< double[] >(num_dims);
-  delta_x   = std::make_unique< double[] >(num_dims);
-  delta_x_2 = std::make_unique< double[] >(num_dims);
+  dim_size          = std::make_unique< double[] >(num_dims);
+  delta_x_min       = std::make_unique< double[] >(num_dims);
+  delta_x_min_end   = std::make_unique< double[] >(num_dims);
+  delta_x_max       = std::make_unique< double[] >(num_dims);
+  delta_x_max_start = std::make_unique< double[] >(num_dims);
 
   for (PetscInt i = 0; i < num_dims; ++i)
   {
-    dim_size[i]  = data["dimensions"][i]["dim_size"];
-    delta_x[i]   = data["dimensions"][i]["delta_x"];
-    delta_x_2[i] = delta_x[i] * delta_x[i];
+    dim_size[i]          = data["dimensions"][i]["dim_size"];
+    delta_x_min[i]       = data["dimensions"][i]["delta_x_min"];
+    delta_x_min_end[i]   = data["dimensions"][i]["delta_x_min_end"];
+    delta_x_max[i]       = data["dimensions"][i]["delta_x_max"];
+    delta_x_max_start[i] = data["dimensions"][i]["delta_x_max_start"];
   }
 
   /* get simulation behavior */

@@ -29,8 +29,10 @@ class Hamiltonian : protected Utils
   double alpha;   /* soft core atomic */
   double alpha_2; /* square of soft core atomic */
   double **field;
-  double *delta_x;
-  double *delta_x_2;
+  double *delta_x_min;       /* step sizes of each dimension in a.u. */
+  double *delta_x_min_end;   /* step sizes of each dimension in a.u. */
+  double *delta_x_max;       /* step sizes of each dimension in a.u. */
+  double *delta_x_max_start; /* step sizes of each dimension in a.u. */
   double **x_value;
   Mat hamiltonian;
   PetscInt **gobbler_idx; /* distance that starts gobbler */
