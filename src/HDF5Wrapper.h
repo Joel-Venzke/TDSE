@@ -25,7 +25,7 @@ class HDF5Wrapper : protected Utils
   /* ructor */
   HDF5Wrapper(Parameters &p);
   HDF5Wrapper(std::string f_name, Parameters &p);
-  HDF5Wrapper(std::string f_name);
+  HDF5Wrapper(std::string f_name, std::string mode = "wr");
 
   /* destructor */
   ~HDF5Wrapper();
@@ -75,9 +75,6 @@ class HDF5Wrapper : protected Utils
 
   /* write for parameters */
   void WriteHeader(Parameters &p);
-
-  /* reads restart and validates file */
-  void ReadRestart(Parameters &p);
 
   /* kill run */
   void EndRun(std::string str);

@@ -7,8 +7,8 @@ import h5py
 folders = []
 plot_lines = {}
 
-for dx in ["0.1", "0.15", "0.2", "0.3", "0.4"]:
-    for order in ["2", "4", "6"]:
+for dx in ["0.15", "0.2", "0.3", "0.4", "0.5", "0.6"]:
+    for order in ["2"]:
         key = dx + "/" + order + "/"
         folders.append(key)
 
@@ -23,20 +23,25 @@ for dx in ["0.1", "0.15", "0.2", "0.3", "0.4"]:
             line_style += "m"
         if dx == "0.4":
             line_style += "c"
+        if dx == "0.5":
+            line_style += "k"
+        if dx == "0.6":
+            line_style += "y"
 
         if order == "2":
             line_style += "-"
         if order == "4":
-            line_style += "--"
+            line_style += "-"
         if order == "6":
-            line_style += "-."
+            line_style += "-"
 
         plot_lines[key] = line_style
 
 for fold in folders:
     f = h5py.File(fold + "TDSE.h5", "r")
+    p = h5py.File("Pulse.h5", "r")
     observables = f["Observables"]
-    pulses = f["Pulse"]
+    pulses = p["Pulse"]
     p_time = pulses["time"][:]
     time = observables["time"][1:]
     num_dims = f["Parameters"]["num_dims"][0]
@@ -49,8 +54,9 @@ print "Plotting Norm"
 fig = plt.figure()
 for fold in folders:
     f = h5py.File(fold + "TDSE.h5", "r")
+    p = h5py.File("Pulse.h5", "r")
     observables = f["Observables"]
-    pulses = f["Pulse"]
+    pulses = p["Pulse"]
     p_time = pulses["time"][:]
     time = observables["time"][1:]
     num_dims = f["Parameters"]["num_dims"][0]
@@ -71,8 +77,9 @@ print "Plotting Ionization"
 fig = plt.figure()
 for fold in folders:
     f = h5py.File(fold + "TDSE.h5", "r")
+    p = h5py.File("Pulse.h5", "r")
     observables = f["Observables"]
-    pulses = f["Pulse"]
+    pulses = p["Pulse"]
     p_time = pulses["time"][:]
     time = observables["time"][1:]
     num_dims = f["Parameters"]["num_dims"][0]
@@ -93,8 +100,9 @@ print "Plotting Ionization Rate"
 fig = plt.figure()
 for fold in folders:
     f = h5py.File(fold + "TDSE.h5", "r")
+    p = h5py.File("Pulse.h5", "r")
     observables = f["Observables"]
-    pulses = f["Pulse"]
+    pulses = p["Pulse"]
     p_time = pulses["time"][:]
     time = observables["time"][1:]
     num_dims = f["Parameters"]["num_dims"][0]
@@ -119,8 +127,9 @@ print "Plotting ECS Population"
 fig = plt.figure()
 for fold in folders:
     f = h5py.File(fold + "TDSE.h5", "r")
+    p = h5py.File("Pulse.h5", "r")
     observables = f["Observables"]
-    pulses = f["Pulse"]
+    pulses = p["Pulse"]
     p_time = pulses["time"][:]
     time = observables["time"][1:]
     num_dims = f["Parameters"]["num_dims"][0]
@@ -143,8 +152,9 @@ print "Plotting Dipole"
 fig = plt.figure()
 for fold in folders:
     f = h5py.File(fold + "TDSE.h5", "r")
+    p = h5py.File("Pulse.h5", "r")
     observables = f["Observables"]
-    pulses = f["Pulse"]
+    pulses = p["Pulse"]
     p_time = pulses["time"][:]
     time = observables["time"][1:]
     num_dims = f["Parameters"]["num_dims"][0]
@@ -175,8 +185,9 @@ print "Plotting Dipole Acceleration"
 fig = plt.figure()
 for fold in folders:
     f = h5py.File(fold + "TDSE.h5", "r")
+    p = h5py.File("Pulse.h5", "r")
     observables = f["Observables"]
-    pulses = f["Pulse"]
+    pulses = p["Pulse"]
     p_time = pulses["time"][:]
     time = observables["time"][1:]
     num_dims = f["Parameters"]["num_dims"][0]
@@ -205,10 +216,13 @@ plt.clf()
 # HHG Spectrum
 print "Plotting HHG Spectrum"
 fig = plt.figure()
+count = 0
+harm_value = 0
 for fold in folders:
     f = h5py.File(fold + "TDSE.h5", "r")
+    p = h5py.File("Pulse.h5", "r")
     observables = f["Observables"]
-    pulses = f["Pulse"]
+    pulses = p["Pulse"]
     p_time = pulses["time"][:]
     time = observables["time"][1:]
     num_dims = f["Parameters"]["num_dims"][0]
@@ -238,6 +252,11 @@ for fold in folders:
                                  int(np.ceil((padd2 - data.shape[0]) / 2))),
                                 'constant',
                                 constant_values=(0.0, 0.0))))
+                    if count == 0: 
+                        count = 1
+                        harm_value = data[np.argmin(np.abs(np.arange(data.shape[0]) * dH-11))]
+                    else:
+                        data *= harm_value/data[np.argmin(np.abs(np.arange(data.shape[0]) * dH-11))]
                     plt.semilogy(
                         np.arange(data.shape[0]) * dH,
                         data,
@@ -247,7 +266,12 @@ for fold in folders:
 plt.ylabel("HHG Spectrum (a.u.)")
 plt.title("HHG Spectrum")
 plt.legend()
-plt.xlim([0, 50])
+x_min = 0
+x_max = 30
+plt.xticks(np.arange(x_min, x_max+1, 1.0))
+plt.xlim([x_min, x_max])
+plt.ylim([1e-3, 1e3])
+plt.grid(True, which='both')
 plt.tight_layout()
 fig.savefig("figs/HHG_Spectrum.png")
 plt.clf()
@@ -257,8 +281,9 @@ print "Plotting Linearity"
 fig = plt.figure()
 for fold in folders:
     f = h5py.File(fold + "TDSE.h5", "r")
+    p = h5py.File("Pulse.h5", "r")
     observables = f["Observables"]
-    pulses = f["Pulse"]
+    pulses = p["Pulse"]
     p_time = pulses["time"][:]
     time = observables["time"][1:]
     num_dims = f["Parameters"]["num_dims"][0]

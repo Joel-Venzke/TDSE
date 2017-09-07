@@ -1,17 +1,17 @@
 {
-  "delta_t": 0.005,
+  "delta_t": 0.02,
   "dimensions": [
-    {"dim_size": 20.0,
-    "delta_x":   0.1},
-    {"dim_size": 70.0,
-    "delta_x":   0.1}],
+    {"dim_size": 40.0,
+    "delta_x":   0.2},
+    {"dim_size": 80.0,
+    "delta_x":   0.2}],
   "coordinate_system": "Cylindrical",
   "num_electrons": 1,
   "restart": 0,
   "target": {
-    "name":  "He-SAE",
+    "name":  "H",
     "nuclei" : [
-      { "z": 0.0,
+      { "z": 1.0,
       "location": [0.0,0.0,0.0],
       "SAE": {
         "z_c": 1.0,
@@ -23,29 +23,30 @@
   "alpha":   0.0,
   "gobbler": 0.9,
   "order":   2,
-  "sigma":   2.0,
-  "write_frequency_checkpoint": 2000,
-  "write_frequency_observables": 2,
+  "sigma":   3.0,
+  "write_frequency_checkpoint": 100,
+  "write_frequency_observables": 1,
   "write_frequency_eigin_state": 1,
   "state_solver":    "Power",
   "propagate": 1,
   "free_propagate": 0,
-  "states": [
-    {"energy": -1}],
+  "start_state": 0,
+  "states": [{"energy": -0.5}],
   "tol":        1e-10,
   "laser": {
+    "experiment_type": "default",
     "pulses": [
     { "polarization_vector": [0.0,1.0,0.0],
       "poynting_vector": [0.0,0.0,1.0],
       "helicity" : "left",
       "ellipticity" : 0.0,
       "pulse_shape":   "sin2",
-      "cycles_on":      4.0,
+      "cycles_on":      1.0,
       "cycles_plateau": 0.0,
-      "cycles_off":     4.0,
+      "cycles_off":     1.0,
       "cycles_delay":   0.0,
       "cep":            0.0,
-      "energy":         0.057,
-      "field_max":      128.0}]
+      "energy":         0.375,
+      "intensity":      1e14}]
   }
 }

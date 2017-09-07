@@ -1,6 +1,6 @@
 # Trivial Dynamics in Schrodinger Equation (TDSE)
 
-This code was developed by @Joel-Venzke during his PHD. It solves the Time Dependent Schroedinger Equation for ultrafast laser pulses interacting with matter.
+This code was developed at JILA in Boulder, CO by @Joel-Venzke during his PHD, and contributed to by Cory Goldsmith. It solves the Time Dependent Schroedinger Equation for ultrafast laser pulses interacting with matter.
 
 # Dependencies
 
@@ -12,33 +12,27 @@ Boost MPI
 
 Compiler with GCC 4.9 or greater (C++11 support)
 
-# INSTALL
+# INSTALL DEPENDENCIES
 
 You will need hdf5 with c++ and mpi support (see system specifics below). 
 
 Then install petsc with complex support (see system specifics below).
 
-Then go into the src directory and copy `Makefile.${SYSTEM}` to `Makefile` and update the paths
-
-Then back to the root directory and copy a `build.${SYSTEM}` file that is similar to your system to `build`. 
-
-Finally make the needed changes to paths and run `.\build`.
-
 ## Mac
-
-Need clang 8.0.0 if running on mac here is the command to run once you installed the 10.12 command line tools
-
-`sudo xcode-select --switch /Library/Developer/CommandLineTools`
-
-then
-
-`clang -v` 
-
-should tell you the version is 8.0.0
 
 Here is the brew command to install on mac 
 
-Note: you need to do a brew edit to make the cxx if statement: `if build.with?("cxx") && (build.without?("mpi") || build.with?("unsupported"))`
+Note: It looks like the brew install script has dropped support for hdf5 with all of the options we need. However, you can run `brew edit hdf5` and change the install script to include 
+~~~~
+if build.without?("mpi")
+  args << "--enable-cxx"
+else
+  args << "--enable-cxx"
+  args << "--enable-cxx"
+end
+~~~~
+
+Then run 
 
 `brew install hdf5 --c++11 --with-fortran --with-mpi --with-threadsafe --with-unsupported`
 
@@ -46,15 +40,57 @@ Then install petsc with complex support. Here is the brew command:
 
 `brew install petsc --with-complex`
 
+Then install slepc with complex support. Here is the brew command:
+
+`brew install slepc --with-complex`
+
+Now you will need to build the TDSE code in the INSTALL TDSE section. 
+
 ## Summit CU
 
-Use the `hdf5_build.summitcu` and `petsc_build.summitcu` scripts to compile on summit. Make appropriate changes to the paths
+Make sure you set PETSC_DIR and SLEPC_DIR in your `~/.bashrc` or equivalent file once they are installed before running the next install script. HDF5 must be installed first, followed by PETSC, followed by SLEPC. 
 
+Use the `hdf5_build.summitcu`, `petsc_build.summitcu`, and `slepc_build.summitcu` scripts to compile on summit. Make appropriate changes to the paths and modules. Running these scripts can take a while depending on the system
+
+
+# INSTALL TDSE
+
+Make sure both the PETSC_DIR and SLEPC_DIR variables set in you `~/.bashrc` or equivalent file. Make sure you "source" the file as well.
+
+First you will need to make a bin directory in the root directory of the TDSE repository. 
+
+Then go into the src directory and copy `Makefile.${SYSTEM}` to `Makefile`. Open the Make file and adjust any paths to the various dependencies. 
+
+Then back to the TDSE root directory and copy a `build.${SYSTEM}` file that is similar to your system to `build`. Now you will need to update any modules that are loaded.
+
+Finally run `.\build` and the code will compile if everything is installed correctly.
+
+If there is crazy behavior with the code, run a `./clean` and `./build`
 
 # USAGE
 The code can be used by using the `TDSE` binary. Here is an example run command using 4 processors.
 
-`mpiexec -n 4 ${TDSE_DIR}/bin/TDSE  -eigen_ksp_type preonly -eigen_pc_type lu -eigen_pc_factor_mat_solver_package superlu_dist`
+`mpiexec -n 4 ${TDSE_DIR}/bin/TDSE`
+
+When using the Power method, it is best to utilize a direct solver since the matrix is nearly singular. To achive this, add the following arguments on the end of the run command. This requires the SuperLU Distribute code 
+
+`-eigen_ksp_type preonly -eigen_pc_type lu -eigen_pc_factor_mat_solver_package superlu_dist`
+
+the resulting command will look like 
+
+`mpiexec -n 4 ${TDSE_DIR}/bin/TDSE -eigen_ksp_type preonly -eigen_pc_type lu -eigen_pc_factor_mat_solver_package superlu_dist`
+
+When using SLEPC for eigen states, it is nice to use the argument 
+
+`-eps_monitor`
+
+to see how your eigen state calculation is coming along.
+
+If you want to try out various solvers for propagation use
+
+`-prop_ksp_type ${KSP_TYPE}`
+
+For more information on trying out different solvers, preconditions, and other optimizations, checkout PETSC's user manual.
 
 # Development 
 
@@ -63,13 +99,9 @@ we use the following clang_format
 `{
     "BasedOnStyle": "Google",
     "AlignConsecutiveAssignments": true,
-    "BreakBeforeBraces": "Allman"
+    "BreakBeforeBraces": "Allman",
+    "SpacesInAngles": true
 }`
 
 # NOTES
 anaconda may cause issues with install
-
-Intensity to field max (velocity-gauge)
-where i is the intensity in (W/cm^2)
-
-math.sqrt(i/3.51e16)/0.057*(1 / 7.2973525664e-3)

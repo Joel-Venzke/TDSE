@@ -17,7 +17,7 @@
 # their own unique job name.
 
 #----------------------User Options------------------------
-TDSE_DIR=/users/becker/jove7731/Repos/TDSE
+TDSE_DIR=/projects/cogo4490/repos/TDSE
 DAISYCHAIN_SCRIPT=${TDSE_DIR}/scripts/run_scripts/slurm_daisychain.sh
 RUN_FILE=${TDSE_DIR}/bin/TDSE
 RESTART=python ${TDSE_DIR}/scripts/run_scripts/restart_on.py

@@ -8,11 +8,7 @@ HDF5Wrapper::HDF5Wrapper(std::string f_name, Parameters &p)
     file_name = f_name;
     header    = false;
     file_open = false;
-    if (p.GetRestart() == 1)
-    {
-      ReadRestart(p);
-    }
-    else
+    if (p.GetRestart() == 0)
     {
       data_file = std::make_shared< H5::H5File >(file_name, H5F_ACC_RDWR);
       file_open = true;
@@ -23,14 +19,21 @@ HDF5Wrapper::HDF5Wrapper(std::string f_name, Parameters &p)
 }
 
 /* constructor file_name needs ending ".h5" */
-HDF5Wrapper::HDF5Wrapper(std::string f_name)
+HDF5Wrapper::HDF5Wrapper(std::string f_name, std::string mode)
 {
   if (world.rank() == 0)
   {
     file_name = f_name;
     header    = false;
     file_open = false;
-    data_file = std::make_shared< H5::H5File >(file_name, H5F_ACC_RDWR);
+    if (mode == "w")
+    {
+      data_file = std::make_shared< H5::H5File >(file_name, H5F_ACC_TRUNC);
+    }
+    else
+    {
+      data_file = std::make_shared< H5::H5File >(file_name, H5F_ACC_RDWR);
+    }
     file_open = true;
     Close();
   }
@@ -44,11 +47,7 @@ HDF5Wrapper::HDF5Wrapper(Parameters &p)
     header    = false;
     file_name = "TDSE.h5";
     file_open = false;
-    if (p.GetRestart() == 1)
-    {
-      ReadRestart(p);
-    }
-    else
+    if (p.GetRestart() == 0)
     {
       data_file = std::make_shared< H5::H5File >(file_name, H5F_ACC_TRUNC);
       file_open = true;
@@ -116,9 +115,9 @@ std::unique_ptr< hsize_t[] > HDF5Wrapper::GetHsizeT(int size, bool complex)
   {
     alloc_size = 1;
   }
-  auto h5_size            = std::make_unique< hsize_t[] >(alloc_size);
-  h5_size[0]              = size;
-  if (complex) h5_size[1] = 2;
+  auto h5_size = std::make_unique< hsize_t[] >(alloc_size);
+  h5_size[0]   = size;
+  if (complex) h5_size[1]= 2;
   return h5_size;
 }
 
@@ -901,15 +900,6 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
 
     header = false;
     Close();
-  }
-}
-
-/* TDOD: set up restart */
-void HDF5Wrapper::ReadRestart(Parameters &p)
-{
-  if (world.rank() == 0)
-  {
-    /* TODO(jove7731): put parameter check here */
   }
 }
 

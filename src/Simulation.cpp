@@ -87,7 +87,7 @@ void Simulation::Propagate()
   if (parameters->GetRestart() == 1)
   {
     /* set current iteration */
-    i = h5_file->GetLast("/Wavefunction/time") / delta_t;
+    i = std::round(h5_file->GetLast("/Wavefunction/time") / delta_t);
     i++;
     /* only checkpoint end of pulse if the simulation isn't in free propagation
      * already*/
@@ -152,7 +152,7 @@ void Simulation::Propagate()
   if (checkpoint_eof)
   {
     /* Save frame after pulse ends*/
-    wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
+    wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
   }
 
   if (free_propagate == -1) /* until norm stops changing */
@@ -173,7 +173,8 @@ void Simulation::Propagate()
       if (i % write_frequency_observables == 0)
       {
         /* write a checkpoint */
-        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i, false);
+        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1),
+                                 false);
       }
 
       /* only checkpoint so often */
@@ -197,7 +198,7 @@ void Simulation::Propagate()
           converged = true;
         }
         /* write a checkpoint */
-        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
+        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
         t = clock();
       }
       i++;
@@ -216,7 +217,8 @@ void Simulation::Propagate()
       if (i % write_frequency_observables == 0)
       {
         /* write a checkpoint */
-        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i, false);
+        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1),
+                                 false);
       }
 
       /* only checkpoint so often */
@@ -232,13 +234,13 @@ void Simulation::Propagate()
                     << "\n"
                     << std::flush;
         /* write a checkpoint */
-        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
+        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
         t = clock();
       }
       i++;
     }
     /* Save last Wavefunction since it might not end on a write frequency*/
-    wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
+    wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
   }
 
   VecDestroy(&psi_old);
@@ -282,7 +284,7 @@ void Simulation::SplitOpperator()
     /* set current iteration */
     /* The -2 is from the already increased counter and the fact that psi[0] is
      * written during simulation setup */
-    i = (wavefunction->GetWrieCounterCheckpoint() - 2) *
+    i = (wavefunction->GetWriteCounterCheckpoint() - 2) *
         write_frequency_checkpoint;
     i++;
     if (i >= time_length) EndRun("Restart needs work for free prop restarts");
@@ -339,7 +341,7 @@ void Simulation::SplitOpperator()
   }
 
   /* Save frame after pulse ends*/
-  wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
+  wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
 
   if (free_propagate == -1) /* until norm stops changing */
   {
@@ -369,7 +371,8 @@ void Simulation::SplitOpperator()
       if (i % write_frequency_observables == 0)
       {
         /* write a checkpoint */
-        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i, false);
+        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1),
+                                 false);
       }
 
       /* only checkpoint so often */
@@ -393,7 +396,7 @@ void Simulation::SplitOpperator()
           converged = true;
         }
         /* write a checkpoint */
-        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
+        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
         t = clock();
       }
       i++;
@@ -422,7 +425,8 @@ void Simulation::SplitOpperator()
       if (i % write_frequency_observables == 0)
       {
         /* write a checkpoint */
-        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i, false);
+        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1),
+                                 false);
       }
 
       /* only checkpoint so often */
@@ -438,13 +442,13 @@ void Simulation::SplitOpperator()
                     << "\n"
                     << std::flush;
         /* write a checkpoint */
-        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
+        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
         t = clock();
       }
       i++;
     }
     /* Save last Wavefunction since it might not by on a write frequency*/
-    wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
+    wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
   }
 
   VecDestroy(&psi_old);
@@ -537,7 +541,6 @@ void Simulation::CrankNicolson(double dt, PetscInt time_idx, PetscInt dim_idx)
   if (time_idx != old_time_idx or dim_idx != old_dim_idx)
   {
     PetscLogEventBegin(create_matrix, 0, 0, 0, 0);
-
     /* factor = i*(-i*dt/2) */
     dcomp factor = dcomp(0.0, 1.0) * dcomp(dt / 2.0, 0.0);
     if (time_idx < 0)
@@ -690,7 +693,7 @@ void Simulation::PowerMethod(PetscInt num_states, PetscInt return_state_idx)
       if (i % write_frequency == 0)
       {
         /* check convergence criteria */
-        converged = CheckConvergance(psi[0], psi_old, parameters->GetTol());
+        converged = CheckConvergence(psi[0], psi_old, parameters->GetTol());
         /* save this psi to ${target}.h5 */
         energy = wavefunction->GetEnergy(hamiltonian->GetTimeIndependent());
         if (world.rank() == 0)
@@ -751,7 +754,7 @@ void Simulation::PowerMethod(PetscInt num_states, PetscInt return_state_idx)
  * @param tol [description]
  * @return [description]
  */
-bool Simulation::CheckConvergance(Vec &psi_1, Vec &psi_2, double tol)
+bool Simulation::CheckConvergence(Vec &psi_1, Vec &psi_2, double tol)
 {
   Mat *h              = hamiltonian->GetTimeIndependent();
   double wave_error   = 0.0;

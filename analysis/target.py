@@ -1,6 +1,11 @@
 import numpy as np
 import h5py
-target_name = "He"
+import json
+
+with open('input.json', 'r') as data_file:
+    data = json.load(data_file)
+
+target_name = data["target"]["name"]
 # read data
 target = h5py.File(target_name + ".h5", "r")
 f = h5py.File("TDSE.h5", "r")
@@ -23,6 +28,51 @@ for i, psi in enumerate(psi_value):
     max_val_tmp = np.max(np.absolute(psi))
     if (max_val_tmp > max_val):
         max_val = max_val_tmp
+
+
+def state_single_name(state_number, shells):
+    # find the n value for this state
+    n_value = 0
+    for n, shell in enumerate(shells):
+        if state_number > shell:
+            n_value = n + 1
+
+    # calculate quantum number l
+    l_value = state_number - shells[n_value - 1]
+
+    # create label
+    if l_value == 1:
+        ret_val = str(n_value) + "s"
+    elif l_value == 2:
+        ret_val = str(n_value) + "p"
+    elif l_value == 3:
+        ret_val = str(n_value) + "d"
+    elif l_value == 4:
+        ret_val = str(n_value) + "f"
+    elif l_value > 24:  # anything greater that z is just a number
+        ret_val = str(n_value) + ",l=" + str(l_value - 1)
+    else:  # any
+        ret_val = str(n_value) + chr(ord('g') + l_value - 5)
+
+    return ret_val
+
+
+# return list of states up to state_number
+def state_name(state_number):
+    # get size of each shell
+    shells = [0]
+    while (state_number > shells[-1]):
+        shells.append(shells[-1] + len(shells))
+
+    # get list of names
+    name_list = []
+    for state in range(1, state_number + 1):
+        name_list.append(state_single_name(state, shells))
+
+    return name_list
+
+
+name_list = state_name(len(psi_value))
 
 if len(shape) == 3:
     from mayavi import mlab
@@ -96,9 +146,13 @@ elif len(shape) == 2:
                 norm=LogNorm(vmin=1e-12, vmax=max_val))
         # color bar doesn't change during the video so only set it here
         plt.colorbar()
-        plt.xlabel("X-axis (a.u.)")
-        plt.ylabel("Y-axis  (a.u.)")
-        plt.title("Wave Function - Energy " + str(energy[i]))
+        if f["Parameters"]["coordinate_system_idx"][0] == 1:
+            plt.xlabel("z-axis (a.u.)")
+            plt.ylabel("$\\rho$-axis  (a.u.)")
+        else:
+            plt.xlabel("X-axis (a.u.)")
+            plt.ylabel("Y-axis  (a.u.)")
+        plt.title(name_list[i] + " - Energy " + str(energy[i]))
         fig.savefig("figs/" + target_name + "_log_state_" + str(i).zfill(3) +
                     ".jpg")
         plt.clf()

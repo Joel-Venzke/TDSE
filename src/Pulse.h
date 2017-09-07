@@ -50,7 +50,7 @@ class Pulse : protected Utils
   ~Pulse();
 
   /* write out data */
-  void Checkpoint(HDF5Wrapper &data_file);
+  void Checkpoint();
 
   /* accessors methods */
   double **GetField();
