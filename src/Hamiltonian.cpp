@@ -88,22 +88,26 @@ void Hamiltonian::CalculateHamlitonian(PetscInt time_idx, PetscInt only_dim_idx,
     idx_array = GetIndexArray(i_val, j_val);
     for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
     {
-      /* Set up real gird */
-      for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
+      /* avoid recalculating if the grid is uniform */
+      if (delta_x_max[dim_idx] != delta_x_min[dim_idx])
       {
-        if (idx_array[dim_idx * 2] < (order / 2 + 1) or
-            num_x[dim_idx] - 1 - idx_array[dim_idx * 2] < (order / 2 + 1))
+        /* Set up real gird */
+        for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
         {
-          x_vals[coef_idx] = delta_x_max[dim_idx] * coef_idx;
+          if (idx_array[dim_idx * 2] < (order / 2 + 1) or
+              num_x[dim_idx] - 1 - idx_array[dim_idx * 2] < (order / 2 + 1))
+          {
+            x_vals[coef_idx] = delta_x_max[dim_idx] * coef_idx;
+          }
+          else
+          {
+            x_vals[coef_idx] =
+                x_value[dim_idx][coef_idx - order / 2 + idx_array[dim_idx * 2]];
+          }
         }
-        else
-        {
-          x_vals[coef_idx] =
-              x_value[dim_idx][coef_idx - order / 2 + idx_array[dim_idx * 2]];
-        }
+        /* Get real coefficients for each dimension */
+        FDWeights(x_vals, 2, real_coef[dim_idx]);
       }
-      /* Get real coefficients for each dimension */
-      FDWeights(x_vals, 2, real_coef[dim_idx]);
     }
 
     /* Diagonal element */
@@ -215,6 +219,14 @@ void Hamiltonian::SetUpCoefficients()
 
   for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
   {
+    /* Set up real gird */
+    for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
+    {
+      x_vals[coef_idx] = delta_x_min[dim_idx] * coef_idx;
+    }
+    /* Get real coefficients for each dimension */
+    FDWeights(x_vals, 2, real_coef[dim_idx]);
+
     for (int discontinuity_idx = 0; discontinuity_idx < order;
          ++discontinuity_idx)
     {
