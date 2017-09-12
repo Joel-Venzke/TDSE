@@ -206,6 +206,8 @@ void Parameters::Setup(std::string file_name)
   /* allocate memory */
   pulse_shape         = std::make_unique< std::string[] >(num_pulses);
   pulse_shape_idx     = std::make_unique< PetscInt[] >(num_pulses);
+  power_on            = std::make_unique< PetscInt[] >(num_pulses);
+  power_off           = std::make_unique< PetscInt[] >(num_pulses);
   cycles_on           = std::make_unique< double[] >(num_pulses);
   cycles_plateau      = std::make_unique< double[] >(num_pulses);
   cycles_off          = std::make_unique< double[] >(num_pulses);
@@ -217,7 +219,7 @@ void Parameters::Setup(std::string file_name)
   helicity            = std::make_unique< std::string[] >(num_pulses);
   helicity_idx        = std::make_unique< PetscInt[] >(num_pulses);
   polarization_vector = new double*[num_pulses];
-  if (num_dims == 3) poynting_vector = new double*[num_pulses];
+  if (num_dims == 3) poynting_vector= new double*[num_pulses];
 
   /* set pulses up by experiment type */
 
@@ -233,13 +235,23 @@ void Parameters::Setup(std::string file_name)
     /* read in IR and XUV parameters */
     for (PetscInt pulse_idx = 0; pulse_idx < 2; ++pulse_idx)
     {
+      power_on[pulse_idx]  = 1.0;
+      power_off[pulse_idx] = 1.0;
       pulse_shape[pulse_idx] =
           data["laser"]["pulses"][pulse_idx]["pulse_shape"];
 
       /* index used similar target_idx */
       if (pulse_shape[pulse_idx] == "sin2")
       {
+        EndRun(
+            "\"sin2\" is no longer an option. Please change to \"sin\" and set "
+            "\"power_on\" and \"power_off\" to \"2\"\n");
+      }
+      else if (pulse_shape[pulse_idx] == "sin")
+      {
         pulse_shape_idx[pulse_idx] = 0;
+        power_on[pulse_idx]  = data["laser"]["pulses"][pulse_idx]["power_on"];
+        power_off[pulse_idx] = data["laser"]["pulses"][pulse_idx]["power_off"];
       }
       else if (pulse_shape[pulse_idx] == "gaussian")
       {
@@ -280,8 +292,8 @@ void Parameters::Setup(std::string file_name)
         }
       }
       /* normalize the polarization vector*/
-      polar_norm                       = sqrt(polar_norm);
-      if (num_dims == 3) poynting_norm = sqrt(poynting_norm);
+      polar_norm = sqrt(polar_norm);
+      if (num_dims == 3) poynting_norm= sqrt(poynting_norm);
       for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
       {
         polarization_vector[pulse_idx][dim_idx] /= polar_norm;
@@ -371,13 +383,23 @@ void Parameters::Setup(std::string file_name)
     /* read data */
     for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
     {
+      power_on[pulse_idx]  = 1.0;
+      power_off[pulse_idx] = 1.0;
       pulse_shape[pulse_idx] =
           data["laser"]["pulses"][pulse_idx]["pulse_shape"];
 
       /* index used similar target_idx */
       if (pulse_shape[pulse_idx] == "sin2")
       {
+        EndRun(
+            "\"sin2\" is no longer an option. Please change to \"sin\" and set "
+            "\"power_on\" and \"power_off\" to \"2\"\n");
+      }
+      else if (pulse_shape[pulse_idx] == "sin")
+      {
         pulse_shape_idx[pulse_idx] = 0;
+        power_on[pulse_idx]  = data["laser"]["pulses"][pulse_idx]["power_on"];
+        power_off[pulse_idx] = data["laser"]["pulses"][pulse_idx]["power_off"];
       }
       else if (pulse_shape[pulse_idx] == "gaussian")
       {
@@ -418,8 +440,8 @@ void Parameters::Setup(std::string file_name)
         }
       }
       /* normalize the polarization vector*/
-      polar_norm                       = sqrt(polar_norm);
-      if (num_dims == 3) poynting_norm = sqrt(poynting_norm);
+      polar_norm = sqrt(polar_norm);
+      if (num_dims == 3) poynting_norm= sqrt(poynting_norm);
       for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
       {
         polarization_vector[pulse_idx][dim_idx] /= polar_norm;
@@ -560,7 +582,7 @@ void Parameters::Validate()
   for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; pulse_idx++)
   {
     /* Check pulse shapes */
-    if (pulse_shape[pulse_idx] != "sin2" and
+    if (pulse_shape[pulse_idx] != "sin" and
         pulse_shape[pulse_idx] != "gaussian")
     {
       error_found = true;
@@ -569,7 +591,7 @@ void Parameters::Validate()
       err_str += " has unsupported pulse shape: \"";
       err_str += pulse_shape[pulse_idx] + "\"\n";
       err_str += "Current support includes: ";
-      err_str += "\"sin2\" and \"gaussian\"\n";
+      err_str += "\"sin\" and \"gaussian\"\n";
     }
 
     /* check cycles_on */

@@ -878,7 +878,11 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
     }
     WriteObject(p.pulse_shape_idx.get(), num_pulses,
                 "/Parameters/pulse_shape_idx",
-                "The index of the pulse shape. sin2:0, gaussian:1");
+                "The index of the pulse shape. sin:0, gaussian:1");
+    WriteObject(p.power_on.get(), num_pulses, "/Parameters/power_on",
+                "Power of sin in ramp on envelope function");
+    WriteObject(p.power_off.get(), num_pulses, "/Parameters/power_off",
+                "Power of sin in ramp off envelope function");
     WriteObject(p.cycles_on.get(), num_pulses, "/Parameters/cycles_on",
                 "Number of cycles the pulse ramps on for");
     WriteObject(p.cycles_plateau.get(), num_pulses,

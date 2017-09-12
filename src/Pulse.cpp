@@ -26,6 +26,8 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p)
 
   pulse_shape_idx = p.pulse_shape_idx.get();
   gaussian_sigma  = 5.0;
+  power_on        = p.power_on.get();
+  power_off       = p.power_off.get();
   cycles_on       = p.cycles_on.get();
   cycles_plateau  = p.cycles_plateau.get();
   cycles_off      = p.cycles_off.get();
@@ -179,7 +181,8 @@ void Pulse::InitializePulse(PetscInt n)
   PetscInt off_start     = 0;
   PetscInt off_end       = 0;
   double period          = 2.0 * pi / energy[n];
-  double s1;
+  double s1;  // value of sin (x for Gaussian)
+  double sn;  // sin to the nth power
   double current_cep = cep[n] + (((int)cycles_on[n]) - cycles_on[n]);
 
   /* index that turns pulse on */
@@ -234,7 +237,12 @@ void Pulse::InitializePulse(PetscInt n)
       {
         s1 = sin(energy[n] * delta_t * (time_idx - on_start) /
                  (4.0 * cycles_on[n]));
-        pulse_envelope[n][time_idx] = field_max[n] * s1 * s1;
+        sn = 1.0;
+        for (int power = 0; power < power_on[n]; ++power)
+        {
+          sn *= s1;
+        }
+        pulse_envelope[n][time_idx] = field_max[n] * sn;
       }
       else if (pulse_shape_idx[n] == 1)
       {
@@ -253,8 +261,14 @@ void Pulse::InitializePulse(PetscInt n)
       if (pulse_shape_idx[n] == 0)
       {
         s1 = sin(energy[n] * delta_t * (time_idx - off_start) /
-                 (4.0 * cycles_off[n]));
-        pulse_envelope[n][time_idx] = field_max[n] * (1.0 - (s1 * s1));
+                     (4.0 * cycles_off[n]) +
+                 pi / 2.0);
+        sn = 1.0;
+        for (int power = 0; power < power_off[n]; ++power)
+        {
+          sn *= s1;
+        }
+        pulse_envelope[n][time_idx] = field_max[n] * sn;
       }
       else if (pulse_shape_idx[n] == 1)
       {

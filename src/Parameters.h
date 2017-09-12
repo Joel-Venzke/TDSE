@@ -77,6 +77,8 @@ class Parameters : protected Utils
   std::unique_ptr< std::string[] >
       pulse_shape;  ///< pulse shape {"sin2","linear"}
   std::unique_ptr< PetscInt[] > pulse_shape_idx;  ///< index of pulse shape
+  std::unique_ptr< PetscInt[] > power_on;         ///< power of sin^n shape on
+  std::unique_ptr< PetscInt[] > power_off;        ///< power of sin^n shape off
   std::unique_ptr< double[] > cycles_on;          ///< ramp on cycles
   std::unique_ptr< double[] > cycles_plateau;     ///< plateau cycles
   std::unique_ptr< double[] > cycles_off;         ///< ramp off cycles
