@@ -292,8 +292,19 @@ void Parameters::Setup(std::string file_name)
         }
       }
       /* normalize the polarization vector*/
+      if (polar_norm < 1e-10)
+      {
+        EndRun("Polarization Vector has Norm of Zero");
+      }
       polar_norm = sqrt(polar_norm);
-      if (num_dims == 3) poynting_norm= sqrt(poynting_norm);
+      if (num_dims == 3)
+      {
+        if (poynting_norm < 1e-10)
+        {
+          EndRun("Poynting Vector has Norm of Zero");
+        }
+        poynting_norm = sqrt(poynting_norm);
+      }
       for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
       {
         polarization_vector[pulse_idx][dim_idx] /= polar_norm;
@@ -440,8 +451,19 @@ void Parameters::Setup(std::string file_name)
         }
       }
       /* normalize the polarization vector*/
+      if (polar_norm < 1e-10)
+      {
+        EndRun("Polarization Vector has Norm of Zero");
+      }
       polar_norm = sqrt(polar_norm);
-      if (num_dims == 3) poynting_norm= sqrt(poynting_norm);
+      if (num_dims == 3)
+      {
+        if (poynting_norm < 1e-10)
+        {
+          EndRun("Poynting Vector has Norm of Zero");
+        }
+        poynting_norm = sqrt(poynting_norm);
+      }
       for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
       {
         polarization_vector[pulse_idx][dim_idx] /= polar_norm;
