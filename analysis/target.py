@@ -1,4 +1,5 @@
 import numpy as np
+import pylab as plb
 import h5py
 import json
 
@@ -19,7 +20,9 @@ upper_idx = (shape * gobbler - 1).astype(int)
 lower_idx = shape - upper_idx
 print shape
 x = f["Wavefunction"]["x_value_0"][:]
-y = f["Wavefunction"]["x_value_1"][:]
+
+if len(shape) > 1:
+    y = f["Wavefunction"]["x_value_1"][:]
 
 max_val = 0
 # calculate color bounds
@@ -152,6 +155,29 @@ elif len(shape) == 2:
         else:
             plt.xlabel("X-axis (a.u.)")
             plt.ylabel("Y-axis  (a.u.)")
+        plt.title(name_list[i] + " - Energy " + str(energy[i]))
+        fig.savefig("figs/" + target_name + "_log_state_" + str(i).zfill(3) +
+                    ".jpg")
+        plt.clf()
+
+elif len(shape) == 1:
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    import matplotlib.animation as animation
+    from matplotlib.colors import LogNorm
+    fig = plt.figure()
+    for i, psi in enumerate(psi_value):
+        print "plotting", i
+        # set up initial figure with color bar
+        psi = psi[:, 0] + 1j * psi[:, 1]
+        psi.shape = tuple(shape)
+        plt.plot(x, (np.absolute(psi)))
+        # color bar doesn't change during the video so only set it here
+        plt.xlabel("z-axis (a.u.)")
+        plt.ylabel("log10(psi)")
+        plb.xlim([-10, 10])
+        #plb.ylim([-7, 0])
         plt.title(name_list[i] + " - Energy " + str(energy[i]))
         fig.savefig("figs/" + target_name + "_log_state_" + str(i).zfill(3) +
                     ".jpg")
