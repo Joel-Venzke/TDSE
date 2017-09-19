@@ -716,6 +716,11 @@ dcomp Hamiltonian::GetNucleiTerm(std::vector< PetscInt >& idx_array)
         r = SoftCoreDistance(location[nuclei_idx], idx_array, elec_idx);
         nuclei -= dcomp(c0[nuclei_idx] / r, 0.0);
         nuclei -= dcomp(z_c[nuclei_idx] * exp(-r0[nuclei_idx] * r) / r, 0.0);
+
+	// Tong Lin He Only
+	// clean up hack later
+	//nuclei -= dcomp(-0.231 * exp(-0.480 * r) / r, 0.0);
+
         for (PetscInt i = 0; i < sae_size[nuclei_idx]; ++i)
         {
           nuclei -= dcomp(a[nuclei_idx][i] * exp(-b[nuclei_idx][i] * r), 0.0);
