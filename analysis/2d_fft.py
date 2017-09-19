@@ -9,8 +9,8 @@ from scipy.signal import argrelmax
 
 # read data
 f = h5py.File("TDSE.h5", "r")
-psi_value = f["Wavefunction"]["psi"]
-psi_time = f["Wavefunction"]["time"][:]
+psi_value = f["Projections"]["psi"]
+psi_time = f["Projections"]["time"][:]
 shape = f["Wavefunction"]["num_x"][:]
 gobbler = f["Parameters"]["gobbler"][0]
 dt = f["Parameters"]["delta_t"][0]
@@ -26,21 +26,20 @@ if len(shape) > 1:
     y = f["Wavefunction"]["x_value_1"][:]
     time_x = np.min(y[lower_idx[1]:upper_idx[1]]) * 0.95
     ky = np.zeros(y.size)
-    i = 0 
+    i = 0
     for j in y:
-        ky[i] = (-(y.shape[0] / 2) + i) * 2 * np.pi / (x.shape[0] * (y[1]-y[0]))
-        i += 1 
+        ky[i] = (-(y.shape[0] / 2) + i) * 2 * np.pi / (x.shape[0] *
+                                                       (y[1] - y[0]))
+        i += 1
     fig = plt.figure()
 
 else:
     time_x = np.min(x[lower_idx[0]:upper_idx[0]]) * 0.95
 
-i = 0 
+i = 0
 for j in x:
-    kx[i] = (-(x.shape[0] / 2) + i) * 2 * np.pi / (x.shape[0] * (x[1]-x[0]))
+    kx[i] = (-(x.shape[0] / 2) + i) * 2 * np.pi / (x.shape[0] * (x[1] - x[0]))
     i += 1
-
-
 
 # shape into a 3d array with time as the first axis
 
@@ -48,7 +47,7 @@ font = {'size': 18}
 matplotlib.rc('font', **font)
 
 for i, psi in enumerate(psi_value):
-    if i > 20:  # the zeroth wave function is the guess and not relevant
+    if i > 0:  # the zeroth wave function is the guess and not relevant
         print "plotting", i
         plt.text(
             time_x,
@@ -73,13 +72,17 @@ for i, psi in enumerate(psi_value):
                 psi = psi[x_min_idx:x_max_idx, y_min_idx:y_max_idx]
                 data = None
                 if f["Parameters"]["coordinate_system_idx"][0] == 1:
-                    psi = np.multiply(x[x_min_idx:x_max_idx], psi.transpose()).transpose()
+                    psi = np.multiply(x[x_min_idx:x_max_idx],
+                                      psi.transpose()).transpose()
                     data = plt.imshow(
                         np.abs(np.fft.fftshift(np.fft.fft2(psi), axes=1)),
                         cmap='viridis',
                         origin='lower',
                         norm=LogNorm(vmin=1e-15),
-                        extent=[ky.min(), ky.max(), kx.min(), kx.max()])
+                        extent=[ky.min(),
+                                ky.max(),
+                                kx.min(),
+                                kx.max()])
                     plt.text(
                         time_x,
                         time_y,
@@ -110,32 +113,31 @@ for i, psi in enumerate(psi_value):
             plb.xlim([-5, 5])
             plb.ylim([-5, 5])
             # plt.axis('off')
-            
+
             #print peaks for last one
-            
-            pp  = []
+
+            pp = []
             ppa = []
             pAp = []
             ftt = []
-            ftta= []
+            ftta = []
             fAp = []
             thresh = 0.0005
-            
-            for element in argrelmax(dataft)[0]:
-                if(dataft[element] > thresh):
-                    pp.append(kx[element])
-                    ftt.append(dataft[element])
-                    ppa = np.array(pp)
-                    ftta = np.array(ftt)
-                    
-            for elem in argrelmax(ftta)[0]:
-                pAp.append(ppa[elem])
-                fAp.append(ftta[elem])
-                print str(ppa[elem]) + '\t'
-                print str(ftta[elem]) + '\n'
-                 
+
+            # for element in argrelmax(dataft)[0]:
+            #     if (dataft[element] > thresh):
+            #         pp.append(kx[element])
+            #         ftt.append(dataft[element])
+            #         ppa = np.array(pp)
+            #         ftta = np.array(ftt)
+
+            # for elem in argrelmax(ftta)[0]:
+            #     pAp.append(ppa[elem])
+            #     fAp.append(ftta[elem])
+            #     print str(ppa[elem]) + '\t'
+            #     print str(ftta[elem]) + '\n'
+
             plb.xlabel('$k_{x}$ (a.u.)')
             plb.ylabel('log10(FT(psi)) (arb. u)')
             plt.savefig("figs/2d_fft_" + str(i).zfill(8) + ".png")
             plt.clf()
-

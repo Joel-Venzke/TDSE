@@ -42,6 +42,7 @@ class Wavefunction : protected Utils
 
   PetscInt write_counter_checkpoint;
   PetscInt write_counter_observables;
+  PetscInt write_counter_projections;
 
   PetscLogEvent time_norm;
   PetscLogEvent time_energy;
@@ -81,7 +82,7 @@ class Wavefunction : protected Utils
 
   /* IO */
   void Checkpoint(HDF5Wrapper &data_file, ViewWrapper &view_file, double time,
-                  bool checkpoint_psi = true);
+                  PetscInt checkpoint_psi = 0);
   void CheckpointPsi(ViewWrapper &view_file, PetscInt write_idx);
 
   /* tools */
@@ -96,7 +97,7 @@ class Wavefunction : protected Utils
   double GetGobbler();
   std::vector< dcomp > Projections(std::string file_name);
   void ProjectOut(std::string file_name, HDF5Wrapper &h5_file,
-                  ViewWrapper &viewer_file);
+                  ViewWrapper &viewer_file, double time);
   void LoadPsi(std::string file_name, PetscInt num_states,
                PetscInt return_state_idx);
   void ResetPsi();

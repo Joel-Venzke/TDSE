@@ -25,6 +25,7 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   num_psi_build             = 1.0;
   write_counter_checkpoint  = 0;
   write_counter_observables = 0;
+  write_counter_projections = 0;
   order                     = p.GetOrder();
 
   PetscLogEventRegister("WaveNorm", PETSC_VIEWER_CLASSID, &time_norm);
@@ -124,13 +125,19 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
 }
 
 void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
-                              double time, bool checkpoint_psi)
+                              double time, PetscInt checkpoint_psi)
 {
   if (world.rank() == 0)
   {
-    if (checkpoint_psi)
+    if (checkpoint_psi == 0)
     {
       std::cout << "Checkpointing Psi: " << write_counter_checkpoint << "\n"
+                << std::flush;
+    }
+    else if (checkpoint_psi == 2)
+    {
+      std::cout << "Checkpointing Psi Projections: "
+                << write_counter_projections << "\n"
                 << std::flush;
     }
   }
@@ -143,6 +150,7 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   if (first_pass)
   {
     viewer_file.Open("a");
+    group_name = "/Wavefunction/";
     /* move into group */
     viewer_file.PushGroup(group_name);
     /* set time step */
@@ -154,7 +162,21 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
     name = tmp;
     viewer_file.WriteAttribute(name, "Attribute",
                                "Wavefunction for the n electron system");
-    /* close file */
+    viewer_file.PopGroup(); /* close file */
+
+    group_name = "/Projections/";
+    /* move into group */
+    viewer_file.PushGroup(group_name);
+    /* set time step */
+    viewer_file.SetTime(write_counter_checkpoint);
+    /* write vector */
+    viewer_file.WriteObject((PetscObject)psi);
+    /* get object name */
+    PetscObjectGetName((PetscObject)psi, &tmp);
+    name = tmp;
+    viewer_file.WriteAttribute(name, "Attribute",
+                               "Wavefunction for the n electron system");
+    viewer_file.PopGroup(); /* close file */
     viewer_file.Close();
 
     /* size of each dim */
@@ -200,6 +222,10 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
         &projections[0], projections.size(), "/Wavefunction/projections",
         "Projection onto the various excited states", write_counter_checkpoint);
 
+    h5_file.WriteObject(time, "/Projections/time",
+                        "Time step that psi was written to disk",
+                        write_counter_checkpoint);
+
     /* write observables */
     h5_file.CreateGroup("/Observables/");
     h5_file.WriteObject(time, "/Observables/time",
@@ -238,11 +264,13 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
     first_pass = false;
     write_counter_checkpoint++;
     write_counter_observables++;
+    write_counter_projections++;
   }
   else
   {
-    if (checkpoint_psi)
+    if (checkpoint_psi == 0)
     {
+      group_name = "/Wavefunction/";
       viewer_file.Open("a");
       /* set time step */
       viewer_file.SetTime(write_counter_checkpoint);
@@ -263,7 +291,7 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
                           write_counter_checkpoint);
       write_counter_checkpoint++;
     }
-    else
+    else if (checkpoint_psi == 1) /* Observables */
     {
       h5_file.WriteObject(time, "/Observables/time", write_counter_observables);
       h5_file.WriteObject(Norm(), "/Observables/norm",
@@ -288,6 +316,27 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
       }
       write_counter_observables++;
     }
+    else if (checkpoint_psi == 2) /* Projections */
+    {
+      group_name = "/Projections/";
+      viewer_file.Open("a");
+      /* set time step */
+      viewer_file.SetTime(write_counter_projections);
+      /* move into group */
+      viewer_file.PushGroup(group_name);
+      /* write vector */
+      viewer_file.WriteObject((PetscObject)psi);
+      /* close file */
+      viewer_file.Close();
+
+      /* write time */
+      h5_file.WriteObject(time, "/Projections/time", write_counter_projections);
+      write_counter_projections++;
+    }
+    else
+    {
+      EndRun("Bad index in Wavefunction's Checkpoint function");
+    }
   }
 }
 
@@ -298,7 +347,8 @@ void Wavefunction::LoadRestart(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   first_pass             = false;
   std::string group_name = "/Wavefunction/";
   /* Get write index for last checkpoint */
-  write_counter_checkpoint = h5_file.GetTimeIdx("/Wavefunction/psi");
+  write_counter_checkpoint  = h5_file.GetTimeIdx("/Wavefunction/psi");
+  write_counter_projections = h5_file.GetTimeIdx("/Projections/psi");
   /* Open file */
   viewer_file.Open("r");
   /* Set time idx */
@@ -318,6 +368,7 @@ void Wavefunction::LoadRestart(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   /* Increment both counters */
   write_counter_observables++;
   write_counter_checkpoint++;
+  write_counter_projections++;
 }
 
 /**
@@ -363,22 +414,30 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
  * @return A vector of projections corresponding to that state
  */
 void Wavefunction::ProjectOut(std::string file_name, HDF5Wrapper& h5_file_in,
-                              ViewWrapper& viewer_file_in)
+                              ViewWrapper& viewer_file_in, double time)
 {
   /* Get write index for last checkpoint */
   std::vector< dcomp > ret_vec = Projections(file_name);
   HDF5Wrapper h5_file(file_name);
   ViewWrapper viewer_file(file_name);
 
+  /* Save psi from projection death */
+  VecCopy(psi, psi_tmp_cyl);
   viewer_file.Open("r");
   for (int state_idx = 0; state_idx < num_states; ++state_idx)
   {
     viewer_file.SetTime(state_idx);
     viewer_file.ReadObject(psi_proj);
     Normalize(psi_proj, 0.0);
-    VecAXPY(psi, -1.0 * ret_vec[state_idx], psi_proj);
-    Checkpoint(h5_file_in, viewer_file_in, -1 * state_idx);
+    VecAXPY(psi_tmp_cyl, -1.0 * ret_vec[state_idx], psi_proj);
   }
+
+  /* Save psi from projection death */
+  VecCopy(psi, psi_proj);
+  VecCopy(psi_tmp_cyl, psi);
+  Checkpoint(h5_file_in, viewer_file_in, time, 2);
+  VecCopy(psi_proj, psi);
+
   /* Close file */
   viewer_file.Close();
 }
