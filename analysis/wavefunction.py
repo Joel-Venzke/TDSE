@@ -5,14 +5,20 @@ import h5py
 f = h5py.File("TDSE.h5", "r")
 psi_value = f["Wavefunction"]["psi"]
 psi_time = f["Wavefunction"]["time"][:]
-x = f["Wavefunction"]["x_value_0"][:]
-y = f["Wavefunction"]["x_value_1"][:]
 shape = f["Wavefunction"]["num_x"][:]
+x = f["Wavefunction"]["x_value_0"][:]
+
+if len(shape) > 1:
+    y = f["Wavefunction"]["x_value_1"][:]
+
 gobbler = f["Parameters"]["gobbler"][0]
 upper_idx = (shape * gobbler - 1).astype(int)
 lower_idx = shape - upper_idx
 # calculate location for time to be printed
-time_x = np.min(y[lower_idx[1]:upper_idx[1]]) * 0.95
+if len(shape) > 1:
+    time_x = np.min(y[lower_idx[1]:upper_idx[1]]) * 0.95
+else:
+    time_x = np.min(x[lower_idx[0]:upper_idx[0]]) * 0.95
 time_y = np.max(x[lower_idx[0]:upper_idx[0]]) * 0.9
 
 max_val = 0
@@ -151,4 +157,39 @@ elif len(shape) == 2:
             # plt.axis('off')
             plt.colorbar()
             fig.savefig("figs/Wave_" + str(i).zfill(8) + ".png")
+            plt.clf()
+
+elif len(shape) == 1:
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    import pylab as plb
+    from matplotlib.colors import LogNorm
+
+    font = {'size': 18}
+    matplotlib.rc('font', **font)
+    for i, psi in enumerate(psi_value):
+        if i > 0:  # the zeroth wave function is the guess and not relevant
+            print "plotting", i
+            plt.text(
+                time_x,
+                time_y,
+                "Time: " + str(psi_time[i]) + " a.u.",
+                color='white')
+            # set up initial figure with color bar
+            psi = psi[:, 0] + 1j * psi[:, 1]
+            psi.shape = tuple(shape)
+
+            data = None
+
+            data = plt.plot(x, np.log10(psi))
+            plt.text(
+                time_x,
+                time_y,
+                "Time: " + str(psi_time[i]) + " a.u.",
+                color='black')
+            plb.xlabel('x (a.u.)')
+            plb.ylabel('log10(psi) (arb. u)')
+            plb.ylim([-10, 0])
+            plt.savefig("figs/Wave_" + str(i).zfill(8) + ".png")
             plt.clf()
