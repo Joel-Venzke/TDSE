@@ -1,12 +1,8 @@
 #pragma once
 #include <cstdlib>
-#include <fstream>
 #include <memory>
 #include <streambuf>
 #include "Utils.h"
-#include "json.hpp"
-
-using json = nlohmann::json;
 
 class Parameters : protected Utils
 {

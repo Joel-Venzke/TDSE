@@ -1,26 +1,5 @@
 #include "Parameters.h"
 
-/*
- * Reads file and returns a string
- */
-std::string FileToString(std::string file_name)
-{
-  // TODO(jove7731): check if file exists
-  std::ifstream t(file_name);
-  std::string str((std::istreambuf_iterator< char >(t)),
-                  std::istreambuf_iterator< char >());
-  return str;
-}
-
-/*
- * Reads file and returns a json object
- */
-json FileToJson(std::string file_name)
-{
-  auto j = json::parse(FileToString(file_name));
-  return j;
-}
-
 /* Constructor */
 Parameters::Parameters(std::string file_name) { Setup(file_name); }
 
@@ -223,166 +202,213 @@ void Parameters::Setup(std::string file_name)
 
   /* set pulses up by experiment type */
 
-  /* streaking */
-  if (experiment_type == "streaking" and num_pulses != 2)
+  if (experiment_type == "File")
   {
-    EndRun(" streaking only allows 2 pulses");
-  }
-
-  /* read in IR and XUV parameters */
-  for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
-  {
-    power_on[pulse_idx]    = 1.0;
-    power_off[pulse_idx]   = 1.0;
-    pulse_shape[pulse_idx] = data["laser"]["pulses"][pulse_idx]["pulse_shape"];
-
-    /* index used similar target_idx */
-    if (pulse_shape[pulse_idx] == "sin2")
+    for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
     {
-      EndRun(
-          "\"sin2\" is no longer an option. Please change to \"sin\" and set "
-          "\"power_on\" and \"power_off\" to \"2\"\n");
-    }
-    else if (pulse_shape[pulse_idx] == "sin")
-    {
-      pulse_shape_idx[pulse_idx] = 0;
-      power_on[pulse_idx]  = data["laser"]["pulses"][pulse_idx]["power_on"];
-      power_off[pulse_idx] = data["laser"]["pulses"][pulse_idx]["power_off"];
-    }
-    else if (pulse_shape[pulse_idx] == "gaussian")
-    {
+      /* Keep from breaking other things */
       pulse_shape_idx[pulse_idx] = 1;
+      power_on[pulse_idx]        = 1.0;
+      power_off[pulse_idx]       = 1.0;
+      cycles_on[pulse_idx]       = 1.0;
+      cycles_plateau[pulse_idx]  = 1.0;
+      cycles_off[pulse_idx]      = 1.0;
+      cycles_delay[pulse_idx]    = 1.0;
+      cep[pulse_idx]             = 0.0;
+      energy[pulse_idx]          = 1.0;
+      field_max[pulse_idx]       = 1.0;
+      ellipticity[pulse_idx]     = 1.0;
+      helicity_idx[pulse_idx]    = 1.0;
+
+      /* Get polarization */
+      polarization_vector[pulse_idx] = new double[num_dims];
+      polar_norm                     = 0.0;
+      for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+      {
+        polarization_vector[pulse_idx][dim_idx] =
+            data["laser"]["pulses"][pulse_idx]["polarization_vector"][dim_idx];
+        polar_norm += polarization_vector[pulse_idx][dim_idx] *
+                      polarization_vector[pulse_idx][dim_idx];
+      }
+      /* normalize the polarization vector*/
+      if (polar_norm < 1e-10)
+      {
+        EndRun("Polarization Vector has Norm of Zero");
+      }
+      polar_norm = sqrt(polar_norm);
+      for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+      {
+        polarization_vector[pulse_idx][dim_idx] /= polar_norm;
+      }
     }
-    else
+  }
+  else
+  {
+    /* streaking */
+    if (experiment_type == "streaking" and num_pulses != 2)
     {
-      pulse_shape_idx[pulse_idx] = -1;
+      EndRun(" streaking only allows 2 pulses");
     }
 
-    if (data["laser"]["pulses"][pulse_idx]["polarization_vector"].size() <
-        num_dims)
+    /* read in IR and XUV parameters */
+    for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
     {
-      EndRun("Polarization vector dimension is to small for pulse " +
-             std::to_string(pulse_idx));
-    }
+      power_on[pulse_idx]  = 1.0;
+      power_off[pulse_idx] = 1.0;
+      pulse_shape[pulse_idx] =
+          data["laser"]["pulses"][pulse_idx]["pulse_shape"];
 
-    polarization_vector[pulse_idx] = new double[num_dims];
-    polar_norm                     = 0.0;
-    if (num_dims == 3)
-    {
-      poynting_vector[pulse_idx] = new double[num_dims];
-      poynting_norm              = 0.0;
-    }
-    for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
-    {
-      polarization_vector[pulse_idx][dim_idx] =
-          data["laser"]["pulses"][pulse_idx]["polarization_vector"][dim_idx];
-      polar_norm += polarization_vector[pulse_idx][dim_idx] *
-                    polarization_vector[pulse_idx][dim_idx];
+      /* index used similar target_idx */
+      if (pulse_shape[pulse_idx] == "sin2")
+      {
+        EndRun(
+            "\"sin2\" is no longer an option. Please change to \"sin\" and set "
+            "\"power_on\" and \"power_off\" to \"2\"\n");
+      }
+      else if (pulse_shape[pulse_idx] == "sin")
+      {
+        pulse_shape_idx[pulse_idx] = 0;
+        power_on[pulse_idx]  = data["laser"]["pulses"][pulse_idx]["power_on"];
+        power_off[pulse_idx] = data["laser"]["pulses"][pulse_idx]["power_off"];
+      }
+      else if (pulse_shape[pulse_idx] == "gaussian")
+      {
+        pulse_shape_idx[pulse_idx] = 1;
+      }
+      else
+      {
+        pulse_shape_idx[pulse_idx] = -1;
+      }
 
+      if (data["laser"]["pulses"][pulse_idx]["polarization_vector"].size() <
+          num_dims)
+      {
+        EndRun("Polarization vector dimension is to small for pulse " +
+               std::to_string(pulse_idx));
+      }
+
+      polarization_vector[pulse_idx] = new double[num_dims];
+      polar_norm                     = 0.0;
       if (num_dims == 3)
       {
-        poynting_vector[pulse_idx][dim_idx] =
-            data["laser"]["pulses"][pulse_idx]["poynting_vector"][dim_idx];
-        poynting_norm += poynting_vector[pulse_idx][dim_idx] *
-                         poynting_vector[pulse_idx][dim_idx];
+        poynting_vector[pulse_idx] = new double[num_dims];
+        poynting_norm              = 0.0;
       }
-    }
-    /* normalize the polarization vector*/
-    if (polar_norm < 1e-10)
-    {
-      EndRun("Polarization Vector has Norm of Zero");
-    }
-    polar_norm = sqrt(polar_norm);
-    if (num_dims == 3)
-    {
-      if (poynting_norm < 1e-10)
+      for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
       {
-        EndRun("Poynting Vector has Norm of Zero");
+        polarization_vector[pulse_idx][dim_idx] =
+            data["laser"]["pulses"][pulse_idx]["polarization_vector"][dim_idx];
+        polar_norm += polarization_vector[pulse_idx][dim_idx] *
+                      polarization_vector[pulse_idx][dim_idx];
+
+        if (num_dims == 3)
+        {
+          poynting_vector[pulse_idx][dim_idx] =
+              data["laser"]["pulses"][pulse_idx]["poynting_vector"][dim_idx];
+          poynting_norm += poynting_vector[pulse_idx][dim_idx] *
+                           poynting_vector[pulse_idx][dim_idx];
+        }
       }
-      poynting_norm = sqrt(poynting_norm);
-    }
-    for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
-    {
-      polarization_vector[pulse_idx][dim_idx] /= polar_norm;
-      if (num_dims == 3 and poynting_norm > 1e-10)
+      /* normalize the polarization vector*/
+      if (polar_norm < 1e-10)
       {
-        poynting_vector[pulse_idx][dim_idx] /= poynting_norm;
+        EndRun("Polarization Vector has Norm of Zero");
       }
-    }
+      polar_norm = sqrt(polar_norm);
+      if (num_dims == 3)
+      {
+        if (poynting_norm < 1e-10)
+        {
+          EndRun("Poynting Vector has Norm of Zero");
+        }
+        poynting_norm = sqrt(poynting_norm);
+      }
+      for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+      {
+        polarization_vector[pulse_idx][dim_idx] /= polar_norm;
+        if (num_dims == 3 and poynting_norm > 1e-10)
+        {
+          poynting_vector[pulse_idx][dim_idx] /= poynting_norm;
+        }
+      }
 
-    cep[pulse_idx]         = data["laser"]["pulses"][pulse_idx]["cep"];
-    energy[pulse_idx]      = data["laser"]["pulses"][pulse_idx]["energy"];
-    ellipticity[pulse_idx] = data["laser"]["pulses"][pulse_idx]["ellipticity"];
-    helicity[pulse_idx]    = data["laser"]["pulses"][pulse_idx]["helicity"];
+      cep[pulse_idx]    = data["laser"]["pulses"][pulse_idx]["cep"];
+      energy[pulse_idx] = data["laser"]["pulses"][pulse_idx]["energy"];
+      ellipticity[pulse_idx] =
+          data["laser"]["pulses"][pulse_idx]["ellipticity"];
+      helicity[pulse_idx] = data["laser"]["pulses"][pulse_idx]["helicity"];
 
-    intensity = data["laser"]["pulses"][pulse_idx]["intensity"];
-    field_max[pulse_idx] =
-        std::sqrt(intensity / 3.51e16) * c / energy[pulse_idx];
+      intensity = data["laser"]["pulses"][pulse_idx]["intensity"];
+      field_max[pulse_idx] =
+          std::sqrt(intensity / 3.51e16) * c / energy[pulse_idx];
 
-    if (helicity[pulse_idx] == "right")
-    {
-      helicity_idx[pulse_idx] = 0;
-    }
-    else if (helicity[pulse_idx] == "left")
-    {
-      helicity_idx[pulse_idx] = 1;
-    }
-    else
-    {
-      helicity_idx[pulse_idx] = -1;
-    }
-
-    cycles_on[pulse_idx] = data["laser"]["pulses"][pulse_idx]["cycles_on"];
-    cycles_plateau[pulse_idx] =
-        data["laser"]["pulses"][pulse_idx]["cycles_plateau"];
-    cycles_off[pulse_idx] = data["laser"]["pulses"][pulse_idx]["cycles_off"];
-
-    /* IR specific */
-    if (experiment_type == "default" or
-        (experiment_type == "streaking" and pulse_idx == 0))
-    {
-      cycles_delay[pulse_idx] =
-          data["laser"]["pulses"][pulse_idx]["cycles_delay"];
-    }
-    /* XUV specific */
-    else if (experiment_type == "streaking" and pulse_idx == 1)
-    {
-      tau_delay = data["laser"]["pulses"][pulse_idx]["tau_delay"];
-
-      double center_XUV_cycles =
-          energy[pulse_idx] *
-          ((2 * pi * (cycles_delay[pulse_idx - 1] + cycles_on[pulse_idx - 1]) /
-            energy[pulse_idx - 1]) +
-           tau_delay) /
-          (2 * pi);
-
-      if (pulse_shape_idx[pulse_idx] == 0)
-        cycles_delay[pulse_idx] = center_XUV_cycles - cycles_on[pulse_idx];
-      else if (pulse_shape_idx[pulse_idx] == 1)
-        cycles_delay[pulse_idx] = center_XUV_cycles - 6 * cycles_on[pulse_idx];
+      if (helicity[pulse_idx] == "right")
+      {
+        helicity_idx[pulse_idx] = 0;
+      }
+      else if (helicity[pulse_idx] == "left")
+      {
+        helicity_idx[pulse_idx] = 1;
+      }
       else
-        EndRun(
-            "Streaking simulation: XUV does not have a valid "
-            "pulse_shape");
-
-      if (cycles_delay[pulse_idx] < 0)
       {
-        cycles_delay[pulse_idx - 1] -=
-            cycles_delay[pulse_idx] * energy[pulse_idx - 1] / energy[pulse_idx];
-        cycles_delay[pulse_idx] = 0;
+        helicity_idx[pulse_idx] = -1;
       }
-    }
-    /* transient absorption spectroscopy */
-    else if (experiment_type == "transient")
-    {
-      EndRun("\ntransient absorption not supported yet\n");
-    }
-    else
-    {
-      EndRun("Unsupported experiment_type");
+
+      cycles_on[pulse_idx] = data["laser"]["pulses"][pulse_idx]["cycles_on"];
+      cycles_plateau[pulse_idx] =
+          data["laser"]["pulses"][pulse_idx]["cycles_plateau"];
+      cycles_off[pulse_idx] = data["laser"]["pulses"][pulse_idx]["cycles_off"];
+
+      /* IR specific */
+      if (experiment_type == "default" or
+          (experiment_type == "streaking" and pulse_idx == 0))
+      {
+        cycles_delay[pulse_idx] =
+            data["laser"]["pulses"][pulse_idx]["cycles_delay"];
+      }
+      /* XUV specific */
+      else if (experiment_type == "streaking" and pulse_idx == 1)
+      {
+        tau_delay = data["laser"]["pulses"][pulse_idx]["tau_delay"];
+
+        double center_XUV_cycles =
+            energy[pulse_idx] *
+            ((2 * pi *
+              (cycles_delay[pulse_idx - 1] + cycles_on[pulse_idx - 1]) /
+              energy[pulse_idx - 1]) +
+             tau_delay) /
+            (2 * pi);
+
+        if (pulse_shape_idx[pulse_idx] == 0)
+          cycles_delay[pulse_idx] = center_XUV_cycles - cycles_on[pulse_idx];
+        else if (pulse_shape_idx[pulse_idx] == 1)
+          cycles_delay[pulse_idx] =
+              center_XUV_cycles - 6 * cycles_on[pulse_idx];
+        else
+          EndRun(
+              "Streaking simulation: XUV does not have a valid "
+              "pulse_shape");
+
+        if (cycles_delay[pulse_idx] < 0)
+        {
+          cycles_delay[pulse_idx - 1] -= cycles_delay[pulse_idx] *
+                                         energy[pulse_idx - 1] /
+                                         energy[pulse_idx];
+          cycles_delay[pulse_idx] = 0;
+        }
+      }
+      /* transient absorption spectroscopy */
+      else if (experiment_type == "transient")
+      {
+        EndRun("\ntransient absorption not supported yet\n");
+      }
+      else
+      {
+        EndRun("Unsupported experiment_type");
+      }
     }
   }
-
   /* ensure input is good */
   Validate();
 

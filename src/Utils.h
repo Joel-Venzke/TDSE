@@ -7,9 +7,13 @@
 #include <boost/mpi/group.hpp>
 #include <boost/optional/optional_io.hpp>
 #include <complex>
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
+#include "json.hpp"
+
+using json = nlohmann::json;
 
 namespace mpi = boost::mpi;
 
@@ -26,4 +30,7 @@ class Utils
  public:
   void EndRun(std::string str);
   void EndRun(std::string str, PetscInt exit_val);
+
+  std::string FileToString(std::string file_name);
+  json FileToJson(std::string file_name);
 };
