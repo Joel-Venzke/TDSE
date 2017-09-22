@@ -32,6 +32,7 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p)
   cep             = p.cep.get();
   energy          = p.energy.get();
   field_max       = p.field_max.get();
+  experiment_type = p.experiment_type;
 
   InitializePolarization();
   InitializePulseLength();
@@ -57,16 +58,7 @@ Pulse::~Pulse()
   }
   delete cycles_total;
   delete time;
-  if (pulse_alloc)
-  {
-    for (PetscInt i = 0; i < num_pulses; ++i)
-    {
-      delete pulse_value[i];
-      delete pulse_envelope[i];
-    }
-    delete[] pulse_value;
-    delete[] pulse_envelope;
-  }
+  DeallocatePulses();
   for (PetscInt i = 0; i < num_dims; ++i)
   {
     delete field[i];
@@ -145,30 +137,85 @@ void Pulse::InitializePulseLength()
 {
   PetscInt pulse_length = 0;
   cycles_total          = new double[num_pulses];
+
+  if (experiment_type == "File")
+  {
+    ReadPulseFromFile();
+    for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
+    {
+      pulse_length = cycles_total[pulse_idx];
+      /* find the largest */
+      if (pulse_length > max_pulse_length)
+      {
+        max_pulse_length = pulse_length;
+      }
+    }
+  }
+  else
+  {
+    for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
+    {
+      if (pulse_shape_idx[pulse_idx] == 0)
+      {
+        cycles_total[pulse_idx] =
+            cycles_delay[pulse_idx] + cycles_on[pulse_idx] +
+            cycles_plateau[pulse_idx] + cycles_off[pulse_idx];
+      }
+      else if (pulse_shape_idx[pulse_idx] ==
+               1) /* Gaussian needs 6 sigma tails */
+      {
+        cycles_total[pulse_idx] =
+            cycles_delay[pulse_idx] + gaussian_sigma * cycles_on[pulse_idx] +
+            cycles_plateau[pulse_idx] + gaussian_sigma * cycles_off[pulse_idx];
+      }
+
+      /* calculate length (number of array cells) of each pulse */
+      pulse_length = ceil(2.0 * pi * cycles_total[pulse_idx] /
+                          (energy[pulse_idx] * delta_t));
+
+      /* find the largest */
+      if (pulse_length > max_pulse_length)
+      {
+        max_pulse_length = pulse_length;
+      }
+    }
+  }
+}
+
+void Pulse::ReadPulseFromFile()
+{
+  PetscInt file_time_size  = 0;
+  PetscInt file_pulse_size = 0;
+
+  json data  = FileToJson("pulses.json");
+  file_time  = new double*[num_pulses];
+  file_pulse = new double*[num_pulses];
+  file_size  = new PetscInt[num_pulses];
   for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
   {
-    if (pulse_shape_idx[pulse_idx] == 0)
+    file_time_size  = data["pulses"][pulse_idx]["time"].size();
+    file_pulse_size = data["pulses"][pulse_idx]["field"].size();
+    if (file_time_size != file_pulse_size)
     {
-      cycles_total[pulse_idx] = cycles_delay[pulse_idx] + cycles_on[pulse_idx] +
-                                cycles_plateau[pulse_idx] +
-                                cycles_off[pulse_idx];
+      EndRun("Size of Time and Field of pulse " + std::to_string(pulse_idx) +
+             " do not match");
     }
-    else if (pulse_shape_idx[pulse_idx] == 1) /* Gaussian needs 6 sigma tails */
+    file_time[pulse_idx]  = new double[file_time_size];
+    file_pulse[pulse_idx] = new double[file_time_size];
+    for (int time_idx = 0; time_idx < file_time_size; ++time_idx)
     {
-      cycles_total[pulse_idx] =
-          cycles_delay[pulse_idx] + gaussian_sigma * cycles_on[pulse_idx] +
-          cycles_plateau[pulse_idx] + gaussian_sigma * cycles_off[pulse_idx];
+      file_time[pulse_idx][time_idx] =
+          data["pulses"][pulse_idx]["time"][time_idx];
+      file_pulse[pulse_idx][time_idx] =
+          data["pulses"][pulse_idx]["field"][time_idx];
     }
 
-    /* calculate length (number of array cells) of each pulse */
-    pulse_length = ceil(2.0 * pi * cycles_total[pulse_idx] /
-                        (energy[pulse_idx] * delta_t));
+    /* store size of pulse */
+    file_size[pulse_idx] = file_time_size;
 
-    /* find the largest */
-    if (pulse_length > max_pulse_length)
-    {
-      max_pulse_length = pulse_length;
-    }
+    /* figure out how many time steps we need */
+    cycles_total[pulse_idx] =
+        std::ceil(file_time[pulse_idx][file_time_size - 1] / delta_t) + 1;
   }
 }
 
@@ -182,151 +229,199 @@ void Pulse::InitializeTime()
   }
 }
 
+/**
+ * @brief Linear interpolation of file pulse
+ *
+ * @param pulse_idx index of pulse in file
+ * @param time time you want the interpolation at
+ *
+ * @return value of the pulse at the interpolated time
+ */
+double Pulse::Interpolate(PetscInt pulse_idx, double time)
+{
+  if (time > file_time[pulse_idx][file_size[pulse_idx] - 1]) return 0.0;
+  PetscInt time_idx = 1;
+  double slope;
+  while (time >= file_time[pulse_idx][time_idx]) time_idx++;
+  slope =
+      (file_pulse[pulse_idx][time_idx] - file_pulse[pulse_idx][time_idx - 1]) /
+      (file_time[pulse_idx][time_idx] - file_time[pulse_idx][time_idx - 1]);
+  return file_pulse[pulse_idx][time_idx - 1] +
+         slope * (time - file_time[pulse_idx][time_idx - 1]);
+}
+
 /* build the nth pulse */
 void Pulse::InitializePulse(PetscInt n)
 {
-  PetscInt on_start      = 0;
-  PetscInt plateau_start = 0;
-  PetscInt off_start     = 0;
-  PetscInt off_end       = 0;
-  double period          = 2.0 * pi / energy[n];
-  double s1;  // value of sin (x for Gaussian)
-  double sn;  // sin to the nth power
-  double current_cep = cep[n] + (((int)cycles_on[n]) - cycles_on[n]);
-
-  /* index that turns pulse on */
-  on_start = ceil(period * cycles_delay[n] / (delta_t));
-
-  if (pulse_shape_idx[n] == 0)
-  {
-    /* index that holds pulse at max */
-    plateau_start = ceil(period * (cycles_on[n] + cycles_delay[n]) / (delta_t));
-    /* index that turns pulse off */
-    off_start =
-        ceil(period * (cycles_plateau[n] + cycles_on[n] + cycles_delay[n]) /
-             (delta_t));
-
-    /* index that holds pulse at 0 */
-    off_end = ceil(
-        period *
-        (cycles_off[n] + cycles_plateau[n] + cycles_on[n] + cycles_delay[n]) /
-        (delta_t));
-  }
-  else if (pulse_shape_idx[n] == 1) /* Gaussian needs 6 sigma tails */
-  {
-    /* index that holds pulse at max */
-    plateau_start = ceil(
-        period * (gaussian_sigma * cycles_on[n] + cycles_delay[n]) / (delta_t));
-    /* index that turns pulse off */
-    off_start = ceil(
-        period *
-        (cycles_plateau[n] + gaussian_sigma * cycles_on[n] + cycles_delay[n]) /
-        (delta_t));
-
-    /* index that holds pulse at 0 */
-    off_end = ceil(period *
-                   (gaussian_sigma * cycles_off[n] + cycles_plateau[n] +
-                    gaussian_sigma * cycles_on[n] + cycles_delay[n]) /
-                   (delta_t));
-  }
-
-  if (!pulse_alloc)
-  {
-    pulse_envelope[n] = new double[max_pulse_length];
-  }
-  for (PetscInt time_idx = 0; time_idx < max_pulse_length; ++time_idx)
-  {
-    if (time_idx < on_start)
-    { /* pulse still off */
-      pulse_envelope[n][time_idx] = 0.0;
-    }
-    else if (time_idx < plateau_start)
-    { /* pulse ramping on */
-      if (pulse_shape_idx[n] == 0)
-      {
-        s1 = sin(energy[n] * delta_t * (time_idx - on_start) /
-                 (4.0 * cycles_on[n]));
-        sn = 1.0;
-        for (int power = 0; power < power_on[n]; ++power)
-        {
-          sn *= s1;
-        }
-        pulse_envelope[n][time_idx] = field_max[n] * sn;
-      }
-      else if (pulse_shape_idx[n] == 1)
-      {
-        s1 = (energy[n] * delta_t * (plateau_start - time_idx)) /
-             (2.0 * pi * cycles_on[n]);
-        pulse_envelope[n][time_idx] = field_max[n] * exp(-1.0 * s1 * s1);
-        // pulse_envelope[n][time_idx] = -1.0 * s1 * s1;
-      }
-    }
-    else if (time_idx < off_start)
-    { /* pulse at max */
-      pulse_envelope[n][time_idx] = field_max[n];
-    }
-    else if (time_idx < off_end)
-    { /* pulse ramping off */
-      if (pulse_shape_idx[n] == 0)
-      {
-        s1 = sin(energy[n] * delta_t * (time_idx - off_start) /
-                     (4.0 * cycles_off[n]) +
-                 pi / 2.0);
-        sn = 1.0;
-        for (int power = 0; power < power_off[n]; ++power)
-        {
-          sn *= s1;
-        }
-        pulse_envelope[n][time_idx] = field_max[n] * sn;
-      }
-      else if (pulse_shape_idx[n] == 1)
-      {
-        s1 = (energy[n] * delta_t * (time_idx - off_start)) /
-             (2 * pi * cycles_off[n]);
-        pulse_envelope[n][time_idx] = field_max[n] * exp(-1.0 * s1 * s1);
-        // pulse_envelope[n][time_idx] = -1.0 * s1 * s1;
-      }
-    }
-    else
-    { /* pulse is off */
-      pulse_envelope[n][time_idx] = 0.0;
-    }
-  }
-
-  if (!pulse_alloc)
-  {
-    pulse_value[n] = new double*[num_dims];
-  }
-  for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+  if (experiment_type == "File")
   {
     if (!pulse_alloc)
     {
-      pulse_value[n][dim_idx] = new double[max_pulse_length];
+      pulse_envelope[n] = new double[max_pulse_length];
+      pulse_value[n]    = new double*[num_dims];
+      for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+      {
+        pulse_value[n][dim_idx] = new double[max_pulse_length];
+      }
     }
     for (PetscInt time_idx = 0; time_idx < max_pulse_length; ++time_idx)
     {
-      /* calculate the actual pulse */
-      pulse_value[n][dim_idx][time_idx] =
-          polarization_vector_major[n][dim_idx] * pulse_envelope[n][time_idx] *
-          sin(energy[n] * delta_t * (time_idx - on_start) +
-              current_cep * 2 * pi);
-      if (helicity_idx[n] == 0) /* right */
+      pulse_envelope[n][time_idx] = Interpolate(n, time[time_idx]);
+      for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
       {
-        /* We want cos(...) */
-        pulse_value[n][dim_idx][time_idx] +=
-            polarization_vector_minor[n][dim_idx] *
-            pulse_envelope[n][time_idx] *
-            cos(energy[n] * delta_t * (time_idx - on_start) +
-                current_cep * 2 * pi);
+        pulse_value[n][dim_idx][time_idx] =
+            polarization_vector_major[n][dim_idx] * pulse_envelope[n][time_idx];
       }
-      else if (helicity_idx[n] == 1) /* left */
+    }
+  }
+  else
+  {
+    PetscInt on_start      = 0;
+    PetscInt plateau_start = 0;
+    PetscInt off_start     = 0;
+    PetscInt off_end       = 0;
+    double period          = 2.0 * pi / energy[n];
+    double s1;  // value of sin (x for Gaussian)
+    double sn;  // sin to the nth power
+    double current_cep = cep[n] + (((int)cycles_on[n]) - cycles_on[n]);
+
+    /* index that turns pulse on */
+    on_start = ceil(period * cycles_delay[n] / (delta_t));
+
+    if (pulse_shape_idx[n] == 0)
+    {
+      /* index that holds pulse at max */
+      plateau_start =
+          ceil(period * (cycles_on[n] + cycles_delay[n]) / (delta_t));
+      /* index that turns pulse off */
+      off_start =
+          ceil(period * (cycles_plateau[n] + cycles_on[n] + cycles_delay[n]) /
+               (delta_t));
+
+      /* index that holds pulse at 0 */
+      off_end = ceil(
+          period *
+          (cycles_off[n] + cycles_plateau[n] + cycles_on[n] + cycles_delay[n]) /
+          (delta_t));
+    }
+    else if (pulse_shape_idx[n] == 1) /* Gaussian needs 6 sigma tails */
+    {
+      /* index that holds pulse at max */
+      plateau_start =
+          ceil(period * (gaussian_sigma * cycles_on[n] + cycles_delay[n]) /
+               (delta_t));
+      /* index that turns pulse off */
+      off_start = ceil(period *
+                       (cycles_plateau[n] + gaussian_sigma * cycles_on[n] +
+                        cycles_delay[n]) /
+                       (delta_t));
+
+      /* index that holds pulse at 0 */
+      off_end = ceil(period *
+                     (gaussian_sigma * cycles_off[n] + cycles_plateau[n] +
+                      gaussian_sigma * cycles_on[n] + cycles_delay[n]) /
+                     (delta_t));
+    }
+
+    if (!pulse_alloc)
+    {
+      pulse_envelope[n] = new double[max_pulse_length];
+    }
+    for (PetscInt time_idx = 0; time_idx < max_pulse_length; ++time_idx)
+    {
+      if (time_idx < on_start)
+      { /* pulse still off */
+        pulse_envelope[n][time_idx] = 0.0;
+      }
+      else if (time_idx < plateau_start)
+      { /* pulse ramping on */
+        if (pulse_shape_idx[n] == 0)
+        {
+          s1 = sin(energy[n] * delta_t * (time_idx - on_start) /
+                   (4.0 * cycles_on[n]));
+          sn = 1.0;
+          for (int power = 0; power < power_on[n]; ++power)
+          {
+            sn *= s1;
+          }
+          pulse_envelope[n][time_idx] = field_max[n] * sn;
+        }
+        else if (pulse_shape_idx[n] == 1)
+        {
+          s1 = (energy[n] * delta_t * (plateau_start - time_idx)) /
+               (2.0 * pi * cycles_on[n]);
+          pulse_envelope[n][time_idx] = field_max[n] * exp(-1.0 * s1 * s1);
+          // pulse_envelope[n][time_idx] = -1.0 * s1 * s1;
+        }
+      }
+      else if (time_idx < off_start)
+      { /* pulse at max */
+        pulse_envelope[n][time_idx] = field_max[n];
+      }
+      else if (time_idx < off_end)
+      { /* pulse ramping off */
+        if (pulse_shape_idx[n] == 0)
+        {
+          s1 = sin(energy[n] * delta_t * (time_idx - off_start) /
+                       (4.0 * cycles_off[n]) +
+                   pi / 2.0);
+          sn = 1.0;
+          for (int power = 0; power < power_off[n]; ++power)
+          {
+            sn *= s1;
+          }
+          pulse_envelope[n][time_idx] = field_max[n] * sn;
+        }
+        else if (pulse_shape_idx[n] == 1)
+        {
+          s1 = (energy[n] * delta_t * (time_idx - off_start)) /
+               (2 * pi * cycles_off[n]);
+          pulse_envelope[n][time_idx] = field_max[n] * exp(-1.0 * s1 * s1);
+          // pulse_envelope[n][time_idx] = -1.0 * s1 * s1;
+        }
+      }
+      else
+      { /* pulse is off */
+        pulse_envelope[n][time_idx] = 0.0;
+      }
+    }
+
+    if (!pulse_alloc)
+    {
+      pulse_value[n] = new double*[num_dims];
+    }
+    for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+    {
+      if (!pulse_alloc)
       {
-        /* We want -1.0 * cos(...) */
-        pulse_value[n][dim_idx][time_idx] -=
-            polarization_vector_minor[n][dim_idx] *
+        pulse_value[n][dim_idx] = new double[max_pulse_length];
+      }
+      for (PetscInt time_idx = 0; time_idx < max_pulse_length; ++time_idx)
+      {
+        /* calculate the actual pulse */
+        pulse_value[n][dim_idx][time_idx] =
+            polarization_vector_major[n][dim_idx] *
             pulse_envelope[n][time_idx] *
-            cos(energy[n] * delta_t * (time_idx - on_start) +
+            sin(energy[n] * delta_t * (time_idx - on_start) +
                 current_cep * 2 * pi);
+        if (helicity_idx[n] == 0) /* right */
+        {
+          /* We want cos(...) */
+          pulse_value[n][dim_idx][time_idx] +=
+              polarization_vector_minor[n][dim_idx] *
+              pulse_envelope[n][time_idx] *
+              cos(energy[n] * delta_t * (time_idx - on_start) +
+                  current_cep * 2 * pi);
+        }
+        else if (helicity_idx[n] == 1) /* left */
+        {
+          /* We want -1.0 * cos(...) */
+          pulse_value[n][dim_idx][time_idx] -=
+              polarization_vector_minor[n][dim_idx] *
+              pulse_envelope[n][time_idx] *
+              cos(energy[n] * delta_t * (time_idx - on_start) +
+                  current_cep * 2 * pi);
+        }
       }
     }
   }
@@ -421,13 +516,24 @@ void Pulse::DeallocatePulses()
     {
       for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
       {
-        delete[] pulse_value[pulse_idx][dim_idx];
+        delete pulse_value[pulse_idx][dim_idx];
       }
       delete[] pulse_value[pulse_idx];
-      delete[] pulse_envelope[pulse_idx];
+      delete pulse_envelope[pulse_idx];
+      if (experiment_type == "File")
+      {
+        delete file_pulse[pulse_idx];
+        delete file_time[pulse_idx];
+      }
     }
     delete[] pulse_value;
     delete[] pulse_envelope;
+    if (experiment_type == "File")
+    {
+      delete[] file_pulse;
+      delete[] file_time;
+      delete file_size;
+    }
     pulse_alloc = false;
   }
 }
