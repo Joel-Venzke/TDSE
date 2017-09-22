@@ -11,7 +11,7 @@ for tau in ["-20", "-10", "0", "10", "20"]:
     key = "tau_" + tau + "/"
     folders.append(key)
 
-# for each folder containing a 
+# for each folder containing a
 # sim with a different delay
 for fold in folders:
     #read data
@@ -19,7 +19,7 @@ for fold in folders:
     psi_value = f["Wavefunction"]["psi"][-1]
     p_time = pulses["time"][:]
     time = observables["time"][1:]
-    tau_delay  = f["Parameters"]["tau_delay"][0]
+    tau_delay = f["Parameters"]["tau_delay"][0]
 
     taus.append(tau_delay)
 

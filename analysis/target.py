@@ -166,7 +166,7 @@ elif len(shape) == 1:
     import pylab as plb
     import matplotlib.animation as animation
     from matplotlib.colors import LogNorm
-#    fig = plt.figure()
+    #    fig = plt.figure()
     for i, psi in enumerate(psi_value):
         print "plotting", i
         # set up initial figure with color bar

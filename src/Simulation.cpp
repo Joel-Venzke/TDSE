@@ -200,6 +200,8 @@ void Simulation::Propagate()
         }
         /* write a checkpoint */
         wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
+        wavefunction->ProjectOut(parameters->GetTarget() + ".h5", *h5_file,
+                                 *viewer_file, delta_t * (i - 1));
         t = clock();
       }
       i++;
@@ -235,15 +237,17 @@ void Simulation::Propagate()
                     << std::flush;
         /* write a checkpoint */
         wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
+        wavefunction->ProjectOut(parameters->GetTarget() + ".h5", *h5_file,
+                                 *viewer_file, delta_t * (i - 1));
         t = clock();
       }
       i++;
     }
     /* Save last Wavefunction since it might not end on a write frequency*/
     wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
+    wavefunction->ProjectOut(parameters->GetTarget() + ".h5", *h5_file,
+                             *viewer_file, delta_t * (i - 1));
   }
-  wavefunction->ProjectOut(parameters->GetTarget() + ".h5", *h5_file,
-                           *viewer_file, delta_t * (i - 1));
 
   VecDestroy(&psi_old);
 }

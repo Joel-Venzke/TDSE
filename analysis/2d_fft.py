@@ -100,19 +100,19 @@ for i, psi in enumerate(psi_value):
 
             #print peaks for last one
 
-            pp = []
-            ftt = []
+            kx_peaks = []
+            peak_values = []
             thresh = 0.0005
 
             for element in argrelmax(dataft)[0]:
                 if (dataft[element] > thresh):
-                    pp.append(kx[element])
-                    ftt.append(dataft[element])
-            pp = np.array(pp)
-            ftt = np.array(ftt)
+                    kx_peaks.append(kx[element])
+                    peak_values.append(dataft[element])
+            kx_peaks = np.array(kx_peaks)
+            peak_values = np.array(peak_values)
 
-            for elem in argrelmax(ftt)[0]:
-                print "k_x:", pp[elem], ftt[elem]
+            for elem in argrelmax(peak_values)[0]:
+                print "k_x:", kx_peaks[elem], peak_values[elem]
 
             plt.savefig("figs/2d_fft_" + str(i).zfill(8) + ".png")
             plt.clf()
