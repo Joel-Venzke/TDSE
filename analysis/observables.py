@@ -65,12 +65,12 @@ print "Plotting Dipole"
 fig = plt.figure()
 for elec_idx in range(num_electrons):
     for dim_idx in range(num_dims):
-        if (not (dim_idx == 0 and
-                 f["Parameters"]["coordinate_system_idx"][0] == 1)):
+        if (not (dim_idx == 0
+                 and f["Parameters"]["coordinate_system_idx"][0] == 1)):
             plt.plot(
                 time,
-                -1.0 * observables["position_expectation_" +
-                                   str(elec_idx) + "_" + str(dim_idx)][1:],
+                -1.0 * observables["position_expectation_"
+                                   + str(elec_idx) + "_" + str(dim_idx)][1:],
                 label="Electron " + str(elec_idx) + " Dim " + str(dim_idx))
 plt.xlabel("Time (a.u.)")
 plt.ylabel("Dipole (a.u.)")
@@ -86,12 +86,12 @@ fig2, ax1 = plt.subplots()
 ax2 = ax1.twinx()
 for elec_idx in range(num_electrons):
     for dim_idx in range(num_dims):
-        if (not (dim_idx == 0 and
-                 f["Parameters"]["coordinate_system_idx"][0] == 1)):
+        if (not (dim_idx == 0
+                 and f["Parameters"]["coordinate_system_idx"][0] == 1)):
             ax1.plot(
                 time,
-                -1.0 * observables["position_expectation_" +
-                                   str(elec_idx) + "_" + str(dim_idx)][1:],
+                -1.0 * observables["position_expectation_"
+                                   + str(elec_idx) + "_" + str(dim_idx)][1:],
                 label="Electron " + str(elec_idx) + " Dim " + str(dim_idx))
 ax2.plot(time, 1.0 - observables["norm"][1:], 'r--', label="Ionization")
 ax1.set_xlabel("Time a.u.")
@@ -107,13 +107,13 @@ fig2, ax1 = plt.subplots()
 ax2 = ax1.twinx()
 for elec_idx in range(num_electrons):
     for dim_idx in range(num_dims):
-        if (not (dim_idx == 0 and
-                 f["Parameters"]["coordinate_system_idx"][0] == 1)):
+        if (not (dim_idx == 0
+                 and f["Parameters"]["coordinate_system_idx"][0] == 1)):
             ax1.plot(
                 time,
                 np.abs(-1.0 *
-                       observables["position_expectation_" +
-                                   str(elec_idx) + "_" + str(dim_idx)][1:]),
+                       observables["position_expectation_"
+                                   + str(elec_idx) + "_" + str(dim_idx)][1:]),
                 label="Electron " + str(elec_idx) + " Dim " + str(dim_idx))
 for pulse_idx in range(num_pulses):
     ax2.plot(
@@ -133,12 +133,12 @@ print "Plotting Dipole Acceleration"
 fig = plt.figure()
 for elec_idx in range(num_electrons):
     for dim_idx in range(num_dims):
-        if (not (dim_idx == 0 and
-                 f["Parameters"]["coordinate_system_idx"][0] == 1)):
+        if (not (dim_idx == 0
+                 and f["Parameters"]["coordinate_system_idx"][0] == 1)):
             plt.plot(
                 time,
-                observables["dipole_acceleration_" +
-                            str(elec_idx) + "_" + str(dim_idx)][1:],
+                observables["dipole_acceleration_"
+                            + str(elec_idx) + "_" + str(dim_idx)][1:],
                 label="Electron " + str(elec_idx) + " Dim " + str(dim_idx))
 plt.xlabel("Time (a.u.)")
 plt.ylabel("Dipole Acceleration (a.u.)")
@@ -154,8 +154,8 @@ fig = plt.figure()
 energy = f["Parameters"]["energy"][0]
 for elec_idx in range(num_electrons):
     for dim_idx in range(num_dims):
-        if (not (dim_idx == 0 and
-                 f["Parameters"]["coordinate_system_idx"][0] == 1)):
+        if (not (dim_idx == 0
+                 and f["Parameters"]["coordinate_system_idx"][0] == 1)):
             data = observables[
                 "dipole_acceleration_" + str(elec_idx) + "_" + str(dim_idx)][
                     1:len(pulses["field_" + str(dim_idx)]
@@ -190,8 +190,8 @@ fig2, ax1 = plt.subplots()
 ax2 = ax1.twinx()
 for elec_idx in range(num_electrons):
     for dim_idx in range(num_dims):
-        if (not (dim_idx == 0 and
-                 f["Parameters"]["coordinate_system_idx"][0] == 1)):
+        if (not (dim_idx == 0
+                 and f["Parameters"]["coordinate_system_idx"][0] == 1)):
             ax1.plot(
                 time,
                 np.abs(observables["dipole_acceleration_" + str(elec_idx) + "_"
@@ -215,15 +215,17 @@ print "Plotting Linearity"
 fig = plt.figure()
 for elec_idx in range(num_electrons):
     for dim_idx in range(num_dims):
-        if (not (dim_idx == 0 and
-                 f["Parameters"]["coordinate_system_idx"][0] == 1)):
+        if (not (dim_idx == 0
+                 and f["Parameters"]["coordinate_system_idx"][0] == 1)):
             plt.plot(
-                observables["dipole_acceleration_" +
-                            str(elec_idx) + "_" + str(dim_idx)]
+                observables["dipole_acceleration_"
+                            + str(elec_idx) + "_" + str(dim_idx)]
                 [1:len(pulses["field_" + str(dim_idx)]
                        [checkpoint_frequency::checkpoint_frequency]) + 1],
-                pulses["field_" + str(dim_idx)][checkpoint_frequency::
-                                                checkpoint_frequency],
+                -1.0 * np.gradient(pulses["field_1"][
+                    checkpoint_frequency::checkpoint_frequency], f[
+                        "Parameters"]["delta_t"][0] * checkpoint_frequency) *
+                7.2973525664e-3,
                 label="Electron " + str(elec_idx) + " Dim " + str(dim_idx))
 plt.xlabel("Field in (a.u.)")
 plt.ylabel("Dipole Acceleration (a.u.)")
@@ -263,11 +265,13 @@ def state_single_name(state_number, shells):
 
     return ret_val
 
+
 def get_shells(state_number):
     shells = [0]
     while (state_number > shells[-1]):
         shells.append(shells[-1] + len(shells))
     return shells
+
 
 # return list of states up to state_number
 def state_name(state_number):
@@ -357,20 +361,20 @@ for state_number in range(data.shape[1]):
     plt.xlabel("Time (a.u.)")
     plt.ylim([1e-20, 10])
     plt.legend(loc=2)
-    fig.savefig("figs/Projection_"+str(state_number).zfill(4)+"_"+state_labels[state_number]+".png")
+    fig.savefig("figs/Projection_" + str(state_number).zfill(4) + "_" +
+                state_labels[state_number] + ".png")
     plt.clf()
 
 fig = plt.figure()
-plt.semilogy(
-    range(plot_data.shape[1]),
-    plot_data[-1, :],'o-')
+plt.semilogy(range(plot_data.shape[1]), plot_data[-1, :], 'o-')
 
 plt.ylabel("Population")
 plt.xlabel("Bound State")
-plt.xticks(range(plot_data.shape[1]),state_labels,rotation='vertical')
+plt.xticks(range(plot_data.shape[1]), state_labels, rotation='vertical')
 plt.ylim([1e-20, 10])
 fig.savefig("figs/Projection_at_end.png")
 plt.clf()
+
 
 def sum_by_n(data):
     ret_val = []
@@ -378,32 +382,31 @@ def sum_by_n(data):
     ret_val = np.zeros((data.shape[0], len(shells)))
     for n in range(len(shells)):
         for l in range(n):
-            if n>0:
-                ret_val[:,n] += data[:, shells[n-1]+l]
+            if n > 0:
+                ret_val[:, n] += data[:, shells[n - 1] + l]
             else:
-                ret_val[:,n] += data[:, l]
+                ret_val[:, n] += data[:, l]
     return ret_val
+
 
 fig = plt.figure()
 by_n_value = sum_by_n(plot_data)
-plt.semilogy(
-    range(len(by_n_value[-1])),
-    by_n_value[-1],'o-')
+plt.semilogy(range(len(by_n_value[-1])), by_n_value[-1], 'o-')
 plt.ylabel("Population")
 plt.xlabel("N value")
 plt.ylim([1e-20, 10])
-plt.xlim([0,len(by_n_value[-1])])
+plt.xlim([0, len(by_n_value[-1])])
 plt.xticks(range(len(by_n_value[-1])))
 fig.savefig("figs/Projection_at_end_by_n.png")
 plt.clf()
 
 fig = plt.figure()
-for n_value in range(1,by_n_value.shape[1]):
+for n_value in range(1, by_n_value.shape[1]):
     plt.semilogy(
         plot_time,
         by_n_value[:, n_value],
         marker='o',
-        label="n="+str(n_value),
+        label="n=" + str(n_value),
         color=colors[n_value % len(colors)],
         linestyle=linestyles[(n_value / len(colors)) % len(linestyles)])
 
@@ -414,26 +417,26 @@ plt.legend(loc=2)
 fig.savefig("figs/Projection_vs_time_by_n.png")
 plt.clf()
 
+
 def sum_by_l(data):
     ret_val = []
     shells = get_shells(data.shape[1])
-    if len(shells)>2:
-      ret_val = np.zeros((data.shape[0], shells[-1]-shells[-2]))
+    if len(shells) > 2:
+        ret_val = np.zeros((data.shape[0], shells[-1] - shells[-2]))
     else:
-      ret_val = np.zeros((data.shape[0], 3))
+        ret_val = np.zeros((data.shape[0], 3))
     for n in range(len(shells)):
         for l in range(n):
-            if n>0:
-                ret_val[:,l] += data[:, shells[n-1]+l]
+            if n > 0:
+                ret_val[:, l] += data[:, shells[n - 1] + l]
             else:
-                ret_val[:,l] += data[:, l]
+                ret_val[:, l] += data[:, l]
     return ret_val
+
 
 fig = plt.figure()
 by_l_value = sum_by_l(plot_data)
-plt.semilogy(
-    range(len(by_l_value[-1])),
-    by_l_value[-1],'o-')
+plt.semilogy(range(len(by_l_value[-1])), by_l_value[-1], 'o-')
 plt.ylabel("Population")
 plt.xlabel("l value")
 plt.ylim([1e-20, 10])

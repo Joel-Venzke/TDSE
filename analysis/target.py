@@ -166,7 +166,7 @@ elif len(shape) == 1:
     import pylab as plb
     import matplotlib.animation as animation
     from matplotlib.colors import LogNorm
-#    fig = plt.figure()
+    #    fig = plt.figure()
     for i, psi in enumerate(psi_value):
         print "plotting", i
         # set up initial figure with color bar
@@ -176,7 +176,7 @@ elif len(shape) == 1:
         # color bar doesn't change during the video so only set it here
         plt.xlabel("z-axis (a.u.)")
         plt.ylabel("log10(psi)")
-        plb.xlim([-30, 30])
+        plb.xlim([-700, 700])
         #plb.ylim([-7, 0])
         plt.title(name_list[i] + " - Energy " + str(energy[i]))
         plt.savefig("figs/" + target_name + "_log_state_" + str(i).zfill(3) +
