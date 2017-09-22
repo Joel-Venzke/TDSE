@@ -99,11 +99,6 @@ elif len(shape) == 2:
     for i, psi in enumerate(psi_value):
         if i > 0:  # the zeroth wave function is the guess and not relevant
             print "plotting", i
-            plt.text(
-                time_x,
-                time_y,
-                "Time: " + str(psi_time[i]) + " a.u.",
-                color='white')
             # set up initial figure with color bar
             psi = psi[:, 0] + 1j * psi[:, 1]
             psi.shape = tuple(shape)
@@ -171,25 +166,20 @@ elif len(shape) == 1:
     for i, psi in enumerate(psi_value):
         if i > 0:  # the zeroth wave function is the guess and not relevant
             print "plotting", i
-            plt.text(
-                time_x,
-                time_y,
-                "Time: " + str(psi_time[i]) + " a.u.",
-                color='white')
             # set up initial figure with color bar
             psi = psi[:, 0] + 1j * psi[:, 1]
             psi.shape = tuple(shape)
 
             data = None
 
-            data = plt.plot(x, np.log10(psi))
+            data = plt.semilogy(x, np.abs(psi))
             plt.text(
                 time_x,
                 time_y,
                 "Time: " + str(psi_time[i]) + " a.u.",
                 color='black')
             plb.xlabel('x (a.u.)')
-            plb.ylabel('log10(psi) (arb. u)')
-            plb.ylim([-10, 0])
+            plb.ylabel('psi (arb. u)')
+            plt.ylim(ymin=1e-15)
             plt.savefig("figs/Wave_" + str(i).zfill(8) + ".png")
             plt.clf()

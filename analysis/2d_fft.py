@@ -46,14 +46,23 @@ for i, psi in enumerate(psi_value):
         if len(shape) == 2:
             if f["Parameters"]["coordinate_system_idx"][0] == 1:
                 psi = np.pad(psi, ((psi.shape[0], 0), (0, 0)), 'symmetric')
-            data = plt.imshow(
-                np.abs(np.fft.fftshift(np.fft.fft2(psi))),
-                # np.abs(psi),
-                cmap='viridis',
-                origin='lower',
-                norm=LogNorm(vmin=1e-15),
-                extent=[ky.min(), ky.max(),
-                        kx.min(), kx.max()])
+                data = plt.imshow(
+                    np.abs(np.fft.fftshift(np.fft.fft2(psi), axes=1)),
+                    # np.abs(psi),
+                    cmap='viridis',
+                    origin='lower',
+                    norm=LogNorm(vmin=1e-5),
+                    extent=[ky.min(), ky.max(),
+                            kx.min(), kx.max()])
+            else:
+                data = plt.imshow(
+                    np.abs(np.fft.fftshift(np.fft.fft2(psi))),
+                    # np.abs(psi),
+                    cmap='viridis',
+                    origin='lower',
+                    norm=LogNorm(vmin=1e-5),
+                    extent=[ky.min(), ky.max(),
+                            kx.min(), kx.max()])
             plt.text(
                 time_x,
                 time_y,
@@ -61,15 +70,18 @@ for i, psi in enumerate(psi_value):
                 color='white')
             # color bar doesn't change during the video so only set it here
             if f["Parameters"]["coordinate_system_idx"][0] == 1:
-                plt.xlabel("$k_z$ (a.u.)")
-                plt.ylabel("$k_x$ (a.u.)")
+                plt.xlabel("$k_\\rho$ (a.u.)")
+                plt.ylabel("$k_z$ (a.u.)")
             else:
                 plt.xlabel("$k_x$ (a.u.)")
                 plt.ylabel("$k_y$  (a.u.)")
             plt.colorbar()
             fig.savefig("figs/2d_fft_" + str(i).zfill(8) + "_full.png")
-            plb.xlim([-2, 2])
-            plb.ylim([-2, 2])
+            plb.xlim([-5, 5])
+            if f["Parameters"]["coordinate_system_idx"][0] == 1:
+                plb.ylim([0, 5])
+            else:
+                plb.ylim([-5, 5])
             fig.savefig("figs/2d_fft_" + str(i).zfill(8) + ".png")
             plt.clf()
 
