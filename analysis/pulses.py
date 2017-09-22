@@ -16,7 +16,7 @@ num_pulses = f["Parameters"]["num_pulses"][0]
 checkpoint_frequency = f["Parameters"]["write_frequency_observables"][0]
 
 # Field Plot
-print "Plotting Field"
+print "Plotting A Field"
 fig = plt.figure()
 for dim_idx in range(num_dims):
     plt.plot(
@@ -25,12 +25,26 @@ for dim_idx in range(num_dims):
         label="field " + str(dim_idx))
 plt.xlabel("Time (a.u.)")
 plt.ylabel("Field (a.u.)")
-plt.title("Field")
+plt.title("A Field")
 plt.legend()
-fig.savefig("figs/Pulse_field.png")
+fig.savefig("figs/Pulse_total_A_field.png")
+
+print "Plotting E Field"
+fig = plt.figure()
+for dim_idx in range(num_dims):
+    plt.plot(
+        p_time,
+        -1.0 * np.gradient(pulses["field_" + str(dim_idx)][:],
+                           f["Parameters"]["delta_t"][0]) * 7.2973525664e-3,
+        label="field " + str(dim_idx))
+plt.xlabel("Time (a.u.)")
+plt.ylabel("Field (a.u.)")
+plt.title("E Field")
+plt.legend()
+fig.savefig("figs/Pulse_total_E_field.png")
 
 # Field Plot
-print "Plotting Pulses"
+print "Plotting Pulses A"
 fig = plt.figure()
 for pulse_idx in range(num_pulses):
     plt.plot(p_time, pulses["Pulse_envelope_" + str(pulse_idx)][:], 'r--')
@@ -45,32 +59,52 @@ plt.xlabel("Time (a.u.)")
 plt.ylabel("Field (a.u.)")
 plt.title("Pulses")
 plt.legend()
-fig.savefig("figs/Pulses.png")
+fig.savefig("figs/Pulses_A_field.png")
 
+print "Plotting Pulses E"
+fig = plt.figure()
+for pulse_idx in range(num_pulses):
+    plt.plot(p_time, pulses["Pulse_envelope_" + str(pulse_idx)][:] *
+             7.2973525664e-3 * f["Parameters"]["energy"][pulse_idx], 'r--')
+    plt.plot(p_time, -1.0 * pulses["Pulse_envelope_" + str(pulse_idx)][:] *
+             7.2973525664e-3 * f["Parameters"]["energy"][pulse_idx], 'r--')
+    for dim_idx in range(num_dims):
+        plt.plot(
+            p_time,
+            -1.0 *
+            np.gradient(pulses["Pulse_value_"
+                               + str(pulse_idx) + "_" + str(dim_idx)][:],
+                        f["Parameters"]["delta_t"][0]) * 7.2973525664e-3,
+            label="Pulse " + str(pulse_idx) + " Dim " + str(dim_idx))
+plt.xlabel("Time (a.u.)")
+plt.ylabel("Field (a.u.)")
+plt.title("Pulses")
+plt.legend()
+fig.savefig("figs/Pulses_E_field.png")
 
 # Spectrum
 print "Plotting Spectrum"
 grid_max = 0.0
 fig = plt.figure()
 for dim_idx in range(num_dims):
-    data = pulses["field_" + str(dim_idx)][:]
+    data = -1.0 * np.gradient(pulses["field_" + str(dim_idx)][:],
+                              f["Parameters"]["delta_t"][0]) * 7.2973525664e-3
     if np.max(data) > 1e-10:
         data_fft = np.absolute(
-                np.fft.fft(
-                    np.lib.pad(
-                        data, (10 * data.shape[0], 10 * data.shape[0]),
-                        'constant',
-                        constant_values=(0.0, 0.0))))
-        # 2*pi/(dt*N)
-        spec_time = np.arange(data_fft.shape[0])*2.0*np.pi/(data_fft.shape[0]*(p_time[1]-p_time[0]))
-        plt.semilogy(spec_time,
-            data_fft,
-            label="field " + str(dim_idx))
-        grid_max  = max(spec_time[np.argmax(data_fft[:data_fft.shape[0]/2])], grid_max)        
+            np.fft.fft(
+                np.lib.pad(
+                    data, (10 * data.shape[0], 10 * data.shape[0]),
+                    'constant',
+                    constant_values=(0.0, 0.0))))
+        spec_time = np.arange(data_fft.shape[0]) * 2.0 * np.pi / (
+            data_fft.shape[0] * (p_time[1] - p_time[0]))
+        plt.semilogy(spec_time, data_fft, label="field " + str(dim_idx))
+        grid_max = max(spec_time[np.argmax(data_fft[:data_fft.shape[0] / 2])],
+                       grid_max)
 
 plt.ylabel("Field Spectrum (arb)")
 plt.xlabel("$\omega$ (a.u.)")
 plt.title("Field Spectrum")
-plt.xlim([0, grid_max * 20.0])
+plt.xlim([0, grid_max * 40.0])
 plt.legend()
 fig.savefig("figs/Spectrum.png")

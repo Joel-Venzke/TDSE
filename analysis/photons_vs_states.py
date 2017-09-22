@@ -85,7 +85,8 @@ print "Plotting Spectrum"
 fig = plt.figure(figsize=(24, 9), dpi=80)
 font = {'size': 18}
 matplotlib.rc('font', **font)
-data = pulses["field_1"][:]
+data = -1.0 * np.gradient(pulses["field_1"][:],
+                          f["Parameters"]["delta_t"][0]) * 7.2973525664e-3
 if np.max(data) > 1e-10:
     data_fft = np.absolute(
         np.fft.fft(
