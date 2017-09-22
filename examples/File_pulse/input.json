@@ -1,5 +1,5 @@
 {
-  "delta_t": 0.1,
+  "delta_t": 0.009,
   "dimensions": [
     {"dim_size":         100.0,
     "delta_x_min":       0.5,

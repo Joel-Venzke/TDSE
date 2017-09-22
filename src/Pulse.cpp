@@ -264,9 +264,25 @@ void Pulse::InitializePulse(PetscInt n)
         pulse_value[n][dim_idx] = new double[max_pulse_length];
       }
     }
+
     for (PetscInt time_idx = 0; time_idx < max_pulse_length; ++time_idx)
     {
+      /* Get E-Field from file */
       pulse_envelope[n][time_idx] = Interpolate(n, time[time_idx]);
+    }
+
+    for (PetscInt time_idx = 0; time_idx < max_pulse_length; ++time_idx)
+    {
+      /* Time integral */
+      if (time_idx > 0)
+      {
+        pulse_envelope[n][time_idx] = pulse_envelope[n][time_idx - 1] -
+                                      pulse_envelope[n][time_idx] * c * delta_t;
+      }
+      else
+      {
+        pulse_envelope[n][time_idx] *= -1.0 * c * delta_t;
+      }
       for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
       {
         pulse_value[n][dim_idx][time_idx] =
