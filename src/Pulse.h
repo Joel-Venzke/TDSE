@@ -39,6 +39,8 @@ class Pulse : protected Utils
   /* private to avoid unneeded allocation calls and to protect the */
   /* developer form accessing garbage arrays */
   void InitializePulse(PetscInt i);
+  void InitializePolarization();
+  void InitializePulseLength();
   void InitializePulse();
   void InitializeTime();
   void DeallocatePulses();

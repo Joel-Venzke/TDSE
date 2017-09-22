@@ -40,35 +40,8 @@
   "states": [{"energy": -0.5},{"energy": -0.125},{"energy": -0.125}],
   "tol":        1e-10,
   "laser": {
-    "experiment_type": "default",
+    "experiment_type": "File",
     "pulses": [
-    { "polarization_vector": [0.0,1.0,0.0],
-      "poynting_vector": [0.0,0.0,1.0],
-      "helicity" : "left",
-      "ellipticity" : 0.0,
-      "pulse_shape":   "sin",
-      "power_on":       2.0,
-      "power_off":      2.0,
-      "cycles_on":      4.0,
-      "cycles_plateau": 0.0,
-      "cycles_off":     4.0,
-      "cycles_delay":   0.0,
-      "cep":            0.0,
-      "energy":         0.057,
-      "intensity":      1e14},
-    { "polarization_vector": [0.0,1.0,0.0],
-      "poynting_vector": [0.0,0.0,1.0],
-      "helicity" : "left",
-      "ellipticity" : 0.0,
-      "pulse_shape":   "sin",
-      "power_on":       2.0,
-      "power_off":      2.0,
-      "cycles_on":      4.0,
-      "cycles_plateau": 0.0,
-      "cycles_off":     4.0,
-      "cycles_delay":   0.0,
-      "cep":            0.0,
-      "energy":         1.5,
-      "intensity":      1e14}]
+    { "polarization_vector": [0.0,1.0,0.0]}]
   }
 }

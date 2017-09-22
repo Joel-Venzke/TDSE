@@ -7,9 +7,6 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p)
     std::cout << "Creating pulses\n" << std::flush;
   }
 
-  PetscInt pulse_length = 0;
-  double polar_norm     = 0.0;
-
   /* get number of pulses and dt from Parameters */
   pulse_alloc               = false;
   num_pulses                = p.GetNumPulses();
@@ -36,10 +33,52 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p)
   energy          = p.energy.get();
   field_max       = p.field_max.get();
 
+  InitializePolarization();
+  InitializePulseLength();
+  InitializeTime();
+  InitializePulse();
+  InitializeField();
+
+  Checkpoint();
+
+  DeallocatePulses();
+
+  if (world.rank() == 0)
+  {
+    std::cout << "Pulses created\n" << std::flush;
+  }
+}
+
+Pulse::~Pulse()
+{
+  if (world.rank() == 0)
+  {
+    std::cout << "Deleting Pulse\n" << std::flush;
+  }
+  delete cycles_total;
+  delete time;
+  if (pulse_alloc)
+  {
+    for (PetscInt i = 0; i < num_pulses; ++i)
+    {
+      delete pulse_value[i];
+      delete pulse_envelope[i];
+    }
+    delete[] pulse_value;
+    delete[] pulse_envelope;
+  }
+  for (PetscInt i = 0; i < num_dims; ++i)
+  {
+    delete field[i];
+  }
+  delete[] field;
+}
+
+void Pulse::InitializePolarization()
+{
+  double polar_norm = 0.0;
   /* allocate arrays */
   polarization_vector_minor = new double*[num_pulses];
-  cycles_total              = new double[num_pulses];
-
   /* get data from Parameters */
   for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
   {
@@ -99,7 +138,15 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p)
       /* scale with ellipticity */
       polarization_vector_minor[pulse_idx][dim_idx] *= ellipticity[pulse_idx];
     }
+  }
+}
 
+void Pulse::InitializePulseLength()
+{
+  PetscInt pulse_length = 0;
+  cycles_total          = new double[num_pulses];
+  for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
+  {
     if (pulse_shape_idx[pulse_idx] == 0)
     {
       cycles_total[pulse_idx] = cycles_delay[pulse_idx] + cycles_on[pulse_idx] +
@@ -123,44 +170,6 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p)
       max_pulse_length = pulse_length;
     }
   }
-
-  InitializeTime();
-  InitializePulse();
-  InitializeField();
-
-  Checkpoint();
-
-  DeallocatePulses();
-
-  if (world.rank() == 0)
-  {
-    std::cout << "Pulses created\n" << std::flush;
-  }
-}
-
-Pulse::~Pulse()
-{
-  if (world.rank() == 0)
-  {
-    std::cout << "Deleting Pulse\n" << std::flush;
-  }
-  delete cycles_total;
-  delete time;
-  if (pulse_alloc)
-  {
-    for (PetscInt i = 0; i < num_pulses; ++i)
-    {
-      delete pulse_value[i];
-      delete pulse_envelope[i];
-    }
-    delete[] pulse_value;
-    delete[] pulse_envelope;
-  }
-  for (PetscInt i = 0; i < num_dims; ++i)
-  {
-    delete field[i];
-  }
-  delete[] field;
 }
 
 /* Build array with time in au */

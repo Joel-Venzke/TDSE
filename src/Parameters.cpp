@@ -207,18 +207,26 @@ void Parameters::Setup(std::string file_name)
     for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
     {
       /* Keep from breaking other things */
-      pulse_shape_idx[pulse_idx] = 1;
-      power_on[pulse_idx]        = 1.0;
-      power_off[pulse_idx]       = 1.0;
+      pulse_shape_idx[pulse_idx] = 0;
+      power_on[pulse_idx]        = 2.0;
+      power_off[pulse_idx]       = 2.0;
       cycles_on[pulse_idx]       = 1.0;
-      cycles_plateau[pulse_idx]  = 1.0;
+      cycles_plateau[pulse_idx]  = 0.0;
       cycles_off[pulse_idx]      = 1.0;
-      cycles_delay[pulse_idx]    = 1.0;
+      cycles_delay[pulse_idx]    = 0.0;
       cep[pulse_idx]             = 0.0;
       energy[pulse_idx]          = 1.0;
       field_max[pulse_idx]       = 1.0;
-      ellipticity[pulse_idx]     = 1.0;
-      helicity_idx[pulse_idx]    = 1.0;
+      ellipticity[pulse_idx]     = 0.0;
+      helicity_idx[pulse_idx]    = 0;
+
+      if (num_dims == 3)
+      {
+        poynting_vector[pulse_idx]    = new double[num_dims];
+        poynting_vector[pulse_idx][0] = 0.0;
+        poynting_vector[pulse_idx][1] = 0.0;
+        poynting_vector[pulse_idx][2] = 1.0;
+      }
 
       /* Get polarization */
       polarization_vector[pulse_idx] = new double[num_dims];
@@ -505,13 +513,12 @@ void Parameters::Validate()
       }
     }
   }
-
   /* Check pulses */
   for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; pulse_idx++)
   {
     /* Check pulse shapes */
     if (pulse_shape[pulse_idx] != "sin" and
-        pulse_shape[pulse_idx] != "gaussian")
+        pulse_shape[pulse_idx] != "gaussian" and experiment_type != "File")
     {
       error_found = true;
       err_str += "\nPulse ";
