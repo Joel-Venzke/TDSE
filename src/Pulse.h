@@ -36,13 +36,22 @@ class Pulse : protected Utils
   /* true if the individual pulses and envelopes are allocated */
   bool pulse_alloc;
 
+  double **file_time;  /* stores the time at each point from the file */
+  double **file_pulse; /* stores the time at each point from the file */
+  PetscInt *file_size;
+  std::string experiment_type;
+
   /* private to avoid unneeded allocation calls and to protect the */
   /* developer form accessing garbage arrays */
   void InitializePulse(PetscInt i);
+  void InitializePolarization();
+  void InitializePulseLength();
+  void ReadPulseFromFile();
   void InitializePulse();
   void InitializeTime();
   void DeallocatePulses();
   void InitializeField();
+  double Interpolate(PetscInt pulse_idx, double time);
 
  public:
   /* Constructor */
