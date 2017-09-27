@@ -365,13 +365,17 @@ for state_number in range(data.shape[1]):
                 state_labels[state_number] + ".png")
     plt.clf()
 
-fig = plt.figure()
+fig = plt.figure(figsize=(24, 18), dpi=80)
+for idx in get_shells(plot_data.shape[1]):
+    plt.axvline(x=idx, color='k')
 plt.semilogy(range(plot_data.shape[1]), plot_data[-1, :], 'o-')
 
 plt.ylabel("Population")
 plt.xlabel("Bound State")
+plt.xlim([min(range(plot_data.shape[1])), max(range(plot_data.shape[1]))])
 plt.xticks(range(plot_data.shape[1]), state_labels, rotation='vertical')
-plt.ylim([1e-20, 10])
+plt.ylim([1e-17, 10])
+plt.grid()
 fig.savefig("figs/Projection_at_end.png")
 plt.clf()
 
