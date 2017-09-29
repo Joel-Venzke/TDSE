@@ -213,6 +213,13 @@ fig2.savefig("figs/Dipole_acceleration_with_field_envelope.png")
 # Linearity
 print "Plotting Linearity"
 fig = plt.figure()
+plt.plot(-1.0 * np.gradient(
+    pulses["field_1"][checkpoint_frequency::checkpoint_frequency],
+    f["Parameters"]["delta_t"][0] * checkpoint_frequency) * 7.2973525664e-3,
+         np.gradient(
+             pulses["field_1"][checkpoint_frequency::checkpoint_frequency],
+             f["Parameters"]["delta_t"][0] * checkpoint_frequency) *
+         7.2973525664e-3, "r-.")
 for elec_idx in range(num_electrons):
     for dim_idx in range(num_dims):
         if (not (dim_idx == 0
@@ -350,8 +357,8 @@ plt.clf()
 fig = plt.figure()
 for state_number in range(data.shape[1]):
     plt.semilogy(
-        plot_time,
-        plot_data[:, state_number],
+        w_time,
+        data[:, state_number],
         marker='o',
         label=state_labels[state_number],
         color=colors[state_number % len(colors)],
@@ -368,11 +375,12 @@ for state_number in range(data.shape[1]):
 fig = plt.figure(figsize=(24, 18), dpi=80)
 for idx in get_shells(plot_data.shape[1]):
     plt.axvline(x=idx, color='k')
-plt.semilogy(range(plot_data.shape[1]), plot_data[-1, :], 'o-')
+plt.semilogy(range(data.shape[1]), data[-1, :], 'o-')
 
 plt.ylabel("Population")
 plt.xlabel("Bound State")
-plt.title("A max: " + str(f["Parameters"]["field_max"][0]) + " Cycles: " + str(f["Parameters"]["cycles_on"][0]+f["Parameters"]["cycles_off"][0]))
+plt.title("A max: " + str(f["Parameters"]["field_max"][0]) + " Cycles: " + str(
+    f["Parameters"]["cycles_on"][0] + f["Parameters"]["cycles_off"][0]))
 plt.xlim([min(range(plot_data.shape[1])), max(range(plot_data.shape[1]))])
 plt.xticks(range(plot_data.shape[1]), state_labels, rotation='vertical')
 plt.ylim([1e-17, 10])
