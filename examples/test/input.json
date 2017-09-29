@@ -35,7 +35,7 @@
   "write_frequency_eigin_state": 1,
   "state_solver":    "Power",
   "propagate": 1,
-  "free_propagate": 100,
+  "free_propagate": 500,
   "start_state": 0,
   "states": [{"energy": -0.5},{"energy": -0.125},{"energy": -0.125}],
   "tol":        1e-10,
@@ -53,7 +53,7 @@
       "cycles_off":     4.0,
       "cycles_delay":   0.0,
       "cep":            0.0,
-      "energy":         0.057,
+      "energy":         1.5,
       "intensity":      1e14}]
   }
 }

@@ -355,10 +355,11 @@ fig.savefig("figs/Projection_vs_time.png")
 plt.clf()
 
 fig = plt.figure()
+pulse_end_idx = np.argmin(np.abs(w_time - p_time[-1]))
 for state_number in range(data.shape[1]):
     plt.plot(
-        w_time,
-        data[:, state_number],
+        w_time[pulse_end_idx:],
+        data[pulse_end_idx:, state_number],
         marker='o',
         label=state_labels[state_number],
         color=colors[state_number % len(colors)],
@@ -366,7 +367,6 @@ for state_number in range(data.shape[1]):
 
     plt.ylabel("Population")
     plt.xlabel("Time (a.u.)")
-    plt.ylim([1e-20, 10])
     plt.legend(loc=2)
     fig.savefig("figs/Projection_" + str(state_number).zfill(4) + "_" +
                 state_labels[state_number] + ".png")
