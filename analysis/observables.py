@@ -372,6 +372,7 @@ plt.semilogy(range(plot_data.shape[1]), plot_data[-1, :], 'o-')
 
 plt.ylabel("Population")
 plt.xlabel("Bound State")
+plt.title("A max: " + str(f["Parameters"]["field_max"][0]) + " Cycles: " + str(f["Parameters"]["cycles_on"][0]+f["Parameters"]["cycles_off"][0]))
 plt.xlim([min(range(plot_data.shape[1])), max(range(plot_data.shape[1]))])
 plt.xticks(range(plot_data.shape[1]), state_labels, rotation='vertical')
 plt.ylim([1e-17, 10])

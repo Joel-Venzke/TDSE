@@ -47,13 +47,13 @@ for i, psi in enumerate(psi_value):
             if f["Parameters"]["coordinate_system_idx"][0] == 1:
                 psi = np.pad(psi, ((psi.shape[0], 0), (0, 0)), 'symmetric')
                 data = plt.imshow(
-                    np.abs(np.fft.fftshift(np.fft.fft2(psi), axes=1)),
+                    np.abs(np.fft.fftshift(np.fft.fft2(psi))),
                     # np.abs(psi),
                     cmap='viridis',
                     origin='lower',
                     norm=LogNorm(vmin=1e-5),
                     extent=[ky.min(), ky.max(),
-                            kx.min(), kx.max()])
+                            -1.0*kx.max()/2.0, kx.max()/2.0])
             else:
                 data = plt.imshow(
                     np.abs(np.fft.fftshift(np.fft.fft2(psi))),
@@ -77,11 +77,8 @@ for i, psi in enumerate(psi_value):
                 plt.ylabel("$k_y$  (a.u.)")
             plt.colorbar()
             fig.savefig("figs/2d_fft_" + str(i).zfill(8) + "_full.png")
-            plb.xlim([-5, 5])
-            if f["Parameters"]["coordinate_system_idx"][0] == 1:
-                plb.ylim([0, 5])
-            else:
-                plb.ylim([-5, 5])
+            plb.xlim([-1.5, 1.5])
+            plb.ylim([-1.5, 1.5])
             fig.savefig("figs/2d_fft_" + str(i).zfill(8) + ".png")
             plt.clf()
 
