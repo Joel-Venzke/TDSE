@@ -356,7 +356,7 @@ plt.clf()
 
 fig = plt.figure()
 for state_number in range(data.shape[1]):
-    plt.semilogy(
+    plt.plot(
         w_time,
         data[:, state_number],
         marker='o',
