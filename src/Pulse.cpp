@@ -559,3 +559,25 @@ double** Pulse::GetField() { return field; }
 double* Pulse::GetTime() { return time; }
 
 PetscInt Pulse::GetMaxPulseLength() { return max_pulse_length; }
+
+PetscInt Pulse::GetFieldMaxIdx()
+{
+  double pulse_max       = 0;
+  double pulse_mag       = 0;
+  PetscInt pulse_max_idx = 0;
+
+  for (int time_idx = 0; time_idx < max_pulse_length; ++time_idx)
+  {
+    pulse_mag = 0;
+    for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+    {
+      pulse_mag += field[dim_idx][time_idx] * field[dim_idx][time_idx];
+    }
+    if (pulse_mag > pulse_max)
+    {
+      pulse_max     = pulse_mag;
+      pulse_max_idx = time_idx;
+    }
+  }
+  return pulse_max_idx;
+}

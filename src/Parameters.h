@@ -43,6 +43,8 @@ class Parameters : protected Utils
   PetscInt free_propagate;  ///< How many free propagation steps (-1 means till
                             /// norm is converged)
 
+  PetscInt field_max_states;  ///< 1 if states at max, 0 if field free
+
   /* pulse data */
   PetscInt num_pulses;           ///< number of pulses
   double** polarization_vector;  ///< polarization vector for each pulse
@@ -123,6 +125,8 @@ class Parameters : protected Utils
 
   PetscInt GetPropagate();
   PetscInt GetFreePropagate();
+
+  PetscInt GetFieldMaxStates();
 
   PetscInt GetNumPulses();
   double** GetPolarizationVector();

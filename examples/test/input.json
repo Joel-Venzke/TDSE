@@ -1,21 +1,21 @@
 {
-  "delta_t": 0.1,
+  "delta_t": 0.045,
   "dimensions": [
-    {"dim_size":         100.0,
-    "delta_x_min":       0.5,
+    {"dim_size":         50.0,
+    "delta_x_min":       0.3,
     "delta_x_min_end":   10.0,
-    "delta_x_max":       0.5,
+    "delta_x_max":       0.3,
     "delta_x_max_start": 11.0},
-    {"dim_size":         200.0,
-    "delta_x_min":       0.5,
+    {"dim_size":         100.0,
+    "delta_x_min":       0.3,
     "delta_x_min_end":   10.0,
-    "delta_x_max":       0.5,
+    "delta_x_max":       0.3,
     "delta_x_max_start": 11.0}],
   "coordinate_system": "Cylindrical",
   "num_electrons": 1,
   "restart": 0,
   "target": {
-    "name":  "H",
+    "name":  "H_max",
     "nuclei" : [
       { "z": 1.0,
       "location": [0.0,0.0,0.0],
@@ -36,8 +36,9 @@
   "state_solver":    "Power",
   "propagate": 1,
   "free_propagate": 500,
+  "field_max_states": 1,
   "start_state": 0,
-  "states": [{"energy": -0.5},{"energy": -0.125},{"energy": -0.125}],
+  "states": [{"energy": -5},{"energy": -5},{"energy": -5}],
   "tol":        1e-10,
   "laser": {
     "experiment_type": "default",
@@ -53,7 +54,7 @@
       "cycles_off":     4.0,
       "cycles_delay":   0.0,
       "cep":            0.0,
-      "energy":         1.5,
+      "energy":         0.057,
       "intensity":      1e14}]
   }
 }
