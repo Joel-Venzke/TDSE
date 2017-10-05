@@ -3,6 +3,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import h5py
+from matplotlib.colors import LogNorm
 
 f = h5py.File("TDSE.h5", "r")
 p = h5py.File("Pulse.h5", "r")
@@ -487,4 +488,44 @@ plt.xlabel("Time (a.u.)")
 plt.ylim([1e-20, 10])
 plt.legend(loc=2)
 fig.savefig("figs/Projection_vs_time_by_l.png")
+plt.clf()
+
+
+def grid_by_l_and_n(data):
+    ret_val = []
+    shells = get_shells(data.shape[1])
+    l_dim = 0
+    if len(shells) > 2:
+        l_dim = shells[-1] - shells[-2]
+    else:
+        l_dim = 3
+    n_dim = len(shells) + 1
+    ret_val = np.zeros((n_dim, l_dim))
+    for n in range(len(shells)):
+        for l in range(n):
+            if n > 0:
+                ret_val[n, l] += data[-1, shells[n - 1] + l]
+            else:
+                ret_val[n, l] += data[-1, l]
+    return ret_val
+
+
+grid_data = grid_by_l_and_n(data)
+fig = plt.figure()
+plt.imshow(
+    grid_data[1:],
+    cmap='viridis',
+    origin='lower',
+    interpolation='none',
+    norm=LogNorm(vmin=1e-15))
+ax = plt.gca()
+ax.set_xticks(np.arange(-.5, grid_data.shape[1], 1))
+ax.set_yticks(np.arange(.5, grid_data.shape[0], 1))
+ax.set_xticklabels(np.arange(0, grid_data.shape[1], 1))
+ax.set_yticklabels(np.arange(1, grid_data.shape[0], 1))
+ax.grid(color='w', linestyle='-', linewidth=2)
+plt.xlabel("l value")
+plt.ylabel("n value")
+plt.colorbar()
+fig.savefig("figs/Projection_heat.png")
 plt.clf()

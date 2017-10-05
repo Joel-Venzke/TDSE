@@ -67,4 +67,5 @@ class Pulse : protected Utils
   double **GetField();
   double *GetTime();
   PetscInt GetMaxPulseLength();
+  PetscInt GetFieldMaxIdx();
 };

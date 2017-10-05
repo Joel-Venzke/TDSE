@@ -178,6 +178,8 @@ void Parameters::Setup(std::string file_name)
   propagate      = data["propagate"];
   free_propagate = data["free_propagate"];
 
+  field_max_states = data["field_max_states"];
+
   /* get pulse information */
   num_pulses      = data["laser"]["pulses"].size();
   experiment_type = data["laser"]["experiment_type"];
@@ -513,6 +515,13 @@ void Parameters::Validate()
       }
     }
   }
+
+  if (field_max_states != 0 and propagate == 1)
+  {
+    error_found = true;
+    err_str += "\nYou're not allowed to propagate a field max state\n";
+  }
+
   /* Check pulses */
   for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; pulse_idx++)
   {
@@ -709,6 +718,8 @@ std::string Parameters::GetStateSolver() { return state_solver; }
 PetscInt Parameters::GetPropagate() { return propagate; }
 
 PetscInt Parameters::GetFreePropagate() { return free_propagate; }
+
+PetscInt Parameters::GetFieldMaxStates() { return field_max_states; }
 
 PetscInt Parameters::GetNumPulses() { return num_pulses; }
 
