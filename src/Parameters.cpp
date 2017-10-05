@@ -515,6 +515,13 @@ void Parameters::Validate()
       }
     }
   }
+
+  if (field_max_states != 0 and propagate == 1)
+  {
+    error_found = true;
+    err_str += "\nYou're not allowed to propagate a field max state\n";
+  }
+
   /* Check pulses */
   for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; pulse_idx++)
   {
