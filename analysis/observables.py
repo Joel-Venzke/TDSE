@@ -516,8 +516,14 @@ plt.imshow(
     grid_data[1:],
     cmap='viridis',
     origin='lower',
-    extent=[0, grid_data.shape[1], 1, grid_data.shape[1]],
+    interpolation='none',
     norm=LogNorm(vmin=1e-15))
+ax = plt.gca()
+ax.set_xticks(np.arange(-.5, grid_data.shape[1], 1))
+ax.set_yticks(np.arange(.5, grid_data.shape[0], 1))
+ax.set_xticklabels(np.arange(0, grid_data.shape[1], 1))
+ax.set_yticklabels(np.arange(1, grid_data.shape[0], 1))
+ax.grid(color='w', linestyle='-', linewidth=2)
 plt.colorbar()
 fig.savefig("figs/Projection_heat.png")
 plt.clf()
