@@ -343,6 +343,9 @@ void Pulse::InitializePulse(PetscInt n)
     {
       pulse_envelope[n] = new double[max_pulse_length];
     }
+
+    double fac = 2 * sqrt(log(2));
+
     for (PetscInt time_idx = 0; time_idx < max_pulse_length; ++time_idx)
     {
       if (time_idx < on_start)
@@ -391,7 +394,7 @@ void Pulse::InitializePulse(PetscInt n)
         else if (pulse_shape_idx[n] == 1)
         {
           s1 = (energy[n] * delta_t * (time_idx - off_start)) /
-               (2 * pi * cycles_off[n]);
+               (2 * pi * fac * cycles_off[n]);
           pulse_envelope[n][time_idx] = field_max[n] * exp(-1.0 * s1 * s1);
           // pulse_envelope[n][time_idx] = -1.0 * s1 * s1;
         }
