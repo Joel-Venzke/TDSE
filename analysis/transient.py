@@ -79,9 +79,9 @@ print "d is " + str(2.0 * np.pi / (
 plt.ylabel("Field Spectrum (arb)")
 plt.xlabel("$\omega$ (a.u.)")
 plt.title("Field Spectrum")
-plt.xlim([0, 3])
-# plt.ylim([0, 1e2])
+plt.xlim([0.3, 2])
+plt.ylim([-50, 50])
 plt.legend()
 print "saving figure....may take a while. please hold"
-fig.savefig("figs/Spectrum.png")
+fig.savefig("figs/transient.png")
 
