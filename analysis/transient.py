@@ -23,59 +23,45 @@ fig = plt.figure()
 
 # Dipole
 print "Calculating dipole spectrum"
-for dim_idx in range(num_dims):
-    if (not (dim_idx == 0 and f["Parameters"]["coordinate_system_idx"][0] == 1)):
-		dipole = -1.0 * observables["position_expectation_" + str(dim_idx) + '_' + str(dim_idx)][1:]
-  		if np.max(dipole) > 1e-10:
-			dipole_fft = np.fft.fft(
-	            np.lib.pad(
-	                dipole, (10 * dipole.shape[0], 10 * dipole.shape[0]),
-	                'constant',
-	                constant_values=(0.0, 0.0)))
-    spec_time_dip = np.arange(dipole_fft.shape[0]) * 2.0 * np.pi / (
-        dipole_fft.shape[0] * (p_time[1] - p_time[0]))
-    spec_time_dip = spec_time_dip[:-8]
-    dipole_fft = dipole_fft[:-8]
-    f_dip = interpolate.interp1d(spec_time_dip, dipole_fft)
-    xnew = np.arange(0, spec_time_dip.max(), 0.00001)
-    ynew_dip = f_dip(xnew) 
-    # plt.semilogy(spec_time_dip, np.abs(dipole_fft), label="dipole")
-    grid_max = max(spec_time_dip[np.argmax(dipole_fft[:dipole_fft.shape[0] / 2])],
-                   grid_max)
+if(num_dims > 1): 
+	exit('only supports 1D currently')
+dim_idx = 0
 
-print "dip time min is " + str(spec_time_dip.min())
-print "dip time max is " + str(spec_time_dip.max())
-print "d is " + str(2.0 * np.pi / (
-        dipole_fft.shape[0] * (p_time[1] - p_time[0])))
+dipole = -1.0 * observables["position_expectation_" + str(dim_idx) + '_' + str(dim_idx)][1:]
+dipole_fft = np.fft.fft(
+    np.lib.pad(
+        dipole, (10 * dipole.shape[0], 10 * dipole.shape[0]),
+        'constant',
+        constant_values=(0.0, 0.0)))
+spec_time_dip = np.arange(dipole_fft.shape[0]) * 2.0 * np.pi / (
+    dipole_fft.shape[0] * (p_time[1] - p_time[0]))
+spec_time_dip = spec_time_dip[:-8]
+dipole_fft = dipole_fft[:-8]
+f_dip = interpolate.interp1d(spec_time_dip, dipole_fft)
+xnew = np.arange(0, spec_time_dip.max(), 0.00001)
+ynew_dip = f_dip(xnew) 
+grid_max = max(spec_time_dip[np.argmax(dipole_fft[:dipole_fft.shape[0] / 2])],
+               grid_max)
 
 
 # Spectrum
 print "Calculating field spectrum"
-for dim_idx in range(num_dims):
-    data = -1.0 * np.gradient(pulses["field_" + str(dim_idx)][:],
-                              f["Parameters"]["delta_t"][0]) * 7.2973525664e-3
-    if np.max(data) > 1e-10:
-        data_fft = \
-            np.fft.fft(
-                np.lib.pad(
-                    data, (10 * data.shape[0], 10 * data.shape[0]),
-                    'constant',
-                    constant_values=(0.0, 0.0)))
-        spec_time = np.arange(data_fft.shape[0]) * 2.0 * np.pi / (
-            data_fft.shape[0] * (p_time[1] - p_time[0]))
-        f = interpolate.interp1d(spec_time, data_fft)
-        # plt.semilogy(spec_time, np.abs(data_fft), label="field")
-        ynew = f(xnew)
-        print "Plotting Spectrum"
-        plt.plot(xnew, -2 * (np.conj(ynew) * ynew_dip).imag, label="ATAS")
+data = -1.0 * np.gradient(pulses["field_" + str(dim_idx)][:],
+                          f["Parameters"]["delta_t"][0]) * 7.2973525664e-3
+data_fft = \
+    np.fft.fft(
+        np.lib.pad(
+            data, (10 * data.shape[0], 10 * data.shape[0]),
+            'constant',
+            constant_values=(0.0, 0.0)))
+spec_time = np.arange(data_fft.shape[0]) * 2.0 * np.pi / (
+    data_fft.shape[0] * (p_time[1] - p_time[0]))
+f = interpolate.interp1d(spec_time, data_fft)
+ynew = f(xnew)
+print "Plotting Spectrum"
+plt.plot(xnew, -2 * (np.conj(ynew) * ynew_dip).imag, label="ATAS")
 
-print "time min is " + str(spec_time.min())
-print "time max is " + str(spec_time.max())
-print "d is " + str(2.0 * np.pi / (
-            data_fft.shape[0] * (p_time[1] - p_time[0])))
-        # grid_max = max(spec_time[np.argmax(data_fft[:data_fft.shape[0] / 2])],
-                       # grid_max
-                       # plt.plot(s )
+
 plt.ylabel("Field Spectrum (arb)")
 plt.xlabel("$\omega$ (a.u.)")
 plt.title("Field Spectrum")

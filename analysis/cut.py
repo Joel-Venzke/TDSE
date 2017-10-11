@@ -55,13 +55,12 @@ if len(shape) == 1:
 	        # set up initial figure with color bar
 	        psi = psi[:, 0] + 1j * psi[:, 1]
 	        psi.shape = tuple(shape)
-	        j = 0
-	        for val in x:
+
+	        for j, val in enumerate(x):
 	        	if val >= -cut_left and val <= cut_right:
 	        		psi[j] = 0.0 + 1j * 0.0
-	        	j += 1
-	        data = None
 
+	        data = None
 	        data = plt.semilogy(x, np.abs(psi))
 	        plt.text(
 	            time_x,
