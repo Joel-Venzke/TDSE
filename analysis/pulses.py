@@ -6,10 +6,8 @@ import h5py
 
 f = h5py.File("TDSE.h5", "r")
 p = h5py.File("Pulse.h5", "r")
-observables = f["Observables"]
 pulses = p["Pulse"]
 p_time = pulses["time"][:]
-time = observables["time"][1:]
 num_dims = f["Parameters"]["num_dims"][0]
 num_electrons = f["Parameters"]["num_electrons"][0]
 num_pulses = f["Parameters"]["num_pulses"][0]

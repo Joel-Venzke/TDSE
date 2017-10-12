@@ -368,7 +368,7 @@ void Pulse::InitializePulse(PetscInt n)
         else if (pulse_shape_idx[n] == 1)
         {
           s1 = (energy[n] * delta_t * (plateau_start - time_idx)) /
-               (2.0 * pi * cycles_on[n]);
+               (2.0 * pi * fac * cycles_on[n]);
           pulse_envelope[n][time_idx] = field_max[n] * exp(-1.0 * s1 * s1);
           // pulse_envelope[n][time_idx] = -1.0 * s1 * s1;
         }
