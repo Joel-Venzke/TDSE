@@ -14,29 +14,42 @@ def get_pulse(cycles_on, cycles_off, intensity, w, dt):
     return time, c2 * np.sin(w * time)
 
 
-w_0 = 0.057
-w_min = 0.02
-w_max = w_0
+w_0 = 1.0
+w_min = w_0 / 2
+w_max = w_0 * 2
 dt = 0.005
+plot_data = []
+for cycles in range(1, 5):
+    w_min = w_0 / 2
+    w_max = w_0 * 2
+    while (np.abs(w_max - w_min) > 1e-6):
+        # print(w_max + w_min) / 2.0, " Error: ", np.abs(w_max - w_min)
+        time, pulse = get_pulse(cycles / 2.0, cycles / 2.0, 5.31e13,
+                                (w_max + w_min) / 2.0, dt)
 
-while (np.abs(w_max - w_min) > 1e-4):
-    print(w_max + w_min) / 2.0, " Error: ", np.abs(w_max - w_min)
-    time, pulse = get_pulse(1, 1, 1e14, (w_max + w_min) / 2.0, dt)
+        data = -1.0 * np.gradient(pulse, dt) * 7.2973525664e-3
+        data_fft = np.absolute(
+            np.fft.fft(
+                np.lib.pad(
+                    data, (10 * data.shape[0], 10 * data.shape[0]),
+                    'constant',
+                    constant_values=(0.0, 0.0))))
+        spec_time = np.arange(data_fft.shape[0]) * 2.0 * np.pi / (
+            data_fft.shape[0] * (dt))
+        # plt.semilogy(spec_time, data_fft)
+        w_new = spec_time[np.argmax(data_fft[:data_fft.shape[0] / 2])]
+        if w_new > w_0:
+            w_max = (w_max + w_min) / 2.0
+        else:
+            w_min = (w_max + w_min) / 2.0
+    plot_data.append((w_max + w_min) / 2.0)
+    print cycles, plot_data[-1]
+print plot_data
 
-    data = -1.0 * np.gradient(pulse, dt) * 7.2973525664e-3
-    data_fft = np.absolute(
-        np.fft.fft(
-            np.lib.pad(
-                data, (10 * data.shape[0], 10 * data.shape[0]),
-                'constant',
-                constant_values=(0.0, 0.0))))
-    spec_time = np.arange(data_fft.shape[0]) * 2.0 * np.pi / (
-        data_fft.shape[0] * (dt))
-    # plt.semilogy(spec_time, data_fft)
-    w_new = spec_time[np.argmax(data_fft[:data_fft.shape[0] / 2])]
-    if w_new > w_0:
-        w_max = (w_max + w_min) / 2.0
-    else:
-        w_min = (w_max + w_min) / 2.0
-
-print "w_A", (w_max + w_min) / 2.0
+plt.plot(range(1, 5), plot_data, 'r-o', label="$\omega_A$")
+plt.axhline(y=w_0, color='k', label="$\omega_E$")
+plt.xlabel("Cycles")
+plt.ylabel("Photon energy (au)")
+plt.title("270nm")
+plt.legend()
+plt.savefig("270nm.png")

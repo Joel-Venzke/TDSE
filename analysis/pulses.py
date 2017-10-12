@@ -105,6 +105,6 @@ for dim_idx in range(num_dims):
 plt.ylabel("Field Spectrum (arb)")
 plt.xlabel("$\omega$ (a.u.)")
 plt.title("Field Spectrum")
-plt.xlim([0, grid_max * 40.0])
+plt.xlim([0, grid_max * 3.0])
 plt.legend()
 fig.savefig("figs/Spectrum.png")
