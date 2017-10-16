@@ -26,6 +26,7 @@ plt.title("Norm")
 plt.tight_layout()
 fig.savefig("figs/Norm.png")
 plt.clf()
+plt.close(fig)
 
 # Ionization
 print "Plotting Ionization"
@@ -37,6 +38,7 @@ plt.title("Ionization")
 plt.tight_layout()
 fig.savefig("figs/Ionization.png")
 plt.clf()
+plt.close(fig)
 
 # Ionization
 print "Plotting Ionization Rate"
@@ -48,6 +50,7 @@ plt.title("Ionization Rate")
 plt.tight_layout()
 fig.savefig("figs/Ionization_rate.png")
 plt.clf()
+plt.close(fig)
 
 # Gobbler
 print "Plotting ECS Population"
@@ -60,6 +63,7 @@ if np.max(observables["gobbler"][1:]) > 1e-19:
     plt.tight_layout()
     fig.savefig("figs/ECS_population.png")
 plt.clf()
+plt.close(fig)
 
 # Dipole
 print "Plotting Dipole"
@@ -80,6 +84,7 @@ plt.legend()
 plt.tight_layout()
 fig.savefig("figs/Dipole.png")
 plt.clf()
+plt.close(fig)
 
 # dipole with ionization
 print "Plotting Dipole with ionization"
@@ -148,6 +153,7 @@ plt.legend()
 plt.tight_layout()
 fig.savefig("figs/Dipole_acceleration.png")
 plt.clf()
+plt.close(fig)
 
 # HHG Spectrum
 print "Plotting HHG Spectrum"
@@ -184,6 +190,7 @@ plt.xlim([0, 100])
 plt.tight_layout()
 fig.savefig("figs/HHG_Spectrum.png")
 plt.clf()
+plt.close(fig)
 
 # Dipole acceleration with envelope
 print "Plotting Dipole Acceleration with field Envelope"
@@ -242,6 +249,7 @@ plt.legend()
 plt.tight_layout()
 fig.savefig("figs/Linearity.png")
 plt.clf()
+plt.close(fig)
 
 # Projection
 print "Plotting Projection"
@@ -278,7 +286,7 @@ def get_shells(state_number):
     shells = [0]
     while (state_number > shells[-1]):
         shells.append(shells[-1] + len(shells))
-    return shells
+    return np.array(shells)
 
 
 # return list of states up to state_number
@@ -354,6 +362,7 @@ plt.ylim([1e-20, 10])
 plt.legend(loc=2)
 fig.savefig("figs/Projection_vs_time.png")
 plt.clf()
+plt.close(fig)
 
 fig = plt.figure()
 pulse_end_idx = np.argmin(np.abs(w_time - p_time[-1]))
@@ -372,6 +381,7 @@ for state_number in range(data.shape[1]):
     fig.savefig("figs/Projection_" + str(state_number).zfill(4) + "_" +
                 state_labels[state_number] + ".png")
     plt.clf()
+    plt.close(fig)
 
 fig = plt.figure(figsize=(24, 18), dpi=80)
 for idx in get_shells(plot_data.shape[1]):
@@ -388,6 +398,7 @@ plt.ylim([1e-17, 10])
 plt.grid()
 fig.savefig("figs/Projection_at_end.png")
 plt.clf()
+plt.close(fig)
 
 
 def sum_by_n(data):
@@ -413,6 +424,7 @@ plt.xlim([0, len(by_n_value[-1])])
 plt.xticks(range(len(by_n_value[-1])))
 fig.savefig("figs/Projection_at_end_by_n.png")
 plt.clf()
+plt.close(fig)
 
 fig = plt.figure()
 for n_value in range(1, by_n_value.shape[1]):
@@ -430,6 +442,7 @@ plt.ylim([1e-20, 10])
 plt.legend(loc=2)
 fig.savefig("figs/Projection_vs_time_by_n.png")
 plt.clf()
+plt.close(fig)
 
 
 def sum_by_l(data):
@@ -457,6 +470,7 @@ plt.ylim([1e-20, 10])
 plt.xticks(range(len(by_l_value[-1])))
 fig.savefig("figs/Projection_at_end_by_l.png")
 plt.clf()
+plt.close(fig)
 
 fig = plt.figure()
 for l_value in range(by_l_value.shape[1]):
@@ -489,6 +503,7 @@ plt.ylim([1e-20, 10])
 plt.legend(loc=2)
 fig.savefig("figs/Projection_vs_time_by_l.png")
 plt.clf()
+plt.close(fig)
 
 
 def grid_by_l_and_n(data):
@@ -529,3 +544,31 @@ plt.ylabel("n value")
 plt.colorbar()
 fig.savefig("figs/Projection_heat.png")
 plt.clf()
+plt.close(fig)
+
+# plot populations by n
+shells = get_shells(plot_data.shape[1])
+n_max = len(shells)
+font = {'family': 'normal', 'weight': 'bold', 'size': 22}
+
+matplotlib.rc('font', **font)
+for n_idx, idx in enumerate(shells):
+    fig = plt.figure()
+    plt.semilogy(range(data.shape[1]), data[-1, :], 'o-')
+
+    plt.ylabel("Population")
+    plt.xlabel("Bound State")
+    plt.title(" Cycles: " + str(f["Parameters"]["cycles_on"][0] +
+                                f["Parameters"]["cycles_off"][0]))
+    plt.xlim([min(range(plot_data.shape[1])), max(range(plot_data.shape[1]))])
+    plt.xticks(range(plot_data.shape[1]), state_labels, rotation='vertical')
+    plt.ylim([1e-17, 10])
+    if n_idx == n_max - 1:
+        plt.xlim([shells[n_idx], plot_data.shape[1] - 1])
+    else:
+        plt.xlim([shells[n_idx], shells[n_idx + 1] - 1])
+    plt.grid()
+    plt.tight_layout()
+    fig.savefig("figs/Projection_at_end_n_" + str(n_idx + 1) + ".png")
+    plt.clf()
+    plt.close(fig)

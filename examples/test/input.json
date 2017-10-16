@@ -38,7 +38,7 @@
   "free_propagate": 0,
   "field_max_states": 0,
   "start_state": 0,
-  "states": [{"energy": -0.5},{"energy": -0.125},{"energy": -0.125},{"energy": -0.125},{"energy": -0.125},{"energy": -0.125}],
+  "states": [{"energy": -0.5},{"energy": -0.125},{"energy": -0.125}],
   "tol":        1e-10,
   "laser": {
     "experiment_type": "default",
@@ -49,12 +49,12 @@
       "pulse_shape":   "sin",
       "power_on":       2.0,
       "power_off":      2.0,
-      "cycles_on":      10.0,
+      "cycles_on":      1.0,
       "cycles_plateau": 0.0,
-      "cycles_off":     10.0,
+      "cycles_off":     1.0,
       "cycles_delay":   0.0,
       "cep":            0.0,
-      "energy":         0.056869,
+      "energy":         1.0,
       "intensity":      5.31e13}]
   }
 }
