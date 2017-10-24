@@ -562,7 +562,7 @@ for n_idx, idx in enumerate(shells):
                                 f["Parameters"]["cycles_off"][0]))
     plt.xlim([min(range(plot_data.shape[1])), max(range(plot_data.shape[1]))])
     plt.xticks(range(plot_data.shape[1]), state_labels, rotation='vertical')
-    plt.ylim([1e-17, 10])
+    plt.ylim([1e-9, 1e-3])
     if n_idx == n_max - 1:
         plt.xlim([shells[n_idx], plot_data.shape[1] - 1])
     else:
@@ -570,5 +570,35 @@ for n_idx, idx in enumerate(shells):
     plt.grid()
     plt.tight_layout()
     fig.savefig("figs/Projection_at_end_n_" + str(n_idx + 1) + ".png")
+    plt.clf()
+    plt.close(fig)
+
+for n_idx, idx in enumerate(shells):
+    fig = plt.figure()
+    plt.semilogy(range(data.shape[1]), data[-1, :], 'o-')
+
+    plt.ylabel("Population")
+    plt.xlabel("Bound State")
+    if np.abs(f["Parameters"]["field_max"][0] - 93.7) < 1:
+        plt.title("11 Photons")
+    elif np.abs(f["Parameters"]["field_max"][0] - 114.39) < 1:
+        plt.title("12 Photons")
+    elif np.abs(f["Parameters"]["field_max"][0] - 131.79) < 1:
+        plt.title("13 Photons")
+    else:
+        plt.title("14 Photons")
+    plt.xlim([min(range(plot_data.shape[1])), max(range(plot_data.shape[1]))])
+    plt.xticks(range(plot_data.shape[1]), state_labels, rotation='vertical')
+    if n_idx < 10:
+        plt.ylim([1e-9, 1e-3])
+    else:
+        plt.ylim([1e-14, 1e-3])
+    if n_idx == n_max - 1:
+        plt.xlim([shells[n_idx], plot_data.shape[1] - 1])
+    else:
+        plt.xlim([shells[n_idx], shells[n_idx + 1] - 1])
+    plt.grid()
+    plt.tight_layout()
+    fig.savefig("figs/Projection_at_end_n_photons_" + str(n_idx + 1) + ".png")
     plt.clf()
     plt.close(fig)

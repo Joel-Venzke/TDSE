@@ -25,7 +25,7 @@ if len(shape) > 1:
 
 max_val = 0
 # calculate color bounds
-for i, psi in enumerate(psi_value):
+for i, psi in enumerate(psi_value[:2]):
     psi = psi[:, 0] + 1j * psi[:, 1]
     max_val_tmp = np.max(np.absolute(psi))
     if (max_val_tmp > max_val):
@@ -106,6 +106,10 @@ elif len(shape) == 2:
     import matplotlib.pyplot as plt
     import matplotlib.animation as animation
     from matplotlib.colors import LogNorm
+    import pylab as plb
+    font = {'family': 'normal', 'weight': 'bold', 'size': 22}
+
+    matplotlib.rc('font', **font)
     fig = plt.figure()
     for i, psi in enumerate(psi_value):
         print "plotting", i
@@ -147,6 +151,26 @@ elif len(shape) == 2:
                 ],
                 norm=LogNorm(vmin=1e-12, vmax=max_val))
         # color bar doesn't change during the video so only set it here
+        plt.colorbar(pad = 0.1)
+        if f["Parameters"]["coordinate_system_idx"][0] == 1:
+            plt.xlabel("z-axis (a.u.)")
+            plt.ylabel("$\\rho$-axis  (a.u.)")
+        else:
+            plt.xlabel("X-axis (a.u.)")
+            plt.ylabel("Y-axis  (a.u.)")
+        plt.title(name_list[i])
+        plt.tight_layout()
+        fig.savefig("figs/" + target_name + "_log_state_" + str(i).zfill(3) +
+                    ".jpg")
+        plt.clf()
+        plt.imshow(
+            psi,
+            cmap='viridis',
+            origin='lower',
+            extent=[
+                y[y_min_idx], y[y_max_idx], x[x_min_idx], x[x_max_idx]
+            ],
+            norm=LogNorm(vmin=1e-15, vmax=np.max(psi)))
         plt.colorbar()
         if f["Parameters"]["coordinate_system_idx"][0] == 1:
             plt.xlabel("z-axis (a.u.)")
@@ -154,8 +178,11 @@ elif len(shape) == 2:
         else:
             plt.xlabel("X-axis (a.u.)")
             plt.ylabel("Y-axis  (a.u.)")
-        plt.title(name_list[i] + " - Energy " + str(energy[i]))
-        fig.savefig("figs/" + target_name + "_log_state_" + str(i).zfill(3) +
+        plt.title(name_list[i])
+        plb.xlim([-30,30])
+        plb.ylim([0,30])
+        plt.tight_layout()
+        fig.savefig("figs/" + target_name + "_log_state_small_" + str(i).zfill(3) +
                     ".jpg")
         plt.clf()
 
