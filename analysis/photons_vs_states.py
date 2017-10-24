@@ -29,11 +29,11 @@ num_dims = f["Parameters"]["num_dims"][0]
 num_electrons = f["Parameters"]["num_electrons"][0]
 num_pulses = f["Parameters"]["num_pulses"][0]
 checkpoint_frequency = f["Parameters"]["write_frequency_observables"][0]
-# energies = target["Energy"][:]
+energies = target["Energy"][:]
 field_max = f["Parameters"]["field_max"][0]
 u_p = field_max * field_max / (c * c * 4.0)
 
-#H
+# H
 energies = [
     -0.518536, -0.127738, -0.125544, -0.0564105, -0.0557645, -0.0556327,
     -0.03162, -0.031348, -0.0312945, -0.0312691, -0.0201923, -0.0200532,
@@ -57,7 +57,7 @@ energies = [
     -0.00255119, -0.00255116, -0.00255113, -0.00255111, -0.00222963,
     -0.00222449, -0.00222356
 ]
-#He
+# He
 # energies = [
 #     -0.947675, -0.160426, -0.127575, -0.0652075, -0.0564096, -0.055578,
 #     -0.0351759, -0.0316225, -0.031263, -0.0312522, -0.0219692, -0.0201935,
