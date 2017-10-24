@@ -381,7 +381,6 @@ for state_number in range(data.shape[1]):
     fig.savefig("figs/Projection_" + str(state_number).zfill(4) + "_" +
                 state_labels[state_number] + ".png")
     plt.clf()
-    plt.close(fig)
 
 fig = plt.figure(figsize=(24, 18), dpi=80)
 for idx in get_shells(plot_data.shape[1]):
@@ -532,7 +531,7 @@ plt.imshow(
     cmap='viridis',
     origin='lower',
     interpolation='none',
-    norm=LogNorm(vmin=1e-15))
+    norm=LogNorm(vmin=1e-8))
 ax = plt.gca()
 ax.set_xticks(np.arange(-.5, grid_data.shape[1], 1))
 ax.set_yticks(np.arange(.5, grid_data.shape[0], 1))
