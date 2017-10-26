@@ -698,6 +698,7 @@ dcomp Hamiltonian::GetKineticTerm(std::vector< PetscInt >& idx_array,
 dcomp Hamiltonian::GetNucleiTerm(std::vector< PetscInt >& idx_array)
 {
   dcomp nuclei(0.0, 0.0);
+  double r_soft;
   double r;
   /* loop over each electron */
   for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
@@ -713,13 +714,15 @@ dcomp Hamiltonian::GetNucleiTerm(std::vector< PetscInt >& idx_array)
       }
       else /* SAE */
       {
-        r = SoftCoreDistance(location[nuclei_idx], idx_array, elec_idx);
-        nuclei -= dcomp(c0[nuclei_idx] / r, 0.0);
-        nuclei -= dcomp(z_c[nuclei_idx] * exp(-r0[nuclei_idx] * r) / r, 0.0);
+        r_soft = SoftCoreDistance(location[nuclei_idx], idx_array, elec_idx);
+        r      = EuclideanDistance(location[nuclei_idx], idx_array, elec_idx);
+        nuclei -= dcomp(c0[nuclei_idx] / r_soft, 0.0);
+        nuclei -=
+            dcomp(z_c[nuclei_idx] * exp(-r0[nuclei_idx] * r) / r_soft, 0.0);
 
-	// Tong Lin He Only
-	// clean up hack later
-	//nuclei -= dcomp(-0.231 * exp(-0.480 * r) / r, 0.0);
+        // Tong Lin He Only
+        // clean up hack later
+        // nuclei -= dcomp(-0.231 * exp(-0.480 * r) / r, 0.0);
 
         for (PetscInt i = 0; i < sae_size[nuclei_idx]; ++i)
         {
@@ -770,6 +773,37 @@ double Hamiltonian::SoftCoreDistance(std::vector< PetscInt >& idx_array,
                                      PetscInt elec_idx_1, PetscInt elec_idx_2)
 {
   double distance = alpha_2; /* Make sure we include the soft core */
+  double diff     = 0.0;
+  /* loop over all dims */
+  for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+  {
+    diff = x_value[dim_idx][idx_array[2 * elec_idx_1]] -
+           x_value[dim_idx][idx_array[2 * elec_idx_2]];
+    distance += diff * diff;
+  }
+  return sqrt(distance);
+}
+
+double Hamiltonian::EuclideanDistance(double* location,
+                                      std::vector< PetscInt >& idx_array,
+                                      PetscInt elec_idx)
+{
+  double distance = 0.0;
+  double diff     = 0.0;
+  /* loop over all dims */
+  for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+  {
+    diff = location[dim_idx] -
+           x_value[dim_idx][idx_array[2 * (dim_idx + elec_idx * num_dims)]];
+    distance += diff * diff;
+  }
+  return sqrt(distance);
+}
+
+double Hamiltonian::EuclideanDistance(std::vector< PetscInt >& idx_array,
+                                      PetscInt elec_idx_1, PetscInt elec_idx_2)
+{
+  double distance = 0.0;
   double diff     = 0.0;
   /* loop over all dims */
   for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)

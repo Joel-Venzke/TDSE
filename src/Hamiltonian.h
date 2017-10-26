@@ -82,6 +82,10 @@ class Hamiltonian : protected Utils
                           PetscInt elec_idx);
   double SoftCoreDistance(std::vector< PetscInt > &idx_array,
                           PetscInt elec_idx_1, PetscInt elec_idx_2);
+  double EuclideanDistance(double *location, std::vector< PetscInt > &idx_array,
+                           PetscInt elec_idx);
+  double EuclideanDistance(std::vector< PetscInt > &idx_array,
+                           PetscInt elec_idx_1, PetscInt elec_idx_2);
   std::vector< PetscInt > GetIndexArray(PetscInt idx_i, PetscInt idx_j);
   std::vector< PetscInt > GetDiffArray(std::vector< PetscInt > &idx_array);
 
