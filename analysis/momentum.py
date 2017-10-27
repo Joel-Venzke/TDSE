@@ -114,5 +114,5 @@ for i, psi in enumerate(psi_value):
             for elem in argrelmax(peak_values)[0]:
                 print "k_x:", kx_peaks[elem], peak_values[elem]
 
-            plt.savefig("figs/2d_fft_" + str(i).zfill(8) + ".png")
+            plt.savefig("figs/1d_fft_" + str(i).zfill(8) + ".png")
             plt.clf()
