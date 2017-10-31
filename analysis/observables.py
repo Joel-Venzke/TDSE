@@ -179,6 +179,7 @@ for elec_idx in range(num_electrons):
                                    int(np.ceil((padd2 - data.shape[0]) / 2))),
                             'constant',
                             constant_values=(0.0, 0.0))))
+                data /= data.max()
                 plt.semilogy(
                     np.arange(data.shape[0]) * dH,
                     data,
@@ -186,7 +187,8 @@ for elec_idx in range(num_electrons):
 plt.ylabel("HHG Spectrum (a.u.)")
 plt.title("HHG Spectrum")
 plt.legend()
-plt.xlim([0, 100])
+plt.xlim([0, 20])
+plt.ylim([1e-7, 1])
 plt.tight_layout()
 fig.savefig("figs/HHG_Spectrum.png")
 plt.clf()
@@ -531,7 +533,7 @@ plt.imshow(
     cmap='viridis',
     origin='lower',
     interpolation='none',
-    norm=LogNorm(vmin=1e-8))
+    norm=LogNorm(vmax=1e-3,vmin=1e-8))
 ax = plt.gca()
 ax.set_xticks(np.arange(-.5, grid_data.shape[1], 1))
 ax.set_yticks(np.arange(.5, grid_data.shape[0], 1))
