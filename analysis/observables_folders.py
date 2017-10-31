@@ -163,12 +163,12 @@ for fold in folders:
     checkpoint_frequency = f["Parameters"]["write_frequency_observables"][0]
     for elec_idx in range(num_electrons):
         for dim_idx in range(num_dims):
-            if (not (dim_idx == 0 and
-                     f["Parameters"]["coordinate_system_idx"][0] == 1)):
+            if (not (dim_idx == 0
+                     and f["Parameters"]["coordinate_system_idx"][0] == 1)):
                 plt.plot(
                     time,
-                    observables["position_expectation_" +
-                                str(elec_idx) + "_" + str(dim_idx)][1:],
+                    observables["position_expectation_"
+                                + str(elec_idx) + "_" + str(dim_idx)][1:],
                     plot_lines[fold],
                     label=fold + "Electron " + str(elec_idx) + " Dim " +
                     str(dim_idx))
@@ -196,12 +196,12 @@ for fold in folders:
     checkpoint_frequency = f["Parameters"]["write_frequency_observables"][0]
     for elec_idx in range(num_electrons):
         for dim_idx in range(num_dims):
-            if (not (dim_idx == 0 and
-                     f["Parameters"]["coordinate_system_idx"][0] == 1)):
+            if (not (dim_idx == 0
+                     and f["Parameters"]["coordinate_system_idx"][0] == 1)):
                 plt.plot(
                     time,
-                    observables["dipole_acceleration_" +
-                                str(elec_idx) + "_" + str(dim_idx)][1:],
+                    observables["dipole_acceleration_"
+                                + str(elec_idx) + "_" + str(dim_idx)][1:],
                     plot_lines[fold],
                     label=fold + "Electron " + str(elec_idx) + " Dim " +
                     str(dim_idx))
@@ -232,11 +232,11 @@ for fold in folders:
     energy = f["Parameters"]["energy"][0]
     for elec_idx in range(num_electrons):
         for dim_idx in range(num_dims):
-            if (not (dim_idx == 0 and
-                     f["Parameters"]["coordinate_system_idx"][0] == 1)):
+            if (not (dim_idx == 0
+                     and f["Parameters"]["coordinate_system_idx"][0] == 1)):
                 data = observables[
-                    "dipole_acceleration_" +
-                    str(elec_idx) + "_" + str(dim_idx)][1:len(
+                    "dipole_acceleration_"
+                    + str(elec_idx) + "_" + str(dim_idx)][1:len(
                         pulses["field_" + str(dim_idx)]
                         [checkpoint_frequency::checkpoint_frequency]) + 1]
                 data = data * np.blackman(data.shape[0])
@@ -252,11 +252,13 @@ for fold in folders:
                                  int(np.ceil((padd2 - data.shape[0]) / 2))),
                                 'constant',
                                 constant_values=(0.0, 0.0))))
-                    if count == 0: 
+                    if count == 0:
                         count = 1
-                        harm_value = data[np.argmin(np.abs(np.arange(data.shape[0]) * dH-11))]
+                        harm_value = data[np.argmin(
+                            np.abs(np.arange(data.shape[0]) * dH - 11))]
                     else:
-                        data *= harm_value/data[np.argmin(np.abs(np.arange(data.shape[0]) * dH-11))]
+                        data *= harm_value / data[np.argmin(
+                            np.abs(np.arange(data.shape[0]) * dH - 11))]
                     plt.semilogy(
                         np.arange(data.shape[0]) * dH,
                         data,
@@ -268,7 +270,7 @@ plt.title("HHG Spectrum")
 plt.legend()
 x_min = 0
 x_max = 30
-plt.xticks(np.arange(x_min, x_max+1, 1.0))
+plt.xticks(np.arange(x_min, x_max + 1, 1.0))
 plt.xlim([x_min, x_max])
 plt.ylim([1e-3, 1e3])
 plt.grid(True, which='both')
@@ -292,11 +294,11 @@ for fold in folders:
     checkpoint_frequency = f["Parameters"]["write_frequency_observables"][0]
     for elec_idx in range(num_electrons):
         for dim_idx in range(num_dims):
-            if (not (dim_idx == 0 and
-                     f["Parameters"]["coordinate_system_idx"][0] == 1)):
+            if (not (dim_idx == 0
+                     and f["Parameters"]["coordinate_system_idx"][0] == 1)):
                 plt.plot(
-                    observables["dipole_acceleration_" +
-                                str(elec_idx) + "_" + str(dim_idx)]
+                    observables["dipole_acceleration_"
+                                + str(elec_idx) + "_" + str(dim_idx)]
                     [1:len(pulses["field_" + str(dim_idx)]
                            [checkpoint_frequency::checkpoint_frequency]) + 1],
                     pulses["field_" + str(dim_idx)][checkpoint_frequency::

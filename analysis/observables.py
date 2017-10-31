@@ -157,7 +157,7 @@ plt.close(fig)
 
 # HHG Spectrum
 print "Plotting HHG Spectrum"
-fig = plt.figure()
+fig = plt.figure(figsize=(24, 18), dpi=80)
 energy = f["Parameters"]["energy"][0]
 for elec_idx in range(num_electrons):
     for dim_idx in range(num_dims):
@@ -187,8 +187,12 @@ for elec_idx in range(num_electrons):
 plt.ylabel("HHG Spectrum (a.u.)")
 plt.title("HHG Spectrum")
 plt.legend()
-plt.xlim([0, 20])
+x_min = 0
+x_max = 20
+plt.xticks(np.arange(x_min, x_max + 1, 1.0))
+plt.xlim([x_min, x_max])
 plt.ylim([1e-7, 1])
+plt.grid(True, which='both')
 plt.tight_layout()
 fig.savefig("figs/HHG_Spectrum.png")
 plt.clf()
@@ -533,7 +537,7 @@ plt.imshow(
     cmap='viridis',
     origin='lower',
     interpolation='none',
-    norm=LogNorm(vmax=1e-3,vmin=1e-8))
+    norm=LogNorm(vmax=1e-3, vmin=1e-8))
 ax = plt.gca()
 ax.set_xticks(np.arange(-.5, grid_data.shape[1], 1))
 ax.set_yticks(np.arange(.5, grid_data.shape[0], 1))
