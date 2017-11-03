@@ -51,7 +51,7 @@ for i, psi in enumerate(psi_value):
                     # np.abs(psi),
                     cmap='viridis',
                     origin='lower',
-                    norm=LogNorm(vmin=1e-5),
+                    # norm=LogNorm(vmin=1e-5),
                     extent=[
                         ky.min(),
                         ky.max(), -1.0 * kx.max() / 2.0,

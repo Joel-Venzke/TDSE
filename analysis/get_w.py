@@ -20,11 +20,11 @@ w_min = w_0 / 2
 w_max = w_0 * 2
 dt = 0.045
 plot_data = []
-for cycles in range(10, 11):
+for cycles in range(1, 10):
     w_min = w_0 / 2
     w_max = w_0 * 2
     while (np.abs(w_max - w_min) > 1e-6):
-        print(w_max + w_min) / 2.0, " Error: ", np.abs(w_max - w_min)
+        # print(w_max + w_min) / 2.0, " Error: ", np.abs(w_max - w_min)
         time, pulse = get_pulse(cycles / 2.0, cycles / 2.0, 5.31e13,
                                 (w_max + w_min) / 2.0, dt)
 
@@ -44,7 +44,7 @@ for cycles in range(10, 11):
         else:
             w_min = (w_max + w_min) / 2.0
     plot_data.append((w_max + w_min) / 2.0)
-    print cycles, plot_data[-1]
+    print cycles, plot_data[-1], (w_0 - plot_data[-1]) / w_0
 print plot_data
 
 plt.plot(range(1, 5), plot_data, 'r-o', label="$\omega_A$")

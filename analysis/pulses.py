@@ -12,6 +12,7 @@ num_dims = f["Parameters"]["num_dims"][0]
 num_electrons = f["Parameters"]["num_electrons"][0]
 num_pulses = f["Parameters"]["num_pulses"][0]
 checkpoint_frequency = f["Parameters"]["write_frequency_observables"][0]
+energy = f["Parameters"]["energy"][0]
 
 # Field Plot
 print "Plotting A Field"
@@ -99,10 +100,12 @@ for dim_idx in range(num_dims):
         plt.semilogy(spec_time, data_fft, label="field " + str(dim_idx))
         grid_max = max(spec_time[np.argmax(data_fft[:data_fft.shape[0] / 2])],
                        grid_max)
-
+plt.axvline(x=energy, color='k')
+plt.axvline(x=grid_max, color='r')
 plt.ylabel("Field Spectrum (arb)")
 plt.xlabel("$\omega$ (a.u.)")
 plt.title("Field Spectrum")
 plt.xlim([0, grid_max * 3.0])
 plt.legend()
 fig.savefig("figs/Spectrum.png")
+print "Omega Error (A vs E):", grid_max - energy

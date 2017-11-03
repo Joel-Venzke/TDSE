@@ -303,15 +303,13 @@ void Simulation::EigenSolve(PetscInt num_states, PetscInt return_state_idx)
 
   if (parameters->GetFieldMaxStates())
   {
-    EPSSetOperators(
-        eps,
-        *(hamiltonian->GetTotalHamiltonian(pulse->GetFieldMaxIdx(), -1, false)),
-        NULL);
+    h = hamiltonian->GetTotalHamiltonian(pulse->GetFieldMaxIdx(), -1, false);
   }
   else
   {
-    EPSSetOperators(eps, *(hamiltonian->GetTimeIndependent(-1, false)), NULL);
+    h = hamiltonian->GetTimeIndependent(-1, false);
   }
+  EPSSetOperators(eps, *(h), NULL);
   EPSSetProblemType(eps, EPS_NHEP);
   EPSSetTolerances(eps, tol, PETSC_DECIDE);
   EPSSetWhichEigenpairs(eps, EPS_SMALLEST_REAL);
@@ -327,7 +325,7 @@ void Simulation::EigenSolve(PetscInt num_states, PetscInt return_state_idx)
       std::cout << "Eigen " << eigen_real << " " << eigen_imag << " " << i
                 << "\n";
     wavefunction->Normalize();
-    CheckpointState(h_states_file, v_states_file, j);
+    CheckpointState(h_states_file, v_states_file, j, h);
   }
   EPSGetEigenpair(eps, return_state_idx, &eigen_real, NULL, *psi, NULL);
   wavefunction->Normalize();
@@ -445,17 +443,13 @@ void Simulation::PowerMethod(PetscInt num_states, PetscInt return_state_idx)
   {
     if (parameters->GetFieldMaxStates())
     {
-      /* Get Hamiltonian */
-      MatCopy(*(hamiltonian->GetTotalHamiltonian(pulse->GetFieldMaxIdx(), -1,
-                                                 false)),
-              left, SAME_NONZERO_PATTERN);
+      h = hamiltonian->GetTotalHamiltonian(pulse->GetFieldMaxIdx(), -1, false);
     }
     else
     {
-      /* Get Hamiltonian */
-      MatCopy(*(hamiltonian->GetTimeIndependent(-1, false)), left,
-              SAME_NONZERO_PATTERN);
+      h = hamiltonian->GetTimeIndependent(-1, false);
     }
+    MatCopy(*(h), left, SAME_NONZERO_PATTERN);
     /* Shift by eigen value */
     MatShift(left, -1.0 * state_energy[iter]);
 
@@ -513,7 +507,7 @@ void Simulation::PowerMethod(PetscInt num_states, PetscInt return_state_idx)
         /* check convergence criteria */
         converged = CheckConvergence(psi[0], psi_old, parameters->GetTol());
         /* save this psi to ${target}.h5 */
-        energy = wavefunction->GetEnergy(hamiltonian->GetTimeIndependent());
+        energy = wavefunction->GetEnergy(h);
         if (world.rank() == 0)
           std::cout << "Energy: " << energy << "\n" << std::flush;
         /* write a checkpoint */
@@ -536,7 +530,7 @@ void Simulation::PowerMethod(PetscInt num_states, PetscInt return_state_idx)
     states.push_back(psi_tmp);
 
     /* save this psi to ${target}.h5 */
-    CheckpointState(h_states_file, v_states_file, iter);
+    CheckpointState(h_states_file, v_states_file, iter, h);
 
     /* new Gaussian guess */
     wavefunction->ResetPsi();
@@ -638,13 +632,20 @@ void Simulation::ModifiedGramSchmidt(std::vector< Vec > &states)
  * @param write_idx Index of the eigen state
  */
 void Simulation::CheckpointState(HDF5Wrapper &h_file, ViewWrapper &v_file,
-                                 PetscInt write_idx)
+                                 PetscInt write_idx, Mat *cur_hamiltonian)
 {
   wavefunction->Normalize();
   wavefunction->CheckpointPsi(v_file, write_idx);
-  h_file.WriteObject(
-      wavefunction->GetEnergy(hamiltonian->GetTimeIndependent(-1, false)),
-      "/Energy", "Energy of the corresponding state", write_idx);
+  if (parameters->GetFieldMaxStates())
+  {
+    h_file.WriteObject(wavefunction->GetEnergy(cur_hamiltonian), "/Energy",
+                       "Energy of the corresponding state", write_idx);
+  }
+  else
+  {
+    h_file.WriteObject(wavefunction->GetEnergy(cur_hamiltonian), "/Energy",
+                       "Energy of the corresponding state", write_idx);
+  }
 }
 
 /**

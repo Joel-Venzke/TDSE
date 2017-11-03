@@ -64,5 +64,5 @@ class Simulation : protected Utils
   void CrankNicolson(double dt, PetscInt time_idx, PetscInt dim_idx = -1);
 
   void CheckpointState(HDF5Wrapper &h_file, ViewWrapper &v_file,
-                       PetscInt write_idx);
+                       PetscInt write_idx, Mat *cur_hamiltonian);
 };
