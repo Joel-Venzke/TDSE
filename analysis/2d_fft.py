@@ -52,7 +52,7 @@ for i, psi in enumerate(psi_value):
                 print np.sqrt(ky[max_idx[0]] * ky[max_idx[0]] + ky[max_idx[1]]
                               * ky[max_idx[1]]), ky[max_idx[1]], ky[max_idx[0]]
                 data = plt.imshow(
-                    np.abs(np.fft.fftshift(np.fft.fft2(psi))),
+                    psi,
                     # np.abs(psi),
                     cmap='viridis',
                     origin='lower',
@@ -69,7 +69,7 @@ for i, psi in enumerate(psi_value):
                 print np.sqrt(ky[max_idx[0]] * ky[max_idx[0]] + ky[max_idx[1]]
                               * ky[max_idx[1]]), ky[max_idx[1]], ky[max_idx[0]]
                 data = plt.imshow(
-                    np.abs(np.fft.fftshift(np.fft.fft2(psi))),
+                    psi,
                     # np.abs(psi),
                     cmap='viridis',
                     origin='lower',
@@ -90,8 +90,8 @@ for i, psi in enumerate(psi_value):
                 plt.ylabel("$k_y$  (a.u.)")
             plt.colorbar()
             fig.savefig("figs/2d_fft_" + str(i).zfill(8) + "_full.png")
-            plb.xlim([-1.5, 1.5])
-            plb.ylim([-1.5, 1.5])
+            plb.xlim([-1.65, 1.65])
+            plb.ylim([-1.65, 1.65])
             fig.savefig("figs/2d_fft_" + str(i).zfill(8) + ".png")
             plt.clf()
 
