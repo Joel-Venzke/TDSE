@@ -2,6 +2,7 @@ import numpy as np
 import h5py
 from matplotlib.colors import LogNorm
 from scipy.signal import argrelmax
+import os
 
 print "start"
 
@@ -29,7 +30,7 @@ dky = kyc[1] - kyc[0]
 #how much (in a.u.) do you wish to cut off?
 cut_left = 5
 cut_right = 5
-r_critical = 50
+r_critical = 100
 
 if len(shape) > 1:
     time_x = np.min(y[lower_idx[1]:upper_idx[1]]) * 0.95
@@ -129,7 +130,7 @@ elif len(shape) == 2:
 
 
     for i, psi in enumerate(psi_value):
-        if i == 17:  # arbitrary at moment
+        if i == 13:  # arbitrary at moment
             print "cut version", i
             # set up initial figure with color bar
             psi = psi[:, 0] + 1j * psi[:, 1]
@@ -164,23 +165,25 @@ elif len(shape) == 2:
                         np.conjugate(psi),
                         np.multiply(x[x_min_idx:x_max_idx], psi.transpose())
                         .transpose()))
-                data = plt.imshow(
-                    psi,
-                    cmap='viridis',
-                    origin='lower',
-                    extent=[
-                        y[y_min_idx], y[y_max_idx], x[x_min_idx], x[x_max_idx]
-                    ],
-                    norm=LogNorm(vmin=1e-10, vmax=max_val))
+               
             else:
-                data = plt.imshow(
-                    np.absolute(psi),
-                    cmap='viridis',
-                    origin='lower',
-                    extent=[
-                        y[y_min_idx], y[y_max_idx], x[x_min_idx], x[x_max_idx]
-                    ],
-                    norm=LogNorm(vmin=1e-10, vmax=max_val))
+                print psi.shape
+
+                i_vector = np.unravel_index(np.argmax(psi), (psi.shape[0], psi.shape[1]))
+                angle = np.arctan2(yc[i_vector[0]], xc[i_vector[1]])
+
+                print "angle of position max is " + str(angle * 180 / np.pi) + \
+                        " degrees at y = " + str(yc[i_vector[0]]) + ", x = " + \
+                        str(xc[i_vector[1]])
+
+            data = plt.imshow(
+                np.absolute(psi),
+                cmap='viridis',
+                origin='lower',
+                extent=[
+                    y[y_min_idx], y[y_max_idx], x[x_min_idx], x[x_max_idx]
+                ],
+                norm=LogNorm(vmin=1e-10, vmax=max_val))
             plt.text(
                 time_x,
                 time_y,
@@ -209,9 +212,9 @@ elif len(shape) == 2:
                 psi = np.pad(psi, ((psi.shape[0], 0), (0, 0)), 'symmetric')
                 ft_full = np.abs(np.fft.fftshift(np.fft.fft2(psi)))**2
                 half = ceil(ft_full.shape[0] / 2.0)
-                ft_left = ft_full[:int(half)]
-                ft_right = ft_full[int(half):]
-                kxcl, kxcr = kxc[:int(half)], kxc[int(half):]
+                ft_left = ft_full[:, :int(half)]
+                ft_right = ft_full[:, int(half):]
+                kycl, kycr = kyc[:int(half)], kyc[int(half):]
         
                 print "Calculating asymmetry..."
                 p_l = np.sum(ft_left) * dkx * dky
@@ -230,23 +233,35 @@ elif len(shape) == 2:
                 ft_full = np.abs(np.fft.fftshift(np.fft.fft2(psi)))**2
                 full = ft_full.shape[0]
                 half = np.ceil(full / 2.0)
-                ft_left = ft_full[:int(half)]
-                ft_right = ft_full[int(half):]
-                kxcl, kxcr = kxc[:int(half)], kxc[int(half):]
-        
-                print "Calculating asymmetry..."
+                ft_left = ft_full[:, :int(half)]
+                ft_right = ft_full[:, int(half):]
+                kycl, kycr = kyc[:int(half)], kyc[int(half):]
+                
+                print "outputting FFT"
+                # np.set_printoptions(threshold=np.inf, linewidth=np.inf)  # turn off summarization, line-wrapping
+                # with open('fft.txt', 'w') as f:
+                #     f.write(np.array2string(ft_full, separator=', '))
+                np.savetxt('fft.txt', ft_full, delimiter=',')
+                print "Calculating asymmetry and rotation angle..."
                 p_l = np.sum(ft_left) * dkx * dky
                 p_r = np.sum(ft_right) * dkx * dky
                 asymmetry = (p_l - p_r) / (p_l + p_r)
+                i_vector = np.unravel_index(np.argmax(ft_full),
+                    (ft_full.shape[0], ft_full.shape[1]))
+                print "max location is y = " + str(kyc[i_vector[0]]) \
+                    + "a.u., " + "x = " + str(kxc[i_vector[1]]) + "\n"
+                angle = np.arctan2(kyc[i_vector[0]], kxc[i_vector[1]])
 
                 print "asymmetry is " + str(asymmetry) +\
-                      " now plotting full spectrum"
+                    ", and angle of momentum max is " + str(angle * 180 / np.pi) +\
+                      " degrees. Now plotting full spectrum"
 
                 dataft = plt.imshow(
                 np.sqrt(ft_full),
                 cmap='viridis',
                 origin='lower',
-                vmin=3.3,vmax=3.6,#norm=LogNorm(vmin=1e-10),
+                # norm=LogNorm(vmin=1e-10),
+                vmin=0.125,vmax=0.175,
                 extent=[ky.min(), ky.max(),
                         kx.min(), kx.max()])
 
