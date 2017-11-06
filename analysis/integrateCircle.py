@@ -6,7 +6,7 @@ from matplotlib.colors import LogNorm
 from scipy.signal import argrelmax
 import os
 import matplotlib
-# matplotlib.use('Agg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import pylab as plb
 from matplotlib.colors import LogNorm
@@ -46,7 +46,7 @@ i_vector = np.unravel_index(np.argmax(data),
 #Get max momentum from FT, fix r to max
 # r_fix = np.sqrt(kyc[i_vector[0]]**2 +
 #                 kxc[i_vector[1]]**2)
-r_fix = 0.76
+r_fix = 0.763
 print r_fix
 dtheta = 0.02
 # dr = 0.00001
@@ -76,4 +76,5 @@ plt.plot(theta * 180 / np.pi, theta_data)
 plb.xlim([-180, 180])
 plb.xlabel('angle (degrees)')
 plb.ylabel('population (arb. u)')
-plt.show()
+fig.savefig('figs/popVsTheta' + '.png')
+plt.clf()
