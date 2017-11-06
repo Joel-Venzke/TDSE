@@ -46,6 +46,11 @@ for i, psi in enumerate(psi_value):
         if len(shape) == 2:
             if f["Parameters"]["coordinate_system_idx"][0] == 1:
                 psi = np.pad(psi, ((psi.shape[0], 0), (0, 0)), 'symmetric')
+                psi = np.abs(np.fft.fftshift(np.fft.fft2(psi)))
+                max_idx = np.unravel_index(
+                    np.argmax(psi), (psi.shape[0], psi.shape[1]))
+                print np.sqrt(ky[max_idx[0]] * ky[max_idx[0]] + ky[max_idx[1]]
+                              * ky[max_idx[1]]), ky[max_idx[1]], ky[max_idx[0]]
                 data = plt.imshow(
                     np.abs(np.fft.fftshift(np.fft.fft2(psi))),
                     # np.abs(psi),
@@ -58,6 +63,11 @@ for i, psi in enumerate(psi_value):
                         kx.max() / 2.0
                     ])
             else:
+                psi = np.abs(np.fft.fftshift(np.fft.fft2(psi)))
+                max_idx = np.unravel_index(
+                    np.argmax(psi), (psi.shape[0], psi.shape[1]))
+                print np.sqrt(ky[max_idx[0]] * ky[max_idx[0]] + ky[max_idx[1]]
+                              * ky[max_idx[1]]), ky[max_idx[1]], ky[max_idx[0]]
                 data = plt.imshow(
                     np.abs(np.fft.fftshift(np.fft.fft2(psi))),
                     # np.abs(psi),
