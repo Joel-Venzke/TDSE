@@ -44,9 +44,9 @@ i_vector = np.unravel_index(np.argmax(data),
                     (data.shape[0], data.shape[1]))
 
 #Get max momentum from FT, fix r to max
-# r_fix = np.sqrt(kyc[i_vector[0]]**2 +
-#                 kxc[i_vector[1]]**2)
-r_fix = 0.763
+r_fix = np.sqrt(kyc[i_vector[0]]**2 +
+                kxc[i_vector[1]]**2)
+# r_fix = 0.763
 print r_fix
 dtheta = 0.02
 # dr = 0.00001
