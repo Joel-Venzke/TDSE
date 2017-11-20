@@ -70,9 +70,18 @@ for j, val in enumerate(kxc):
            theta_data[np.argmin(np.abs(theta-theta_current))] += data[j][k]
            z[np.argmin(np.abs(theta-theta_current))] += 1
 
+central = np.loadtxt('centralCycle.txt')
+t_central = central[0][:]
+x_central = central[1][:]
+y_central = central[2][:]
+strength  = np.sqrt(x_central**2 + y_central**2)
+angle     = np.arctan2(y_central, x_central)
 theta_data = theta_data / z
+
 np.savetxt('theta_dataD.txt', theta_data, delimiter=',')
-plt.plot(theta * 180 / np.pi, theta_data)
+plt.plot(theta * 180 / np.pi, theta_data, '--', 
+          angle * 180 / np.pi, strength 
+          * theta_data.max() / strength.max())
 plb.xlim([-180, 180])
 plb.xlabel('angle (degrees)')
 plb.ylabel('population (arb. u)')
