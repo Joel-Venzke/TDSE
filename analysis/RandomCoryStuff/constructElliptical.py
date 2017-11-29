@@ -7,7 +7,7 @@ c = 1 / 7.2973525664e-3
 f = h5py.File("TDSE.h5", "r")
 freq = f["Parameters"]["energy"][0]
 afieldMax = f["Parameters"]["field_max"][0]
-fieldMax = c * afieldMax / freq
+fieldMax = freq * afieldMax / c
 cyclesOn = f["Parameters"]["cycles_on"][0]
 ellipticity = f["Parameters"]["ellipticity_0"][0]
 
@@ -32,8 +32,8 @@ for j, x in enumerate(t):
 	s1 = freq * (x - (N / 2)) \
 	/ (2 * np.pi * 2 * np.sqrt(np.log(2)) * cyclesOn)
 	env[j] = fieldMax * np.exp(-1.0 * s1 * s1)
-	fy[j]  = -np.cos(freq * x) / fac 
-	fx[j]  = ellipticity * np.sin(freq * x) / fac
+	fy[j]  = -env[j] * np.cos(freq * x) / fac 
+	fx[j]  = env[j] * ellipticity * np.sin(freq * x) / fac
 
 	if x >= x1 and x <= x2:
 		saver[i][0] = x
@@ -45,12 +45,15 @@ for j, x in enumerate(t):
 # 	for k, y in enumerate(fy):
 # 		tot[j][k] = np.sqrt(x**2 + y**2)
 	
+radiusC = np.sqrt(fy**2 + fx**2)
+thetaC  = np.arctan2(fy, fx)
 radius = np.sqrt(saver[:,1]**2 + saver[:,2]**2)
 theta  = np.arctan2(saver[:,2], saver[:, 1])
 np.savetxt('centralCycle.txt', saver)
 # plt.plot(t, env * fx, t, env * fy)
 # plt.plot(saver[:, 0], saver[:,1], saver[:, 0], saver[:,2])
 plt.plot(theta, radius)
+# plt.plot(radiusC)
 # plt.imshow(
 # 	       tot,
 # 	       origin='lower',

@@ -73,16 +73,18 @@ theta_current = 0
 
 #for each point in data, divide 
 #by field Intensity corresponding to correct angle
+print "dividing out intensity...."
 for j, val in enumerate(xc):
     for k, valy in enumerate(yc):
         theta_current = np.arctan2(valy, val)
         z = np.argmin(np.abs(fieldTheta - theta_current))
-        data_adjusted[j][k] = psi[j][k] / (saver[z][1]**2 + saver[z][2]**2)**2
+        data_adjusted[j][k] = \
+        psi[j][k] / (saver[z][1]**2 + saver[z][2]**2)**2
 
-
+psi = data_adjusted
 # print "cutting again"
-# r_critical = 20
-# alpha = 5.0
+# r_critical = 30
+# alpha = 25000000000000
 # for j, val in enumerate(xc):
 #     for k, valy in enumerate(yc):
 #         r = np.sqrt(val**2 + valy**2)
@@ -118,10 +120,11 @@ plt.colorbar()
 # plb.ylim([-2, 2])
 fig.savefig("figs/adjusted_cut" + ".png")
 plt.clf()
-
+ft_full = None
 
 print "FT adjusted cut Wavefunction"
-ft_full = np.abs(np.fft.fftshift(np.fft.fft2(data_adjusted))),
+ft_full = np.abs(np.fft.fftshift(np.fft.fft2(psi)))**2
+print ft_full
 # np.savetxt('fftAdjusted.txt', ft_full, delimiter=',')
 print "Calculating rotation angle..."
 i_vector = np.unravel_index(np.argmax(ft_full),
@@ -134,10 +137,11 @@ print " angle of momentum max is " + str(angle * 180 / np.pi) +\
       " degrees. Now plotting full spectrum"
 
 dataft = plt.imshow(
-ft_full**2,
+# np.abs(np.fft.fftshift(np.fft.fft2(data_adjusted)))
+np.sqrt(ft_full),
 cmap='viridis',
 origin='lower',
-norm=LogNorm(vmin=1e-10),
+norm=LogNorm(vmin=1e-3),
 # vmin=0.125,vmax=0.175,
 extent=[kyc.min(), kyc.max(),
         kxc.min(), kxc.max()])

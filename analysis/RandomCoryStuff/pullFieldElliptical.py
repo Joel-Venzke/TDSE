@@ -21,7 +21,7 @@ period = 2 * np.pi / freq
 t1 = (p_time.max() - period) / 2
 t2 = (p_time.max() + period) / 2
 saverSize = int((t2 - t1) / dt + 1)
-central = np.zeros([num_dims + 1, saverSize])
+central = np.zeros([num_dims + 1, saverSize - 1])
 
 for dim_idx in range(num_dims):
         field[dim_idx][:] = -1.0 * np.gradient(pulses["field_" + str(dim_idx)][:],
@@ -40,8 +40,8 @@ y_central = central[2][:]
 strength  = np.sqrt(x_central**2 + y_central**2)
 angle     = np.arctan2(y_central, x_central)
 
-# plt.plot(t_central, x_central, t_central, y_central)
-plt.plot(angle, strength)
+plt.plot(t_central, x_central, t_central, y_central)
+# plt.plot(angle, strength)
 plt.xlabel("Time (a.u.)")
 plt.ylabel("Field (a.u.)")
 plt.title("E Field")

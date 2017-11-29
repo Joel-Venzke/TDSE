@@ -70,7 +70,7 @@ for j, val in enumerate(kxc):
     for k, valy in enumerate(kyc):
         theta_current = np.arctan2(valy, val)
         z = np.argmin(np.abs(fieldTheta - theta_current))
-        data_adjusted[j][k] = data[j][k] / (saver[z][1]**2 + saver[z][2]**2)
+        data_adjusted[j][k] = data[j][k] / (saver[z][1]**2 + saver[z][2]**2)**2
            
 i_vector = np.unravel_index(np.argmax(data_adjusted),
                     (data_adjusted.shape[0], data_adjusted.shape[1]))
@@ -87,7 +87,7 @@ dataft = plt.imshow(
                     data_adjusted,
                     cmap='viridis',
                     origin='lower',
-                    vmin=2.0,vmax=5.8,
+                    vmin=20,vmax=60.8,
                     # norm=LogNorm(vmin=1e-5),
                     extent=[kyc.min(), kyc.max(),
                             kxc.min(), kxc.max()])
@@ -97,9 +97,9 @@ plt.ylabel("$k_x$  (a.u.)")
 plb.xlim([-10, 10])
 plb.ylim([-10, 10])
 plt.colorbar()
-fig.savefig("figs/adjusted_fft_cutlin" + "_full.png")
+fig.savefig("figs/adjusted_fft_cutlinSquared" + "_full.png")
 plb.xlim([-2, 2])
 plb.ylim([-2, 2])
-fig.savefig("figs/adjusted_fft_cutlin" + ".png")
+fig.savefig("figs/adjusted_fft_cutlinSquared" + ".png")
 plt.clf()
 

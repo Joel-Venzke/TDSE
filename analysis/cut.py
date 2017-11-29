@@ -256,13 +256,14 @@ elif len(shape) == 2:
                       " degrees. Now plotting full spectrum"
 
                 dataft = plt.imshow(
-                np.sqrt(ft_full),
+                #np.sqrt(ft_full),
+                ft_full.transpose(),
                 cmap='viridis',
                 origin='lower',
                 # norm=LogNorm(vmin=1e-5),
-                vmin=3.0,vmax=3.5,
-                extent=[ky.min(), ky.max(),
-                        kx.min(), kx.max()])
+                vmin=9.0,vmax=13.0,
+                extent=[kx.min(), kx.max(),
+                        ky.min(), ky.max()])
 
             plt.text(
                 time_x,
@@ -274,8 +275,8 @@ elif len(shape) == 2:
                 plt.xlabel("$k_\\rho$ (a.u.)")
                 plt.ylabel("$k_z$ (a.u.)")
             else:
-                plt.xlabel("$k_y$ (a.u.)")
-                plt.ylabel("$k_x$  (a.u.)")
+                plt.xlabel("$k_x$ (a.u.)")
+                plt.ylabel("$k_y$  (a.u.)")
             plb.xlim([-10, 10])
             plb.ylim([-10, 10])
             plt.colorbar()
