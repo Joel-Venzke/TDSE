@@ -52,6 +52,7 @@ Make sure you set PETSC_DIR and SLEPC_DIR in your `~/.bashrc` or equivalent file
 
 Use the `hdf5_build.summitcu`, `petsc_build.summitcu`, and `slepc_build.summitcu` scripts to compile on summit. Make appropriate changes to the paths and modules. Running these scripts can take a while depending on the system
 
+HDF5 must be installed from the local install directory. Both PETSC and SLEPC are installed from their respective repositories.
 
 # INSTALL TDSE
 
