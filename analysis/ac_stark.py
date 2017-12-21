@@ -74,8 +74,9 @@ if len(shape) > 1:
 name_list = state_name(len(psi_value))
 
 dipole_list = np.zeros(psi_value.shape[0])
-for i, psi_i in enumerate(psi_value):
+for i in range(psi_value.shape[0]):
     if i % size == rank:
+        psi_i = psi_value[i]
         if rank == 0 and i > 0:
             for idx, d in enumerate(dipole_list):
                 if np.abs(d) > 0:
