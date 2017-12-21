@@ -10,7 +10,6 @@ target_name = data["target"]["name"]
 target = h5py.File(target_name + ".h5", "r")
 f = h5py.File("TDSE.h5", "r")
 psi_value = target["psi"]
-# psi_value = f["Wavefunction"]["psi"]
 energy = target["Energy"]
 psi_time = f["Wavefunction"]["time"][:]
 shape = f["Wavefunction"]["num_x"][:]
@@ -151,7 +150,7 @@ elif len(shape) == 2:
                 ],
                 norm=LogNorm(vmin=1e-12, vmax=max_val))
         # color bar doesn't change during the video so only set it here
-        plt.colorbar(pad = 0.1)
+        plt.colorbar(pad=0.1)
         if f["Parameters"]["coordinate_system_idx"][0] == 1:
             plt.xlabel("z-axis (a.u.)")
             plt.ylabel("$\\rho$-axis  (a.u.)")
@@ -167,9 +166,7 @@ elif len(shape) == 2:
             psi,
             cmap='viridis',
             origin='lower',
-            extent=[
-                y[y_min_idx], y[y_max_idx], x[x_min_idx], x[x_max_idx]
-            ],
+            extent=[y[y_min_idx], y[y_max_idx], x[x_min_idx], x[x_max_idx]],
             norm=LogNorm(vmin=1e-15, vmax=np.max(psi)))
         plt.colorbar()
         if f["Parameters"]["coordinate_system_idx"][0] == 1:
@@ -179,11 +176,11 @@ elif len(shape) == 2:
             plt.xlabel("X-axis (a.u.)")
             plt.ylabel("Y-axis  (a.u.)")
         plt.title(name_list[i])
-        plb.xlim([-30,30])
-        plb.ylim([0,30])
+        plb.xlim([-30, 30])
+        plb.ylim([0, 30])
         plt.tight_layout()
-        fig.savefig("figs/" + target_name + "_log_state_small_" + str(i).zfill(3) +
-                    ".jpg")
+        fig.savefig("figs/" + target_name + "_log_state_small_" +
+                    str(i).zfill(3) + ".jpg")
         plt.clf()
 
 elif len(shape) == 1:

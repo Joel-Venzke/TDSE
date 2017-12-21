@@ -47,6 +47,9 @@ for i, psi in enumerate(psi_value):
             if f["Parameters"]["coordinate_system_idx"][0] == 1:
                 psi = np.pad(psi, ((psi.shape[0], 0), (0, 0)), 'symmetric')
                 psi = np.abs(np.fft.fftshift(np.fft.fft2(psi)))
+                # cross_sec = (ky**2 / 2.0 + 0.50188)**(7.0 / 2.0)
+                # cross_sec[cross_sec > 1e4] = 1.0
+                # psi *= cross_sec
                 max_idx = np.unravel_index(
                     np.argmax(psi), (psi.shape[0], psi.shape[1]))
                 print np.sqrt(ky[max_idx[0]] * ky[max_idx[0]] + ky[max_idx[1]]
@@ -69,7 +72,7 @@ for i, psi in enumerate(psi_value):
                 print np.sqrt(ky[max_idx[0]] * ky[max_idx[0]] + ky[max_idx[1]]
                               * ky[max_idx[1]]), ky[max_idx[1]], ky[max_idx[0]]
                 data = plt.imshow(
-                    psi,
+                    psi * (ky**2 / 2.0 + 0.50188)**(7.0 / 2.0),
                     # np.abs(psi),
                     cmap='viridis',
                     origin='lower',
@@ -89,14 +92,17 @@ for i, psi in enumerate(psi_value):
                 plt.xlabel("$k_x$ (a.u.)")
                 plt.ylabel("$k_y$  (a.u.)")
             plt.colorbar()
-            fig.savefig("figs/2d_fft_" + str(i).zfill(8) + "_full.png")
-            plb.xlim([-1.65, 1.65])
-            plb.ylim([-1.65, 1.65])
+            fig.savefig("figs/2d_fft_full_" + str(i).zfill(8) + ".png")
+            plb.xlim([-5.0, 5.0])
+            plb.ylim([-5.0, 5.0])
             fig.savefig("figs/2d_fft_" + str(i).zfill(8) + ".png")
             plt.clf()
 
         elif len(shape) == 1:
             dataft = np.abs(np.fft.fftshift(np.fft.fft(psi)))
+            # cross_sec = (kx**2 / 2.0 + 0.50188)**(7.0 / 2.0)
+            # cross_sec[cross_sec > 1e4] = 1.0
+            # dataft *= cross_sec
             data = plt.semilogy(kx, dataft)
             plt.text(
                 time_x,
@@ -112,7 +118,7 @@ for i, psi in enumerate(psi_value):
 
             kx_peaks = []
             peak_values = []
-            thresh = 0.0005
+            thresh = 0.00005
 
             for element in argrelmax(dataft)[0]:
                 if (dataft[element] > thresh):
