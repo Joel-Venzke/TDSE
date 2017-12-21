@@ -20,6 +20,8 @@ lower_idx = shape - upper_idx
 
 x = f["Wavefunction"]["x_value_0"][:]
 kx = x * 2.0 * np.pi / (x.shape[0] * (x[1] - x[0]) * (x[1] - x[0]))
+if f["Parameters"]["coordinate_system_idx"][0] == 1:
+    kx = np.pad(kx, (kx.shape[0], 0), 'reflect', reflect_type='odd') / 2.0
 
 if len(shape) == 1:
     time_x = 0
@@ -52,19 +54,18 @@ for i, psi in enumerate(psi_value):
                 # psi *= cross_sec
                 max_idx = np.unravel_index(
                     np.argmax(psi), (psi.shape[0], psi.shape[1]))
-                print np.sqrt(ky[max_idx[0]] * ky[max_idx[0]] + ky[max_idx[1]]
-                              * ky[max_idx[1]]), ky[max_idx[1]], ky[max_idx[0]]
+                print np.sqrt(ky[max_idx[0]] * ky[max_idx[0]] + kx[max_idx[1]]
+                              * kx[max_idx[1]]), kx[max_idx[1]], ky[max_idx[
+                                  0]], max_idx, kx.shape, ky.shape, kx.min(
+                                  ), kx.max(), ky.min(), ky.max()
                 data = plt.imshow(
                     psi,
                     # np.abs(psi),
                     cmap='viridis',
                     origin='lower',
                     # norm=LogNorm(vmin=1e-5),
-                    extent=[
-                        ky.min(),
-                        ky.max(), -1.0 * kx.max() / 2.0,
-                        kx.max() / 2.0
-                    ])
+                    extent=[ky.min(), ky.max(),
+                            kx.min(), kx.max()])
             else:
                 psi = np.abs(np.fft.fftshift(np.fft.fft2(psi)))
                 max_idx = np.unravel_index(
