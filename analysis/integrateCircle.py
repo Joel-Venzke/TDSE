@@ -38,25 +38,26 @@ dky = kyc[1] - kyc[0]
 
 fig = plt.figure()
 print 'loading data'
-data = np.loadtxt('fft.txt', delimiter=',')
-
-i_vector = np.unravel_index(np.argmax(data),
-                    (data.shape[0], data.shape[1]))
+# data = np.loadtxt('fftcomplex.txt').view(complex)
+datanorm = np.loadtxt('fft.txt')#, delimiter=',')
+i_vector = np.unravel_index(np.argmax(datanorm),
+                    (datanorm.shape[0], datanorm.shape[1]))
 
 #Get max momentum from FT, fix r to max
 r_fix = np.sqrt(kyc[i_vector[0]]**2 +
                 kxc[i_vector[1]]**2)
 # r_fix = 0.763
 print r_fix
-dtheta = 0.02
+dtheta = 0.01855
 # dr = 0.00001
 # r = np.arange(0.0, 2.0, dr)
 theta = np.arange(-np.pi, np.pi, dtheta)
+# theta_data = np.zeros(theta.shape[0], 'complex')
 theta_data = np.zeros(theta.shape[0])
 
 # tol = np.sqrt(dky**2 + dkx**2)*10.0
 # print tol
-tol = 0.02
+tol = 0.0181
 r_current = 0
 theta_current = 0
 
@@ -67,7 +68,7 @@ for j, val in enumerate(kxc):
         r_current = np.sqrt(val**2 + valy**2)
         theta_current = np.arctan2(valy, val)
         if(np.abs(r_current - r_fix) < tol):
-           theta_data[np.argmin(np.abs(theta-theta_current))] += data[j][k]
+           theta_data[np.argmin(np.abs(theta-theta_current))] += datanorm[j][k]
            z[np.argmin(np.abs(theta-theta_current))] += 1
 
 central = np.loadtxt('centralCycle.txt')
@@ -77,13 +78,23 @@ y_central = central[2][:]
 strength  = np.sqrt(x_central**2 + y_central**2)
 angle     = np.arctan2(y_central, x_central)
 theta_data = theta_data / z
+norm_theta_data = np.abs(theta_data)**2
 
-np.savetxt('theta_dataD.txt', theta_data, delimiter=',')
+ft = np.fft.fft(theta_data)
+ftnorm = np.abs(ft)**2
+# np.savetxt('theta_dataComplex.txt', theta_data.view(float))
+print ft[:5], ftnorm[:5]
+# plt.plot(theta * 180 / np.pi, norm_theta_data, '--', 
+#           angle * 180 / np.pi, strength 
+#           * norm_theta_data.max() / strength.max())
 plt.plot(theta * 180 / np.pi, theta_data, '--', 
           angle * 180 / np.pi, strength 
           * theta_data.max() / strength.max())
+
+# plt.plot(ft)
 plb.xlim([-180, 180])
 plb.xlabel('angle (degrees)')
 plb.ylabel('population (arb. u)')
+# plt.show()
 fig.savefig('figs/popVsTheta' + '.png')
 plt.clf()
