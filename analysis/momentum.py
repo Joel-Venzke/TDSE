@@ -73,8 +73,8 @@ for i, psi in enumerate(psi_value):
                 print np.sqrt(ky[max_idx[0]] * ky[max_idx[0]] + ky[max_idx[1]]
                               * ky[max_idx[1]]), ky[max_idx[1]], ky[max_idx[0]]
                 data = plt.imshow(
-                    psi * (ky**2 / 2.0 + 0.50188)**(7.0 / 2.0),
-                    # np.abs(psi),
+                    # psi * (ky**2 / 2.0 + 0.50188)**(7.0 / 2.0),
+                    np.abs(psi),
                     cmap='viridis',
                     origin='lower',
                     norm=LogNorm(vmin=1e-5),
