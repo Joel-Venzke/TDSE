@@ -540,11 +540,11 @@ plt.imshow(
     norm=LogNorm(vmax=5e-4, vmin=1e-6))
 for val in np.arange(-0.5, grid_data.shape[1], 1):
     plt.axvline(val, c='w')
-for val in np.arange(-0.5, grid_data.shape[0]-1, 1):
+for val in np.arange(-0.5, grid_data.shape[0] - 1, 1):
     plt.axhline(val, c='w')
 ax = plt.gca()
 ax.set_xticks(np.arange(0, grid_data.shape[1], 1))
-ax.set_yticks(np.arange(0, grid_data.shape[0]-1, 1))
+ax.set_yticks(np.arange(0, grid_data.shape[0] - 1, 1))
 ax.set_xticklabels(np.arange(0, grid_data.shape[1], 1))
 ax.set_yticklabels(np.arange(1, grid_data.shape[0], 1))
 #ax.grid(color='w', linestyle='-', linewidth=2)

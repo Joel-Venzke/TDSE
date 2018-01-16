@@ -109,3 +109,43 @@ plt.xlim([0, grid_max * 3.0])
 plt.legend()
 fig.savefig("figs/Spectrum.png")
 print "Omega Error (A vs E):", grid_max - energy
+print "Grid Max:", grid_max
+
+# Spectrum cross section
+print "Plotting Spectrum"
+e_0 = 0.51088
+grid_max = 0.0
+fig = plt.figure()
+for dim_idx in range(num_dims):
+    data = -1.0 * np.gradient(pulses["field_" + str(dim_idx)][:],
+                              f["Parameters"]["delta_t"][0]) * 7.2973525664e-3
+    if np.max(data) > 1e-10:
+        data_fft = np.absolute(
+            np.fft.fft(
+                np.lib.pad(
+                    data, (10 * data.shape[0], 10 * data.shape[0]),
+                    'constant',
+                    constant_values=(0.0, 0.0))))
+        data_fft /= data_fft.max()
+        spec_time = np.arange(data_fft.shape[0]) * 2.0 * np.pi / (
+            data_fft.shape[0] * (p_time[1] - p_time[0]))
+
+        cut_idx = np.argmin(np.abs(spec_time - e_0)) + 1
+        spec_time = spec_time[cut_idx:]
+        data_fft = data_fft[cut_idx:]
+        gamma = 1.0 / np.sqrt(spec_time / e_0 - 1.0)
+        print data_fft.shape, gamma.shape, spec_time.shape
+        data_fft *= (e_0 / spec_time)**4 * np.exp(
+            -4 * gamma / np.arctan(gamma)) / (1 - np.exp(-2 * np.pi * gamma))
+        plt.plot(spec_time, data_fft, label="field " + str(dim_idx))
+        grid_max = max(spec_time[np.argmax(data_fft[:data_fft.shape[0] / 2])],
+                       grid_max)
+plt.axvline(x=energy, color='k')
+plt.axvline(x=grid_max, color='r')
+plt.ylabel("Field Spectrum (arb)")
+plt.xlabel("$\omega$ (a.u.)")
+plt.title("Field Spectrum")
+plt.xlim([0, 4])
+plt.legend()
+fig.savefig("figs/Spectrum_with_cross_section.png")
+print "Grid max:", grid_max
