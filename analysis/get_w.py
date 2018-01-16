@@ -14,13 +14,13 @@ def get_pulse(cycles_on, cycles_off, intensity, w, dt):
     return time, c2 * np.sin(w * time)
 
 
-w_0 = 2.00
+w_0 = 0.057
 print w_0
 w_min = w_0 / 2
 w_max = w_0 * 2
 dt = 0.02
 plot_data = []
-for cycles in range(1, 10):
+for cycles in range(14, 17):
     w_min = w_0 / 2
     w_max = w_0 * 2
     while (np.abs(w_max - w_min) > 1e-6):
