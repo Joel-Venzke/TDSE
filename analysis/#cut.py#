@@ -30,7 +30,7 @@ dky = kyc[1] - kyc[0]
 #how much (in a.u.) do you wish to cut off?
 cut_left = 5
 cut_right = 5
-r_critical = 50 
+r_critical = 90 
 
 if len(shape) > 1:
     time_x = np.min(y[lower_idx[1]:upper_idx[1]]) * 0.95
@@ -58,7 +58,7 @@ if len(shape) == 1:
     matplotlib.rc('font', **font)
     for i, psi in enumerate(psi_value):
         #Which frame?
-        if i == 12:  #THIS IS ARBITRARY at the moment
+        if i == 10:  #THIS IS ARBITRARY at the moment
             print "plotting cut version", i
             # set up initial figure with color bar
             psi = psi[:, 0] + 1j * psi[:, 1]
@@ -261,7 +261,7 @@ elif len(shape) == 2:
                 cmap='viridis',
                 origin='lower',
                 # norm=LogNorm(vmin=1e-5),
-                vmin=4,vmax=16,
+                vmin=4,vmax=8,
                 extent=[kx.min(), kx.max(),
                         ky.min(), ky.max()])
 

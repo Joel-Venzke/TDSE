@@ -157,7 +157,7 @@ plt.close(fig)
 
 # HHG Spectrum
 print "Plotting HHG Spectrum"
-fig = plt.figure(figsize=(24, 18), dpi=80)
+fig = plt.figure()
 energy = f["Parameters"]["energy"][0]
 for elec_idx in range(num_electrons):
     for dim_idx in range(num_dims):
@@ -179,7 +179,6 @@ for elec_idx in range(num_electrons):
                                    int(np.ceil((padd2 - data.shape[0]) / 2))),
                             'constant',
                             constant_values=(0.0, 0.0))))
-                data /= data.max()
                 plt.semilogy(
                     np.arange(data.shape[0]) * dH,
                     data,
@@ -187,12 +186,7 @@ for elec_idx in range(num_electrons):
 plt.ylabel("HHG Spectrum (a.u.)")
 plt.title("HHG Spectrum")
 plt.legend()
-x_min = 0
-x_max = 20
-plt.xticks(np.arange(x_min, x_max + 1, 1.0))
-plt.xlim([x_min, x_max])
-plt.ylim([1e-7, 1])
-plt.grid(True, which='both')
+plt.xlim([0, 100])
 plt.tight_layout()
 fig.savefig("figs/HHG_Spectrum.png")
 plt.clf()
@@ -387,6 +381,7 @@ for state_number in range(data.shape[1]):
     fig.savefig("figs/Projection_" + str(state_number).zfill(4) + "_" +
                 state_labels[state_number] + ".png")
     plt.clf()
+    plt.close(fig)
 
 fig = plt.figure(figsize=(24, 18), dpi=80)
 for idx in get_shells(plot_data.shape[1]):
@@ -537,7 +532,7 @@ plt.imshow(
     cmap='viridis',
     origin='lower',
     interpolation='none',
-    norm=LogNorm(vmax=1e-3, vmin=1e-8))
+    norm=LogNorm(vmin=1e-15))
 ax = plt.gca()
 ax.set_xticks(np.arange(-.5, grid_data.shape[1], 1))
 ax.set_yticks(np.arange(.5, grid_data.shape[0], 1))
@@ -567,7 +562,7 @@ for n_idx, idx in enumerate(shells):
                                 f["Parameters"]["cycles_off"][0]))
     plt.xlim([min(range(plot_data.shape[1])), max(range(plot_data.shape[1]))])
     plt.xticks(range(plot_data.shape[1]), state_labels, rotation='vertical')
-    plt.ylim([1e-9, 1e-3])
+    plt.ylim([1e-17, 10])
     if n_idx == n_max - 1:
         plt.xlim([shells[n_idx], plot_data.shape[1] - 1])
     else:
@@ -575,35 +570,5 @@ for n_idx, idx in enumerate(shells):
     plt.grid()
     plt.tight_layout()
     fig.savefig("figs/Projection_at_end_n_" + str(n_idx + 1) + ".png")
-    plt.clf()
-    plt.close(fig)
-
-for n_idx, idx in enumerate(shells):
-    fig = plt.figure()
-    plt.semilogy(range(data.shape[1]), data[-1, :], 'o-')
-
-    plt.ylabel("Population")
-    plt.xlabel("Bound State")
-    if np.abs(f["Parameters"]["field_max"][0] - 93.7) < 1:
-        plt.title("11 Photons")
-    elif np.abs(f["Parameters"]["field_max"][0] - 114.39) < 1:
-        plt.title("12 Photons")
-    elif np.abs(f["Parameters"]["field_max"][0] - 131.79) < 1:
-        plt.title("13 Photons")
-    else:
-        plt.title("14 Photons")
-    plt.xlim([min(range(plot_data.shape[1])), max(range(plot_data.shape[1]))])
-    plt.xticks(range(plot_data.shape[1]), state_labels, rotation='vertical')
-    if n_idx < 10:
-        plt.ylim([1e-9, 1e-3])
-    else:
-        plt.ylim([1e-14, 1e-3])
-    if n_idx == n_max - 1:
-        plt.xlim([shells[n_idx], plot_data.shape[1] - 1])
-    else:
-        plt.xlim([shells[n_idx], shells[n_idx + 1] - 1])
-    plt.grid()
-    plt.tight_layout()
-    fig.savefig("figs/Projection_at_end_n_photons_" + str(n_idx + 1) + ".png")
     plt.clf()
     plt.close(fig)

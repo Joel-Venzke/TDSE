@@ -25,7 +25,7 @@ if len(shape) > 1:
 
 max_val = 0
 # calculate color bounds
-for i, psi in enumerate(psi_value[:2]):
+for i, psi in enumerate(psi_value):
     psi = psi[:, 0] + 1j * psi[:, 1]
     max_val_tmp = np.max(np.absolute(psi))
     if (max_val_tmp > max_val):
@@ -106,16 +106,21 @@ elif len(shape) == 2:
     import matplotlib.pyplot as plt
     import matplotlib.animation as animation
     from matplotlib.colors import LogNorm
-    import pylab as plb
-    font = {'family': 'normal', 'weight': 'bold', 'size': 22}
-
-    matplotlib.rc('font', **font)
     fig = plt.figure()
     for i, psi in enumerate(psi_value):
         print "plotting", i
-        # set up initial figure with color bar
         psi = psi[:, 0] + 1j * psi[:, 1]
         psi.shape = tuple(shape)
+
+        # set up initial figure with color bar
+        if i == 1 or i == 2 :
+            psi2 = np.abs(psi)
+            i_vector = np.unravel_index(np.argmax(psi2),
+                            (psi2.shape[0], psi2.shape[1]))
+            print np.arctan2(y[i_vector[0]], x[i_vector[1]])
+            print np.arctan2(y[i_vector[1]], x[i_vector[0]])
+#            print np.arctan2(y[np.argmin(psi)], x[np.argmin(psi)]) 
+
         if f["Parameters"]["coordinate_system_idx"][0] == 1:
             x_min_idx = 0
         else:
@@ -142,35 +147,16 @@ elif len(shape) == 2:
                 ],
                 norm=LogNorm(vmin=1e-15, vmax=np.max(psi)))
         else:
+            p = np.absolute(psi)
             plt.imshow(
-                np.absolute(psi),
+                p.transpose(),
                 cmap='viridis',
                 origin='lower',
                 extent=[
-                    y[y_min_idx], y[y_max_idx], x[x_min_idx], x[x_max_idx]
+                    x[x_min_idx], x[x_max_idx], y[y_min_idx], y[y_max_idx]
                 ],
                 norm=LogNorm(vmin=1e-12, vmax=max_val))
         # color bar doesn't change during the video so only set it here
-        plt.colorbar(pad = 0.1)
-        if f["Parameters"]["coordinate_system_idx"][0] == 1:
-            plt.xlabel("z-axis (a.u.)")
-            plt.ylabel("$\\rho$-axis  (a.u.)")
-        else:
-            plt.xlabel("X-axis (a.u.)")
-            plt.ylabel("Y-axis  (a.u.)")
-        plt.title(name_list[i])
-        plt.tight_layout()
-        fig.savefig("figs/" + target_name + "_log_state_" + str(i).zfill(3) +
-                    ".jpg")
-        plt.clf()
-        plt.imshow(
-            psi,
-            cmap='viridis',
-            origin='lower',
-            extent=[
-                y[y_min_idx], y[y_max_idx], x[x_min_idx], x[x_max_idx]
-            ],
-            norm=LogNorm(vmin=1e-15, vmax=np.max(psi)))
         plt.colorbar()
         if f["Parameters"]["coordinate_system_idx"][0] == 1:
             plt.xlabel("z-axis (a.u.)")
@@ -178,11 +164,10 @@ elif len(shape) == 2:
         else:
             plt.xlabel("X-axis (a.u.)")
             plt.ylabel("Y-axis  (a.u.)")
-        plt.title(name_list[i])
-        plb.xlim([-30,30])
-        plb.ylim([0,30])
-        plt.tight_layout()
-        fig.savefig("figs/" + target_name + "_log_state_small_" + str(i).zfill(3) +
+            plt.xlim([-20, 20])
+            plt.ylim([-20, 20])
+        plt.title(name_list[i] + " - Energy " + str(energy[i]))
+        fig.savefig("figs/" + target_name + "_log_state_" + str(i).zfill(3) +
                     ".jpg")
         plt.clf()
 
