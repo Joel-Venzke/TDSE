@@ -15,6 +15,7 @@ shape = f["Wavefunction"]["num_x"][:]
 gobbler = f["Parameters"]["gobbler"][0]
 upper_idx = (shape * gobbler - 1).astype(int)
 lower_idx = shape - upper_idx
+dx = f["Parameters"]["delta_x_max"][0]
 
 x = f["Wavefunction"]["x_value_0"][:]
 kx = x * 2.0 * np.pi / (x.shape[0] * (x[1] - x[0]) * (x[1] - x[0]))
@@ -58,7 +59,7 @@ if len(shape) == 1:
     matplotlib.rc('font', **font)
     for i, psi in enumerate(psi_value):
         #Which frame?
-        if i == 12:  #THIS IS ARBITRARY at the moment
+        if i == 10:  #THIS IS ARBITRARY at the moment
             print "plotting cut version", i
             # set up initial figure with color bar
             psi = psi[:, 0] + 1j * psi[:, 1]
@@ -130,7 +131,7 @@ elif len(shape) == 2:
 
 
     for i, psi in enumerate(psi_value):
-        if i == 10:  # arbitrary at moment
+        if i == 11:  # arbitrary at moment
             print "cut version", i
             # set up initial figure with color bar
             psi = psi[:, 0] + 1j * psi[:, 1]
@@ -231,15 +232,40 @@ elif len(shape) == 2:
                     extent=[ky.min(), ky.max(),
                             -1.0*kx.max()/2.0, kx.max()/2.0])
             else:
-                ft_full = np.abs(np.fft.fftshift(np.fft.fft2(psi)))**2
+                pad_x = 2 ** np.ceil(np.log2(psi.shape[0]*1))
+                pad_y = 2 ** np.ceil(np.log2(psi.shape[1]*1))
+                print 'padding'
+                psi = np.pad(psi, 
+                    ((int(np.floor((pad_x - psi.shape[0]) / 2.0)), 
+                        int(np.ceil((pad_x - psi.shape[0]) / 2.0))), 
+                        (int(np.floor((pad_y - psi.shape[1]) / 2.0)), 
+                        int(np.ceil((pad_y - psi.shape[1]) / 2.0)))), 'constant', constant_values=((0,0), (0,0)))
+                print psi.shape
+                shape = psi.shape[0]
+                x = np.arange(int(-0.5*shape)*dx, int(0.5*shape)*dx, dx)
+                print shape, x.shape[0]
+                
+                upper_idx = (shape * gobbler - 1).astype(int)
+                lower_idx = shape - upper_idx
+                
+                kx = x * 2.0 * np.pi / (x.shape[0] * (x[1] - x[0]) * (x[1] - x[0]))
+                kxc = kx#[lower_idx:upper_idx]
+
+                y = np.arange(int(-0.5*shape)*dx, int(0.5*shape)*dx, dx)
+                print y.shape[0]
+                ky = y * 2.0 * np.pi / (y.shape[0] * (y[1] - y[0]) * (y[1] - y[0]))
+                kyc = ky#[lower_idx:upper_idx]
+                
+                dkx = kxc[1] - kxc[0]
+                dky = kyc[1] - kyc[0]
+
+                ft_fullest = np.fft.fftshift(np.fft.fft2(psi))
+                ft_full = np.abs(ft_fullest)**2
                 full = ft_full.shape[0]
                 half = np.ceil(full / 2.0)
                 ft_left = ft_full[:, :int(half)]
                 ft_right = ft_full[:, int(half):]
                 kycl, kycr = kyc[:int(half)], kyc[int(half):]
-                
-                print "outputting FFT"
-                np.savetxt('fft.txt', ft_full, delimiter=',')
                 
                 print "Calculating asymmetry and rotation angle..."
                 p_l = np.sum(ft_left) * dkx * dky
@@ -255,13 +281,17 @@ elif len(shape) == 2:
                     ", and angle of momentum max is " + str(angle * 180 / np.pi) +\
                       " degrees. Now plotting full spectrum"
 
+                print "outputting FFT"
+                np.savetxt('fft.txt', ft_full, delimiter=',')
+                np.savetxt('fftcomplex.txt', ft_fullest.view(float))
+                
                 dataft = plt.imshow(
                 #np.sqrt(ft_full),
                 ft_full.transpose(),
                 cmap='viridis',
                 origin='lower',
-                # norm=LogNorm(vmin=1e-5),
-                vmin=4,vmax=16,
+                # norm=LogNorm(vmin=1e-8),
+                vmin=10,vmax=16.5,
                 extent=[kx.min(), kx.max(),
                         ky.min(), ky.max()])
 
@@ -280,9 +310,9 @@ elif len(shape) == 2:
             plb.xlim([-10, 10])
             plb.ylim([-10, 10])
             plt.colorbar()
-            fig.savefig("figs/2d_fft_cutlin" + str(i).zfill(8) + "_full.png")
-            plb.xlim([-2, 2])
-            plb.ylim([-2, 2])
-            fig.savefig("figs/2d_fft_cutlin" + str(i).zfill(8) + ".png")
+            fig.savefig("figs/2d_fft_cut_lin" + str(i).zfill(8) + "_full.png")
+            plb.xlim([-3, 3])
+            plb.ylim([-3, 3])
+            fig.savefig("figs/2d_fft_cut_lin" + str(i).zfill(8) + ".png")
             plt.clf()
         
