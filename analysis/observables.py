@@ -167,7 +167,7 @@ for elec_idx in range(num_electrons):
                 "dipole_acceleration_" + str(elec_idx) + "_" + str(dim_idx)][
                     1:len(pulses["field_" + str(dim_idx)]
                           [checkpoint_frequency::checkpoint_frequency]) + 1]
-            data = data * np.blackman(data.shape[0])
+            # data = data * np.blackman(data.shape[0])
             padd2 = 2**np.ceil(np.log2(data.shape[0] * 4))
             paddT = np.max(time) * padd2 / data.shape[0]
             dH = 2 * np.pi / paddT / energy
@@ -188,8 +188,8 @@ plt.ylabel("HHG Spectrum (a.u.)")
 plt.title("HHG Spectrum")
 plt.legend()
 x_min = 0
-x_max = 20
-plt.xticks(np.arange(x_min, x_max + 1, 1.0))
+x_max = 40
+plt.xticks(np.arange(x_min + 1, x_max + 1, 2.0))
 plt.xlim([x_min, x_max])
 plt.ylim([1e-7, 1])
 plt.grid(True, which='both')
@@ -537,14 +537,14 @@ plt.imshow(
     cmap='viridis',
     origin='lower',
     interpolation='none',
-    norm=LogNorm(vmax=5e-4, vmin=1e-6))
+    norm=LogNorm(vmax=grid_data[2:].max(), vmin=grid_data[2:].max() / 1e3))
 for val in np.arange(-0.5, grid_data.shape[1], 1):
     plt.axvline(val, c='w')
-for val in np.arange(-0.5, grid_data.shape[0]-1, 1):
+for val in np.arange(-0.5, grid_data.shape[0] - 1, 1):
     plt.axhline(val, c='w')
 ax = plt.gca()
 ax.set_xticks(np.arange(0, grid_data.shape[1], 1))
-ax.set_yticks(np.arange(0, grid_data.shape[0]-1, 1))
+ax.set_yticks(np.arange(0, grid_data.shape[0] - 1, 1))
 ax.set_xticklabels(np.arange(0, grid_data.shape[1], 1))
 ax.set_yticklabels(np.arange(1, grid_data.shape[0], 1))
 #ax.grid(color='w', linestyle='-', linewidth=2)

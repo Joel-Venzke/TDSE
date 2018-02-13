@@ -1,22 +1,29 @@
 from mpi4py import MPI
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
 import h5py
 from matplotlib.colors import LogNorm
 from obspy.signal.tf_misfit import cwt
+
+font = {'size': 18}
+
+matplotlib.rc('font', **font)
 
 comm = MPI.COMM_WORLD
 size = comm.Get_size()
 rank = comm.Get_rank()
 
 w_0 = 0.057
-ground_state = np.abs(-0.518536)
-min_harm = 4
-max_harm = 14
+ground_state = np.abs(-0.90292)
+min_harm = 12
+max_harm = 46
 
-w_list = range(1, 100)
+w_list = range(3, 100, 5)
 w_list += range(100, 1000, 100)
 w_list += list(10**np.arange(3, 5))
+
+# w_list = range(53, 54)
 
 v_max_list = 5 * 10.0**np.arange(-3, -4, -1)
 v_min_list = 1 * 10.0**np.arange(-4, -5, -1)
@@ -72,21 +79,86 @@ for scale_type in ["lin"]:
             plot_data = np.abs(scalogram)
             plot_data[plot_data < min_val] = min_val
             plt.contourf(
-                x, y, plot_data, contour_vals, cmap='viridis', norm=LogNorm())
+                x,
+                y,
+                plot_data,
+                contour_vals,
+                cmap='viridis',
+                norm=LogNorm(),
+                rasterized=True)
         else:
             exit("scale fail")
-        plt.plot(pulse_time, state_shift / w_0, 'r-')
-        plt.plot(pulse_time, (state_shift - 0.125544) / w_0, 'w-')
-        plt.plot(pulse_time, (state_shift - 0.0557645) / w_0, 'w-')
-        plt.plot(pulse_time, (state_shift - 0.031348) / w_0, 'w-')
-        plt.xlabel("Time (a.u)")
-        plt.ylabel("Harmonic Order")
+        # plt.plot(pulse_time, state_shift / w_0, 'r-')
+        # plt.plot(pulse_time, (state_shift - 0.1276) / w_0, 'w-')
+        # plt.plot(pulse_time, (state_shift - 0.0564246) / w_0, 'w-')
+        # plt.plot(pulse_time, (state_shift - 0.0316303) / w_0, 'w-')
+        plt.text(
+            100, (state_shift[0] - 0.1276) / w_0 - 0.5,
+            "2p",
+            color='w',
+            fontsize=12)
+        plt.text(
+            100, (state_shift[0] - 0.0564246) / w_0 - 0.5,
+            "3p",
+            color='w',
+            fontsize=12)
+        plt.text(
+            100, (state_shift[0] - 0.0316303) / w_0 - 0.5,
+            "4p",
+            color='w',
+            fontsize=12)
+        plt.text(
+            100, (state_shift[0]) / w_0 + 0.2, "$I_p$", color='r', fontsize=12)
+        # plt.text(0.0, state_shift -0.0564246, "$n=2$")
+        # plt.text(0.0, state_shift / w_0, "$n=I_p$")
+        ax = plt.gca()
+        plt.xlabel("time (a.u)")
+        plt.ylabel("harmonic order")
         plt.yticks(range(1, max_harm + 1, 2))
         plt.ylim(y.min(), y.max())
         plt.colorbar()
         plt.grid(c='gray', ls='--')
+        plt.tight_layout()
         if scale_type == "lin":
             plt.savefig(str(num).zfill(6) + "_lin_gird.png")
         elif scale_type == "log":
             plt.savefig(str(num).zfill(6) + "_log_gird.png")
+        plt.close()
+
+        plt.pcolormesh(x, y, np.angle(scalogram), cmap='RdYlBu')
+        plt.plot(pulse_time, state_shift / w_0, 'r-')
+        plt.plot(pulse_time, (state_shift - 0.1276) / w_0, 'w-')
+        plt.plot(pulse_time, (state_shift - 0.0564246) / w_0, 'w-')
+        plt.plot(pulse_time, (state_shift - 0.0316303) / w_0, 'w-')
+        plt.text(
+            100, (state_shift[0] - 0.1276) / w_0 - 0.5,
+            "2p",
+            color='w',
+            fontsize=12)
+        plt.text(
+            100, (state_shift[0] - 0.0564246) / w_0 - 0.5,
+            "3p",
+            color='w',
+            fontsize=12)
+        plt.text(
+            100, (state_shift[0] - 0.0316303) / w_0 - 0.5,
+            "4p",
+            color='w',
+            fontsize=12)
+        plt.text(
+            100, (state_shift[0]) / w_0 + 0.2, "$I_p$", color='r', fontsize=12)
+        # plt.text(0.0, state_shift -0.0564246, "$n=2$")
+        # plt.text(0.0, state_shift / w_0, "$n=I_p$")
+        ax = plt.gca()
+        plt.xlabel("time (a.u)")
+        plt.ylabel("harmonic order")
+        plt.yticks(range(1, max_harm + 1, 2))
+        plt.ylim(y.min(), y.max())
+        plt.colorbar()
+        plt.grid(c='gray', ls='--')
+        plt.tight_layout()
+        if scale_type == "lin":
+            plt.savefig(str(num).zfill(6) + "_lin_phase.png")
+        elif scale_type == "log":
+            plt.savefig(str(num).zfill(6) + "_log_phase.png")
         plt.close()

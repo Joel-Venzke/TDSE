@@ -4,6 +4,8 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import h5py
 
+# f = h5py.File("Observables.h5", "r")
+# p = f
 f = h5py.File("TDSE.h5", "r")
 p = h5py.File("Pulse.h5", "r")
 pulses = p["Pulse"]
@@ -75,6 +77,9 @@ for pulse_idx in range(num_pulses):
                                + str(pulse_idx) + "_" + str(dim_idx)][:],
                         f["Parameters"]["delta_t"][0]) * 7.2973525664e-3,
             label="Pulse " + str(pulse_idx) + " Dim " + str(dim_idx))
+        print(p_time[2] - p_time[1]) * ((-1.0 * np.gradient(
+            pulses["Pulse_value_" + str(pulse_idx) + "_" + str(dim_idx)][:], f[
+                "Parameters"]["delta_t"][0]) * 7.2973525664e-3)**2).sum()
 plt.xlabel("Time (a.u.)")
 plt.ylabel("Field (a.u.)")
 plt.title("Pulses")
@@ -105,7 +110,7 @@ plt.axvline(x=grid_max, color='r')
 plt.ylabel("Field Spectrum (arb)")
 plt.xlabel("$\omega$ (a.u.)")
 plt.title("Field Spectrum")
-plt.xlim([0, grid_max * 3.0])
+plt.xlim([0, grid_max * 8.0])
 plt.legend()
 fig.savefig("figs/Spectrum.png")
-print "Omega Error (A vs E):", grid_max - energy
+print "Omega Error (A vs E):", grid_max - energy, grid_max

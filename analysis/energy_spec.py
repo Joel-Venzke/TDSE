@@ -39,9 +39,9 @@ spectrum = np.zeros(spectrum_k.shape)
 # font = {'size': 18}
 # matplotlib.rc('font', **font)
 fig = plt.figure()
-for i, psi in enumerate(psi_value[-2:]):
-    if i > 0:  # the zeroth wave function is the guess and not relevant
-        print "plotting", i
+for plot_idx, psi in enumerate(psi_value[-2:]):
+    if plot_idx > 0:  # the zeroth wave function is the guess and not relevant
+        print "plotting", plot_idx
         # reshape data
         psi = psi[:, 0] + 1j * psi[:, 1]
         psi.shape = tuple(shape)
@@ -78,8 +78,9 @@ for i, psi in enumerate(psi_value[-2:]):
                     spectrum[-1] = (spectrum[-1] + spectrum[-2]) / 2.0
                     index = np.argmax(np.abs(spectrum))
                     print "Max smooth k:", spectrum_k[
-                        index], "Max smooth w:", spectrum_w[index], np.sum(
-                            np.abs(spectrum_old - spectrum))
+                        index], "Max smooth w:", spectrum_w[index], spectrum_w[
+                            index
+                            - 1], np.sum(np.abs(spectrum_old - spectrum))
                     plt.axvline(x=spectrum_w[index], ls='--', c='b')
                     # if smooth_idx > 4:
                     plt.plot(spectrum_w, spectrum, label=str(smooth_idx + 1))
