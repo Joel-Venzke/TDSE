@@ -15,8 +15,9 @@ class Hamiltonian : protected Utils
   PetscInt *num_x;
   PetscInt num_psi;
   PetscInt num_psi_build;
-  double *z;         /* atomic number of each nuclei */
-  double **location; /* location of each nuclei */
+  double *z;           /* atomic number of each nuclei */
+  double **location;   /* location of each nuclei */
+  PetscInt gauge_idx;  ///< index of gauge (0 velocity, 1 length)
 
   /* SAE stuff */
   double **a;         /* SAE a for each nuclei (coefficient of exponential) */
@@ -74,6 +75,8 @@ class Hamiltonian : protected Utils
   dcomp GetDiagonal(std::vector< PetscInt > &idx_array, bool time_dep,
                     PetscInt time_idx, PetscInt only_dim_idx, bool ecs);
   dcomp GetKineticTerm(std::vector< PetscInt > &idx_array,
+                       PetscInt only_dim_idx, bool ecs);
+  dcomp GetLengthGauge(std::vector< PetscInt > &idx_array, PetscInt time_idx,
                        PetscInt only_dim_idx, bool ecs);
   dcomp GetNucleiTerm(std::vector< PetscInt > &idx_array);
   dcomp GetElectronElectronTerm(std::vector< PetscInt > &idx_array);

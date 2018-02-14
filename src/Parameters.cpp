@@ -83,6 +83,21 @@ void Parameters::Setup(std::string file_name)
   {
     state_solver_idx = 3;
   }
+
+  gauge = data["gauge"];
+  if (gauge == "Velocity")
+  {
+    gauge_idx = 0;
+  }
+  else if (gauge == "Length")
+  {
+    gauge_idx = 1;
+  }
+  else
+  {
+    gauge_idx = -1;
+  }
+
   start_state = data["start_state"];
   if (state_solver_idx != 2)
   {
@@ -640,6 +655,14 @@ void Parameters::Validate()
     err_str += "\"\nvalid solvers are \"File\", \"SLEPC\", and \"Power\"\n";
   }
 
+  if (gauge_idx == -1)
+  {
+    error_found = true;
+    err_str += "\nInvalid gauge: \"";
+    err_str += gauge;
+    err_str += "\"\nvalid gauges are \"Velocity\", and \"Length\"\n";
+  }
+
   if (start_state >= num_states)
   {
     error_found = true;
@@ -716,6 +739,8 @@ double Parameters::GetTol() { return tol; }
 PetscInt Parameters::GetStateSolverIdx() { return state_solver_idx; }
 
 std::string Parameters::GetStateSolver() { return state_solver; }
+
+PetscInt Parameters::GetGaugeIdx() { return gauge_idx; }
 
 PetscInt Parameters::GetPropagate() { return propagate; }
 

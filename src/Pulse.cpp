@@ -23,6 +23,7 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p)
 
   pulse_shape_idx = p.pulse_shape_idx.get();
   gaussian_sigma  = 5.0;
+  gauge_idx       = p.GetGaugeIdx();
   power_on        = p.power_on.get();
   power_off       = p.power_off.get();
   cycles_on       = p.cycles_on.get();
@@ -482,6 +483,35 @@ void Pulse::InitializeField()
         field[dim_idx][time_idx] += pulse_value[pulse_idx][dim_idx][time_idx];
       }
     }
+  }
+  /* Calculate the E field from A by E= -1/c * (dA/dt)*/
+  if (gauge_idx == 1)
+  {
+    /* Don't overwrite field until calculation is done */
+    double* field_tmp = new double[max_pulse_length];
+    for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+    {
+      /* Forward difference for first point (-1/c)  [-1, 1, 0] (1/dt) */
+      field_tmp[0] = (field[dim_idx][1] - field[dim_idx][0]) / (delta_t * c);
+      for (PetscInt time_idx = 1; time_idx < max_pulse_length - 1; ++time_idx)
+      {
+        /* calculate (-1/c)  [-1/2, 0, 1/2] (1/dt) */
+        field_tmp[time_idx] =
+            (field[dim_idx][time_idx - 1] - field[dim_idx][time_idx + 1]) /
+            (2 * delta_t * c);
+      }
+      /* Backward difference for first point (-1/c)  [0, -1, 1] (1/dt) */
+      field_tmp[max_pulse_length - 1] = (field[dim_idx][max_pulse_length - 2] -
+                                         field[dim_idx][max_pulse_length - 1]) /
+                                        (delta_t * c);
+
+      /* overwrite field with the E field */
+      for (PetscInt time_idx = 0; time_idx < max_pulse_length; ++time_idx)
+      {
+        field[dim_idx][time_idx] = field_tmp[time_idx];
+      }
+    }
+    delete[] field_tmp;
   }
 }
 

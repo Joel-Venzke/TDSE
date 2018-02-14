@@ -850,6 +850,8 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
     WriteObject(p.GetTol(), "/Parameters/tol", "Error tolerance in psi");
     WriteObject(p.GetStateSolverIdx(), "/Parameters/state_solver_idx",
                 "Index of solver: File:0, ITP:1, Power:2");
+    WriteObject(p.GetGaugeIdx(), "/Parameters/gauge_idx",
+                "Index of solver: Velocity:0, Length:1");
     WriteObject(num_pulses, "/Parameters/num_pulses",
                 "The number of pulses from the input file");
     for (int pulse_idx = 0; pulse_idx < p.GetNumPulses(); ++pulse_idx)

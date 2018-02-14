@@ -11,6 +11,7 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
   num_x                 = w.GetNumX();
   num_psi               = w.GetNumPsi();
   num_psi_build         = w.GetNumPsiBuild();
+  gauge_idx             = p.GetGaugeIdx();
   delta_x_min           = p.delta_x_min.get();
   delta_x_min_end       = p.delta_x_min_end.get();
   delta_x_max           = p.delta_x_max.get();
@@ -450,7 +451,7 @@ dcomp Hamiltonian::GetOffDiagonal(std::vector< PetscInt >& idx_array,
         if (diff_array[elec_idx * num_dims + dim_idx] != 0)
         {
           /* DONT TOUCH FIELD WITH ECS */
-          if (time_dep) /* Time dependent matrix */
+          if (time_dep and gauge_idx == 0) /* Time dependent matrix */
           {
             /* DONT TOUCH FIELD WITH ECS */
             /* Polarization vector for linear polarization */
@@ -580,6 +581,10 @@ dcomp Hamiltonian::GetDiagonal(std::vector< PetscInt >& idx_array,
   dcomp diagonal(0.0, 0.0);
   /* kinetic term */
   diagonal += GetKineticTerm(idx_array, only_dim_idx, ecs);
+  if (time_dep and gauge_idx == 1)
+  {
+    diagonal += GetLengthGauge(idx_array, time_idx, only_dim_idx, ecs);
+  }
   /* nuclei term */
   if (only_dim_idx == -1)
   {
@@ -693,6 +698,28 @@ dcomp Hamiltonian::GetKineticTerm(std::vector< PetscInt >& idx_array,
     }
   }
   return kinetic;
+}
+
+dcomp Hamiltonian::GetLengthGauge(std::vector< PetscInt >& idx_array,
+                                  PetscInt time_idx, PetscInt only_dim_idx,
+                                  bool ecs)
+{
+  dcomp length_gauge(0.0, 0.0);
+  /* Only num_dim terms per electron since it psi is a scalar function */
+  for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
+  {
+    for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+    {
+      if (only_dim_idx == -1 or only_dim_idx == dim_idx)
+      {
+        /* E dot x */
+        length_gauge +=
+            field[dim_idx][time_idx] *
+            x_value[dim_idx][idx_array[2 * (dim_idx + elec_idx * num_dims)]];
+      }
+    }
+  }
+  return length_gauge;
 }
 
 dcomp Hamiltonian::GetNucleiTerm(std::vector< PetscInt >& idx_array)

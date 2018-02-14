@@ -39,6 +39,9 @@ class Parameters : protected Utils
   std::string state_solver;   ///< name of the solver used to get states
   PetscInt state_solver_idx;  ///< index of state solver
 
+  std::string gauge;   ///< name of the gauge used to get states
+  PetscInt gauge_idx;  ///< index of gauge (0 velocity, 1 length)
+
   PetscInt propagate;       ///< 0: no propagation 1: propagation
   PetscInt free_propagate;  ///< How many free propagation steps (-1 means till
                             /// norm is converged)
@@ -122,6 +125,7 @@ class Parameters : protected Utils
   double GetTol();
   PetscInt GetStateSolverIdx();
   std::string GetStateSolver();
+  PetscInt GetGaugeIdx();
 
   PetscInt GetPropagate();
   PetscInt GetFreePropagate();
