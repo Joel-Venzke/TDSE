@@ -473,14 +473,23 @@ void Wavefunction::LoadPsi(std::string file_name, PetscInt num_states,
 
   /* Open File */
   viewer_file.Open("r");
-
+  Vec psi_temp;
+  VecDuplicate(psi, &psi_temp);
+  ierr = PetscObjectSetName((PetscObject)psi_temp, "psi");
   /* Read psi */
+  // viewer_file.SetTime(return_state_idx);
+  // viewer_file.ReadObject(psi);
   viewer_file.SetTime(return_state_idx);
-  viewer_file.ReadObject(psi);
+  viewer_file.ReadObject(psi_temp);
+  VecCopy(psi_temp, psi);
+
+  viewer_file.SetTime(return_state_idx + 1);
+  viewer_file.ReadObject(psi_temp);
+  VecAXPY(psi, 1.0, psi_temp);
 
   /* Normalize */
   Normalize(psi, 0.0);
-
+  VecDestroy(&psi_temp);
   /* Close file */
   viewer_file.Close();
 }
@@ -635,7 +644,7 @@ void Wavefunction::CreateGrid()
         else if (std::abs(x_value[dim_idx][x_idx + 1]) <
                  delta_x_max_start[dim_idx])
         {
-          s1        = std::sin(w * (std::abs(x_value[dim_idx][x_idx + 1]) -
+          s1 = std::sin(w * (std::abs(x_value[dim_idx][x_idx + 1]) -
                              delta_x_min_end[dim_idx]));
           current_x = x_value[dim_idx][x_idx + 1] -
                       (amplitude * s1 * s1 + delta_x_min[dim_idx]);

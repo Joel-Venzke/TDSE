@@ -149,6 +149,8 @@ elif len(shape) == 2:
             else:
                 plt.xlabel("X-axis (a.u.)")
                 plt.ylabel("Y-axis  (a.u.)")
+                plt.xlim([-15, 15])
+                plt.ylim([-15, 15])
             # plt.axis('off')
             plt.colorbar()
             fig.savefig("figs/Wave_" + str(i).zfill(8) + ".png")
