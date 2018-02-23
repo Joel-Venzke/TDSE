@@ -4,9 +4,15 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import h5py
 from matplotlib.colors import LogNorm
+f = None
+p = None
 
-f = h5py.File("TDSE.h5", "r")
-p = h5py.File("Pulse.h5", "r")
+try:
+    f = h5py.File("TDSE.h5", "r")
+    p = h5py.File("Pulse.h5", "r")
+except:
+    f = h5py.File("Observables.h5", "r")
+    p = f
 observables = f["Observables"]
 pulses = p["Pulse"]
 p_time = pulses["time"][:]
@@ -159,6 +165,7 @@ plt.close(fig)
 print "Plotting HHG Spectrum"
 fig = plt.figure(figsize=(24, 18), dpi=80)
 energy = f["Parameters"]["energy"][0]
+energy = 0.057
 for elec_idx in range(num_electrons):
     for dim_idx in range(num_dims):
         if (not (dim_idx == 0
@@ -188,10 +195,10 @@ plt.ylabel("HHG Spectrum (a.u.)")
 plt.title("HHG Spectrum")
 plt.legend()
 x_min = 0
-x_max = 40
+x_max = 23
 plt.xticks(np.arange(x_min + 1, x_max + 1, 2.0))
 plt.xlim([x_min, x_max])
-plt.ylim([1e-7, 1])
+plt.ylim([1e-5, 1])
 plt.grid(True, which='both')
 plt.tight_layout()
 fig.savefig("figs/HHG_Spectrum.png")
@@ -352,19 +359,27 @@ for zero in get_field_zeros(pulses):
 plot_time = np.array(plot_time)
 plot_data = np.array(plot_data)
 
-fig = plt.figure()
+font = {'size': 22}
+
+matplotlib.rc('font', **font)
+fig = plt.figure(figsize=(12, 9), dpi=80)
 for state_number in range(data.shape[1]):
-    plt.semilogy(
-        plot_time,
-        plot_data[:, state_number],
-        marker='o',
-        label=state_labels[state_number],
-        color=colors[state_number % len(colors)],
-        linestyle=linestyles[(state_number / len(colors)) % len(linestyles)])
+    if state_number in [1, 2, 3, 4, 5, 28, 29, 30, 31, 32, 33, 34, 35]:
+        plot_idx = np.argmin(
+            np.abs(
+                np.array([1, 2, 3, 4, 5, 28, 29, 30, 31, 32, 33, 34, 35]) -
+                state_number))
+        plt.semilogy(
+            w_time,
+            data[:, state_number],
+            marker='x',
+            label=state_labels[state_number],
+            color=colors[plot_idx % len(colors)],
+            linestyle=linestyles[(plot_idx / len(colors)) % len(linestyles)])
 
 plt.ylabel("Population")
 plt.xlabel("Time (a.u.)")
-plt.ylim([1e-20, 10])
+plt.ylim([1e-15, 1])
 plt.legend(loc=2)
 fig.savefig("figs/Projection_vs_time.png")
 plt.clf()
@@ -530,38 +545,36 @@ def grid_by_l_and_n(data):
     return ret_val
 
 
-grid_data = grid_by_l_and_n(data)[:-1]
-fig = plt.figure()
-plt.imshow(
-    grid_data[1:],
-    cmap='viridis',
-    origin='lower',
-    interpolation='none',
-    norm=LogNorm(vmax=grid_data[2:].max(), vmin=grid_data[2:].max() / 1e3))
-for val in np.arange(-0.5, grid_data.shape[1], 1):
-    plt.axvline(val, c='w')
-for val in np.arange(-0.5, grid_data.shape[0] - 1, 1):
-    plt.axhline(val, c='w')
-ax = plt.gca()
-ax.set_xticks(np.arange(0, grid_data.shape[1], 1))
-ax.set_yticks(np.arange(0, grid_data.shape[0] - 1, 1))
-ax.set_xticklabels(np.arange(0, grid_data.shape[1], 1))
-ax.set_yticklabels(np.arange(1, grid_data.shape[0], 1))
-#ax.grid(color='w', linestyle='-', linewidth=2)
-plt.xlabel("l value")
-plt.ylabel("n value")
-cbar = plt.colorbar()
-cbar.set_label('Population')
-fig.savefig("figs/Projection_heat.png")
-plt.clf()
-plt.close(fig)
+# grid_data = grid_by_l_and_n(data)[:-1]
+# fig = plt.figure()
+# plt.imshow(
+#     grid_data[1:],
+#     cmap='viridis',
+#     origin='lower',
+#     interpolation='none',
+#     # norm=LogNorm(vmax=2e-7, vmin=2e-9))
+#     norm=LogNorm(vmax=grid_data[2:].max(), vmin=grid_data[2:].max() / 1e3))
+# for val in np.arange(-0.5, grid_data.shape[1], 1):
+#     plt.axvline(val, c='w')
+# for val in np.arange(-0.5, grid_data.shape[0] - 1, 1):
+#     plt.axhline(val, c='w')
+# ax = plt.gca()
+# ax.set_xticks(np.arange(0, grid_data.shape[1], 1))
+# ax.set_yticks(np.arange(0, grid_data.shape[0] - 1, 1))
+# ax.set_xticklabels(np.arange(0, grid_data.shape[1], 1))
+# ax.set_yticklabels(np.arange(1, grid_data.shape[0], 1))
+# #ax.grid(color='w', linestyle='-', linewidth=2)
+# plt.xlabel("l value")
+# plt.ylabel("n value")
+# cbar = plt.colorbar()
+# cbar.set_label('Population')
+# fig.savefig("figs/Projection_heat.png")
+# plt.clf()
+# plt.close(fig)
 
 # plot populations by n
 shells = get_shells(plot_data.shape[1])
 n_max = len(shells)
-font = {'family': 'normal', 'weight': 'bold', 'size': 22}
-
-matplotlib.rc('font', **font)
 for n_idx, idx in enumerate(shells):
     fig = plt.figure()
     plt.semilogy(range(data.shape[1]), data[-1, :], 'o-')

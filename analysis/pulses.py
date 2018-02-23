@@ -15,6 +15,7 @@ num_electrons = f["Parameters"]["num_electrons"][0]
 num_pulses = f["Parameters"]["num_pulses"][0]
 checkpoint_frequency = f["Parameters"]["write_frequency_observables"][0]
 energy = f["Parameters"]["energy"][0]
+# energy = 0.057
 
 # Field Plot
 print "Plotting A Field"
@@ -56,30 +57,82 @@ for pulse_idx in range(num_pulses):
             p_time,
             pulses["Pulse_value_" + str(pulse_idx) + "_" + str(dim_idx)][:],
             label="Pulse " + str(pulse_idx) + " Dim " + str(dim_idx))
+        plt.axhline(
+            np.max(pulses["Pulse_envelope_" + str(pulse_idx)][:]) / 2.0)
+        plt.axvline(p_time[np.argmin(
+            np.abs(
+                np.max(pulses["Pulse_envelope_" + str(pulse_idx)][:]) / 2.0 -
+                pulses["Pulse_envelope_" + str(pulse_idx)][:]))])
+        plt.axvline(p_time[p_time.shape[0] / 2 + np.argmin(
+            np.abs(
+                np.max(pulses["Pulse_envelope_" + str(pulse_idx)][:]) / 2.0 -
+                pulses["Pulse_envelope_"
+                       + str(pulse_idx)][p_time.shape[0] / 2:]))])
+        plt.axvline(p_time[-1] / 2.0)
+        print(p_time[2] - p_time[1]) * (
+            pulses["Pulse_value_"
+                   + str(pulse_idx) + "_" + str(dim_idx)][:]).sum()
+        print p_time[np.argmin(
+            np.abs(
+                np.max(pulses["Pulse_envelope_" + str(pulse_idx)][:]) / 2.0 -
+                pulses["Pulse_envelope_"
+                       + str(pulse_idx)][:]))] - p_time[-1] / 2.0
 plt.xlabel("Time (a.u.)")
 plt.ylabel("Field (a.u.)")
 plt.title("Pulses")
 plt.legend()
 fig.savefig("figs/Pulses_A_field.png")
 
+print "Plotting Envelope derivatives"
+fig = plt.figure()
+for pulse_idx in range(num_pulses):
+    plt.plot(p_time,
+             np.gradient(pulses["Pulse_envelope_" + str(pulse_idx)][:],
+                         f["Parameters"]["delta_t"][0]), 'r--')
+    plt.plot(p_time, pulses["Pulse_envelope_" + str(pulse_idx)][:] /
+             np.max(pulses["Pulse_envelope_" + str(pulse_idx)][:]), 'r--')
+plt.xlabel("Time (a.u.)")
+plt.ylabel("Field (a.u.)")
+plt.title("Pulses")
+fig.savefig("figs/Pulses_Envelope_Derivative.png")
+
 print "Plotting Pulses E"
 fig = plt.figure()
 for pulse_idx in range(num_pulses):
     plt.plot(p_time, pulses["Pulse_envelope_" + str(pulse_idx)][:] *
              7.2973525664e-3 * f["Parameters"]["energy"][pulse_idx], 'r--')
-    plt.plot(p_time, -1.0 * pulses["Pulse_envelope_" + str(pulse_idx)][:] *
-             7.2973525664e-3 * f["Parameters"]["energy"][pulse_idx], 'r--')
-    for dim_idx in range(num_dims):
-        plt.plot(
-            p_time,
-            -1.0 *
-            np.gradient(pulses["Pulse_value_"
-                               + str(pulse_idx) + "_" + str(dim_idx)][:],
-                        f["Parameters"]["delta_t"][0]) * 7.2973525664e-3,
-            label="Pulse " + str(pulse_idx) + " Dim " + str(dim_idx))
-        print(p_time[2] - p_time[1]) * ((-1.0 * np.gradient(
-            pulses["Pulse_value_" + str(pulse_idx) + "_" + str(dim_idx)][:], f[
-                "Parameters"]["delta_t"][0]) * 7.2973525664e-3)**2).sum()
+    plt.plot(
+        p_time,
+        -1.0 * pulses["Pulse_envelope_" + str(pulse_idx)][:] * 7.2973525664e-3
+        * f["Parameters"]["energy"][pulse_idx],
+        'r--',
+        label="$wA/c$ Envelope")
+
+    plt.plot(
+        p_time,
+        -1.0 * np.gradient(pulses["Pulse_value_" + str(pulse_idx) + "_1"][:],
+                           f["Parameters"]["delta_t"][0]) * 7.2973525664e-3,
+        label="E")
+
+    plt.plot(
+        p_time,
+        pulses["Pulse_value_" + str(pulse_idx) + "_1"][:] * 7.2973525664e-3 *
+        f["Parameters"]["energy"][pulse_idx],
+        label="$wA/c$")
+    # for dim_idx in range(num_dims):
+# plt.plot(
+#     p_time,
+#     -1.0 *
+#     np.gradient(pulses["Pulse_value_"
+#                        + str(pulse_idx) + "_" + str(dim_idx)][:],
+#                 f["Parameters"]["delta_t"][0]) * 7.2973525664e-3,
+#     label="Pulse " + str(pulse_idx) + " Dim " + str(dim_idx))
+# print(p_time[2] - p_time[1]) * ((-1.0 * np.gradient(
+#     pulses["Pulse_value_" + str(pulse_idx) + "_" + str(dim_idx)][:], f[
+#         "Parameters"]["delta_t"][0]) * 7.2973525664e-3)**2).sum()
+# print(p_time[2] - p_time[1]) * ((-1.0 * np.gradient(
+#     pulses["Pulse_value_" + str(pulse_idx) + "_" + str(dim_idx)][:], f[
+#         "Parameters"]["delta_t"][0]) * 7.2973525664e-3)).sum()
 plt.xlabel("Time (a.u.)")
 plt.ylabel("Field (a.u.)")
 plt.title("Pulses")
@@ -90,9 +143,24 @@ fig.savefig("figs/Pulses_E_field.png")
 print "Plotting Spectrum"
 grid_max = 0.0
 fig = plt.figure()
+energy = f["Parameters"]["energy"][0]
 for dim_idx in range(num_dims):
     data = -1.0 * np.gradient(pulses["field_" + str(dim_idx)][:],
                               f["Parameters"]["delta_t"][0]) * 7.2973525664e-3
+    if np.max(data) > 1e-10:
+        data_fft = np.absolute(
+            np.fft.fft(
+                np.lib.pad(
+                    data, (200 * data.shape[0], 200 * data.shape[0]),
+                    'constant',
+                    constant_values=(0.0, 0.0))))
+        spec_time = np.arange(data_fft.shape[0]) * 2.0 * np.pi / (
+            data_fft.shape[0] * (p_time[1] - p_time[0]))
+        plt.plot(spec_time, data_fft / data_fft.max(), label="DFT(E)")
+        grid_max = max(spec_time[np.argmax(data_fft[:data_fft.shape[0] / 2])],
+                       grid_max)
+        print spec_time[2] - spec_time[1]
+    data = pulses["field_" + str(dim_idx)][:]
     if np.max(data) > 1e-10:
         data_fft = np.absolute(
             np.fft.fft(
@@ -102,15 +170,16 @@ for dim_idx in range(num_dims):
                     constant_values=(0.0, 0.0))))
         spec_time = np.arange(data_fft.shape[0]) * 2.0 * np.pi / (
             data_fft.shape[0] * (p_time[1] - p_time[0]))
-        plt.semilogy(spec_time, data_fft, label="field " + str(dim_idx))
-        grid_max = max(spec_time[np.argmax(data_fft[:data_fft.shape[0] / 2])],
-                       grid_max)
-plt.axvline(x=energy, color='k')
-plt.axvline(x=grid_max, color='r')
+        plt.plot(spec_time, data_fft / data_fft.max(), label="DFT(A)")
+        # grid_max = max(spec_time[np.argmax(data_fft[:data_fft.shape[0] / 2])],
+        #                grid_max)
+    # plt.axvline(x=energy, color='k')
+    # plt.axvline(x=grid_max, color='r')
 plt.ylabel("Field Spectrum (arb)")
 plt.xlabel("$\omega$ (a.u.)")
 plt.title("Field Spectrum")
-plt.xlim([0, grid_max * 8.0])
+plt.xlim([0, grid_max * 2.0])
+plt.ylim(ymin=0)
 plt.legend()
 fig.savefig("figs/Spectrum.png")
 print "Omega Error (A vs E):", grid_max - energy, grid_max

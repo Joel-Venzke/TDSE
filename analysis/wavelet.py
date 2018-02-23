@@ -15,9 +15,9 @@ size = comm.Get_size()
 rank = comm.Get_rank()
 
 w_0 = 0.057
-ground_state = np.abs(-0.90292)
-min_harm = 12
-max_harm = 46
+ground_state = np.abs(-0.507158)
+min_harm = 5
+max_harm = 16
 
 w_list = range(3, 100, 5)
 w_list += range(100, 1000, 100)
@@ -89,28 +89,26 @@ for scale_type in ["lin"]:
         else:
             exit("scale fail")
         # plt.plot(pulse_time, state_shift / w_0, 'r-')
-        # plt.plot(pulse_time, (state_shift - 0.1276) / w_0, 'w-')
-        # plt.plot(pulse_time, (state_shift - 0.0564246) / w_0, 'w-')
-        # plt.plot(pulse_time, (state_shift - 0.0316303) / w_0, 'w-')
+        # plt.plot(pulse_time, (state_shift - 0.125) / w_0, 'w-')
+        # plt.plot(pulse_time, (state_shift - 0.0556058) / w_0, 'w-')
+        # plt.plot(pulse_time, (state_shift - 0.0312736) / w_0, 'w-')
         plt.text(
-            100, (state_shift[0] - 0.1276) / w_0 - 0.5,
+            100, (state_shift[0] - 0.125) / w_0 - 0.5,
             "2p",
             color='w',
             fontsize=12)
         plt.text(
-            100, (state_shift[0] - 0.0564246) / w_0 - 0.5,
+            100, (state_shift[0] - 0.0556058) / w_0 - 0.5,
             "3p",
             color='w',
             fontsize=12)
         plt.text(
-            100, (state_shift[0] - 0.0316303) / w_0 - 0.5,
+            100, (state_shift[0] - 0.0312736) / w_0 - 0.5,
             "4p",
             color='w',
             fontsize=12)
         plt.text(
             100, (state_shift[0]) / w_0 + 0.2, "$I_p$", color='r', fontsize=12)
-        # plt.text(0.0, state_shift -0.0564246, "$n=2$")
-        # plt.text(0.0, state_shift / w_0, "$n=I_p$")
         ax = plt.gca()
         plt.xlabel("time (a.u)")
         plt.ylabel("harmonic order")
@@ -123,42 +121,4 @@ for scale_type in ["lin"]:
             plt.savefig(str(num).zfill(6) + "_lin_gird.png")
         elif scale_type == "log":
             plt.savefig(str(num).zfill(6) + "_log_gird.png")
-        plt.close()
-
-        plt.pcolormesh(x, y, np.angle(scalogram), cmap='RdYlBu')
-        plt.plot(pulse_time, state_shift / w_0, 'r-')
-        plt.plot(pulse_time, (state_shift - 0.1276) / w_0, 'w-')
-        plt.plot(pulse_time, (state_shift - 0.0564246) / w_0, 'w-')
-        plt.plot(pulse_time, (state_shift - 0.0316303) / w_0, 'w-')
-        plt.text(
-            100, (state_shift[0] - 0.1276) / w_0 - 0.5,
-            "2p",
-            color='w',
-            fontsize=12)
-        plt.text(
-            100, (state_shift[0] - 0.0564246) / w_0 - 0.5,
-            "3p",
-            color='w',
-            fontsize=12)
-        plt.text(
-            100, (state_shift[0] - 0.0316303) / w_0 - 0.5,
-            "4p",
-            color='w',
-            fontsize=12)
-        plt.text(
-            100, (state_shift[0]) / w_0 + 0.2, "$I_p$", color='r', fontsize=12)
-        # plt.text(0.0, state_shift -0.0564246, "$n=2$")
-        # plt.text(0.0, state_shift / w_0, "$n=I_p$")
-        ax = plt.gca()
-        plt.xlabel("time (a.u)")
-        plt.ylabel("harmonic order")
-        plt.yticks(range(1, max_harm + 1, 2))
-        plt.ylim(y.min(), y.max())
-        plt.colorbar()
-        plt.grid(c='gray', ls='--')
-        plt.tight_layout()
-        if scale_type == "lin":
-            plt.savefig(str(num).zfill(6) + "_lin_phase.png")
-        elif scale_type == "log":
-            plt.savefig(str(num).zfill(6) + "_log_phase.png")
         plt.close()

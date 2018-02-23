@@ -162,6 +162,7 @@ elif len(shape) == 2:
         fig.savefig("figs/" + target_name + "_log_state_" + str(i).zfill(3) +
                     ".jpg")
         plt.clf()
+        psi = np.abs(psi)
         plt.imshow(
             psi,
             cmap='viridis',
