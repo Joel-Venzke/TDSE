@@ -57,26 +57,10 @@ for pulse_idx in range(num_pulses):
             p_time,
             pulses["Pulse_value_" + str(pulse_idx) + "_" + str(dim_idx)][:],
             label="Pulse " + str(pulse_idx) + " Dim " + str(dim_idx))
-        plt.axhline(
-            np.max(pulses["Pulse_envelope_" + str(pulse_idx)][:]) / 2.0)
-        plt.axvline(p_time[np.argmin(
-            np.abs(
-                np.max(pulses["Pulse_envelope_" + str(pulse_idx)][:]) / 2.0 -
-                pulses["Pulse_envelope_" + str(pulse_idx)][:]))])
-        plt.axvline(p_time[p_time.shape[0] / 2 + np.argmin(
-            np.abs(
-                np.max(pulses["Pulse_envelope_" + str(pulse_idx)][:]) / 2.0 -
-                pulses["Pulse_envelope_"
-                       + str(pulse_idx)][p_time.shape[0] / 2:]))])
-        plt.axvline(p_time[-1] / 2.0)
         print(p_time[2] - p_time[1]) * (
             pulses["Pulse_value_"
                    + str(pulse_idx) + "_" + str(dim_idx)][:]).sum()
-        print p_time[np.argmin(
-            np.abs(
-                np.max(pulses["Pulse_envelope_" + str(pulse_idx)][:]) / 2.0 -
-                pulses["Pulse_envelope_"
-                       + str(pulse_idx)][:]))] - p_time[-1] / 2.0
+
 plt.xlabel("Time (a.u.)")
 plt.ylabel("Field (a.u.)")
 plt.title("Pulses")
@@ -151,7 +135,7 @@ for dim_idx in range(num_dims):
         data_fft = np.absolute(
             np.fft.fft(
                 np.lib.pad(
-                    data, (200 * data.shape[0], 200 * data.shape[0]),
+                    data, (10 * data.shape[0], 10 * data.shape[0]),
                     'constant',
                     constant_values=(0.0, 0.0))))
         spec_time = np.arange(data_fft.shape[0]) * 2.0 * np.pi / (
@@ -178,7 +162,7 @@ for dim_idx in range(num_dims):
 plt.ylabel("Field Spectrum (arb)")
 plt.xlabel("$\omega$ (a.u.)")
 plt.title("Field Spectrum")
-plt.xlim([0, grid_max * 2.0])
+plt.xlim([0, grid_max * 8.0])
 plt.ylim(ymin=0)
 plt.legend()
 fig.savefig("figs/Spectrum.png")

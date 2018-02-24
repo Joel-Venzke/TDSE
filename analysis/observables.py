@@ -545,32 +545,32 @@ def grid_by_l_and_n(data):
     return ret_val
 
 
-# grid_data = grid_by_l_and_n(data)[:-1]
-# fig = plt.figure()
-# plt.imshow(
-#     grid_data[1:],
-#     cmap='viridis',
-#     origin='lower',
-#     interpolation='none',
-#     # norm=LogNorm(vmax=2e-7, vmin=2e-9))
-#     norm=LogNorm(vmax=grid_data[2:].max(), vmin=grid_data[2:].max() / 1e3))
-# for val in np.arange(-0.5, grid_data.shape[1], 1):
-#     plt.axvline(val, c='w')
-# for val in np.arange(-0.5, grid_data.shape[0] - 1, 1):
-#     plt.axhline(val, c='w')
-# ax = plt.gca()
-# ax.set_xticks(np.arange(0, grid_data.shape[1], 1))
-# ax.set_yticks(np.arange(0, grid_data.shape[0] - 1, 1))
-# ax.set_xticklabels(np.arange(0, grid_data.shape[1], 1))
-# ax.set_yticklabels(np.arange(1, grid_data.shape[0], 1))
-# #ax.grid(color='w', linestyle='-', linewidth=2)
-# plt.xlabel("l value")
-# plt.ylabel("n value")
-# cbar = plt.colorbar()
-# cbar.set_label('Population')
-# fig.savefig("figs/Projection_heat.png")
-# plt.clf()
-# plt.close(fig)
+grid_data = grid_by_l_and_n(data)[:-1]
+fig = plt.figure()
+plt.imshow(
+    grid_data[1:],
+    cmap='viridis',
+    origin='lower',
+    interpolation='none',
+    # norm=LogNorm(vmax=2e-7, vmin=2e-9))
+    norm=LogNorm(vmax=grid_data[2:].max(), vmin=grid_data[2:].max() / 1e3))
+for val in np.arange(-0.5, grid_data.shape[1], 1):
+    plt.axvline(val, c='w')
+for val in np.arange(-0.5, grid_data.shape[0] - 1, 1):
+    plt.axhline(val, c='w')
+ax = plt.gca()
+ax.set_xticks(np.arange(0, grid_data.shape[1], 1))
+ax.set_yticks(np.arange(0, grid_data.shape[0] - 1, 1))
+ax.set_xticklabels(np.arange(0, grid_data.shape[1], 1))
+ax.set_yticklabels(np.arange(1, grid_data.shape[0], 1))
+#ax.grid(color='w', linestyle='-', linewidth=2)
+plt.xlabel("l value")
+plt.ylabel("n value")
+cbar = plt.colorbar()
+cbar.set_label('Population')
+fig.savefig("figs/Projection_heat.png")
+plt.clf()
+plt.close(fig)
 
 # plot populations by n
 shells = get_shells(plot_data.shape[1])

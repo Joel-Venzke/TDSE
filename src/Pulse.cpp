@@ -22,7 +22,7 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p)
   max_pulse_length = 0; /* stores longest pulse */
 
   pulse_shape_idx = p.pulse_shape_idx.get();
-  gaussian_sigma  = 6.0;
+  gaussian_sigma  = 4.0;
   gauge_idx       = p.GetGaugeIdx();
   power_on        = p.power_on.get();
   power_off       = p.power_off.get();
