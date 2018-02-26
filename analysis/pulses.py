@@ -84,25 +84,26 @@ print "Plotting Pulses E"
 fig = plt.figure()
 for pulse_idx in range(num_pulses):
     plt.plot(p_time, pulses["Pulse_envelope_" + str(pulse_idx)][:] *
-             7.2973525664e-3 * f["Parameters"]["energy"][pulse_idx], 'r--')
+             7.2973525664e-3 * f["Parameters"]["energy"][pulse_idx], 'k')
     plt.plot(
         p_time,
         -1.0 * pulses["Pulse_envelope_" + str(pulse_idx)][:] * 7.2973525664e-3
         * f["Parameters"]["energy"][pulse_idx],
-        'r--',
-        label="$wA/c$ Envelope")
+        'k',
+        label="$\\frac{\omega}{c}\\times A(t)$ Envelope")
 
     plt.plot(
         p_time,
         -1.0 * np.gradient(pulses["Pulse_value_" + str(pulse_idx) + "_1"][:],
                            f["Parameters"]["delta_t"][0]) * 7.2973525664e-3,
+        '--',
         label="E")
 
     plt.plot(
         p_time,
         pulses["Pulse_value_" + str(pulse_idx) + "_1"][:] * 7.2973525664e-3 *
         f["Parameters"]["energy"][pulse_idx],
-        label="$wA/c$")
+        label="$\\frac{\omega}{c}\\times A(t)$")
     # for dim_idx in range(num_dims):
 # plt.plot(
 #     p_time,
@@ -135,12 +136,13 @@ for dim_idx in range(num_dims):
         data_fft = np.absolute(
             np.fft.fft(
                 np.lib.pad(
-                    data, (10 * data.shape[0], 10 * data.shape[0]),
+                    data, (300 * data.shape[0], 300 * data.shape[0]),
                     'constant',
                     constant_values=(0.0, 0.0))))
         spec_time = np.arange(data_fft.shape[0]) * 2.0 * np.pi / (
             data_fft.shape[0] * (p_time[1] - p_time[0]))
-        plt.plot(spec_time, data_fft / data_fft.max(), label="DFT(E)")
+        plt.plot(
+            spec_time, data_fft / data_fft.max(), '--', label="E($\omega$)")
         grid_max = max(spec_time[np.argmax(data_fft[:data_fft.shape[0] / 2])],
                        grid_max)
         print spec_time[2] - spec_time[1]
@@ -154,7 +156,7 @@ for dim_idx in range(num_dims):
                     constant_values=(0.0, 0.0))))
         spec_time = np.arange(data_fft.shape[0]) * 2.0 * np.pi / (
             data_fft.shape[0] * (p_time[1] - p_time[0]))
-        plt.plot(spec_time, data_fft / data_fft.max(), label="DFT(A)")
+        plt.plot(spec_time, data_fft / data_fft.max(), label="A($\omega$)")
         # grid_max = max(spec_time[np.argmax(data_fft[:data_fft.shape[0] / 2])],
         #                grid_max)
     # plt.axvline(x=energy, color='k')
@@ -162,7 +164,7 @@ for dim_idx in range(num_dims):
 plt.ylabel("Field Spectrum (arb)")
 plt.xlabel("$\omega$ (a.u.)")
 plt.title("Field Spectrum")
-plt.xlim([0, grid_max * 8.0])
+plt.xlim([0, energy * 3.0])
 plt.ylim(ymin=0)
 plt.legend()
 fig.savefig("figs/Spectrum.png")

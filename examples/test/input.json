@@ -1,5 +1,5 @@
 {
-  "delta_t": 0.005,
+  "delta_t": 0.1,
   "dimensions": [
     {"dim_size":         10.0,
     "delta_x_min":       0.1,
@@ -50,12 +50,12 @@
       "pulse_shape":   "gaussian",
       "power_on":       2.0,
       "power_off":      2.0,
-      "cycles_on":      1.0,
+      "cycles_on":      5.0,
       "cycles_plateau": 0.0,
-      "cycles_off":     1.0,
+      "cycles_off":     5.0,
       "cycles_delay":   0.0,
       "cep":            0.0,
-      "energy":         1.0,
+      "energy":         1.997,
       "intensity":      1e13}]
   }
 }

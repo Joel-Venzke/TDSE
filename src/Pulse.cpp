@@ -299,7 +299,7 @@ void Pulse::InitializePulse(PetscInt n)
     double period          = 2.0 * pi / energy[n];
     double s1;  // value of sin (x for Gaussian)
     double sn;  // sin to the nth power
-    double current_cep = cep[n] + (((int)cycles_on[n]) - cycles_on[n]);
+    double current_cep;
     double fwhm_factor = 2.0 * log(2.0);
 
     /* index that turns pulse on */
@@ -307,6 +307,8 @@ void Pulse::InitializePulse(PetscInt n)
 
     if (pulse_shape_idx[n] == 0)
     {
+      current_cep = cep[n] + (((int)cycles_on[n]) - cycles_on[n]);
+
       /* index that holds pulse at max */
       plateau_start =
           ceil(period * (cycles_on[n] + cycles_delay[n]) / (delta_t));
@@ -323,6 +325,8 @@ void Pulse::InitializePulse(PetscInt n)
     }
     else if (pulse_shape_idx[n] == 1) /* Gaussian needs sigma tails */
     {
+      current_cep = cep[n] + (((int)gaussian_sigma * cycles_on[n]) -
+                              gaussian_sigma * cycles_on[n]);
       /* index that holds pulse at max */
       plateau_start =
           ceil(period * (gaussian_sigma * cycles_on[n] + cycles_delay[n]) /
