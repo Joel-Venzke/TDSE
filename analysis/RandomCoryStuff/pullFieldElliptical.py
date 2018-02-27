@@ -21,7 +21,7 @@ period = 2 * np.pi / freq
 t1 = (p_time.max() - period) / 2
 t2 = (p_time.max() + period) / 2
 saverSize = int((t2 - t1) / dt + 1)
-central = np.zeros([num_dims + 1, saverSize - 1])
+central = np.zeros([num_dims + 1, saverSize])
 
 for dim_idx in range(num_dims):
         field[dim_idx][:] = -1.0 * np.gradient(pulses["field_" + str(dim_idx)][:],

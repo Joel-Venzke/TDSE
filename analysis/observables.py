@@ -4,6 +4,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import h5py
 from matplotlib.colors import LogNorm
+from scipy.signal import argrelmax
 
 f = h5py.File("TDSE.h5", "r")
 p = h5py.File("Pulse.h5", "r")
@@ -68,6 +69,7 @@ plt.close(fig)
 # Dipole
 print "Plotting Dipole"
 fig = plt.figure()
+
 for elec_idx in range(num_electrons):
     for dim_idx in range(num_dims):
         if (not (dim_idx == 0
@@ -77,6 +79,14 @@ for elec_idx in range(num_electrons):
                 -1.0 * observables["position_expectation_"
                                    + str(elec_idx) + "_" + str(dim_idx)][1:],
                 label="Electron " + str(elec_idx) + " Dim " + str(dim_idx))
+#dip=-1.0 * observables["position_expectation_" + str(0) + "_" + str(1)][1:]
+#arger = argrelmax(dip)
+#print str(arger)
+#print str(arger[0][0])
+
+#for i, t in enumerate(dip):
+#    if(i > 0):
+#        print str(time[arger[0][i]]-time[arger[0][i-1]])
 plt.xlabel("Time (a.u.)")
 plt.ylabel("Dipole (a.u.)")
 plt.title("Dipole Moment")

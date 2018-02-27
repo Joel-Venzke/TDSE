@@ -171,11 +171,11 @@ elif len(shape) == 2:
                 print psi.shape
 
                 i_vector = np.unravel_index(np.argmax(psi), (psi.shape[0], psi.shape[1]))
-                angle = np.arctan2(yc[i_vector[0]], xc[i_vector[1]])
+                angle = np.arctan2(yc[i_vector[1]], xc[i_vector[0]])
 
                 print "angle of position max is " + str(angle * 180 / np.pi) + \
-                        " degrees at y = " + str(yc[i_vector[0]]) + ", x = " + \
-                        str(xc[i_vector[1]])
+                        " degrees at y = " + str(yc[i_vector[1]]) + ", x = " + \
+                        str(xc[i_vector[0]])
 
             data = plt.imshow(
                 np.absolute(psi),
@@ -211,9 +211,6 @@ elif len(shape) == 2:
             y_central = saver[2][:]
             fieldTheta = np.arctan2(y_central, x_central)
 
-            # plt.plot(fieldTheta, fieldIntensity)
-            # plt.show()
-
             tol = 0.02
             r_current = 0
             theta_current = 0
@@ -228,18 +225,18 @@ elif len(shape) == 2:
                     theta_current = np.arctan2(valy, val)
                     z = np.argmin(np.abs(fieldTheta - theta_current))
                     data_adjusted[j][k] = \
-                    psi[j][k] / (saver[1][z]**2 + saver[2][z]**2 + 0j)
+                    psi[j][k] / np.sqrt(saver[1][z]**2 + saver[2][z]**2 + 0j)
 
 
-            psi = np.abs(data_adjusted)
+            psi = np.abs(data_adjusted)**2
 
             # i_vector = np.unravel_index(np.argmax(data_adjusted),
             #                     (data_adjusted.shape[0], data_adjusted.shape[1]))
             i_vector = np.unravel_index(np.argmax(psi),
                                 (psi.shape[0], psi.shape[1]))
-            print "max location is y = " + str(yc[i_vector[0]]) \
-                + "a.u., " + "x = " + str(xc[i_vector[1]]) + "\n"
-            angle = np.arctan2(yc[i_vector[0]], xc[i_vector[1]])
+            print "max location is y = " + str(yc[i_vector[1]]) \
+                + "a.u., " + "x = " + str(xc[i_vector[0]]) + "\n"
+            angle = np.arctan2(yc[i_vector[1]], xc[i_vector[0]])
             print "location max value = " + str(data_adjusted[i_vector[0]][i_vector[1]]) 
             print "angle of position max is " + str(angle * 180 / np.pi) +\
                   " degrees."
@@ -267,7 +264,7 @@ elif len(shape) == 2:
 
             print "FT adjusted cut Wavefunction"
             ft_full = np.abs(np.fft.fftshift(np.fft.fft2(data_adjusted)))**2
-            print ft_full
+            # print ft_full
             # print "cutting again"
             # r_critical = 0.2
             # alpha = 2500
@@ -282,21 +279,21 @@ elif len(shape) == 2:
             print "Calculating rotation angle..."
             i_vector = np.unravel_index(np.argmax(ft_full),
                 (ft_full.shape[0], ft_full.shape[1]))
-            print "max momentum is at k_y = " + str(kyc[i_vector[0]]) \
-                + "a.u., " + "k_x = " + str(kxc[i_vector[1]]) + "\n"
-            angle = np.arctan2(kyc[i_vector[0]], kxc[i_vector[1]])
+            print "max momentum is at k_y = " + str(kyc[i_vector[1]]) \
+                + "a.u., " + "k_x = " + str(kxc[i_vector[0]]) + "\n"
+            angle = np.arctan2(kyc[i_vector[1]], kxc[i_vector[0]])
 
             print " angle of momentum max is " + str(angle * 180 / np.pi) +\
-                  " degrees. Now plotting full spectrum"
+                  " degrees with value " + str(ft_full[i_vector[0]][i_vector[1]]) + " Now plotting full spectrum"
 
             dataft = plt.imshow(
             # np.abs(np.fft.fftshift(np.fft.fft2(data_adjusted)))
-            np.sqrt(ft_full),
+            np.sqrt(ft_full.transpose()),
             cmap='viridis',
             origin='lower',
             # norm=LogNorm(vmin=1e-3),
             # vmin=0.125,vmax=0.175,
-            vmin=10000,
+            vmin=240,
             extent=[kyc.min(), kyc.max(),
                     kxc.min(), kxc.max()])
 
