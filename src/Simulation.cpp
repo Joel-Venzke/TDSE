@@ -303,11 +303,11 @@ void Simulation::EigenSolve(PetscInt num_states, PetscInt return_state_idx)
 
   if (parameters->GetFieldMaxStates())
   {
-    h = hamiltonian->GetTotalHamiltonian(pulse->GetFieldMaxIdx(), -1, false);
+    h = hamiltonian->GetTotalHamiltonian(pulse->GetFieldMaxIdx(), false);
   }
   else
   {
-    h = hamiltonian->GetTimeIndependent(-1, false);
+    h = hamiltonian->GetTimeIndependent(false);
   }
   EPSSetOperators(eps, *(h), NULL);
   EPSSetProblemType(eps, EPS_NHEP);
@@ -443,11 +443,11 @@ void Simulation::PowerMethod(PetscInt num_states, PetscInt return_state_idx)
   {
     if (parameters->GetFieldMaxStates())
     {
-      h = hamiltonian->GetTotalHamiltonian(pulse->GetFieldMaxIdx(), -1, false);
+      h = hamiltonian->GetTotalHamiltonian(pulse->GetFieldMaxIdx(), false);
     }
     else
     {
-      h = hamiltonian->GetTimeIndependent(-1, false);
+      h = hamiltonian->GetTimeIndependent(false);
     }
     MatCopy(*(h), left, SAME_NONZERO_PATTERN);
     /* Shift by eigen value */
