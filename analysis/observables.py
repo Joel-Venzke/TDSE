@@ -165,7 +165,7 @@ plt.close(fig)
 print "Plotting HHG Spectrum"
 fig = plt.figure(figsize=(24, 18), dpi=80)
 energy = f["Parameters"]["energy"][0]
-energy = 0.057
+# energy = 0.057
 for elec_idx in range(num_electrons):
     for dim_idx in range(num_dims):
         if (not (dim_idx == 0
@@ -174,7 +174,7 @@ for elec_idx in range(num_electrons):
                 "dipole_acceleration_" + str(elec_idx) + "_" + str(dim_idx)][
                     1:len(pulses["field_" + str(dim_idx)]
                           [checkpoint_frequency::checkpoint_frequency]) + 1]
-            # data = data * np.blackman(data.shape[0])
+            data = data * np.blackman(data.shape[0])
             padd2 = 2**np.ceil(np.log2(data.shape[0] * 4))
             paddT = np.max(time) * padd2 / data.shape[0]
             dH = 2 * np.pi / paddT / energy

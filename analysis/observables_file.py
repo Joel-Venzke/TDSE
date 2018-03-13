@@ -21,9 +21,10 @@ checkpoint_frequency = f["Parameters"]["write_frequency_observables"][0]
 
 # HHG Spectrum
 print "Plotting HHG Spectrum"
-# fig = plt.figure(figsize=(24, 18), dpi=80)
-fig = plt.figure()
+fig = plt.figure(figsize=(24, 18), dpi=80)
+# fig = plt.figure()
 energy = f["Parameters"]["energy"][0]
+energy = 0.057
 for elec_idx in range(num_electrons):
     for dim_idx in range(num_dims):
         if (not (dim_idx == 0
@@ -76,12 +77,12 @@ for elec_idx in range(num_electrons):
 
 plt.ylabel("HHG Spectrum (a.u.)")
 plt.title("HHG Spectrum")
-plt.legend()
-x_min = 6.5
-x_max = 9.5
+# plt.legend()
+x_min = 0
+x_max = 20
 plt.xticks(np.arange(int(x_min), x_max + 1, 1.0))
 plt.xlim([x_min, x_max])
-plt.ylim([1e-6, 1e-2])
+plt.ylim([1e-4, 1e0])
 plt.grid(True, which='both')
 plt.tight_layout()
 fig.savefig("figs/HHG_Spectrum.png")
@@ -90,9 +91,10 @@ plt.close(fig)
 
 # HHG Spectrum
 print "Plotting HHG Spectrum No Blackman"
-# fig = plt.figure(figsize=(24, 18), dpi=80)
-fig = plt.figure()
+fig = plt.figure(figsize=(24, 18), dpi=80)
+# fig = plt.figure()
 energy = f["Parameters"]["energy"][0]
+energy = 0.057
 state_energies = [
     -0.518536, -0.127738, -0.125544, -0.0564105, -0.0557645, -0.0556327,
     -0.03162, -0.031348, -0.0312945, -0.0312691, -0.0201923, -0.0200532,
@@ -116,18 +118,18 @@ state_energies = [
     -0.00255119, -0.00255116, -0.00255113, -0.00255111, -0.00222963,
     -0.00222449, -0.00222356
 ]
-energy = 0.057
+# energy = 0.0625
 
 p_states = [2]
 for n in range(2, 100):
     p_states.append(p_states[-1] + n)
 
-for state_idx, e in enumerate(state_energies):
-    if state_idx in p_states:
-        plt.axvline(np.abs(e - state_energies[0]) / energy, c='gray', lw=1)
-    # else:
-    #     plt.axvline(
-    #         np.abs(e - state_energies[0]) / energy, c='silver', ls=":", lw=1)
+# for state_idx, e in enumerate(state_energies):
+#     if state_idx in p_states:
+#         plt.axvline(np.abs(e - state_energies[0]) / energy, c='gray', lw=1)
+# else:
+#     plt.axvline(
+#         np.abs(e - state_energies[0]) / energy, c='silver', ls=":", lw=1)
 
 for elec_idx in range(num_electrons):
     for dim_idx in range(num_dims):
@@ -182,14 +184,15 @@ plt.xlabel("harmonic order (0.057 a.u.)")
 plt.ylabel("HHG spectrum (arb.)")
 # plt.title("HHG Spectrum No Blackman")
 # plt.legend()
-x_min = 6.5
-x_max = 9.5
+x_min = 0
+x_max = 20
 plt.xticks(np.arange(int(x_min), x_max + 1, 1.0))
 plt.xlim([x_min, x_max])
-plt.ylim([1e-4, 1e-1])
+plt.ylim([1e-4, 1e0])
+plt.grid()
 # plt.grid(True, which='both')
 plt.tight_layout()
-fig.savefig("figs/HHG_Spectrum_no_blackman.eps")
+fig.savefig("figs/HHG_Spectrum_no_blackman.png")
 plt.clf()
 plt.close(fig)
 
@@ -197,6 +200,7 @@ plt.close(fig)
 print "Plotting HHG Diff"
 fig = plt.figure(figsize=(24, 18), dpi=80)
 energy = f["Parameters"]["energy"][0]
+energy = 0.057
 print energy
 state_energies = [
     -0.518536, -0.127738, -0.125544, -0.0564105, -0.0557645, -0.0556327,
