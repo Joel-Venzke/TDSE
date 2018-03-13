@@ -120,7 +120,8 @@ void Simulation::Propagate()
     CrankNicolson(delta_t, i, -1);
 
     /* only calculate observables so often */
-    if (i % write_frequency_observables == 0)
+    if (write_frequency_observables > 0 and
+        i % write_frequency_observables == 0)
     {
       PetscLogEventBegin(create_observables, 0, 0, 0, 0);
       /* write a checkpoint */
@@ -141,8 +142,13 @@ void Simulation::Propagate()
                          (CLOCKS_PER_SEC * write_frequency_checkpoint)
                   << "\n"
                   << std::flush;
+      t = clock();
       /* write a checkpoint */
       wavefunction->Checkpoint(*h5_file, *viewer_file, time[i]);
+      if (world.rank() == 0)
+        std::cout << "Checkpoint time: "
+                  << ((float)clock() - t) / (CLOCKS_PER_SEC) << "\n"
+                  << std::flush;
       t = clock();
       PetscLogEventEnd(create_checkpoint, 0, 0, 0, 0);
     }
@@ -347,7 +353,7 @@ void Simulation::CrankNicolson(double dt, PetscInt time_idx, PetscInt dim_idx)
   if (time_idx != old_time_idx or dim_idx != old_dim_idx)
   {
     PetscLogEventBegin(create_matrix, 0, 0, 0, 0);
-    /* factor = i*(-i*dt/2) */
+    /* factor = (-i*dt/2) */
     dcomp factor = dcomp(0.0, 1.0) * dcomp(dt / 2.0, 0.0);
     if (time_idx < 0)
     {
@@ -367,7 +373,7 @@ void Simulation::CrankNicolson(double dt, PetscInt time_idx, PetscInt dim_idx)
     MatShift(right, 1.0);
 
     KSPSetOperators(ksp, left, left);
-    KSPSetTolerances(ksp, 1.e-17, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
+    KSPSetTolerances(ksp, 1.e-15, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
     KSPSetFromOptions(ksp);
 
     old_dim_idx  = dim_idx;
