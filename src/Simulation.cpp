@@ -267,10 +267,12 @@ void Simulation::Propagate()
  * @param return_state_idx the index of the state you want the Wavefunction
  * class to be set to upon return
  */
-void Simulation::FromFile(PetscInt num_states, PetscInt return_state_idx)
+void Simulation::FromFile(PetscInt num_states)
 {
-  wavefunction->LoadPsi(parameters->GetTarget() + ".h5", num_states,
-                        return_state_idx);
+  wavefunction->LoadPsi(
+      parameters->GetTarget() + ".h5", num_states,
+      parameters->GetNumStartState(), parameters->GetStartStateIdx(),
+      parameters->GetStartStateAmplitude(), parameters->GetStartStatePhase());
 }
 
 /**
@@ -281,7 +283,7 @@ void Simulation::FromFile(PetscInt num_states, PetscInt return_state_idx)
  * @param return_state_idx the index of the state you want the Wavefunction
  * class to be set to upon return
  */
-void Simulation::EigenSolve(PetscInt num_states, PetscInt return_state_idx)
+void Simulation::EigenSolve(PetscInt num_states)
 {
   if (world.rank() == 0)
     std::cout << "\nCalculating the lowest " << num_states
@@ -333,8 +335,7 @@ void Simulation::EigenSolve(PetscInt num_states, PetscInt return_state_idx)
     wavefunction->Normalize();
     CheckpointState(h_states_file, v_states_file, j, h);
   }
-  EPSGetEigenpair(eps, return_state_idx, &eigen_real, NULL, *psi, NULL);
-  wavefunction->Normalize();
+  FromFile(num_states);
   EPSDestroy(&eps);
 }
 
@@ -403,7 +404,7 @@ void Simulation::CrankNicolson(double dt, PetscInt time_idx, PetscInt dim_idx)
  * @param return_state_idx the index of the state you want the Wavefunction
  * class to be set to upon return
  */
-void Simulation::PowerMethod(PetscInt num_states, PetscInt return_state_idx)
+void Simulation::PowerMethod(PetscInt num_states)
 {
   if (world.rank() == 0)
     std::cout << "\nCalculating the lowest " << num_states
@@ -546,11 +547,7 @@ void Simulation::PowerMethod(PetscInt num_states, PetscInt return_state_idx)
     if (world.rank() == 0) std::cout << "\n";
   }
 
-  /* set psi to the return state */
-  VecCopy(states[return_state_idx], *psi);
-  wavefunction->Normalize();
-  /* Handel roundoff in cylindrical */
-  wavefunction->Normalize();
+  FromFile(num_states);
 
   /* Clean up after ourselves */
   /* DO NOT delete psi_tmp since it is the same as states[states.size()-1] which

@@ -98,7 +98,29 @@ void Parameters::Setup(std::string file_name)
     gauge_idx = -1;
   }
 
-  start_state = data["start_state"];
+  num_start_state = data["start_state"]["index"].size();
+  if (data["start_state"]["amplitude"].size() != num_start_state)
+  {
+    EndRun(
+        "Start state amplitude and index sizes do not match. Double check "
+        "input file.");
+  }
+  if (data["start_state"]["phase"].size() != num_start_state)
+  {
+    EndRun(
+        "Start state phase and index sizes do not match. Double check "
+        "input file.");
+  }
+  start_state_idx       = new PetscInt[num_start_state];
+  start_state_amplitude = new double[num_start_state];
+  start_state_phase     = new double[num_start_state];
+  for (PetscInt i = 0; i < num_start_state; i++)
+  {
+    start_state_idx[i]       = data["start_state"]["index"][i];
+    start_state_amplitude[i] = data["start_state"]["amplitude"][i];
+    start_state_phase[i]     = data["start_state"]["phase"][i];
+  }
+
   if (state_solver_idx != 2)
   {
     num_states = data["states"];
@@ -463,6 +485,9 @@ Parameters::~Parameters()
   }
   delete[] polarization_vector;
   if (num_dims == 3) delete[] poynting_vector;
+  delete start_state_idx;        ///< index of states in super position
+  delete start_state_amplitude;  ///< amplitude of states in super position
+  delete start_state_phase;
 }
 
 /* checks important input parameters for errors */
@@ -663,12 +688,15 @@ void Parameters::Validate()
     err_str += "\"\nvalid gauges are \"Velocity\", and \"Length\"\n";
   }
 
-  if (start_state >= num_states)
+  for (int idx = 0; idx < num_start_state; ++idx)
   {
-    error_found = true;
-    err_str +=
-        "\nThe start_state must be less than the total number of states you "
-        "wish to calculate\n";
+    if (start_state_idx[idx] >= num_states)
+    {
+      error_found = true;
+      err_str +=
+          "\nThe start_state must be less than the total number of states you "
+          "wish to calculate\n";
+    }
   }
 
   /* exit here to get all errors in one run */
@@ -732,7 +760,11 @@ PetscInt Parameters::GetOrder() { return order; }
 double Parameters::GetSigma() { return sigma; }
 
 PetscInt Parameters::GetNumStates() { return num_states; }
-PetscInt Parameters::GetStartState() { return start_state; }
+
+PetscInt Parameters::GetNumStartState() { return num_start_state; }
+PetscInt* Parameters::GetStartStateIdx() { return start_state_idx; }
+double* Parameters::GetStartStateAmplitude() { return start_state_amplitude; }
+double* Parameters::GetStartStatePhase() { return start_state_phase; }
 
 double Parameters::GetTol() { return tol; }
 

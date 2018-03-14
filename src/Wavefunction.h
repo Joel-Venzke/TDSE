@@ -99,7 +99,8 @@ class Wavefunction : protected Utils
   void ProjectOut(std::string file_name, HDF5Wrapper &h5_file,
                   ViewWrapper &viewer_file, double time);
   void LoadPsi(std::string file_name, PetscInt num_states,
-               PetscInt return_state_idx);
+               PetscInt num_start_state, PetscInt *start_state_idx,
+               double *start_state_amplitude, double *start_state_phase);
   void ResetPsi();
 
   PetscInt *GetNumX();

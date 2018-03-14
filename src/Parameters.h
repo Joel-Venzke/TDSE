@@ -30,14 +30,17 @@ class Parameters : protected Utils
   PetscInt write_frequency_eigin_state;  ///< how many steps between checkpoints
                                          /// during eigen state calculations
 
-  double gobbler;        ///< percent (1=100% and .9=90%) gobbler turns on at
-  PetscInt order;        ///< What order finite differences (2,4,6,8,...)
-  double sigma;          ///< std of wave function guess
-  PetscInt num_states;   ///< number of ground states
-  PetscInt start_state;  ///< number of ground states
-  double tol;            ///< tolerance in error
-  std::string state_solver;   ///< name of the solver used to get states
-  PetscInt state_solver_idx;  ///< index of state solver
+  double gobbler;       ///< percent (1=100% and .9=90%) gobbler turns on at
+  PetscInt order;       ///< What order finite differences (2,4,6,8,...)
+  double sigma;         ///< std of wave function guess
+  PetscInt num_states;  ///< number of ground states
+  PetscInt num_start_state;       ///< number of states in super position
+  PetscInt* start_state_idx;      ///< index of states in super position
+  double* start_state_amplitude;  ///< amplitude of states in super position
+  double* start_state_phase;      ///< phase of states in super position
+  double tol;                     ///< tolerance in error
+  std::string state_solver;       ///< name of the solver used to get states
+  PetscInt state_solver_idx;      ///< index of state solver
 
   std::string gauge;   ///< name of the gauge used to get states
   PetscInt gauge_idx;  ///< index of gauge (0 velocity, 1 length)
@@ -121,7 +124,10 @@ class Parameters : protected Utils
   PetscInt GetOrder();
   double GetSigma();
   PetscInt GetNumStates();
-  PetscInt GetStartState();
+  PetscInt GetNumStartState();
+  PetscInt* GetStartStateIdx();
+  double* GetStartStateAmplitude();
+  double* GetStartStatePhase();
   double GetTol();
   PetscInt GetStateSolverIdx();
   std::string GetStateSolver();

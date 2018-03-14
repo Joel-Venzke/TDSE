@@ -781,9 +781,10 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
 {
   if (world.rank() == 0)
   {
-    PetscInt num_dims   = p.GetNumDims();
-    PetscInt num_pulses = p.GetNumPulses();
-    header              = true;
+    PetscInt num_dims        = p.GetNumDims();
+    PetscInt num_pulses      = p.GetNumPulses();
+    PetscInt num_start_state = p.GetNumStartState();
+    header                   = true;
 
     CreateGroup("/Parameters/");
 
@@ -798,6 +799,15 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
                 "The minimum step sizes in that dimension in atomic units.");
     WriteObject(p.delta_x_max.get(), num_dims, "/Parameters/delta_x_max",
                 "The maximum step sizes in that dimension in atomic units.");
+    WriteObject(p.GetStartStateIdx(), num_start_state,
+                "/Parameters/start_state_idx",
+                "The index of states in super position.");
+    WriteObject(p.GetStartStateAmplitude(), num_start_state,
+                "/Parameters/start_state_amplitude",
+                "The amplitude of states in super position.");
+    WriteObject(p.GetStartStatePhase(), num_start_state,
+                "/Parameters/start_state_phase",
+                "The phase of states in super position.");
     WriteObject(
         p.delta_x_min_end.get(), num_dims, "/Parameters/delta_x_min_end",
         "The minimum step sizes ends in that dimension in atomic units.");

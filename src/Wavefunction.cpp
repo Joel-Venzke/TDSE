@@ -452,7 +452,9 @@ void Wavefunction::ProjectOut(std::string file_name, HDF5Wrapper& h5_file_in,
  * class to be set to upon return
  */
 void Wavefunction::LoadPsi(std::string file_name, PetscInt num_states,
-                           PetscInt return_state_idx)
+                           PetscInt num_start_state, PetscInt* start_state_idx,
+                           double* start_state_amplitude,
+                           double* start_state_phase)
 {
   if (world.rank() == 0)
     std::cout << "Loading wavefunction from " << file_name << "\n";
@@ -466,17 +468,41 @@ void Wavefunction::LoadPsi(std::string file_name, PetscInt num_states,
     EndRun("Not enough states in the target file");
   }
 
-  if (return_state_idx >= num_states)
+  for (int idx = 0; idx < num_start_state; ++idx)
   {
-    EndRun("The start state must be less than the total number of states");
+    if (start_state_idx[idx] >= num_states)
+    {
+      EndRun("The start state must be less than the total number of states");
+    }
   }
 
   /* Open File */
   viewer_file.Open("r");
+  Vec psi_super_pos;
+  VecDuplicate(psi, &psi_super_pos);
+  ierr = PetscObjectSetName((PetscObject)psi_super_pos, "psi");
 
-  /* Read psi */
-  viewer_file.SetTime(return_state_idx);
-  viewer_file.ReadObject(psi);
+  /* Read the first psi */
+  viewer_file.SetTime(start_state_idx[0]);
+  viewer_file.ReadObject(psi_super_pos);
+  Normalize(psi_super_pos, 0.0);
+  VecScale(psi_super_pos, dcomp(start_state_amplitude[0], 0.0) *
+                              std::exp(dcomp(0.0, start_state_phase[0])));
+  VecCopy(psi_super_pos, psi);
+
+  /* add on all other psi in super position*/
+  for (int idx = 1; idx < num_start_state; ++idx)
+  {
+    viewer_file.SetTime(start_state_idx[idx]);
+    viewer_file.ReadObject(psi_super_pos);
+    Normalize(psi_super_pos, 0.0);
+    VecAXPY(psi,
+            dcomp(start_state_amplitude[idx], 0.0) *
+                std::exp(dcomp(0.0, start_state_phase[idx])),
+            psi_super_pos);
+  }
+
+  VecDestroy(&psi_super_pos);
 
   /* Normalize */
   Normalize(psi, 0.0);
