@@ -18,7 +18,7 @@ num_electrons = f["Parameters"]["num_electrons"][0]
 num_pulses = f["Parameters"]["num_pulses"][0]
 checkpoint_frequency = f["Parameters"]["write_frequency_observables"][0]
 energy = f["Parameters"]["energy"][0]
-# energy = 0.057
+energy = 0.057
 
 # Field Plot
 print "Plotting A Field"
@@ -159,7 +159,7 @@ for dim_idx in range(num_dims):
                     constant_values=(0.0, 0.0))))
         spec_time = np.arange(data_fft.shape[0]) * 2.0 * np.pi / (
             data_fft.shape[0] * (p_time[1] - p_time[0]))
-        plt.plot(spec_time, data_fft / data_fft.max(), label="A($\omega$)")
+        plt.semilogy(spec_time, data_fft / data_fft.max(), label="A($\omega$)")
         grid_max = max(spec_time[np.argmax(data_fft[:data_fft.shape[0] / 2])],
                        grid_max)
     # plt.axvline(x=energy, color='k')
@@ -167,7 +167,7 @@ for dim_idx in range(num_dims):
 plt.ylabel("Field Spectrum (arb)")
 plt.xlabel("$\omega$ (a.u.)")
 plt.title("Field Spectrum")
-plt.xlim([0, grid_max * 3.0])
+plt.xlim([0, grid_max * 8.0])
 plt.ylim(ymin=0)
 plt.legend()
 fig.savefig("figs/Spectrum.png")
