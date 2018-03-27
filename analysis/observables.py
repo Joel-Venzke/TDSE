@@ -165,7 +165,7 @@ plt.close(fig)
 print "Plotting HHG Spectrum"
 fig = plt.figure(figsize=(24, 18), dpi=80)
 energy = f["Parameters"]["energy"][0]
-# energy = 0.057
+energy = 0.057
 for elec_idx in range(num_electrons):
     for dim_idx in range(num_dims):
         if (not (dim_idx == 0
@@ -195,10 +195,10 @@ plt.ylabel("HHG Spectrum (a.u.)")
 plt.title("HHG Spectrum")
 plt.legend()
 x_min = 0
-x_max = 23
+x_max = 60
 plt.xticks(np.arange(x_min + 1, x_max + 1, 2.0))
 plt.xlim([x_min, x_max])
-plt.ylim([1e-5, 1])
+plt.ylim([1e-8, 1])
 plt.grid(True, which='both')
 plt.tight_layout()
 fig.savefig("figs/HHG_Spectrum.png")
