@@ -270,7 +270,7 @@ plt.xlim([x_min, x_max])
 plt.ylim([1e-8, 1])
 plt.grid(True, which='both')
 plt.tight_layout()
-fig.savefig("figs/HHG_Spectrum.png")
+fig.savefig("figs/HHG_Spectrum_dipole.png")
 plt.clf()
 plt.close(fig)
 
