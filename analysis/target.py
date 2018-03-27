@@ -192,8 +192,8 @@ elif len(shape) == 2:
         else:
             print np.angle(psi)[np.unravel_index(
                 np.abs(psi).argmax(), psi.shape)]
-            psi = psi * np.exp(-1.0j * np.angle(psi)[
-                np.unravel_index(np.abs(psi).argmax(), psi.shape)])
+            # psi = psi * np.exp(-1.0j * np.angle(psi)[
+            #     np.unravel_index(np.abs(psi).argmax(), psi.shape)])
             print np.angle(psi)[psi.shape[0] / 2 - 15:psi.shape[0] / 2 + 15,
                                 psi.shape[1] / 2]
             plt.imshow(

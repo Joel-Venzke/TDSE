@@ -230,6 +230,50 @@ fig.savefig("figs/HHG_Spectrum.png")
 plt.clf()
 plt.close(fig)
 
+# HHG Spectrum from Dipole
+print "Plotting HHG Spectrum from Dipole"
+fig = plt.figure(figsize=(24, 18), dpi=80)
+energy = f["Parameters"]["energy"][0]
+energy = 0.057
+for elec_idx in range(num_electrons):
+    for dim_idx in range(num_dims):
+        if (not (dim_idx == 0
+                 and f["Parameters"]["coordinate_system_idx"][0] == 1)):
+            data = energy * energy * observables[
+                "position_expectation_" + str(elec_idx) + "_" + str(dim_idx)][
+                    1:len(pulses["field_" + str(dim_idx)]
+                          [checkpoint_frequency::checkpoint_frequency]) + 1]
+            data = data * np.blackman(data.shape[0])
+            padd2 = 2**np.ceil(np.log2(data.shape[0] * 4))
+            paddT = np.max(time) * padd2 / data.shape[0]
+            dH = 2 * np.pi / paddT / energy
+            if np.max(data) > 1e-19:
+                data = np.absolute(
+                    np.fft.fft(
+                        np.lib.pad(
+                            data, (int(np.floor((padd2 - data.shape[0]) / 2)),
+                                   int(np.ceil((padd2 - data.shape[0]) / 2))),
+                            'constant',
+                            constant_values=(0.0, 0.0))))
+                data /= data.max()
+                plt.semilogy(
+                    np.arange(data.shape[0]) * dH,
+                    data,
+                    label="Electron " + str(elec_idx) + " Dim " + str(dim_idx))
+plt.ylabel("HHG Spectrum (a.u.)")
+plt.title("HHG Spectrum")
+plt.legend()
+x_min = 0
+x_max = 60
+plt.xticks(np.arange(x_min + 1, x_max + 1, 2.0))
+plt.xlim([x_min, x_max])
+plt.ylim([1e-8, 1])
+plt.grid(True, which='both')
+plt.tight_layout()
+fig.savefig("figs/HHG_Spectrum.png")
+plt.clf()
+plt.close(fig)
+
 # Dipole acceleration with envelope
 print "Plotting Dipole Acceleration with field Envelope"
 fig2, ax1 = plt.subplots()
