@@ -239,10 +239,13 @@ for elec_idx in range(num_electrons):
     for dim_idx in range(num_dims):
         if (not (dim_idx == 0
                  and f["Parameters"]["coordinate_system_idx"][0] == 1)):
-            data = energy * energy * observables[
+            data = observables[
                 "position_expectation_" + str(elec_idx) + "_" + str(dim_idx)][
                     1:len(pulses["field_" + str(dim_idx)]
                           [checkpoint_frequency::checkpoint_frequency]) + 1]
+            # take 2 derivatives
+            data = np.gradient(data, time[2] - time[1], edge_order=2)
+            data = np.gradient(data, time[2] - time[1], edge_order=2)
             data = data * np.blackman(data.shape[0])
             padd2 = 2**np.ceil(np.log2(data.shape[0] * 4))
             paddT = np.max(time) * padd2 / data.shape[0]
