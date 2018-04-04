@@ -436,18 +436,13 @@ font = {'size': 22}
 matplotlib.rc('font', **font)
 fig = plt.figure(figsize=(12, 9), dpi=80)
 for state_number in range(data.shape[1]):
-    if state_number in [1, 2, 3, 4, 5, 28, 29, 30, 31, 32, 33, 34, 35]:
-        plot_idx = np.argmin(
-            np.abs(
-                np.array([1, 2, 3, 4, 5, 28, 29, 30, 31, 32, 33, 34, 35]) -
-                state_number))
-        plt.semilogy(
-            w_time,
-            data[:, state_number],
-            marker='x',
-            label=state_labels[state_number],
-            color=colors[plot_idx % len(colors)],
-            linestyle=linestyles[(plot_idx / len(colors)) % len(linestyles)])
+    plt.semilogy(
+        w_time,
+        data[:, state_number],
+        marker='x',
+        label=state_labels[state_number],
+        color=colors[state_number % len(colors)],
+        linestyle=linestyles[(state_number / len(colors)) % len(linestyles)])
 
 plt.ylabel("Population")
 plt.xlabel("Time (a.u.)")
@@ -458,11 +453,10 @@ plt.clf()
 plt.close(fig)
 
 fig = plt.figure()
-pulse_end_idx = np.argmin(np.abs(w_time - p_time[-1]))
 for state_number in range(data.shape[1]):
     plt.plot(
-        w_time[pulse_end_idx:],
-        data[pulse_end_idx:, state_number],
+        w_time[:],
+        data[:, state_number],
         marker='o',
         label=state_labels[state_number],
         color=colors[state_number % len(colors)],
