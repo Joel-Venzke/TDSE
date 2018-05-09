@@ -10,4 +10,5 @@ h5copy -i TDSE.h5 -o Observables.h5 -s /Wavefunction/num_x -d /Wavefunction/num_
 h5copy -i TDSE.h5 -o Observables.h5 -s /Wavefunction/projections -d /Wavefunction/projections
 h5copy -i TDSE.h5 -o Observables.h5 -s /Wavefunction/time -d /Wavefunction/time
 h5copy -i TDSE.h5 -o Observables.h5 -s /Wavefunction/x_value_0 -d /Wavefunction/x_value_0
+h5copy -i TDSE.h5 -o Observables.h5 -s /Wavefunction/x_value_1 -d /Wavefunction/x_value_1
 

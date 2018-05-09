@@ -77,7 +77,8 @@ for i, psi in enumerate(psi_value):
                     np.abs(psi),
                     cmap='viridis',
                     origin='lower',
-                    norm=LogNorm(vmin=1e-5),
+                    #norm=LogNorm(vmin=1e-5),
+                    vmin=np.abs(psi).max()-0.2,
                     extent=[ky.min(), ky.max(),
                             kx.min(), kx.max()])
             plt.text(
@@ -94,8 +95,8 @@ for i, psi in enumerate(psi_value):
                 plt.ylabel("$k_y$  (a.u.)")
             plt.colorbar()
             fig.savefig("figs/2d_fft_full_" + str(i).zfill(8) + ".png")
-            plb.xlim([-5.0, 5.0])
-            plb.ylim([-5.0, 5.0])
+            plb.xlim([-2.0, 2.0])
+            plb.ylim([-2.0, 2.0])
             fig.savefig("figs/2d_fft_" + str(i).zfill(8) + ".png")
             plt.clf()
 
