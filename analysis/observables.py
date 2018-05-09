@@ -3,6 +3,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import h5py
+from scipy.signal import argrelmin, argrelmax
 from matplotlib.colors import LogNorm
 f = None
 p = None
@@ -78,6 +79,11 @@ for elec_idx in range(num_electrons):
     for dim_idx in range(num_dims):
         if (not (dim_idx == 0
                  and f["Parameters"]["coordinate_system_idx"][0] == 1)):
+            print argrelmin(observables["position_expectation_" + str(elec_idx)
+                                        + "_" + str(dim_idx)][1:])[0] * 0.05
+            print argrelmax(observables["position_expectation_" + str(elec_idx)
+                                        + "_" + str(dim_idx)][1:])[0] * 0.05
+
             plt.plot(
                 time,
                 -1.0 * observables["position_expectation_"
@@ -89,6 +95,25 @@ plt.title("Dipole Moment")
 plt.legend()
 plt.tight_layout()
 fig.savefig("figs/Dipole.png")
+plt.clf()
+plt.close(fig)
+
+# Dipole
+print "Plotting Dipole"
+fig = plt.figure()
+ax = plt.subplot(111, projection='polar')
+for elec_idx in range(num_electrons):
+    data_r = np.sqrt(
+        observables["position_expectation_" + str(elec_idx) + "_0"][1:] *
+        observables["position_expectation_" + str(elec_idx) + "_0"][1:] +
+        observables["position_expectation_" + str(elec_idx) + "_1"][1:] *
+        observables["position_expectation_" + str(elec_idx) + "_1"][1:])
+    data_theta = np.angle(-1.0 * observables["position_expectation_"
+                                             + str(elec_idx) + "_0"][1:] -
+                          1.0j * observables["position_expectation_"
+                                             + str(elec_idx) + "_1"][1:])
+    ax.plot(data_theta, data_r, label="Electron " + str(elec_idx))
+fig.savefig("figs/Dipole_square.png")
 plt.clf()
 plt.close(fig)
 
@@ -195,13 +220,60 @@ plt.ylabel("HHG Spectrum (a.u.)")
 plt.title("HHG Spectrum")
 plt.legend()
 x_min = 0
-x_max = 23
+x_max = 5
 plt.xticks(np.arange(x_min + 1, x_max + 1, 2.0))
 plt.xlim([x_min, x_max])
-plt.ylim([1e-5, 1])
+plt.ylim([1e-8, 1])
 plt.grid(True, which='both')
 plt.tight_layout()
 fig.savefig("figs/HHG_Spectrum.png")
+plt.clf()
+plt.close(fig)
+
+# HHG Spectrum from Dipole
+print "Plotting HHG Spectrum from Dipole"
+fig = plt.figure(figsize=(24, 18), dpi=80)
+energy = f["Parameters"]["energy"][0]
+energy = 0.057
+for elec_idx in range(num_electrons):
+    for dim_idx in range(num_dims):
+        if (not (dim_idx == 0
+                 and f["Parameters"]["coordinate_system_idx"][0] == 1)):
+            data = observables[
+                "position_expectation_" + str(elec_idx) + "_" + str(dim_idx)][
+                    1:len(pulses["field_" + str(dim_idx)]
+                          [checkpoint_frequency::checkpoint_frequency]) + 1]
+            # take 2 derivatives
+            data = np.gradient(data, time[2] - time[1], edge_order=2)
+            data = np.gradient(data, time[2] - time[1], edge_order=2)
+            data = data * np.blackman(data.shape[0])
+            padd2 = 2**np.ceil(np.log2(data.shape[0] * 4))
+            paddT = np.max(time) * padd2 / data.shape[0]
+            dH = 2 * np.pi / paddT / energy
+            if np.max(data) > 1e-19:
+                data = np.absolute(
+                    np.fft.fft(
+                        np.lib.pad(
+                            data, (int(np.floor((padd2 - data.shape[0]) / 2)),
+                                   int(np.ceil((padd2 - data.shape[0]) / 2))),
+                            'constant',
+                            constant_values=(0.0, 0.0))))
+                data /= data.max()
+                plt.semilogy(
+                    np.arange(data.shape[0]) * dH,
+                    data,
+                    label="Electron " + str(elec_idx) + " Dim " + str(dim_idx))
+plt.ylabel("HHG Spectrum (a.u.)")
+plt.title("HHG Spectrum")
+plt.legend()
+x_min = 0
+x_max = 60
+plt.xticks(np.arange(x_min + 1, x_max + 1, 2.0))
+plt.xlim([x_min, x_max])
+plt.ylim([1e-8, 1])
+plt.grid(True, which='both')
+plt.tight_layout()
+fig.savefig("figs/HHG_Spectrum_dipole.png")
 plt.clf()
 plt.close(fig)
 
@@ -245,15 +317,25 @@ for elec_idx in range(num_electrons):
     for dim_idx in range(num_dims):
         if (not (dim_idx == 0
                  and f["Parameters"]["coordinate_system_idx"][0] == 1)):
+            data = observables[
+                "dipole_acceleration_" + str(elec_idx) + "_" + str(dim_idx)][
+                    1:len(pulses["field_" + str(dim_idx)]
+                          [checkpoint_frequency::checkpoint_frequency]) + 1]
+            pulse = -1.0 * np.gradient(pulses["field_1"][
+                checkpoint_frequency::checkpoint_frequency], f["Parameters"][
+                    "delta_t"][0] * checkpoint_frequency) * 7.2973525664e-3
+            if len(
+                    pulses["field_" + str(dim_idx)]
+                [checkpoint_frequency::checkpoint_frequency]) < data.shape[0]:
+                data = data[:len(pulses["field_" + str(dim_idx)][
+                    checkpoint_frequency::checkpoint_frequency])]
+            elif len(
+                    pulses["field_" + str(dim_idx)]
+                [checkpoint_frequency::checkpoint_frequency]) > data.shape[0]:
+                pulse = pulse[:data.shape[0]]
             plt.plot(
-                observables["dipole_acceleration_"
-                            + str(elec_idx) + "_" + str(dim_idx)]
-                [1:len(pulses["field_" + str(dim_idx)]
-                       [checkpoint_frequency::checkpoint_frequency]) + 1],
-                -1.0 * np.gradient(pulses["field_1"][
-                    checkpoint_frequency::checkpoint_frequency], f[
-                        "Parameters"]["delta_t"][0] * checkpoint_frequency) *
-                7.2973525664e-3,
+                -1.0 * data,
+                pulse,
                 label="Electron " + str(elec_idx) + " Dim " + str(dim_idx))
 plt.xlabel("Field in (a.u.)")
 plt.ylabel("Dipole Acceleration (a.u.)")
@@ -364,18 +446,13 @@ font = {'size': 22}
 matplotlib.rc('font', **font)
 fig = plt.figure(figsize=(12, 9), dpi=80)
 for state_number in range(data.shape[1]):
-    if state_number in [1, 2, 3, 4, 5, 28, 29, 30, 31, 32, 33, 34, 35]:
-        plot_idx = np.argmin(
-            np.abs(
-                np.array([1, 2, 3, 4, 5, 28, 29, 30, 31, 32, 33, 34, 35]) -
-                state_number))
-        plt.semilogy(
-            w_time,
-            data[:, state_number],
-            marker='x',
-            label=state_labels[state_number],
-            color=colors[plot_idx % len(colors)],
-            linestyle=linestyles[(plot_idx / len(colors)) % len(linestyles)])
+    plt.semilogy(
+        w_time,
+        data[:, state_number],
+        marker='x',
+        label=state_labels[state_number],
+        color=colors[state_number % len(colors)],
+        linestyle=linestyles[(state_number / len(colors)) % len(linestyles)])
 
 plt.ylabel("Population")
 plt.xlabel("Time (a.u.)")
@@ -386,11 +463,10 @@ plt.clf()
 plt.close(fig)
 
 fig = plt.figure()
-pulse_end_idx = np.argmin(np.abs(w_time - p_time[-1]))
 for state_number in range(data.shape[1]):
     plt.plot(
-        w_time[pulse_end_idx:],
-        data[pulse_end_idx:, state_number],
+        w_time[:],
+        data[:, state_number],
         marker='o',
         label=state_labels[state_number],
         color=colors[state_number % len(colors)],

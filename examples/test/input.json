@@ -1,63 +1,92 @@
 {
-  "delta_t": 0.1,
-  "dimensions": [
-    {"dim_size":         50.0,
-    "delta_x_min":       0.5,
-    "delta_x_min_end":   5.0,
-    "delta_x_max":       0.5,
-    "delta_x_max_start": 5.0},
-    {"dim_size":         100.0,
-    "delta_x_min":       0.5,
-    "delta_x_min_end":   5.0,
-    "delta_x_max":       0.5,
-    "delta_x_max_start": 5.0}],
-  "coordinate_system": "Cylindrical",
-  "num_electrons": 1,
-  "restart": 0,
-  "target": {
-    "name":  "H",
-    "nuclei" : [
-      { "z": 1.0,
-      "location": [0.0,0.0,0.0],
-      "SAE": {
-        "z_c": 1.0,
-        "c0": 1.0,
-        "r0": 2.353059,
-        "a" : [0.66294407],
-        "b" : [4.073942]}
-      }]},
-  "alpha":   0.134,
-  "gobbler": 0.9,
-  "order":   2,
-  "sigma":   3.0,
-  "write_frequency_checkpoint": 10,
-  "write_frequency_observables": 1,
-  "write_frequency_eigin_state": 100,
-  "state_solver":    "SLEPC",
-  "gauge":    "Velocity",
-  "propagate": 1,
-  "free_propagate": 0,
-  "field_max_states": 0,
-  "start_state": {"index":     [0,1,2],
-                  "amplitude": [0.5,0.25,0.25],
-                  "phase":     [0.0,1.57,0.785]},
-  "states": 3,
-  "tol":        1e-10,
-  "laser": {
-    "experiment_type": "default",
-    "pulses": [{ "polarization_vector": [0.0,1.0,0.0],
-      "poynting_vector": [0.0,0.0,1.0],
-      "helicity" : "left",
-      "ellipticity" : 0.0,
-      "pulse_shape":   "sin",
-      "power_on":       2.0,
-      "power_off":      2.0,
-      "cycles_on":      10.0,
-      "cycles_plateau": 0.0,
-      "cycles_off":     10.0,
-      "cycles_delay":   0.0,
-      "cep":            0.0,
-      "energy":         1.0,
-      "intensity":      1e13}]
+ "start_state": {"index":     [0,1,2],
+                  "amplitude": [0.5,0.5,0.5],
+                  "phase":     [-3.00986951962,1.58286734128,1.9995490798]},
+ "states": 5,
+ "write_frequency_checkpoint": 100,
+ "gauge": "Velocity",
+ "write_frequency_observables": 1,
+ "dimensions": [
+  {
+   "delta_x_max_start": 4.0,
+   "delta_x_min": 0.2,
+   "delta_x_max": 0.2,
+   "dim_size": 100.0,
+   "delta_x_min_end": 4.0
+  },
+  {
+   "delta_x_max_start": 4.0,
+   "delta_x_min": 0.2,
+   "delta_x_max": 0.2,
+   "dim_size": 100.0,
+   "delta_x_min_end": 4.0
   }
+ ],
+ "gobbler": 0.95,
+ "tol": 1e-10,
+ "num_electrons": 1,
+ "delta_t": 0.05,
+ "propagate": 1,
+ "alpha": 0.8,
+ "restart": 0,
+ "state_solver": "File",
+ "write_frequency_eigin_state": 100,
+ "laser": {
+  "experiment_type": "default",
+  "pulses": [
+   {
+    "power_on": 1.0,
+    "cycles_on": 2.0,
+    "cycles_off": 2.0,
+    "pulse_shape": "gaussian",
+    "cycles_delay": 0.0,
+    "polarization_vector": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "energy": 1.0,
+    "power_off": 1.0,
+    "intensity": 0e13,
+    "cycles_plateau": 0.0,
+    "helicity": "left",
+    "cep": 0.0,
+    "poynting_vector": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "ellipticity": 0.8
+   }
+  ]
+ },
+ "target": {
+  "nuclei": [
+   {
+    "z": 1.0,
+    "location": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "SAE": {
+     "a": [
+      0.66294407
+     ],
+     "c0": 1.0,
+     "z_c": 1.0,
+     "r0": 2.353059,
+     "b": [
+      4.073942
+     ]
+    }
+   }
+  ],
+  "name": "soft"
+ },
+ "coordinate_system": "Cartesian",
+ "field_max_states": 0,
+ "free_propagate": 1000,
+ "sigma": 3.0,
+ "order": 2
 }
