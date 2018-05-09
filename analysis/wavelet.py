@@ -15,11 +15,12 @@ size = comm.Get_size()
 rank = comm.Get_rank()
 
 w_0 = 0.057
-ground_state = np.abs(-0.507158)
+ground_state = np.abs(-0.503829)
 min_harm = 5
 max_harm = 16
 
 w_list = range(3, 100, 5)
+# w_list = range(38, 100, 5)
 w_list += range(100, 1000, 100)
 w_list += list(10**np.arange(3, 5))
 
@@ -51,6 +52,7 @@ data = np.lib.pad(
            int(np.ceil((padd2 - data.shape[0]) / 2))),
     'constant',
     constant_values=(0.0, 0.0))
+print w_list
 for scale_type in ["lin"]:
     # for scale_type in ["lin", "log"]:
     for num in w_list[rank::size]:
@@ -88,12 +90,12 @@ for scale_type in ["lin"]:
                 rasterized=True)
         else:
             exit("scale fail")
-        # plt.plot(pulse_time, state_shift / w_0, 'r-')
-        # plt.plot(pulse_time, (state_shift - 0.125) / w_0, 'w-')
-        # plt.plot(pulse_time, (state_shift - 0.0556058) / w_0, 'w-')
-        # plt.plot(pulse_time, (state_shift - 0.0312736) / w_0, 'w-')
+        plt.plot(pulse_time, state_shift / w_0, 'r-')
+        plt.plot(pulse_time, (state_shift - 0.125) / w_0, 'w-')
+        plt.plot(pulse_time, (state_shift - 0.0556058) / w_0, 'w-')
+        plt.plot(pulse_time, (state_shift - 0.0312736) / w_0, 'w-')
         plt.text(
-            100, (state_shift[0] - 0.125) / w_0 - 0.5,
+            100, (state_shift[0] - 0.12552) / w_0 - 0.5,
             "2p",
             color='w',
             fontsize=12)

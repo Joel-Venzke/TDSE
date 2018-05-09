@@ -190,7 +190,7 @@ plt.close(fig)
 print "Plotting HHG Spectrum"
 fig = plt.figure(figsize=(24, 18), dpi=80)
 energy = f["Parameters"]["energy"][0]
-energy = 0.057
+# energy = 0.057
 for elec_idx in range(num_electrons):
     for dim_idx in range(num_dims):
         if (not (dim_idx == 0
@@ -220,7 +220,7 @@ plt.ylabel("HHG Spectrum (a.u.)")
 plt.title("HHG Spectrum")
 plt.legend()
 x_min = 0
-x_max = 60
+x_max = 5
 plt.xticks(np.arange(x_min + 1, x_max + 1, 2.0))
 plt.xlim([x_min, x_max])
 plt.ylim([1e-8, 1])
@@ -317,15 +317,25 @@ for elec_idx in range(num_electrons):
     for dim_idx in range(num_dims):
         if (not (dim_idx == 0
                  and f["Parameters"]["coordinate_system_idx"][0] == 1)):
+            data = observables[
+                "dipole_acceleration_" + str(elec_idx) + "_" + str(dim_idx)][
+                    1:len(pulses["field_" + str(dim_idx)]
+                          [checkpoint_frequency::checkpoint_frequency]) + 1]
+            pulse = -1.0 * np.gradient(pulses["field_1"][
+                checkpoint_frequency::checkpoint_frequency], f["Parameters"][
+                    "delta_t"][0] * checkpoint_frequency) * 7.2973525664e-3
+            if len(
+                    pulses["field_" + str(dim_idx)]
+                [checkpoint_frequency::checkpoint_frequency]) < data.shape[0]:
+                data = data[:len(pulses["field_" + str(dim_idx)][
+                    checkpoint_frequency::checkpoint_frequency])]
+            elif len(
+                    pulses["field_" + str(dim_idx)]
+                [checkpoint_frequency::checkpoint_frequency]) > data.shape[0]:
+                pulse = pulse[:data.shape[0]]
             plt.plot(
-                observables["dipole_acceleration_"
-                            + str(elec_idx) + "_" + str(dim_idx)]
-                [1:len(pulses["field_" + str(dim_idx)]
-                       [checkpoint_frequency::checkpoint_frequency]) + 1],
-                -1.0 * np.gradient(pulses["field_1"][
-                    checkpoint_frequency::checkpoint_frequency], f[
-                        "Parameters"]["delta_t"][0] * checkpoint_frequency) *
-                7.2973525664e-3,
+                -1.0 * data,
+                pulse,
                 label="Electron " + str(elec_idx) + " Dim " + str(dim_idx))
 plt.xlabel("Field in (a.u.)")
 plt.ylabel("Dipole Acceleration (a.u.)")
