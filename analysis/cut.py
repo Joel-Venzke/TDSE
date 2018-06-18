@@ -1,5 +1,7 @@
 import numpy as np
 import h5py
+import matplotlib
+matplotlib.use('Agg')
 from matplotlib.colors import LogNorm
 from scipy.signal import argrelmax
 from scipy.interpolate import interp2d
@@ -87,7 +89,7 @@ if len(shape) == 2:
     #             cut_filter[j][k] = (np.exp(-alpha * (r - r_critical)**2))
 
     for i, psi in enumerate(psi_value):
-        if i == 9:
+        if i > 0:
             k_max = None
             print "Plotting", i
             # set up initial figure with color bar
@@ -274,7 +276,7 @@ if len(shape) == 2:
 
             interp = interp2d(kx, ky, ft_full, kind='cubic')
 
-            theta_max = 10
+            theta_max = 180
             delta_theta = 0.001
             theta = np.arange(-theta_max * np.pi / 180.,
                               theta_max * np.pi / 180 + delta_theta,
