@@ -4,6 +4,20 @@ from matplotlib.colors import LogNorm
 from scipy.signal import argrelmax
 from scipy.interpolate import interp2d
 import os
+from scipy.special import sph_harm
+
+
+def project_onto_ylm(theta, data):
+    delta_theta = theta[1] - theta[0]
+    data_conj = np.conjugate(data)
+    for l in range(0, 4):
+        for m in range(-l, l + 1):
+            projection = (data_conj * sph_harm(m, l, theta, np.pi / 2.0)
+                          ).sum() * delta_theta
+            if np.abs(projection) > 1e-10:
+                print "l=" + str(l) + " m=" + str(m) + " amp=" + str(
+                    np.abs(projection)) + " phi=" + str(np.angle(projection))
+
 
 print "start"
 
@@ -87,7 +101,7 @@ if len(shape) == 2:
     #             cut_filter[j][k] = (np.exp(-alpha * (r - r_critical)**2))
 
     for i, psi in enumerate(psi_value):
-        if i == 9:
+        if i == 8:
             k_max = None
             print "Plotting", i
             # set up initial figure with color bar
@@ -206,9 +220,8 @@ if len(shape) == 2:
                 dkx = kxc[1] - kxc[0]
                 dky = kyc[1] - kyc[0]
 
-                ft_fullest = np.fft.fftshift(np.fft.fft2(psi))
-                # ft_fullest = ft_fullest.transpose()
-                ft_full = np.abs(ft_fullest)**2
+                psi_fft = np.fft.fftshift(np.fft.fft2(psi))
+                ft_full = np.abs(psi_fft)**2
                 full = ft_full.shape[0]
                 half = np.ceil(full / 2.0)
                 ft_left = ft_full[:, :int(half)]
@@ -230,12 +243,12 @@ if len(shape) == 2:
                 print "Angle mod 180: " + str((angle * 180 / np.pi) % 180)
 
                 #testing whether rotation or not
-                # print "o.g. value is " + str(ft_fullest[half][half])
+                # print "o.g. value is " + str(psi_fft[half][half])
 
                 #uncomment to save fft
                 # print "outputting FFT"
                 # np.savetxt('fft.txt', ft_full, delimiter=',')
-                # np.savetxt('fftcomplex.txt', ft_fullest.view(float))
+                # np.savetxt('fftcomplex.txt', psi_fft.view(float))
 
                 dataft = plt.imshow(
                     #np.sqrt(ft_full),
@@ -274,6 +287,9 @@ if len(shape) == 2:
 
             interp = interp2d(kx, ky, ft_full, kind='cubic')
 
+            interp_real = interp2d(kx, ky, psi_fft.real, kind='cubic')
+            interp_imag = interp2d(kx, ky, psi_fft.imag, kind='cubic')
+
             theta_max = 10
             delta_theta = 0.001
             theta = np.arange(-theta_max * np.pi / 180.,
@@ -282,9 +298,16 @@ if len(shape) == 2:
             x_interp = k_max * np.cos(theta)
             y_interp = k_max * np.sin(theta)
             data = []
+            data_complex = []
             for theta_idx in range(x_interp.shape[0]):
                 data.append(interp(x_interp[theta_idx], y_interp[theta_idx]))
+                data_complex.append(
+                    interp_real(x_interp[theta_idx],
+                                y_interp[theta_idx]) + 1.0j * interp_imag(
+                                    x_interp[theta_idx], y_interp[theta_idx]))
             data = np.array(data)
+            data_complex = np.array(data_complex)
+            project_onto_ylm(theta, data_complex)
             print "Predicted vs actual max:", np.sqrt(
                 2 * (pulse_energy - np.abs(ground_state_energy))), k_max
             print -1.0 * theta[np.argmax(data)] * 180 / np.pi
