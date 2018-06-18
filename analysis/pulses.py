@@ -167,8 +167,10 @@ for dim_idx in range(num_dims):
 plt.ylabel("Field Spectrum (arb)")
 plt.xlabel("$\omega$ (a.u.)")
 plt.title("Field Spectrum")
-plt.xlim([0, grid_max * 8.0])
-plt.ylim(ymin=0)
+plt.xlim([0, 0.06226147959])
+plt.ylim([0.5, 1])
+# plt.ylim(ymin=0)
+plt.grid()
 plt.legend()
 fig.savefig("figs/Spectrum.png")
 print "Omega Error (A vs E):", grid_max - energy, grid_max
