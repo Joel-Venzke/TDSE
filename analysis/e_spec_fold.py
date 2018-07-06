@@ -95,7 +95,7 @@ for fold in folders:
             w_max = 8.0
             k_max = np.sqrt(w_max * 2.0)
             delta_k = (ky[1] - ky[0]) / 2
-            k_values = np.arange(0.5, k_max + delta_k, delta_k)
+            k_values = np.arange(0.2, k_max + delta_k, delta_k)
             delta_theta = 0.01
             theta = np.arange(0, np.pi, delta_theta)
             delta_r = 0.3
