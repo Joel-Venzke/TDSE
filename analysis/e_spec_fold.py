@@ -8,7 +8,7 @@ from matplotlib.colors import LogNorm
 from scipy.signal import argrelmax
 from scipy.special import sph_harm
 from scipy.special import gamma
-from scipy.special import hyp1f1
+from mpmath import hyp1f1
 from scipy.misc import factorial
 from scipy.special import spherical_jn
 from scipy.interpolate import RectBivariateSpline
