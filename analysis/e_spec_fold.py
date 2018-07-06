@@ -24,9 +24,13 @@ def coulomb_wave_function(l, eta, pho):
     # norm_factor = 2**l * np.exp(-np.pi * eta / 2) * np.abs(
     #     gamma(l + 1 + 1.0j * eta)) / factorial(2 * l + 1)
     product = np.arange(1.0, l + 1.0)
+    if l == 0:
+        product = np.array([1.0])
     print "prod", product
-    product = eta**2 + product**2
-    product = np.prod(product)
+    product = np.add.outer(eta**2, product**2)
+    product = np.prod(product, axis=0)
+    print "prod", product
+    print product.shape, eta.shape
     norm_factor = 2**l * np.sqrt(2 * np.pi * eta / (
         np.exp(np.pi * eta / 2) - 1) * product) / factorial(2 * l + 1)
     # return the f_l function
