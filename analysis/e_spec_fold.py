@@ -18,6 +18,7 @@ folders = ["02/", "10/"]
 # note pho = r*k
 # see nist website for definition https://dlmf.nist.gov/33.2
 # top sign used for +- or -+ portions
+# eta is Z/k (and minus for electrons, hydrogen atom -1/k)
 def coulomb_wave_function(l, eta, pho):
     # calculate C_l(eta) coef
     norm_factor = 2**l * np.exp(-np.pi * eta / 2) * np.abs(
@@ -107,7 +108,8 @@ for fold in folders:
                                                r_val * np.cos(theta_val))) *
                             k_values * sph_harm(0, l_val, 0, theta_val)
                             .conjugate() * coulomb_wave_function(
-                                l_val, 0, k_values * r_val).conjugate())[0]
+                                l_val, -1.0 / k_values,
+                                k_values * r_val).conjugate())[0]
 
             # plot
             #for l_idx, l_data in enumerate(np.abs(energy_spectrum)):
