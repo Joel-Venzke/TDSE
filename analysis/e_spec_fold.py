@@ -113,6 +113,7 @@ for fold in folders:
             for l_idx, l_val in enumerate(l_values):
                 print l_val
                 for theta_idx, theta_val in enumerate(theta):
+                    print theta_val
                     for r_idx, r_val in enumerate(r):
                         energy_spectrum[l_idx, :] += (
                             delta_theta * delta_r * r_val * r_val *
