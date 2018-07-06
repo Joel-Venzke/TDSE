@@ -36,7 +36,7 @@ def coulomb_wave_function(l, eta, rho):
     print eta
     for idx in np.arange(norm_factor.shape[0]):
         input_0 = complex(l + 1.0 - 1.0j * eta[idx])
-        input_1 = 2.0 * l + 2.0
+        input_1 = complex(2.0 * l + 2.0)
         input_2 = 1.0j * 2.0 * rho[idx]
         print input_0, input_1, input_2
         print type(input_0), type(input_1), type(input_2)
