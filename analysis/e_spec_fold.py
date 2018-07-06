@@ -28,6 +28,7 @@ def coulomb_wave_function(l, eta, pho):
         product = np.array([1.0])
     print "prod", product
     product = np.add.outer(eta**2, product**2)
+    print "prod", product
     product = np.prod(product, axis=0)
     print "prod", product
     print product.shape, eta.shape
