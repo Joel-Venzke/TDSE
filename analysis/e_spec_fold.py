@@ -20,9 +20,15 @@ folders = ["02/", "10/"]
 # top sign used for +- or -+ portions
 # eta is Z/k (and minus for electrons, hydrogen atom -1/k)
 def coulomb_wave_function(l, eta, pho):
-    # calculate C_l(eta) coef
-    norm_factor = 2**l * np.exp(-np.pi * eta / 2) * np.abs(
-        gamma(l + 1 + 1.0j * eta)) / factorial(2 * l + 1)
+    # calculate C_l(eta) coef using alternate def
+    # norm_factor = 2**l * np.exp(-np.pi * eta / 2) * np.abs(
+    #     gamma(l + 1 + 1.0j * eta)) / factorial(2 * l + 1)
+    product = np.arange(1.0, l + 1.0)
+    product = eta**2 + product**2
+    print product
+    product = np.prod(product)
+    norm_factor = 2**l * np.sqrt(2 * np.pi * eta / (
+        np.exp(np.pi * eta / 2) - 1) * product) / factorial(2 * l + 1)
     # return the f_l function
     return norm_factor * pho**(l + 1) * np.exp(-1.0j * pho) * hyp1f1(
         l + 1 - 1.0j * eta, 2 * l + 2, 1.0j * 2 * pho)
