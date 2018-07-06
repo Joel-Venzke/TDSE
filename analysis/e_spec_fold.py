@@ -19,24 +19,26 @@ folders = ["02/", "10/"]
 # see nist website for definition https://dlmf.nist.gov/33.2
 # top sign used for +- or -+ portions
 # eta is Z/k (and minus for electrons, hydrogen atom -1/k)
-def coulomb_wave_function(l, eta, pho):
+def coulomb_wave_function(l, eta, rho):
     # calculate C_l(eta) coef using alternate def
     # norm_factor = 2**l * np.exp(-np.pi * eta / 2) * np.abs(
     #     gamma(l + 1 + 1.0j * eta)) / factorial(2 * l + 1)
     product = np.arange(1.0, l + 1.0)
     if l == 0:
         product = np.array([1.0])
-    print "prod", product
     product = np.add.outer(eta**2, product**2)
-    print "prod", product
     product = np.prod(product, axis=1)
-    print "prod", product
-    print product.shape, eta.shape
     norm_factor = 2**l * np.sqrt(2 * np.pi * eta / (
         np.exp(np.pi * eta / 2) - 1) * product) / factorial(2 * l + 1)
     # return the f_l function
-    return norm_factor * pho**(l + 1) * np.exp(-1.0j * pho) * hyp1f1(
-        l + 1 - 1.0j * eta, 2 * l + 2, 1.0j * 2 * pho)
+    return_array = np.zeros(norm_factor.shape)
+    for idx in norm_factor.shape[0]:
+        print idx, l + 1.0 - 1.0j * eta[idx], 2.0 * l + 2.0, 1.0j * 2.0 * rho[
+            idx]
+        return_array[idx] = norm_factor[idx] * rho[idx]**(l + 1) * np.exp(
+            -1.0j * rho[idx]) * hyp1f1(l + 1.0 - 1.0j * eta[idx],
+                                       2.0 * l + 2.0, 1.0j * 2.0 * rho[idx])
+    return return_array
 
 
 # font = {'size': 18}
