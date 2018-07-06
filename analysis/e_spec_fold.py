@@ -32,8 +32,6 @@ def coulomb_wave_function(l, eta, rho):
         np.exp(np.pi * eta / 2) - 1) * product) / factorial(2 * l + 1)
     # return the f_l function
     return_array = np.zeros(norm_factor.shape)
-    print eta.shape, eta[0], eta[0].shape
-    print eta
     for idx in np.arange(norm_factor.shape[0]):
         input_0 = complex(l + 1.0 - 1.0j * eta[idx])
         input_1 = complex(2.0 * l + 2.0)
