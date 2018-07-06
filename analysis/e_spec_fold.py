@@ -111,10 +111,9 @@ for fold in folders:
             print l_values.shape, k_values.shape, theta.shape, r.shape
             # integration goes here
             for l_idx, l_val in enumerate(l_values):
-                print l_val
                 for theta_idx, theta_val in enumerate(theta):
-                    print theta_val
                     for r_idx, r_val in enumerate(r):
+                        print l_val, theta_val, r_val
                         energy_spectrum[l_idx, :] += (
                             delta_theta * delta_r * r_val * r_val *
                             np.sin(theta_val) *
