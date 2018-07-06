@@ -9,10 +9,12 @@ import os
 from scipy.special import sph_harm
 
 
+# projects data onto spherical harmonics
+# theta in radians
 def project_onto_ylm(theta, data):
     delta_theta = theta[1] - theta[0]
     data_conj = np.conjugate(data)
-    for l in range(0, 4):
+    for l in range(0, 10):
         for m in range(-l, l + 1):
             projection = (data_conj * sph_harm(m, l, theta, np.pi / 2.0)
                           ).sum() * delta_theta
@@ -103,7 +105,7 @@ if len(shape) == 2:
     #             cut_filter[j][k] = (np.exp(-alpha * (r - r_critical)**2))
 
     for i, psi in enumerate(psi_value):
-        if i > 0:
+        if i == 8:
             k_max = None
             print "Plotting", i
             # set up initial figure with color bar
