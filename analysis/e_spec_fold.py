@@ -38,10 +38,10 @@ def coulomb_wave_function(l, eta, rho):
         input_0 = complex(l + 1.0 - 1.0j * eta[idx])
         input_1 = complex(2.0 * l + 2.0)
         input_2 = 1.0j * 2.0 * rho[idx]
-        print input_0, input_1, input_2
-        print type(input_0), type(input_1), type(input_2)
-        return_array[idx] = norm_factor[idx] * rho[idx]**(l + 1) * np.exp(
-            -1.0j * rho[idx]) * hyp1f1(input_0, input_1, input_2)
+        hyp = hyp1f1(input_0, input_1, input_2)
+        hyp = float(hyp.real) + 1.j * float(hyp.imag)
+        return_array[idx] = norm_factor[idx] * rho[idx]**(
+            l + 1) * np.exp(-1.0j * rho[idx]) * hyp
     return return_array
 
 
