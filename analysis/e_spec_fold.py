@@ -111,8 +111,10 @@ for fold in folders:
             print l_values.shape, k_values.shape, theta.shape, r.shape
             # integration goes here
             for l_idx, l_val in enumerate(l_values):
-                for theta_idx, theta_val in enumerate(theta):
-                    for r_idx, r_val in enumerate(r):
+                for r_idx, r_val in enumerate(r):
+                    coulumn_part = coulomb_wave_function(
+                        l_val, -1.0 / k_values, k_values * r_val).conjugate()
+                    for theta_idx, theta_val in enumerate(theta):
                         print l_val, theta_val, r_val
                         energy_spectrum[l_idx, :] += (
                             delta_theta * delta_r * r_val * r_val *
@@ -122,9 +124,7 @@ for fold in folders:
                              1.0j * f_psi_imag(r_val * np.sin(theta_val),
                                                r_val * np.cos(theta_val))) *
                             k_values * sph_harm(0, l_val, 0, theta_val)
-                            .conjugate() * coulomb_wave_function(
-                                l_val, -1.0 / k_values,
-                                k_values * r_val).conjugate())[0]
+                            .conjugate() * coulumn_part)[0]
 
             # plot
             #for l_idx, l_data in enumerate(np.abs(energy_spectrum)):
