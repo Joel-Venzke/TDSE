@@ -41,9 +41,10 @@ def coulomb_wave_function(l, eta, rho):
             complex(l + 1.0 - 1.0j * eta[idx])), type(2.0 * l + 2.0), type(
                 1.0j * 2.0 * rho[idx])
         return_array[idx] = norm_factor[idx] * rho[idx]**(
-            l + 1) * np.exp(-1.0j * rho[idx]) * hyp1f1(
-                complex(l + 1.0 - 1.0j * eta[idx]), 2.0 * l + 2.0,
-                1.0j * 2.0 * rho[idx])
+            l + 1) * np.exp(-1.0j * rho[idx])
+        # *hyp1f1(
+        #         complex(l + 1.0 - 1.0j * eta[idx]), 2.0 * l + 2.0,
+        #         1.0j * 2.0 * rho[idx])
     return return_array
 
 
