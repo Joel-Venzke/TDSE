@@ -35,16 +35,13 @@ def coulomb_wave_function(l, eta, rho):
     print eta.shape, eta[0], eta[0].shape
     print eta
     for idx in np.arange(norm_factor.shape[0]):
-        print idx, l + 1.0 - 1.0j * eta[idx], 2.0 * l + 2.0, 1.0j * 2.0 * rho[
-            idx]
-        print type(idx), type(
-            complex(l + 1.0 - 1.0j * eta[idx])), type(2.0 * l + 2.0), type(
-                1.0j * 2.0 * rho[idx])
-        return_array[idx] = norm_factor[idx] * rho[idx]**(
-            l + 1) * np.exp(-1.0j * rho[idx])
-        # *hyp1f1(
-        #         complex(l + 1.0 - 1.0j * eta[idx]), 2.0 * l + 2.0,
-        #         1.0j * 2.0 * rho[idx])
+        input_0 = complex(l + 1.0 - 1.0j * eta[idx])
+        input_1 = 2.0 * l + 2.0
+        input_2 = 1.0j * 2.0 * rho[idx]
+        print input_0, input_1, input_2
+        print type(input_0), type(input_1), type(input_2)
+        return_array[idx] = norm_factor[idx] * rho[idx]**(l + 1) * np.exp(
+            -1.0j * rho[idx]) * hyp1f1(input_0, input_1, input_2)
     return return_array
 
 
