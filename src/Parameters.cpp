@@ -21,9 +21,6 @@ void Parameters::Setup(std::string file_name)
   json data = FileToJson(file_name);
 
   /* get numeric information */
-  delta_t           = data["delta_t"];
-  num_dims          = data["dimensions"].size();
-  num_electrons     = data["num_electrons"];
   coordinate_system = data["coordinate_system"];
 
   if (coordinate_system == "Cartesian")
@@ -34,24 +31,59 @@ void Parameters::Setup(std::string file_name)
   {
     coordinate_system_idx = 1;
   }
+  else if (coordinate_system == "RBF")
+  {
+    coordinate_system_idx = 2;
+  }
   else
   {
     coordinate_system_idx = -1;
   }
 
-  dim_size          = std::make_unique< double[] >(num_dims);
-  delta_x_min       = std::make_unique< double[] >(num_dims);
-  delta_x_min_end   = std::make_unique< double[] >(num_dims);
-  delta_x_max       = std::make_unique< double[] >(num_dims);
-  delta_x_max_start = std::make_unique< double[] >(num_dims);
+  delta_t       = data["delta_t"];
+  num_electrons = data["num_electrons"];
 
-  for (PetscInt i = 0; i < num_dims; ++i)
+  if (coordinate_system_idx == 2)
   {
-    dim_size[i]          = data["dimensions"][i]["dim_size"];
-    delta_x_min[i]       = data["dimensions"][i]["delta_x_min"];
-    delta_x_min_end[i]   = data["dimensions"][i]["delta_x_min_end"];
-    delta_x_max[i]       = data["dimensions"][i]["delta_x_max"];
-    delta_x_max_start[i] = data["dimensions"][i]["delta_x_max_start"];
+    num_dims          = 3;
+    dim_size          = std::make_unique< double[] >(num_dims);
+    delta_x_min       = std::make_unique< double[] >(num_dims);
+    delta_x_min_end   = std::make_unique< double[] >(num_dims);
+    delta_x_max       = std::make_unique< double[] >(num_dims);
+    delta_x_max_start = std::make_unique< double[] >(num_dims);
+
+    for (PetscInt i = 0; i < num_dims; ++i)
+    {
+      dim_size[i]          = 0.0;
+      delta_x_min[i]       = 0.0;
+      delta_x_min_end[i]   = 0.0;
+      delta_x_max[i]       = 0.0;
+      delta_x_max_start[i] = 0.0;
+    }
+
+    gobbler = 0.0;
+    order   = 0;
+  }
+  else
+  {
+    num_dims          = data["dimensions"].size();
+    dim_size          = std::make_unique< double[] >(num_dims);
+    delta_x_min       = std::make_unique< double[] >(num_dims);
+    delta_x_min_end   = std::make_unique< double[] >(num_dims);
+    delta_x_max       = std::make_unique< double[] >(num_dims);
+    delta_x_max_start = std::make_unique< double[] >(num_dims);
+
+    for (PetscInt i = 0; i < num_dims; ++i)
+    {
+      dim_size[i]          = data["dimensions"][i]["dim_size"];
+      delta_x_min[i]       = data["dimensions"][i]["delta_x_min"];
+      delta_x_min_end[i]   = data["dimensions"][i]["delta_x_min_end"];
+      delta_x_max[i]       = data["dimensions"][i]["delta_x_max"];
+      delta_x_max_start[i] = data["dimensions"][i]["delta_x_max_start"];
+    }
+
+    gobbler = data["gobbler"];
+    order   = data["order"];
   }
 
   /* get simulation behavior */
@@ -62,8 +94,6 @@ void Parameters::Setup(std::string file_name)
   write_frequency_checkpoint  = data["write_frequency_checkpoint"];
   write_frequency_observables = data["write_frequency_observables"];
   write_frequency_eigin_state = data["write_frequency_eigin_state"];
-  gobbler                     = data["gobbler"];
-  order                       = data["order"];
   sigma                       = data["sigma"];
   tol                         = data["tol"];
   state_solver                = data["state_solver"];

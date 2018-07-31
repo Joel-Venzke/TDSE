@@ -29,7 +29,7 @@ def coulomb_wave_function(l, eta, rho):
     product = np.add.outer(eta**2, product**2)
     product = np.prod(product, axis=1)
     norm_factor = 2**l * np.sqrt(2 * np.pi * eta / (
-        np.exp(np.pi * eta / 2) - 1) * product) / factorial(2 * l + 1)
+        np.exp(np.pi * eta * 2) - 1) * product) / factorial(2 * l + 1)
     # return the f_l function
     return_array = np.zeros(norm_factor.shape, dtype='complex128')
     for idx in np.arange(norm_factor.shape[0]):
@@ -96,7 +96,7 @@ for fold in folders:
             k_max = np.sqrt(w_max * 2.0)
             delta_k = max((ky[1] - ky[0]) / 2, 0.05)
             print "dk: ", delta_k
-            k_values = np.arange(0.2, k_max + delta_k, delta_k)
+            k_values = np.arange(0.8, k_max + delta_k, delta_k)
             delta_theta = 0.01
             theta = np.arange(0, np.pi, delta_theta)
             delta_r = 0.3

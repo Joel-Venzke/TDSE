@@ -72,6 +72,7 @@ class HDF5Wrapper : protected Utils
 
   PetscInt GetTimeIdx(H5std_string var_path, bool complex = false);
   double GetLast(H5std_string var_path);
+  double *GetFirstN(H5std_string var_path, PetscInt first_n);
 
   /* write for parameters */
   void WriteHeader(Parameters &p);

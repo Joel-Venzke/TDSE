@@ -529,152 +529,196 @@ void Wavefunction::CheckpointPsi(ViewWrapper& viewer_file, PetscInt write_idx)
 
 void Wavefunction::CreateGrid()
 {
-  PetscInt center;  /* idx of the 0.0 in the grid */
-  double current_x; /* used for setting grid */
-  double slope;
-  double x_total;
-  double max_x;
-  double amplitude;
-  double w;
-  double s1;
-  PetscInt count;
-
   /* allocation */
   num_x   = new PetscInt[num_dims];
   x_value = new double*[num_dims];
 
-  /* initialize for loop */
-  num_psi_build = 1.0;
-
-  /* build grid */
-  for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
+  /* RBF */
+  if (coordinate_system_idx == 2)
   {
-    amplitude = delta_x_max[dim_idx] - delta_x_min[dim_idx];
-    w = pi / (2.0 * (delta_x_max_start[dim_idx] - delta_x_min_end[dim_idx]));
-    x_total = delta_x_min[dim_idx] / 2.0;
-    count   = 0;
-    if (coordinate_system_idx == 1 and dim_idx == 0)
+    /* load node set hdf5 file*/
+    HDF5Wrapper node_set("nodes.h5", "r");
+
+    /* Find out how many nodes we need*/
+    num_psi = node_set.GetLast("/parameters/num_nodes");
+
+    /* allocate data */
+    for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
     {
-      max_x = dim_size[dim_idx];
-    }
-    else
-    {
-      max_x = dim_size[dim_idx] / 2.0;
+      x_value[dim_idx] = new double[num_psi];
+      num_x[dim_idx]   = num_psi;
     }
 
-    while (x_total < max_x)
+    /* load x data */
+    double* nodes_x = node_set.GetFirstN("/node_set/x", num_psi);
+    for (int idx = 0; idx < num_psi; ++idx)
     {
-      if (x_total < delta_x_min_end[dim_idx])
+      x_value[0][idx] = nodes_x[idx];
+    }
+    delete nodes_x;
+
+    /* load y data */
+    double* nodes_y = node_set.GetFirstN("/node_set/y", num_psi);
+    for (int idx = 0; idx < num_psi; ++idx)
+    {
+      x_value[1][idx] = nodes_y[idx];
+    }
+    delete nodes_y;
+
+    /* load z data */
+    double* nodes_z = node_set.GetFirstN("/node_set/z", num_psi);
+    for (int idx = 0; idx < num_psi; ++idx)
+    {
+      x_value[2][idx] = nodes_z[idx];
+    }
+    delete nodes_z;
+  }
+  else
+  {
+    PetscInt center;  /* idx of the 0.0 in the grid */
+    double current_x; /* used for setting grid */
+    double slope;
+    double x_total;
+    double max_x;
+    double amplitude;
+    double w;
+    double s1;
+    PetscInt count;
+
+    /* initialize for loop */
+    num_psi_build = 1.0;
+
+    /* build grid */
+    for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
+    {
+      amplitude = delta_x_max[dim_idx] - delta_x_min[dim_idx];
+      w = pi / (2.0 * (delta_x_max_start[dim_idx] - delta_x_min_end[dim_idx]));
+      x_total = delta_x_min[dim_idx] / 2.0;
+      count   = 0;
+      if (coordinate_system_idx == 1 and dim_idx == 0)
       {
-        x_total += delta_x_min[dim_idx];
-      }
-      else if (x_total < delta_x_max_start[dim_idx])
-      {
-        s1 = std::sin(w * (x_total - delta_x_min_end[dim_idx]));
-        x_total += amplitude * s1 * s1 + delta_x_min[dim_idx];
+        max_x = dim_size[dim_idx];
       }
       else
       {
-        x_total += delta_x_max[dim_idx];
+        max_x = dim_size[dim_idx] / 2.0;
       }
-      count++;
-    }
-    if (coordinate_system_idx == 1 and dim_idx == 0)
-    {
-      num_x[dim_idx] = count;
-    }
-    else
-    {
-      num_x[dim_idx] = count * 2.0;
-    }
 
-    if (num_x[dim_idx] % 2 != 0)
-    {
-      num_x[dim_idx]++;
-    }
-
-    /* allocate grid */
-    x_value[dim_idx] = new double[num_x[dim_idx]];
-
-    /* size of 1d array for psi */
-    num_psi_build *= num_x[dim_idx];
-
-    slope = (delta_x_max[dim_idx] - delta_x_min[dim_idx]) /
-            (delta_x_max_start[dim_idx] - delta_x_min_end[dim_idx]);
-
-    if (coordinate_system_idx == 1 and dim_idx == 0)
-    {
-      if (order > 2)
+      while (x_total < max_x)
       {
-        x_value[dim_idx][0] = delta_x_min[dim_idx];
+        if (x_total < delta_x_min_end[dim_idx])
+        {
+          x_total += delta_x_min[dim_idx];
+        }
+        else if (x_total < delta_x_max_start[dim_idx])
+        {
+          s1 = std::sin(w * (x_total - delta_x_min_end[dim_idx]));
+          x_total += amplitude * s1 * s1 + delta_x_min[dim_idx];
+        }
+        else
+        {
+          x_total += delta_x_max[dim_idx];
+        }
+        count++;
+      }
+      if (coordinate_system_idx == 1 and dim_idx == 0)
+      {
+        num_x[dim_idx] = count;
       }
       else
       {
-        x_value[dim_idx][0] = delta_x_min[dim_idx] / 2.0;
+        num_x[dim_idx] = count * 2.0;
       }
-      for (int x_idx = 1; x_idx < num_x[dim_idx]; ++x_idx)
+
+      if (num_x[dim_idx] % 2 != 0)
       {
-        if (x_value[dim_idx][x_idx - 1] < delta_x_min_end[dim_idx])
+        num_x[dim_idx]++;
+      }
+
+      /* allocate grid */
+      x_value[dim_idx] = new double[num_x[dim_idx]];
+
+      /* size of 1d array for psi */
+      num_psi_build *= num_x[dim_idx];
+
+      slope = (delta_x_max[dim_idx] - delta_x_min[dim_idx]) /
+              (delta_x_max_start[dim_idx] - delta_x_min_end[dim_idx]);
+
+      if (coordinate_system_idx == 1 and dim_idx == 0)
+      {
+        if (order > 2)
         {
-          x_value[dim_idx][x_idx] =
-              x_value[dim_idx][x_idx - 1] + delta_x_min[dim_idx];
-        }
-        else if (x_value[dim_idx][x_idx - 1] < delta_x_max_start[dim_idx])
-        {
-          s1 = std::sin(
-              w * (x_value[dim_idx][x_idx - 1] - delta_x_min_end[dim_idx]));
-          x_value[dim_idx][x_idx] = x_value[dim_idx][x_idx - 1] +
-                                    amplitude * s1 * s1 + delta_x_min[dim_idx];
+          x_value[dim_idx][0] = delta_x_min[dim_idx];
         }
         else
         {
-          x_value[dim_idx][x_idx] =
-              x_value[dim_idx][x_idx - 1] + delta_x_max[dim_idx];
+          x_value[dim_idx][0] = delta_x_min[dim_idx] / 2.0;
+        }
+        for (int x_idx = 1; x_idx < num_x[dim_idx]; ++x_idx)
+        {
+          if (x_value[dim_idx][x_idx - 1] < delta_x_min_end[dim_idx])
+          {
+            x_value[dim_idx][x_idx] =
+                x_value[dim_idx][x_idx - 1] + delta_x_min[dim_idx];
+          }
+          else if (x_value[dim_idx][x_idx - 1] < delta_x_max_start[dim_idx])
+          {
+            s1 = std::sin(
+                w * (x_value[dim_idx][x_idx - 1] - delta_x_min_end[dim_idx]));
+            x_value[dim_idx][x_idx] = x_value[dim_idx][x_idx - 1] +
+                                      amplitude * s1 * s1 +
+                                      delta_x_min[dim_idx];
+          }
+          else
+          {
+            x_value[dim_idx][x_idx] =
+                x_value[dim_idx][x_idx - 1] + delta_x_max[dim_idx];
+          }
         }
       }
-    }
-    else
-    {
-      /* find center of grid */
-      center = num_x[dim_idx] / 2;
-
-      x_value[dim_idx][center - 1] = -1.0 * delta_x_min[dim_idx] / 2.0;
-      x_value[dim_idx][center]     = delta_x_min[dim_idx] / 2.0;
-
-      /* loop over all others */
-      for (PetscInt x_idx = center - 1; x_idx >= 0; x_idx--)
+      else
       {
-        // /* get x value */
-        // current_x =
-        //     (x_idx - center) * delta_x[dim_idx] + delta_x[dim_idx] / 2.0;
+        /* find center of grid */
+        center = num_x[dim_idx] / 2;
 
-        /* double checking index */
-        if (x_idx < 0 || num_x[dim_idx] - x_idx - 1 >= num_x[dim_idx])
-        {
-          EndRun("Allocation error in grid");
-        }
+        x_value[dim_idx][center - 1] = -1.0 * delta_x_min[dim_idx] / 2.0;
+        x_value[dim_idx][center]     = delta_x_min[dim_idx] / 2.0;
 
-        if (std::abs(x_value[dim_idx][x_idx + 1]) < delta_x_min_end[dim_idx])
+        /* loop over all others */
+        for (PetscInt x_idx = center - 1; x_idx >= 0; x_idx--)
         {
-          current_x = x_value[dim_idx][x_idx + 1] - delta_x_min[dim_idx];
-        }
-        else if (std::abs(x_value[dim_idx][x_idx + 1]) <
-                 delta_x_max_start[dim_idx])
-        {
-          s1        = std::sin(w * (std::abs(x_value[dim_idx][x_idx + 1]) -
-                             delta_x_min_end[dim_idx]));
-          current_x = x_value[dim_idx][x_idx + 1] -
-                      (amplitude * s1 * s1 + delta_x_min[dim_idx]);
-        }
-        else
-        {
-          current_x = x_value[dim_idx][x_idx + 1] - delta_x_max[dim_idx];
-        }
+          // /* get x value */
+          // current_x =
+          //     (x_idx - center) * delta_x[dim_idx] + delta_x[dim_idx] / 2.0;
 
-        /* set negative side */
-        x_value[dim_idx][x_idx] = current_x;
-        /* set positive side */
-        x_value[dim_idx][num_x[dim_idx] - x_idx - 1] = -1 * current_x;
+          /* double checking index */
+          if (x_idx < 0 || num_x[dim_idx] - x_idx - 1 >= num_x[dim_idx])
+          {
+            EndRun("Allocation error in grid");
+          }
+
+          if (std::abs(x_value[dim_idx][x_idx + 1]) < delta_x_min_end[dim_idx])
+          {
+            current_x = x_value[dim_idx][x_idx + 1] - delta_x_min[dim_idx];
+          }
+          else if (std::abs(x_value[dim_idx][x_idx + 1]) <
+                   delta_x_max_start[dim_idx])
+          {
+            s1        = std::sin(w * (std::abs(x_value[dim_idx][x_idx + 1]) -
+                               delta_x_min_end[dim_idx]));
+            current_x = x_value[dim_idx][x_idx + 1] -
+                        (amplitude * s1 * s1 + delta_x_min[dim_idx]);
+          }
+          else
+          {
+            current_x = x_value[dim_idx][x_idx + 1] - delta_x_max[dim_idx];
+          }
+
+          /* set negative side */
+          x_value[dim_idx][x_idx] = current_x;
+          /* set positive side */
+          x_value[dim_idx][num_x[dim_idx] - x_idx - 1] = -1 * current_x;
+        }
       }
     }
   }
@@ -690,45 +734,47 @@ void Wavefunction::CreatePsi()
   PetscComplex val;
 
   sigma2 = sigma * sigma;
-
-  if (!psi_alloc_build)
+  if (coordinate_system_idx != 2)
   {
-    psi_build = new dcomp**[num_electrons];
+    if (!psi_alloc_build)
+    {
+      psi_build = new dcomp**[num_electrons];
+
+      for (PetscInt elec_idx = 0; elec_idx < num_electrons; elec_idx++)
+      {
+        psi_build[elec_idx] = new dcomp*[num_dims];
+
+        for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
+        {
+          psi_build[elec_idx][dim_idx] = new dcomp[num_x[dim_idx]];
+        }
+      }
+      psi_alloc_build = true;
+    }
 
     for (PetscInt elec_idx = 0; elec_idx < num_electrons; elec_idx++)
     {
-      psi_build[elec_idx] = new dcomp*[num_dims];
-
       for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
       {
-        psi_build[elec_idx][dim_idx] = new dcomp[num_x[dim_idx]];
+        for (PetscInt i = 0; i < num_x[dim_idx]; i++)
+        {
+          /* get x value squared */
+          x  = x_value[dim_idx][i];
+          x2 = x * x;
+
+          /* Gaussian centered around 0.0 with variation sigma */
+          psi_build[elec_idx][dim_idx][i] =
+              dcomp(exp(-1 * x2 / (2 * sigma2)), 0.0);
+        }
       }
     }
-    psi_alloc_build = true;
-  }
 
-  for (PetscInt elec_idx = 0; elec_idx < num_electrons; elec_idx++)
-  {
-    for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
+    /* get size of psi */
+    num_psi = 1.0;
+    for (PetscInt elec_idx = 0; elec_idx < num_electrons; elec_idx++)
     {
-      for (PetscInt i = 0; i < num_x[dim_idx]; i++)
-      {
-        /* get x value squared */
-        x  = x_value[dim_idx][i];
-        x2 = x * x;
-
-        /* Gaussian centered around 0.0 with variation sigma */
-        psi_build[elec_idx][dim_idx][i] =
-            dcomp(exp(-1 * x2 / (2 * sigma2)), 0.0);
-      }
+      num_psi *= num_psi_build;
     }
-  }
-
-  /* get size of psi */
-  num_psi = 1.0;
-  for (PetscInt elec_idx = 0; elec_idx < num_electrons; elec_idx++)
-  {
-    num_psi *= num_psi_build;
   }
 
   /* allocate psi */
@@ -796,7 +842,19 @@ void Wavefunction::CreatePsi()
   for (PetscInt idx = low; idx < high; idx++)
   {
     /* set psi */
-    val = GetPsiVal(psi_build, idx);
+    if (coordinate_system_idx == 2)
+    {
+      val = dcomp(exp(-1.0 *
+                      (x_value[0][idx] * x_value[0][idx] +
+                       x_value[1][idx] * x_value[1][idx] +
+                       x_value[2][idx] * x_value[2][idx]) /
+                      (2.0 * sigma2)),
+                  0.0);
+    }
+    else
+    {
+      val = GetPsiVal(psi_build, idx);
+    }
     VecSetValues(psi, 1, &idx, &val, INSERT_VALUES);
   }
   VecAssemblyBegin(psi);
@@ -813,28 +871,58 @@ void Wavefunction::CreateObservables()
   PetscInt low, high;
   PetscComplex val;
 
-  VecGetOwnershipRange(jacobian, &low, &high);
-  for (PetscInt idx = low; idx < high; idx++)
+  if (coordinate_system_idx == 2) /* RBF */
   {
-    if (coordinate_system_idx == 1)
-      val = GetPositionVal(idx, 0, 0, true);
-    else
-      val = 1.0;
-    val *= GetVolumeElement(idx);
-    VecSetValues(jacobian, 1, &idx, &val, INSERT_VALUES);
-  }
-  VecAssemblyBegin(jacobian);
-  VecAssemblyEnd(jacobian);
+    /* load node set hdf5 file*/
+    HDF5Wrapper node_set("nodes.h5", "r");
 
-  VecGetOwnershipRange(ECS, &low, &high);
-  for (PetscInt idx = low; idx < high; idx++)
+    double* weights = node_set.GetFirstN("/node_set/weights", num_psi);
+    VecGetOwnershipRange(jacobian, &low, &high);
+    for (PetscInt idx = low; idx < high; idx++)
+    {
+      val = weights[idx];
+      VecSetValues(jacobian, 1, &idx, &val, INSERT_VALUES);
+    }
+    delete weights;
+    VecAssemblyBegin(jacobian);
+    VecAssemblyEnd(jacobian);
+
+    VecGetOwnershipRange(ECS, &low, &high);
+    for (PetscInt idx = low; idx < high; idx++)
+    {
+      /* TODO add ECS values */
+      val = 0.0;
+      VecSetValues(ECS, 1, &idx, &val, INSERT_VALUES);
+    }
+    VecAssemblyBegin(ECS);
+    VecAssemblyEnd(ECS);
+  }
+  else /* not rbf */
   {
-    val = GetGobblerVal(idx);
-    VecSetValues(ECS, 1, &idx, &val, INSERT_VALUES);
-  }
-  VecAssemblyBegin(ECS);
-  VecAssemblyEnd(ECS);
+    VecGetOwnershipRange(jacobian, &low, &high);
+    for (PetscInt idx = low; idx < high; idx++)
+    {
+      if (coordinate_system_idx == 1)
+        val = GetPositionVal(idx, 0, 0, true);
+      else
+        val = 1.0;
+      val *= GetVolumeElement(idx);
+      VecSetValues(jacobian, 1, &idx, &val, INSERT_VALUES);
+    }
+    VecAssemblyBegin(jacobian);
+    VecAssemblyEnd(jacobian);
 
+    VecGetOwnershipRange(ECS, &low, &high);
+    for (PetscInt idx = low; idx < high; idx++)
+    {
+      val = GetGobblerVal(idx);
+      VecSetValues(ECS, 1, &idx, &val, INSERT_VALUES);
+    }
+    VecAssemblyBegin(ECS);
+    VecAssemblyEnd(ECS);
+  }
+
+  /* same for all coordinate systems */
   for (int elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
   {
     for (int dim_idx = 0; dim_idx < num_dims; ++dim_idx)
@@ -936,94 +1024,101 @@ dcomp Wavefunction::GetPositionVal(PetscInt idx, PetscInt elec_idx,
 {
   /* Value to be returned */
   dcomp ret_val(0.0, 0.0);
-  /* idx for return */
-  std::vector< PetscInt > idx_array = GetIntArray(idx);
-  ret_val = x_value[dim_idx][idx_array[elec_idx * num_dims + dim_idx]];
-  if (integrate and order > 2 and dim_idx == 0 and coordinate_system_idx == 1)
+  if (coordinate_system_idx == 2) /* RBF */
   {
-    // std::cout << "using integrate\n";
-    /* see appendix A of https://arxiv.org/pdf/1604.00947.pdf using Lagrange
-     * interpolation polynomials and
-     * http://slideflix.net/doc/4183369/gregory-s-quadrature-method */
-    // if (idx_array[elec_idx * num_dims + dim_idx] == 0) ret_val *= 13.0 /
-    // 12.0;
+    ret_val = x_value[dim_idx][idx];
+  }
+  else
+  {
+    /* idx for return */
+    std::vector< PetscInt > idx_array = GetIntArray(idx);
+    ret_val = x_value[dim_idx][idx_array[elec_idx * num_dims + dim_idx]];
+    if (integrate and order > 2 and dim_idx == 0 and coordinate_system_idx == 1)
+    {
+      // std::cout << "using integrate\n";
+      /* see appendix A of https://arxiv.org/pdf/1604.00947.pdf using Lagrange
+       * interpolation polynomials and
+       * http://slideflix.net/doc/4183369/gregory-s-quadrature-method */
+      // if (idx_array[elec_idx * num_dims + dim_idx] == 0) ret_val *= 13.0 /
+      // 12.0;
 
-    // if (idx_array[elec_idx * num_dims + dim_idx] == 0)
-    //   ret_val *= 7.0 / 6.0;
-    // else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
-    //   ret_val *= 23.0 / 24.0;
+      // if (idx_array[elec_idx * num_dims + dim_idx] == 0)
+      //   ret_val *= 7.0 / 6.0;
+      // else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
+      //   ret_val *= 23.0 / 24.0;
 
-    // if (idx_array[elec_idx * num_dims + dim_idx] == 0)
-    //   ret_val *= 299.0 / 240.0;
-    // else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
-    //   ret_val *= 211.0 / 240.0;
-    // else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
-    //   ret_val *= 739.0 / 720.0;
+      // if (idx_array[elec_idx * num_dims + dim_idx] == 0)
+      //   ret_val *= 299.0 / 240.0;
+      // else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
+      //   ret_val *= 211.0 / 240.0;
+      // else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
+      //   ret_val *= 739.0 / 720.0;
 
-    // if (idx_array[elec_idx * num_dims + dim_idx] == 0)
-    //   ret_val *= 317.0 / 240.0;
-    // else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
-    //   ret_val *= 23.0 / 30.0;
-    // else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
-    //   ret_val *= 793.0 / 720.0;
-    // else if (idx_array[elec_idx * num_dims + dim_idx] == 3)
-    //   ret_val *= 147.0 / 160.0;
+      // if (idx_array[elec_idx * num_dims + dim_idx] == 0)
+      //   ret_val *= 317.0 / 240.0;
+      // else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
+      //   ret_val *= 23.0 / 30.0;
+      // else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
+      //   ret_val *= 793.0 / 720.0;
+      // else if (idx_array[elec_idx * num_dims + dim_idx] == 3)
+      //   ret_val *= 147.0 / 160.0;
 
-    // if (idx_array[elec_idx * num_dims + dim_idx] == 0)
-    //   ret_val *= 84199.0 / 60480.0;
-    // else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
-    //   ret_val *= 18869.0 / 30240.0;
-    // else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
-    //   ret_val *= 37621.0 / 30240.0;
-    // else if (idx_array[elec_idx * num_dims + dim_idx] == 3)
-    //   ret_val *= 55031.0 / 60480.0;
-    // else if (idx_array[elec_idx * num_dims + dim_idx] == 4)
-    //   ret_val *= 61343.0 / 60480.0;
+      // if (idx_array[elec_idx * num_dims + dim_idx] == 0)
+      //   ret_val *= 84199.0 / 60480.0;
+      // else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
+      //   ret_val *= 18869.0 / 30240.0;
+      // else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
+      //   ret_val *= 37621.0 / 30240.0;
+      // else if (idx_array[elec_idx * num_dims + dim_idx] == 3)
+      //   ret_val *= 55031.0 / 60480.0;
+      // else if (idx_array[elec_idx * num_dims + dim_idx] == 4)
+      //   ret_val *= 61343.0 / 60480.0;
 
-    if (idx_array[elec_idx * num_dims + dim_idx] == 0)
-      ret_val *= 22081.0 / 15120.0;
-    else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
-      ret_val *= 54851.0 / 120960.0;
-    else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
-      ret_val *= 103.0 / 70.0;
-    else if (idx_array[elec_idx * num_dims + dim_idx] == 3)
-      ret_val *= 89437.0 / 120960.0;
-    else if (idx_array[elec_idx * num_dims + dim_idx] == 4)
-      ret_val *= 16367.0 / 15120.0;
-    else if (idx_array[elec_idx * num_dims + dim_idx] == 5)
-      ret_val *= 23917.0 / 24192.0;
+      if (idx_array[elec_idx * num_dims + dim_idx] == 0)
+        ret_val *= 22081.0 / 15120.0;
+      else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
+        ret_val *= 54851.0 / 120960.0;
+      else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
+        ret_val *= 103.0 / 70.0;
+      else if (idx_array[elec_idx * num_dims + dim_idx] == 3)
+        ret_val *= 89437.0 / 120960.0;
+      else if (idx_array[elec_idx * num_dims + dim_idx] == 4)
+        ret_val *= 16367.0 / 15120.0;
+      else if (idx_array[elec_idx * num_dims + dim_idx] == 5)
+        ret_val *= 23917.0 / 24192.0;
 
-    // if (idx_array[elec_idx * num_dims + dim_idx] == 0)
-    //   ret_val *= 5537111.0 / 3628800.0;
-    // else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
-    //   ret_val *= 103613.0 / 403200.0;
-    // else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
-    //   ret_val *= 261115.0 / 145152.0;
-    // else if (idx_array[elec_idx * num_dims + dim_idx] == 3)
-    //   ret_val *= 298951.0 / 725760.0;
-    // else if (idx_array[elec_idx * num_dims + dim_idx] == 4)
-    //   ret_val *= 515677.0 / 403200.0;
-    // else if (idx_array[elec_idx * num_dims + dim_idx] == 5)
-    //   ret_val *= 3349879.0 / 3628800.0;
-    // else if (idx_array[elec_idx * num_dims + dim_idx] == 6)
-    //   ret_val *= 3662753.0 / 3628800.0;
+      // if (idx_array[elec_idx * num_dims + dim_idx] == 0)
+      //   ret_val *= 5537111.0 / 3628800.0;
+      // else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
+      //   ret_val *= 103613.0 / 403200.0;
+      // else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
+      //   ret_val *= 261115.0 / 145152.0;
+      // else if (idx_array[elec_idx * num_dims + dim_idx] == 3)
+      //   ret_val *= 298951.0 / 725760.0;
+      // else if (idx_array[elec_idx * num_dims + dim_idx] == 4)
+      //   ret_val *= 515677.0 / 403200.0;
+      // else if (idx_array[elec_idx * num_dims + dim_idx] == 5)
+      //   ret_val *= 3349879.0 / 3628800.0;
+      // else if (idx_array[elec_idx * num_dims + dim_idx] == 6)
+      //   ret_val *= 3662753.0 / 3628800.0;
 
-    // if (idx_array[elec_idx * num_dims + dim_idx] == 0)
-    //   ret_val *= 1153247.0 / 725760.0;
-    // else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
-    //   ret_val *= 130583.0 / 3628800.0;
-    // else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
-    //   ret_val *= 903527.0 / 403200.0;
-    // else if (idx_array[elec_idx * num_dims + dim_idx] == 3)
-    //   ret_val *= -797.0 / 5670.0;
-    // else if (idx_array[elec_idx * num_dims + dim_idx] == 4)
-    //   ret_val *= 6244961.0 / 3628800.0;
-    // else if (idx_array[elec_idx * num_dims + dim_idx] == 5)
-    //   ret_val *= 56621.0 / 80640.0;
-    // else if (idx_array[elec_idx * num_dims + dim_idx] == 6)
-    //   ret_val *= 3891877.0 / 3628800.0;
-    // else if (idx_array[elec_idx * num_dims + dim_idx] == 7)
-    //   ret_val *= 1028617.0 / 1036800.0;
+      // if (idx_array[elec_idx * num_dims + dim_idx] == 0)
+      //   ret_val *= 1153247.0 / 725760.0;
+      // else if (idx_array[elec_idx * num_dims + dim_idx] == 1)
+      //   ret_val *= 130583.0 / 3628800.0;
+      // else if (idx_array[elec_idx * num_dims + dim_idx] == 2)
+      //   ret_val *= 903527.0 / 403200.0;
+      // else if (idx_array[elec_idx * num_dims + dim_idx] == 3)
+      //   ret_val *= -797.0 / 5670.0;
+      // else if (idx_array[elec_idx * num_dims + dim_idx] == 4)
+      //   ret_val *= 6244961.0 / 3628800.0;
+      // else if (idx_array[elec_idx * num_dims + dim_idx] == 5)
+      //   ret_val *= 56621.0 / 80640.0;
+      // else if (idx_array[elec_idx * num_dims + dim_idx] == 6)
+      //   ret_val *= 3891877.0 / 3628800.0;
+      // else if (idx_array[elec_idx * num_dims + dim_idx] == 7)
+      //   ret_val *= 1028617.0 / 1036800.0;
+    }
   }
   return ret_val;
 }
@@ -1057,11 +1152,22 @@ dcomp Wavefunction::GetDipoleAccerationVal(PetscInt idx, PetscInt elec_idx,
   /* Value to be returned */
   dcomp ret_val(0.0, 0.0);
   double r;
-  /* idx for return */
-  std::vector< PetscInt > idx_array = GetIntArray(idx);
-  r                                 = GetDistance(idx_array, elec_idx);
-  ret_val +=
-      x_value[dim_idx][idx_array[elec_idx * num_dims + dim_idx]] / (r * r * r);
+  if (coordinate_system_idx == 2) /* RBF */
+  {
+    r = sqrt(x_value[0][idx] * x_value[0][idx] +
+             x_value[1][idx] * x_value[1][idx] +
+             x_value[2][idx] * x_value[2][idx]);
+    ret_val += x_value[dim_idx][idx] / (r * r * r);
+  }
+  else
+  {
+    /* idx for return */
+    std::vector< PetscInt > idx_array = GetIntArray(idx);
+    r                                 = GetDistance(idx_array, elec_idx);
+    ret_val += x_value[dim_idx][idx_array[elec_idx * num_dims + dim_idx]] /
+               (r * r * r);
+  }
+
   return ret_val;
 }
 
