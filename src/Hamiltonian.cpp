@@ -10,12 +10,7 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
   coordinate_system_idx = p.GetCoordinateSystemIdx();
   num_x                 = w.GetNumX();
   num_psi               = w.GetNumPsi();
-  num_psi_build         = w.GetNumPsiBuild();
   gauge_idx             = p.GetGaugeIdx();
-  delta_x_min           = p.delta_x_min.get();
-  delta_x_min_end       = p.delta_x_min_end.get();
-  delta_x_max           = p.delta_x_max.get();
-  delta_x_max_start     = p.delta_x_max_start.get();
   x_value               = w.GetXValue();
   z                     = p.z.get();
   location              = p.GetLocation();
@@ -28,14 +23,22 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
   alpha                 = p.GetAlpha();
   alpha_2               = alpha * alpha;
   field                 = pulse.GetField();
-  eta                   = pi / 4.0;
-  order                 = p.GetOrder();
-  order_middle_idx      = order / 2;
-  gobbler_idx           = w.GetGobblerIdx();
 
-  /* call this after setting gobbler and before creating the Hamiltonian */
-  SetUpCoefficients();
+  if (coordinate_system_idx != 2)
+  {
+    num_psi_build     = w.GetNumPsiBuild();
+    delta_x_min       = p.delta_x_min.get();
+    delta_x_min_end   = p.delta_x_min_end.get();
+    delta_x_max       = p.delta_x_max.get();
+    delta_x_max_start = p.delta_x_max_start.get();
+    eta               = pi / 4.0;
+    order             = p.GetOrder();
+    order_middle_idx  = order / 2;
+    gobbler_idx       = w.GetGobblerIdx();
 
+    /* call this after setting gobbler and before creating the Hamiltonian */
+    SetUpCoefficients();
+  }
   /* set up time independent */
   CreateHamlitonian();
 
@@ -45,7 +48,32 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
 void Hamiltonian::CreateHamlitonian()
 {
   /* reserve right amount of memory to save storage */
-  if (coordinate_system_idx == 1) /* Cylindrical needs 1 more for radial bc */
+  if (coordinate_system_idx == 2) /* RBF */
+  {
+    /* load node set hdf5 file*/
+    HDF5Wrapper node_set("nodes.h5", "r");
+
+    /* Find out how many nodes we need*/
+    PetscInt stencil_size = node_set.GetLast("/parameters/stencil_size");
+    MatCreateAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, num_psi, num_psi,
+                 stencil_size, NULL, stencil_size, NULL, &hamiltonian);
+
+    MatCreateAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, num_psi, num_psi,
+                 stencil_size, NULL, stencil_size, NULL, &hamiltonian_0);
+
+    MatCreateAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, num_psi, num_psi,
+                 stencil_size, NULL, stencil_size, NULL, &hamiltonian_0_ecs);
+
+    hamiltonian_laser = new Mat[num_dims];
+    for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+    {
+      MatCreateAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, num_psi,
+                   num_psi, stencil_size, NULL, stencil_size, NULL,
+                   &(hamiltonian_laser[dim_idx]));
+    }
+  }
+  else if (coordinate_system_idx ==
+           1) /* Cylindrical needs 1 more for radial bc */
   {
     MatCreateAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, num_psi, num_psi,
                  num_dims * num_electrons * (order + 3), NULL,
@@ -94,6 +122,12 @@ void Hamiltonian::CreateHamlitonian()
     }
   }
   GenerateHamlitonian();
+  // MatView(hamiltonian_0, PETSC_VIEWER_STDOUT_WORLD);
+  // MatView(hamiltonian_0_ecs, PETSC_VIEWER_STDOUT_WORLD);
+  // MatView(hamiltonian_laser[0], PETSC_VIEWER_STDOUT_WORLD);
+  // MatView(hamiltonian_laser[1], PETSC_VIEWER_STDOUT_WORLD);
+  // MatView(hamiltonian_laser[2], PETSC_VIEWER_STDOUT_WORLD);
+  // EndRun("");
 }
 
 void Hamiltonian::GenerateHamlitonian()
@@ -106,270 +140,47 @@ void Hamiltonian::GenerateHamlitonian()
 
 void Hamiltonian::CalculateHamlitonian0()
 {
-  dcomp val(0.0, 0.0);  /* diagonal terms */
-  PetscInt j_val;       /* j index for matrix */
-  PetscInt base_offset; /* offset of diagonal */
-  PetscInt offset;      /* offset of diagonal */
-  PetscInt start, end;  /* start end rows */
-  bool insert_val, ecs;
-  std::vector< PetscInt > idx_array;
-  std::vector< dcomp > x_vals(order + 1, 0.0);
+  dcomp val(0.0, 0.0); /* diagonal terms */
+  PetscInt start, end; /* start end rows */
 
   MatGetOwnershipRange(hamiltonian_0, &start, &end);
-
-  ecs = false;
-  for (PetscInt i_val = start; i_val < end; i_val++)
+  if (coordinate_system_idx == 2) /* RBF */
   {
-    j_val     = i_val;
-    idx_array = GetIndexArray(i_val, j_val);
-    for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
+    HDF5Wrapper node_set("nodes.h5", "r");
+    PetscInt num_operators = node_set.GetLast("/parameters/num_operators");
+    PetscInt* row_idx =
+        node_set.GetFirstNInt("/operators/row_idx", num_operators);
+    PetscInt* col_idx =
+        node_set.GetFirstNInt("/operators/col_idx", num_operators);
+    double* laplace = node_set.GetFirstN("/operators/laplace", num_operators);
+
+    for (PetscInt idx = 0; idx < num_operators; idx++)
     {
-      /* avoid recalculating if the grid is uniform */
-      if (delta_x_max[dim_idx] != delta_x_min[dim_idx])
+      if (row_idx[idx] >= start and row_idx[idx] < end)
       {
-        /* Set up real gird */
-        for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
+        val = -1.0 * laplace[idx] / 2.0;
+        if (row_idx[idx] == col_idx[idx])
         {
-          if (idx_array[dim_idx * 2] < (order / 2 + 1) or
-              num_x[dim_idx] - 1 - idx_array[dim_idx * 2] < (order / 2 + 1))
-          {
-            x_vals[coef_idx] = delta_x_max[dim_idx] * coef_idx;
-          }
-          else
-          {
-            x_vals[coef_idx] =
-                x_value[dim_idx][coef_idx - order / 2 + idx_array[dim_idx * 2]];
-          }
+          val += GetNucleiTerm(row_idx[idx]);
         }
-        /* Get real coefficients for each dimension */
-        FDWeights(x_vals, 2, real_coef[dim_idx]);
+        MatSetValues(hamiltonian_0, 1, &row_idx[idx], 1, &col_idx[idx], &val,
+                     INSERT_VALUES);
       }
     }
-
-    /* Diagonal element */
-    val = GetVal(i_val, j_val, insert_val, ecs);
-    if (insert_val)
-    {
-      MatSetValues(hamiltonian_0, 1, &i_val, 1, &j_val, &val, INSERT_VALUES);
-    }
-
-    /* Loop over off diagonal elements */
-    for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
-    {
-      for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
-      {
-        base_offset = GetOffset(elec_idx, dim_idx);
-        if (coordinate_system_idx == 1 and dim_idx == 1 and
-            idx_array[0] < order_middle_idx)
-        {
-          /* loop over all off diagonals up to the order needed */
-          for (int diagonal_idx = 0; diagonal_idx < order + 1; ++diagonal_idx)
-          {
-            offset = (diagonal_idx + 1) * base_offset;
-            /* Lower diagonal */
-            if (i_val - offset >= 0 and i_val - offset < num_psi)
-            {
-              j_val = i_val - offset;
-              val   = GetVal(i_val, j_val, insert_val, ecs);
-              if (insert_val)
-              {
-                MatSetValues(hamiltonian_0, 1, &i_val, 1, &j_val, &val,
-                             INSERT_VALUES);
-              }
-            }
-
-            /* Upper diagonal */
-            if (i_val + offset >= 0 and i_val + offset < num_psi)
-            {
-              j_val = i_val + offset;
-              val   = GetVal(i_val, j_val, insert_val, ecs);
-              if (insert_val)
-              {
-                MatSetValues(hamiltonian_0, 1, &i_val, 1, &j_val, &val,
-                             INSERT_VALUES);
-              }
-            }
-          }
-        }
-        else
-        {
-          /* loop over all off diagonals up to the order needed */
-          for (int diagonal_idx = 0; diagonal_idx < order_middle_idx;
-               ++diagonal_idx)
-          {
-            offset = (diagonal_idx + 1) * base_offset;
-            /* Lower diagonal */
-            if (i_val - offset >= 0 and i_val - offset < num_psi)
-            {
-              j_val = i_val - offset;
-              val   = GetVal(i_val, j_val, insert_val, ecs);
-              if (insert_val)
-              {
-                MatSetValues(hamiltonian_0, 1, &i_val, 1, &j_val, &val,
-                             INSERT_VALUES);
-              }
-            }
-
-            /* Upper diagonal */
-            if (i_val + offset >= 0 and i_val + offset < num_psi)
-            {
-              j_val = i_val + offset;
-              val   = GetVal(i_val, j_val, insert_val, ecs);
-              if (insert_val)
-              {
-                MatSetValues(hamiltonian_0, 1, &i_val, 1, &j_val, &val,
-                             INSERT_VALUES);
-              }
-            }
-          }
-        }
-      }
-    }
+    delete row_idx;
+    delete col_idx;
+    delete laplace;
   }
-  MatAssemblyBegin(hamiltonian_0, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(hamiltonian_0, MAT_FINAL_ASSEMBLY);
-}
-
-void Hamiltonian::CalculateHamlitonian0ECS()
-{
-  dcomp val(0.0, 0.0);  /* diagonal terms */
-  PetscInt j_val;       /* j index for matrix */
-  PetscInt base_offset; /* offset of diagonal */
-  PetscInt offset;      /* offset of diagonal */
-  PetscInt start, end;  /* start end rows */
-  bool insert_val, ecs;
-  std::vector< PetscInt > idx_array;
-  std::vector< dcomp > x_vals(order + 1, 0.0);
-
-  MatGetOwnershipRange(hamiltonian_0_ecs, &start, &end);
-
-  ecs = true;
-  for (PetscInt i_val = start; i_val < end; i_val++)
+  else
   {
-    j_val     = i_val;
-    idx_array = GetIndexArray(i_val, j_val);
-    for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
-    {
-      /* avoid recalculating if the grid is uniform */
-      if (delta_x_max[dim_idx] != delta_x_min[dim_idx])
-      {
-        /* Set up real gird */
-        for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
-        {
-          if (idx_array[dim_idx * 2] < (order / 2 + 1) or
-              num_x[dim_idx] - 1 - idx_array[dim_idx * 2] < (order / 2 + 1))
-          {
-            x_vals[coef_idx] = delta_x_max[dim_idx] * coef_idx;
-          }
-          else
-          {
-            x_vals[coef_idx] =
-                x_value[dim_idx][coef_idx - order / 2 + idx_array[dim_idx * 2]];
-          }
-        }
-        /* Get real coefficients for each dimension */
-        FDWeights(x_vals, 2, real_coef[dim_idx]);
-      }
-    }
+    PetscInt j_val;       /* j index for matrix */
+    PetscInt base_offset; /* offset of diagonal */
+    PetscInt offset;      /* offset of diagonal */
+    bool insert_val, ecs;
+    std::vector< PetscInt > idx_array;
+    std::vector< dcomp > x_vals(order + 1, 0.0);
 
-    /* Diagonal element */
-    val = GetVal(i_val, j_val, insert_val, ecs);
-    if (insert_val)
-    {
-      MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
-                   INSERT_VALUES);
-    }
-
-    /* Loop over off diagonal elements */
-    for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
-    {
-      for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
-      {
-        base_offset = GetOffset(elec_idx, dim_idx);
-        if (coordinate_system_idx == 1 and dim_idx == 1 and
-            idx_array[0] < order_middle_idx)
-        {
-          /* loop over all off diagonals up to the order needed */
-          for (int diagonal_idx = 0; diagonal_idx < order + 1; ++diagonal_idx)
-          {
-            offset = (diagonal_idx + 1) * base_offset;
-            /* Lower diagonal */
-            if (i_val - offset >= 0 and i_val - offset < num_psi)
-            {
-              j_val = i_val - offset;
-              val   = GetVal(i_val, j_val, insert_val, ecs);
-              if (insert_val)
-              {
-                MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
-                             INSERT_VALUES);
-              }
-            }
-
-            /* Upper diagonal */
-            if (i_val + offset >= 0 and i_val + offset < num_psi)
-            {
-              j_val = i_val + offset;
-              val   = GetVal(i_val, j_val, insert_val, ecs);
-              if (insert_val)
-              {
-                MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
-                             INSERT_VALUES);
-              }
-            }
-          }
-        }
-        else
-        {
-          /* loop over all off diagonals up to the order needed */
-          for (int diagonal_idx = 0; diagonal_idx < order_middle_idx;
-               ++diagonal_idx)
-          {
-            offset = (diagonal_idx + 1) * base_offset;
-            /* Lower diagonal */
-            if (i_val - offset >= 0 and i_val - offset < num_psi)
-            {
-              j_val = i_val - offset;
-              val   = GetVal(i_val, j_val, insert_val, ecs);
-              if (insert_val)
-              {
-                MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
-                             INSERT_VALUES);
-              }
-            }
-
-            /* Upper diagonal */
-            if (i_val + offset >= 0 and i_val + offset < num_psi)
-            {
-              j_val = i_val + offset;
-              val   = GetVal(i_val, j_val, insert_val, ecs);
-              if (insert_val)
-              {
-                MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
-                             INSERT_VALUES);
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  MatAssemblyBegin(hamiltonian_0_ecs, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(hamiltonian_0_ecs, MAT_FINAL_ASSEMBLY);
-}
-
-void Hamiltonian::CalculateHamlitonianLaser()
-{
-  dcomp val(0.0, 0.0);  /* diagonal terms */
-  PetscInt j_val;       /* j index for matrix */
-  PetscInt base_offset; /* offset of diagonal */
-  PetscInt offset;      /* offset of diagonal */
-  PetscInt start, end;  /* start end rows */
-  bool insert_val;
-  std::vector< PetscInt > idx_array;
-  std::vector< dcomp > x_vals(order + 1, 0.0);
-  for (PetscInt ham_dim_idx = 0; ham_dim_idx < num_dims; ham_dim_idx++)
-  {
-    MatGetOwnershipRange(hamiltonian_laser[ham_dim_idx], &start, &end);
+    ecs = false;
     for (PetscInt i_val = start; i_val < end; i_val++)
     {
       j_val     = i_val;
@@ -399,10 +210,173 @@ void Hamiltonian::CalculateHamlitonianLaser()
       }
 
       /* Diagonal element */
-      val = GetValLaser(i_val, j_val, insert_val, ham_dim_idx);
+      val = GetVal(i_val, j_val, insert_val, ecs);
       if (insert_val)
       {
-        MatSetValues(hamiltonian_laser[ham_dim_idx], 1, &i_val, 1, &j_val, &val,
+        MatSetValues(hamiltonian_0, 1, &i_val, 1, &j_val, &val, INSERT_VALUES);
+      }
+
+      /* Loop over off diagonal elements */
+      for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
+      {
+        for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+        {
+          base_offset = GetOffset(elec_idx, dim_idx);
+          if (coordinate_system_idx == 1 and dim_idx == 1 and
+              idx_array[0] < order_middle_idx)
+          {
+            /* loop over all off diagonals up to the order needed */
+            for (int diagonal_idx = 0; diagonal_idx < order + 1; ++diagonal_idx)
+            {
+              offset = (diagonal_idx + 1) * base_offset;
+              /* Lower diagonal */
+              if (i_val - offset >= 0 and i_val - offset < num_psi)
+              {
+                j_val = i_val - offset;
+                val   = GetVal(i_val, j_val, insert_val, ecs);
+                if (insert_val)
+                {
+                  MatSetValues(hamiltonian_0, 1, &i_val, 1, &j_val, &val,
+                               INSERT_VALUES);
+                }
+              }
+
+              /* Upper diagonal */
+              if (i_val + offset >= 0 and i_val + offset < num_psi)
+              {
+                j_val = i_val + offset;
+                val   = GetVal(i_val, j_val, insert_val, ecs);
+                if (insert_val)
+                {
+                  MatSetValues(hamiltonian_0, 1, &i_val, 1, &j_val, &val,
+                               INSERT_VALUES);
+                }
+              }
+            }
+          }
+          else
+          {
+            /* loop over all off diagonals up to the order needed */
+            for (int diagonal_idx = 0; diagonal_idx < order_middle_idx;
+                 ++diagonal_idx)
+            {
+              offset = (diagonal_idx + 1) * base_offset;
+              /* Lower diagonal */
+              if (i_val - offset >= 0 and i_val - offset < num_psi)
+              {
+                j_val = i_val - offset;
+                val   = GetVal(i_val, j_val, insert_val, ecs);
+                if (insert_val)
+                {
+                  MatSetValues(hamiltonian_0, 1, &i_val, 1, &j_val, &val,
+                               INSERT_VALUES);
+                }
+              }
+
+              /* Upper diagonal */
+              if (i_val + offset >= 0 and i_val + offset < num_psi)
+              {
+                j_val = i_val + offset;
+                val   = GetVal(i_val, j_val, insert_val, ecs);
+                if (insert_val)
+                {
+                  MatSetValues(hamiltonian_0, 1, &i_val, 1, &j_val, &val,
+                               INSERT_VALUES);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  MatAssemblyBegin(hamiltonian_0, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(hamiltonian_0, MAT_FINAL_ASSEMBLY);
+}
+
+void Hamiltonian::CalculateHamlitonian0ECS()
+{
+  dcomp val(0.0, 0.0); /* diagonal terms */
+  PetscInt start, end; /* start end rows */
+
+  MatGetOwnershipRange(hamiltonian_0, &start, &end);
+  if (coordinate_system_idx == 2) /* RBF */
+  {
+    HDF5Wrapper node_set("nodes.h5", "r");
+    PetscInt num_operators = node_set.GetLast("/parameters/num_operators");
+    PetscInt* row_idx =
+        node_set.GetFirstNInt("/operators/row_idx", num_operators);
+    PetscInt* col_idx =
+        node_set.GetFirstNInt("/operators/col_idx", num_operators);
+    double* hyperviscosity =
+        node_set.GetFirstN("/operators/hyperviscosity", num_operators);
+    double* laplace_real =
+        node_set.GetFirstN("/operators/laplace_ecs_real", num_operators);
+    double* laplace_imag =
+        node_set.GetFirstN("/operators/laplace_ecs_imag", num_operators);
+
+    for (PetscInt idx = 0; idx < num_operators; idx++)
+    {
+      if (row_idx[idx] >= start and row_idx[idx] < end)
+      {
+        val = -1.0 * dcomp(laplace_real[idx], laplace_imag[idx]) / 2.0 -
+              5e-3 * dcomp(0.0, hyperviscosity[idx]);
+        if (row_idx[idx] == col_idx[idx])
+        {
+          val += GetNucleiTerm(row_idx[idx]);
+        }
+        MatSetValues(hamiltonian_0_ecs, 1, &row_idx[idx], 1, &col_idx[idx],
+                     &val, INSERT_VALUES);
+      }
+    }
+    delete row_idx;
+    delete col_idx;
+    delete hyperviscosity;
+    delete laplace_real;
+    delete laplace_imag;
+  }
+  else
+  {
+    PetscInt j_val;       /* j index for matrix */
+    PetscInt base_offset; /* offset of diagonal */
+    PetscInt offset;      /* offset of diagonal */
+    bool insert_val, ecs;
+    std::vector< PetscInt > idx_array;
+    std::vector< dcomp > x_vals(order + 1, 0.0);
+    ecs = true;
+    for (PetscInt i_val = start; i_val < end; i_val++)
+    {
+      j_val     = i_val;
+      idx_array = GetIndexArray(i_val, j_val);
+      for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
+      {
+        /* avoid recalculating if the grid is uniform */
+        if (delta_x_max[dim_idx] != delta_x_min[dim_idx])
+        {
+          /* Set up real gird */
+          for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
+          {
+            if (idx_array[dim_idx * 2] < (order / 2 + 1) or
+                num_x[dim_idx] - 1 - idx_array[dim_idx * 2] < (order / 2 + 1))
+            {
+              x_vals[coef_idx] = delta_x_max[dim_idx] * coef_idx;
+            }
+            else
+            {
+              x_vals[coef_idx] = x_value[dim_idx][coef_idx - order / 2 +
+                                                  idx_array[dim_idx * 2]];
+            }
+          }
+          /* Get real coefficients for each dimension */
+          FDWeights(x_vals, 2, real_coef[dim_idx]);
+        }
+      }
+
+      /* Diagonal element */
+      val = GetVal(i_val, j_val, insert_val, ecs);
+      if (insert_val)
+      {
+        MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
                      INSERT_VALUES);
       }
 
@@ -423,11 +397,11 @@ void Hamiltonian::CalculateHamlitonianLaser()
               if (i_val - offset >= 0 and i_val - offset < num_psi)
               {
                 j_val = i_val - offset;
-                val   = GetValLaser(i_val, j_val, insert_val, ham_dim_idx);
+                val   = GetVal(i_val, j_val, insert_val, ecs);
                 if (insert_val)
                 {
-                  MatSetValues(hamiltonian_laser[ham_dim_idx], 1, &i_val, 1,
-                               &j_val, &val, INSERT_VALUES);
+                  MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
+                               INSERT_VALUES);
                 }
               }
 
@@ -435,11 +409,11 @@ void Hamiltonian::CalculateHamlitonianLaser()
               if (i_val + offset >= 0 and i_val + offset < num_psi)
               {
                 j_val = i_val + offset;
-                val   = GetValLaser(i_val, j_val, insert_val, ham_dim_idx);
+                val   = GetVal(i_val, j_val, insert_val, ecs);
                 if (insert_val)
                 {
-                  MatSetValues(hamiltonian_laser[ham_dim_idx], 1, &i_val, 1,
-                               &j_val, &val, INSERT_VALUES);
+                  MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
+                               INSERT_VALUES);
                 }
               }
             }
@@ -455,11 +429,11 @@ void Hamiltonian::CalculateHamlitonianLaser()
               if (i_val - offset >= 0 and i_val - offset < num_psi)
               {
                 j_val = i_val - offset;
-                val   = GetValLaser(i_val, j_val, insert_val, ham_dim_idx);
+                val   = GetVal(i_val, j_val, insert_val, ecs);
                 if (insert_val)
                 {
-                  MatSetValues(hamiltonian_laser[ham_dim_idx], 1, &i_val, 1,
-                               &j_val, &val, INSERT_VALUES);
+                  MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
+                               INSERT_VALUES);
                 }
               }
 
@@ -467,11 +441,11 @@ void Hamiltonian::CalculateHamlitonianLaser()
               if (i_val + offset >= 0 and i_val + offset < num_psi)
               {
                 j_val = i_val + offset;
-                val   = GetValLaser(i_val, j_val, insert_val, ham_dim_idx);
+                val   = GetVal(i_val, j_val, insert_val, ecs);
                 if (insert_val)
                 {
-                  MatSetValues(hamiltonian_laser[ham_dim_idx], 1, &i_val, 1,
-                               &j_val, &val, INSERT_VALUES);
+                  MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
+                               INSERT_VALUES);
                 }
               }
             }
@@ -479,8 +453,203 @@ void Hamiltonian::CalculateHamlitonianLaser()
         }
       }
     }
-    MatAssemblyBegin(hamiltonian_laser[ham_dim_idx], MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(hamiltonian_laser[ham_dim_idx], MAT_FINAL_ASSEMBLY);
+  }
+  MatAssemblyBegin(hamiltonian_0_ecs, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(hamiltonian_0_ecs, MAT_FINAL_ASSEMBLY);
+}
+
+void Hamiltonian::CalculateHamlitonianLaser()
+{
+  dcomp val(0.0, 0.0);            /* diagonal terms */
+  PetscInt start, end;            /* start end rows */
+  if (coordinate_system_idx == 2) /* RBF */
+  {
+    HDF5Wrapper node_set("nodes.h5", "r");
+    PetscInt num_operators = node_set.GetLast("/parameters/num_operators");
+    PetscInt* row_idx =
+        node_set.GetFirstNInt("/operators/row_idx", num_operators);
+    PetscInt* col_idx =
+        node_set.GetFirstNInt("/operators/col_idx", num_operators);
+
+    for (PetscInt ham_dim_idx = 0; ham_dim_idx < num_dims; ham_dim_idx++)
+    {
+      MatGetOwnershipRange(hamiltonian_laser[ham_dim_idx], &start, &end);
+      if (gauge_idx == 0) /* velocity gauge */
+      {
+        double* derivatives;
+
+        if (ham_dim_idx == 0)
+        {
+          derivatives = node_set.GetFirstN("/operators/dx", num_operators);
+        }
+        else if (ham_dim_idx == 1)
+        {
+          derivatives = node_set.GetFirstN("/operators/dy", num_operators);
+        }
+        else if (ham_dim_idx == 2)
+        {
+          derivatives = node_set.GetFirstN("/operators/dz", num_operators);
+        }
+        else
+        {
+          EndRun("operator dimension does not exist for RBF.");
+        }
+
+        for (PetscInt idx = 0; idx < num_operators; idx++)
+        {
+          if (row_idx[idx] >= start and row_idx[idx] < end)
+          {
+            val = derivatives[idx];
+            MatSetValues(hamiltonian_laser[ham_dim_idx], 1, &row_idx[idx], 1,
+                         &col_idx[idx], &val, INSERT_VALUES);
+          }
+        }
+        delete derivatives;
+      }
+      else if (gauge_idx == 1) /* length gauge */
+      {
+        for (PetscInt idx = 0; idx < num_psi; idx++)
+        {
+          val = x_value[ham_dim_idx][idx];
+          MatSetValues(hamiltonian_laser[ham_dim_idx], 1, &idx, 1, &idx, &val,
+                       INSERT_VALUES);
+        }
+      }
+      else
+      {
+        EndRun("Bad gauge index");
+      }
+      MatAssemblyBegin(hamiltonian_laser[ham_dim_idx], MAT_FINAL_ASSEMBLY);
+      MatAssemblyEnd(hamiltonian_laser[ham_dim_idx], MAT_FINAL_ASSEMBLY);
+    }
+    delete row_idx;
+    delete col_idx;
+  }
+  else
+  {
+    PetscInt j_val;       /* j index for matrix */
+    PetscInt base_offset; /* offset of diagonal */
+    PetscInt offset;      /* offset of diagonal */
+    bool insert_val;
+    std::vector< PetscInt > idx_array;
+    std::vector< dcomp > x_vals(order + 1, 0.0);
+    for (PetscInt ham_dim_idx = 0; ham_dim_idx < num_dims; ham_dim_idx++)
+    {
+      MatGetOwnershipRange(hamiltonian_laser[ham_dim_idx], &start, &end);
+      for (PetscInt i_val = start; i_val < end; i_val++)
+      {
+        j_val     = i_val;
+        idx_array = GetIndexArray(i_val, j_val);
+        for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
+        {
+          /* avoid recalculating if the grid is uniform */
+          if (delta_x_max[dim_idx] != delta_x_min[dim_idx])
+          {
+            /* Set up real gird */
+            for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
+            {
+              if (idx_array[dim_idx * 2] < (order / 2 + 1) or
+                  num_x[dim_idx] - 1 - idx_array[dim_idx * 2] < (order / 2 + 1))
+              {
+                x_vals[coef_idx] = delta_x_max[dim_idx] * coef_idx;
+              }
+              else
+              {
+                x_vals[coef_idx] = x_value[dim_idx][coef_idx - order / 2 +
+                                                    idx_array[dim_idx * 2]];
+              }
+            }
+            /* Get real coefficients for each dimension */
+            FDWeights(x_vals, 2, real_coef[dim_idx]);
+          }
+        }
+
+        /* Diagonal element */
+        val = GetValLaser(i_val, j_val, insert_val, ham_dim_idx);
+        if (insert_val)
+        {
+          MatSetValues(hamiltonian_laser[ham_dim_idx], 1, &i_val, 1, &j_val,
+                       &val, INSERT_VALUES);
+        }
+
+        /* Loop over off diagonal elements */
+        for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
+        {
+          for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+          {
+            base_offset = GetOffset(elec_idx, dim_idx);
+            if (coordinate_system_idx == 1 and dim_idx == 1 and
+                idx_array[0] < order_middle_idx)
+            {
+              /* loop over all off diagonals up to the order needed */
+              for (int diagonal_idx = 0; diagonal_idx < order + 1;
+                   ++diagonal_idx)
+              {
+                offset = (diagonal_idx + 1) * base_offset;
+                /* Lower diagonal */
+                if (i_val - offset >= 0 and i_val - offset < num_psi)
+                {
+                  j_val = i_val - offset;
+                  val   = GetValLaser(i_val, j_val, insert_val, ham_dim_idx);
+                  if (insert_val)
+                  {
+                    MatSetValues(hamiltonian_laser[ham_dim_idx], 1, &i_val, 1,
+                                 &j_val, &val, INSERT_VALUES);
+                  }
+                }
+
+                /* Upper diagonal */
+                if (i_val + offset >= 0 and i_val + offset < num_psi)
+                {
+                  j_val = i_val + offset;
+                  val   = GetValLaser(i_val, j_val, insert_val, ham_dim_idx);
+                  if (insert_val)
+                  {
+                    MatSetValues(hamiltonian_laser[ham_dim_idx], 1, &i_val, 1,
+                                 &j_val, &val, INSERT_VALUES);
+                  }
+                }
+              }
+            }
+            else
+            {
+              /* loop over all off diagonals up to the order needed */
+              for (int diagonal_idx = 0; diagonal_idx < order_middle_idx;
+                   ++diagonal_idx)
+              {
+                offset = (diagonal_idx + 1) * base_offset;
+                /* Lower diagonal */
+                if (i_val - offset >= 0 and i_val - offset < num_psi)
+                {
+                  j_val = i_val - offset;
+                  val   = GetValLaser(i_val, j_val, insert_val, ham_dim_idx);
+                  if (insert_val)
+                  {
+                    MatSetValues(hamiltonian_laser[ham_dim_idx], 1, &i_val, 1,
+                                 &j_val, &val, INSERT_VALUES);
+                  }
+                }
+
+                /* Upper diagonal */
+                if (i_val + offset >= 0 and i_val + offset < num_psi)
+                {
+                  j_val = i_val + offset;
+                  val   = GetValLaser(i_val, j_val, insert_val, ham_dim_idx);
+                  if (insert_val)
+                  {
+                    MatSetValues(hamiltonian_laser[ham_dim_idx], 1, &i_val, 1,
+                                 &j_val, &val, INSERT_VALUES);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      MatAssemblyBegin(hamiltonian_laser[ham_dim_idx], MAT_FINAL_ASSEMBLY);
+      MatAssemblyEnd(hamiltonian_laser[ham_dim_idx], MAT_FINAL_ASSEMBLY);
+    }
   }
 }
 
@@ -1116,6 +1285,48 @@ dcomp Hamiltonian::GetNucleiTerm(std::vector< PetscInt >& idx_array)
   return nuclei;
 }
 
+/* get nuclear term for rbf grid */
+dcomp Hamiltonian::GetNucleiTerm(PetscInt idx)
+{
+  dcomp nuclei(0.0, 0.0);
+  double r_soft;
+  double r;
+  /* loop over each electron */
+  for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
+  {
+    /* loop over each nuclei */
+    for (PetscInt nuclei_idx = 0; nuclei_idx < num_nuclei; ++nuclei_idx)
+    {
+      if (z[nuclei_idx] != 0.0) /* Column term */
+      {
+        nuclei -= dcomp(
+            z[nuclei_idx] / SoftCoreDistance(location[nuclei_idx], idx), 0.0);
+        // std::cout << "soft core" << SoftCoreDistance(location[nuclei_idx],
+        // idx)
+        //           << "\n";
+      }
+      else /* SAE */
+      {
+        r_soft = SoftCoreDistance(location[nuclei_idx], idx);
+        r      = EuclideanDistance(location[nuclei_idx], idx);
+        nuclei -= dcomp(c0[nuclei_idx] / r_soft, 0.0);
+        nuclei -=
+            dcomp(z_c[nuclei_idx] * exp(-r0[nuclei_idx] * r) / r_soft, 0.0);
+
+        // Tong Lin He Only
+        // clean up hack later
+        // nuclei -= dcomp(-0.231 * exp(-0.480 * r) / r, 0.0);
+
+        for (PetscInt i = 0; i < sae_size[nuclei_idx]; ++i)
+        {
+          nuclei -= dcomp(a[nuclei_idx][i] * exp(-b[nuclei_idx][i] * r), 0.0);
+        }
+      }
+    }
+  }
+  return nuclei;
+}
+
 dcomp Hamiltonian::GetElectronElectronTerm(std::vector< PetscInt >& idx_array)
 {
   dcomp ee_val(0.0, 0.0);
@@ -1133,6 +1344,19 @@ dcomp Hamiltonian::GetElectronElectronTerm(std::vector< PetscInt >& idx_array)
     }
   }
   return ee_val;
+}
+
+double Hamiltonian::SoftCoreDistance(double* location, PetscInt idx)
+{
+  double distance = alpha_2; /* Make sure we include the soft core */
+  double diff     = 0.0;
+  /* loop over all dims */
+  for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+  {
+    diff = location[dim_idx] - x_value[dim_idx][idx];
+    distance += diff * diff;
+  }
+  return sqrt(distance);
 }
 
 double Hamiltonian::SoftCoreDistance(double* location,
@@ -1161,6 +1385,19 @@ double Hamiltonian::SoftCoreDistance(std::vector< PetscInt >& idx_array,
   {
     diff = x_value[dim_idx][idx_array[2 * elec_idx_1]] -
            x_value[dim_idx][idx_array[2 * elec_idx_2]];
+    distance += diff * diff;
+  }
+  return sqrt(distance);
+}
+
+double Hamiltonian::EuclideanDistance(double* location, PetscInt idx)
+{
+  double distance = 0.0;
+  double diff     = 0.0;
+  /* loop over all dims */
+  for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+  {
+    diff = location[dim_idx] - x_value[dim_idx][idx];
     distance += diff * diff;
   }
   return sqrt(distance);

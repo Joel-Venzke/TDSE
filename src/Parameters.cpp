@@ -538,7 +538,12 @@ void Parameters::Validate()
     err_str += "\nUnsupported coordinate system: ";
     err_str += coordinate_system;
     err_str += "\nSupported coordinate systems are:\n";
-    err_str += "\"Cartesian\" and \"Cylindrical\"\n";
+    err_str += "\"RBF\", \"Cartesian\", and \"Cylindrical\"\n";
+  }
+  if (coordinate_system_idx == 2 and num_electrons != 1)
+  {
+    error_found = true;
+    err_str += "\nRBF only supports 1 electron\n";
   }
   if (coordinate_system_idx == 1)
   {

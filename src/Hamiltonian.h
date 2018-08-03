@@ -87,12 +87,15 @@ class Hamiltonian : protected Utils
   dcomp GetLengthGauge(std::vector< PetscInt > &idx_array,
                        PetscInt only_dim_idx);
   dcomp GetNucleiTerm(std::vector< PetscInt > &idx_array);
+  dcomp GetNucleiTerm(PetscInt idx);
   dcomp GetElectronElectronTerm(std::vector< PetscInt > &idx_array);
   PetscInt GetOffset(PetscInt elec_idx, PetscInt dim_idx);
+  double SoftCoreDistance(double *location, PetscInt idx);
   double SoftCoreDistance(double *location, std::vector< PetscInt > &idx_array,
                           PetscInt elec_idx);
   double SoftCoreDistance(std::vector< PetscInt > &idx_array,
                           PetscInt elec_idx_1, PetscInt elec_idx_2);
+  double EuclideanDistance(double *location, PetscInt idx);
   double EuclideanDistance(double *location, std::vector< PetscInt > &idx_array,
                            PetscInt elec_idx);
   double EuclideanDistance(std::vector< PetscInt > &idx_array,

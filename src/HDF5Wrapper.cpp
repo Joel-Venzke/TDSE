@@ -793,6 +793,36 @@ double *HDF5Wrapper::GetFirstN(H5std_string var_path, PetscInt first_n)
   return ret_val;
 }
 
+PetscInt *HDF5Wrapper::GetFirstNInt(H5std_string var_path, PetscInt first_n)
+{
+  PetscInt *ret_val;
+  ret_val = new PetscInt[first_n];
+  std::unique_ptr< PetscInt[] > read_buff;
+  PetscInt data_size = 1;
+  if (world.rank() == 0)
+  {
+    Open();
+    H5::DataSet data_set(data_file->openDataSet(var_path));
+    H5::DataSpace memspace               = data_set.getSpace();
+    PetscInt ndims                       = memspace.getSimpleExtentNdims();
+    std::unique_ptr< hsize_t[] > h5_size = std::make_unique< hsize_t[] >(ndims);
+    memspace.getSimpleExtentDims(h5_size.get());
+    for (int dim_idx = 0; dim_idx < ndims; ++dim_idx)
+    {
+      data_size *= h5_size[dim_idx];
+    }
+    read_buff = std::make_unique< PetscInt[] >(data_size);
+    data_set.read(read_buff.get(), H5::PredType::NATIVE_INT);
+    for (int idx = 0; idx < first_n; ++idx)
+    {
+      ret_val[idx] = read_buff[idx];
+    }
+    Close();
+  }
+  mpi::broadcast(world, ret_val, first_n, 0);
+  return ret_val;
+}
+
 void HDF5Wrapper::CreateGroup(H5std_string group_path)
 {
   if (world.rank() == 0)
