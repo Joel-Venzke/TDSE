@@ -15,8 +15,9 @@ class Hamiltonian : protected Utils
   PetscInt *num_x;
   PetscInt num_psi;
   PetscInt num_psi_build;
-  double *z;         /* atomic number of each nuclei */
-  double **location; /* location of each nuclei */
+  double *z;           /* atomic number of each nuclei */
+  double **location;   /* location of each nuclei */
+  PetscInt gauge_idx;  ///< index of gauge (0 velocity, 1 length)
 
   /* SAE stuff */
   double **a;         /* SAE a for each nuclei (coefficient of exponential) */
@@ -34,9 +35,12 @@ class Hamiltonian : protected Utils
   double *delta_x_max;       /* step sizes of each dimension in a.u. */
   double *delta_x_max_start; /* step sizes of each dimension in a.u. */
   double **x_value;
-  Mat hamiltonian;
-  PetscInt **gobbler_idx; /* distance that starts gobbler */
-  double eta;             /* value in exponent for ECS */
+  Mat hamiltonian;         ///< Used for total Hamiltonian
+  Mat hamiltonian_0;       ///< Used for time independent Hamiltonian
+  Mat hamiltonian_0_ecs;   ///< Used for time independent Hamiltonian with ecs
+  Mat *hamiltonian_laser;  ///< Used for laser Hamiltonian
+  PetscInt **gobbler_idx;  /* distance that starts gobbler */
+  double eta;              /* value in exponent for ECS */
 
   PetscInt order;
   PetscInt order_middle_idx;
@@ -51,7 +55,10 @@ class Hamiltonian : protected Utils
   std::vector< std::vector< std::vector< dcomp > > > real_coef;
 
   void CreateHamlitonian();
-  void CalculateHamlitonian(PetscInt time_idx, PetscInt only_dim_idx, bool ecs);
+  void GenerateHamlitonian();
+  void CalculateHamlitonian0();
+  void CalculateHamlitonian0ECS();
+  void CalculateHamlitonianLaser();
   void SetUpCoefficients();
 
  public:
@@ -59,29 +66,36 @@ class Hamiltonian : protected Utils
   Hamiltonian(Wavefunction &w, Pulse &pulse, HDF5Wrapper &data_file,
               Parameters &p);
 
-  Mat *GetTotalHamiltonian(PetscInt time_idx, PetscInt only_dim_idx = -1,
-                           bool ecs = true);
-  Mat *GetTimeIndependent(PetscInt only_dim_idx = -1, bool ecs = true);
+  Mat *GetTotalHamiltonian(PetscInt time_idx, bool ecs = true);
+  Mat *GetTimeIndependent(bool ecs = true);
 
-  dcomp GetVal(PetscInt idx_i, PetscInt idx_j, bool time_dep, PetscInt time_idx,
-               bool &insert_val, PetscInt only_dim_idx, bool ecs);
+  dcomp GetVal(PetscInt idx_i, PetscInt idx_j, bool &insert_val, bool ecs);
+  dcomp GetValLaser(PetscInt idx_i, PetscInt idx_j, bool &insert_val,
+                    PetscInt only_dim_idx);
   void FDWeights(std::vector< dcomp > &x_vals, PetscInt max_derivative,
                  std::vector< std::vector< dcomp > > &coef,
                  PetscInt z_idx = -1);
   dcomp GetOffDiagonal(std::vector< PetscInt > &idx_array,
-                       std::vector< PetscInt > &diff_array, bool time_dep,
-                       PetscInt time_idx, PetscInt only_dim_idx, bool ecs);
-  dcomp GetDiagonal(std::vector< PetscInt > &idx_array, bool time_dep,
-                    PetscInt time_idx, PetscInt only_dim_idx, bool ecs);
-  dcomp GetKineticTerm(std::vector< PetscInt > &idx_array,
-                       PetscInt only_dim_idx, bool ecs);
+                       std::vector< PetscInt > &diff_array, bool ecs);
+  dcomp GetOffDiagonalLaser(std::vector< PetscInt > &idx_array,
+                            std::vector< PetscInt > &diff_array,
+                            PetscInt only_dim_idx);
+  dcomp GetDiagonal(std::vector< PetscInt > &idx_array, bool ecs);
+  dcomp GetDiagonalLaser(std::vector< PetscInt > &idx_array,
+                         PetscInt only_dim_idx);
+  dcomp GetKineticTerm(std::vector< PetscInt > &idx_array, bool ecs);
+  dcomp GetLengthGauge(std::vector< PetscInt > &idx_array,
+                       PetscInt only_dim_idx);
   dcomp GetNucleiTerm(std::vector< PetscInt > &idx_array);
+  dcomp GetNucleiTerm(PetscInt idx);
   dcomp GetElectronElectronTerm(std::vector< PetscInt > &idx_array);
   PetscInt GetOffset(PetscInt elec_idx, PetscInt dim_idx);
+  double SoftCoreDistance(double *location, PetscInt idx);
   double SoftCoreDistance(double *location, std::vector< PetscInt > &idx_array,
                           PetscInt elec_idx);
   double SoftCoreDistance(std::vector< PetscInt > &idx_array,
                           PetscInt elec_idx_1, PetscInt elec_idx_2);
+  double EuclideanDistance(double *location, PetscInt idx);
   double EuclideanDistance(double *location, std::vector< PetscInt > &idx_array,
                            PetscInt elec_idx);
   double EuclideanDistance(std::vector< PetscInt > &idx_array,

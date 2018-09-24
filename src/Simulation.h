@@ -56,9 +56,9 @@ class Simulation : protected Utils
              HDF5Wrapper &h_file, ViewWrapper &v_file, Parameters &p);
   ~Simulation();
 
-  void FromFile(PetscInt num_states, PetscInt return_state_idx = 0);
-  void EigenSolve(PetscInt num_states, PetscInt return_state_idx = 0);
-  void PowerMethod(PetscInt num_states, PetscInt return_state_idx = 0);
+  void FromFile(PetscInt num_states);
+  void EigenSolve(PetscInt num_states);
+  void PowerMethod(PetscInt num_states);
   void Propagate();
   void SplitOpperator();
   void CrankNicolson(double dt, PetscInt time_idx, PetscInt dim_idx = -1);

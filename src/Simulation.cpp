@@ -120,7 +120,8 @@ void Simulation::Propagate()
     CrankNicolson(delta_t, i, -1);
 
     /* only calculate observables so often */
-    if (i % write_frequency_observables == 0)
+    if (write_frequency_observables > 0 and
+        i % write_frequency_observables == 0)
     {
       PetscLogEventBegin(create_observables, 0, 0, 0, 0);
       /* write a checkpoint */
@@ -141,8 +142,13 @@ void Simulation::Propagate()
                          (CLOCKS_PER_SEC * write_frequency_checkpoint)
                   << "\n"
                   << std::flush;
+      t = clock();
       /* write a checkpoint */
       wavefunction->Checkpoint(*h5_file, *viewer_file, time[i]);
+      if (world.rank() == 0)
+        std::cout << "Checkpoint time: "
+                  << ((float)clock() - t) / (CLOCKS_PER_SEC) << "\n"
+                  << std::flush;
       t = clock();
       PetscLogEventEnd(create_checkpoint, 0, 0, 0, 0);
     }
@@ -261,10 +267,12 @@ void Simulation::Propagate()
  * @param return_state_idx the index of the state you want the Wavefunction
  * class to be set to upon return
  */
-void Simulation::FromFile(PetscInt num_states, PetscInt return_state_idx)
+void Simulation::FromFile(PetscInt num_states)
 {
-  wavefunction->LoadPsi(parameters->GetTarget() + ".h5", num_states,
-                        return_state_idx);
+  wavefunction->LoadPsi(
+      parameters->GetTarget() + ".h5", num_states,
+      parameters->GetNumStartState(), parameters->GetStartStateIdx(),
+      parameters->GetStartStateAmplitude(), parameters->GetStartStatePhase());
 }
 
 /**
@@ -275,7 +283,7 @@ void Simulation::FromFile(PetscInt num_states, PetscInt return_state_idx)
  * @param return_state_idx the index of the state you want the Wavefunction
  * class to be set to upon return
  */
-void Simulation::EigenSolve(PetscInt num_states, PetscInt return_state_idx)
+void Simulation::EigenSolve(PetscInt num_states)
 {
   if (world.rank() == 0)
     std::cout << "\nCalculating the lowest " << num_states
@@ -303,11 +311,11 @@ void Simulation::EigenSolve(PetscInt num_states, PetscInt return_state_idx)
 
   if (parameters->GetFieldMaxStates())
   {
-    h = hamiltonian->GetTotalHamiltonian(pulse->GetFieldMaxIdx(), -1, false);
+    h = hamiltonian->GetTotalHamiltonian(pulse->GetFieldMaxIdx(), false);
   }
   else
   {
-    h = hamiltonian->GetTimeIndependent(-1, false);
+    h = hamiltonian->GetTimeIndependent(false);
   }
   EPSSetOperators(eps, *(h), NULL);
   EPSSetProblemType(eps, EPS_NHEP);
@@ -327,8 +335,7 @@ void Simulation::EigenSolve(PetscInt num_states, PetscInt return_state_idx)
     wavefunction->Normalize();
     CheckpointState(h_states_file, v_states_file, j, h);
   }
-  EPSGetEigenpair(eps, return_state_idx, &eigen_real, NULL, *psi, NULL);
-  wavefunction->Normalize();
+  FromFile(num_states);
   EPSDestroy(&eps);
 }
 
@@ -347,7 +354,7 @@ void Simulation::CrankNicolson(double dt, PetscInt time_idx, PetscInt dim_idx)
   if (time_idx != old_time_idx or dim_idx != old_dim_idx)
   {
     PetscLogEventBegin(create_matrix, 0, 0, 0, 0);
-    /* factor = i*(-i*dt/2) */
+    /* factor = (-i*dt/2) */
     dcomp factor = dcomp(0.0, 1.0) * dcomp(dt / 2.0, 0.0);
     if (time_idx < 0)
     {
@@ -367,7 +374,7 @@ void Simulation::CrankNicolson(double dt, PetscInt time_idx, PetscInt dim_idx)
     MatShift(right, 1.0);
 
     KSPSetOperators(ksp, left, left);
-    KSPSetTolerances(ksp, 1.e-17, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
+    KSPSetTolerances(ksp, 1.e-15, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
     KSPSetFromOptions(ksp);
 
     old_dim_idx  = dim_idx;
@@ -397,7 +404,7 @@ void Simulation::CrankNicolson(double dt, PetscInt time_idx, PetscInt dim_idx)
  * @param return_state_idx the index of the state you want the Wavefunction
  * class to be set to upon return
  */
-void Simulation::PowerMethod(PetscInt num_states, PetscInt return_state_idx)
+void Simulation::PowerMethod(PetscInt num_states)
 {
   if (world.rank() == 0)
     std::cout << "\nCalculating the lowest " << num_states
@@ -443,11 +450,11 @@ void Simulation::PowerMethod(PetscInt num_states, PetscInt return_state_idx)
   {
     if (parameters->GetFieldMaxStates())
     {
-      h = hamiltonian->GetTotalHamiltonian(pulse->GetFieldMaxIdx(), -1, false);
+      h = hamiltonian->GetTotalHamiltonian(pulse->GetFieldMaxIdx(), false);
     }
     else
     {
-      h = hamiltonian->GetTimeIndependent(-1, false);
+      h = hamiltonian->GetTimeIndependent(false);
     }
     MatCopy(*(h), left, SAME_NONZERO_PATTERN);
     /* Shift by eigen value */
@@ -540,11 +547,7 @@ void Simulation::PowerMethod(PetscInt num_states, PetscInt return_state_idx)
     if (world.rank() == 0) std::cout << "\n";
   }
 
-  /* set psi to the return state */
-  VecCopy(states[return_state_idx], *psi);
-  wavefunction->Normalize();
-  /* Handel roundoff in cylindrical */
-  wavefunction->Normalize();
+  FromFile(num_states);
 
   /* Clean up after ourselves */
   /* DO NOT delete psi_tmp since it is the same as states[states.size()-1] which

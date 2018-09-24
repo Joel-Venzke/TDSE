@@ -99,6 +99,7 @@ elif len(shape) == 2:
     for i, psi in enumerate(psi_value):
         if i > 0:  # the zeroth wave function is the guess and not relevant
             print "plotting", i
+            psi_save = np.array(psi)
             # set up initial figure with color bar
             psi = psi[:, 0] + 1j * psi[:, 1]
             psi.shape = tuple(shape)
@@ -152,6 +153,55 @@ elif len(shape) == 2:
             # plt.axis('off')
             plt.colorbar()
             fig.savefig("figs/Wave_" + str(i).zfill(8) + ".png")
+            plt.clf()
+
+            psi = psi_save
+            psi = psi[:, 0] + 1j * psi[:, 1]
+            psi.shape = tuple(shape)
+            if f["Parameters"]["coordinate_system_idx"][0] == 1:
+                x_min_idx = 0
+            else:
+                x_min_idx = lower_idx[0]
+            x_max_idx = upper_idx[0]
+            y_min_idx = lower_idx[1]
+            y_max_idx = upper_idx[1]
+            x_max_idx = -1
+            y_min_idx = 0
+            y_max_idx = -1
+            psi = psi[x_min_idx:x_max_idx, y_min_idx:y_max_idx]
+            data = None
+            if f["Parameters"]["coordinate_system_idx"][0] == 1:
+                psi = np.angle(psi)
+                data = plt.imshow(
+                    psi,
+                    cmap='hsv',
+                    origin='lower',
+                    extent=[
+                        y[y_min_idx], y[y_max_idx], x[x_min_idx], x[x_max_idx]
+                    ])
+            else:
+                data = plt.imshow(
+                    np.angle(psi),
+                    cmap='hsv',
+                    origin='lower',
+                    extent=[
+                        y[y_min_idx], y[y_max_idx], x[x_min_idx], x[x_max_idx]
+                    ])
+            plt.text(
+                time_x,
+                time_y,
+                "Time: " + str(psi_time[i]) + " a.u.",
+                color='white')
+            # color bar doesn't change during the video so only set it here
+            if f["Parameters"]["coordinate_system_idx"][0] == 1:
+                plt.xlabel("z-axis (a.u.)")
+                plt.ylabel("$\\rho$-axis  (a.u.)")
+            else:
+                plt.xlabel("X-axis (a.u.)")
+                plt.ylabel("Y-axis  (a.u.)")
+            # plt.axis('off')
+            plt.colorbar()
+            fig.savefig("figs/Wave_phase_" + str(i).zfill(8) + ".png")
             plt.clf()
 
 elif len(shape) == 1:

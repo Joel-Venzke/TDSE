@@ -22,7 +22,8 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p)
   max_pulse_length = 0; /* stores longest pulse */
 
   pulse_shape_idx = p.pulse_shape_idx.get();
-  gaussian_sigma  = 5.0;
+  gaussian_sigma  = 4.0;
+  gauge_idx       = p.GetGaugeIdx();
   power_on        = p.power_on.get();
   power_off       = p.power_off.get();
   cycles_on       = p.cycles_on.get();
@@ -161,8 +162,7 @@ void Pulse::InitializePulseLength()
             cycles_delay[pulse_idx] + cycles_on[pulse_idx] +
             cycles_plateau[pulse_idx] + cycles_off[pulse_idx];
       }
-      else if (pulse_shape_idx[pulse_idx] ==
-               1) /* Gaussian needs 6 sigma tails */
+      else if (pulse_shape_idx[pulse_idx] == 1) /* Gaussian needs sigma tails */
       {
         cycles_total[pulse_idx] =
             cycles_delay[pulse_idx] + gaussian_sigma * cycles_on[pulse_idx] +
@@ -299,13 +299,16 @@ void Pulse::InitializePulse(PetscInt n)
     double period          = 2.0 * pi / energy[n];
     double s1;  // value of sin (x for Gaussian)
     double sn;  // sin to the nth power
-    double current_cep = cep[n] + (((int)cycles_on[n]) - cycles_on[n]);
+    double current_cep;
+    double fwhm_factor = 2.0 * log(2.0);
 
     /* index that turns pulse on */
     on_start = ceil(period * cycles_delay[n] / (delta_t));
 
     if (pulse_shape_idx[n] == 0)
     {
+      current_cep = cep[n] + (((int)cycles_on[n]) - cycles_on[n]);
+
       /* index that holds pulse at max */
       plateau_start =
           ceil(period * (cycles_on[n] + cycles_delay[n]) / (delta_t));
@@ -320,8 +323,10 @@ void Pulse::InitializePulse(PetscInt n)
           (cycles_off[n] + cycles_plateau[n] + cycles_on[n] + cycles_delay[n]) /
           (delta_t));
     }
-    else if (pulse_shape_idx[n] == 1) /* Gaussian needs 6 sigma tails */
+    else if (pulse_shape_idx[n] == 1) /* Gaussian needs sigma tails */
     {
+      current_cep = cep[n] + (((int)gaussian_sigma * cycles_on[n]) -
+                              gaussian_sigma * cycles_on[n]);
       /* index that holds pulse at max */
       plateau_start =
           ceil(period * (gaussian_sigma * cycles_on[n] + cycles_delay[n]) /
@@ -344,8 +349,6 @@ void Pulse::InitializePulse(PetscInt n)
       pulse_envelope[n] = new double[max_pulse_length];
     }
 
-    double fac = 2 * sqrt(log(2));
-
     for (PetscInt time_idx = 0; time_idx < max_pulse_length; ++time_idx)
     {
       if (time_idx < on_start)
@@ -367,9 +370,9 @@ void Pulse::InitializePulse(PetscInt n)
         }
         else if (pulse_shape_idx[n] == 1)
         {
-          s1 = (energy[n] * delta_t * (plateau_start - time_idx)) /
-               (2.0 * pi * fac * cycles_on[n]);
-          pulse_envelope[n][time_idx] = field_max[n] * exp(-1.0 * s1 * s1);
+          s1 = (delta_t * (plateau_start - time_idx)) / (period * cycles_on[n]);
+          pulse_envelope[n][time_idx] =
+              field_max[n] * exp(-1.0 * (fwhm_factor / 2.0) * s1 * s1);
           // pulse_envelope[n][time_idx] = -1.0 * s1 * s1;
         }
       }
@@ -393,9 +396,9 @@ void Pulse::InitializePulse(PetscInt n)
         }
         else if (pulse_shape_idx[n] == 1)
         {
-          s1 = (energy[n] * delta_t * (time_idx - off_start)) /
-               (2 * pi * fac * cycles_off[n]);
-          pulse_envelope[n][time_idx] = field_max[n] * exp(-1.0 * s1 * s1);
+          s1 = (delta_t * (time_idx - off_start)) / (period * cycles_off[n]);
+          pulse_envelope[n][time_idx] =
+              field_max[n] * exp(-1.0 * (fwhm_factor / 2.0) * s1 * s1);
           // pulse_envelope[n][time_idx] = -1.0 * s1 * s1;
         }
       }
@@ -422,7 +425,7 @@ void Pulse::InitializePulse(PetscInt n)
             polarization_vector_major[n][dim_idx] *
             pulse_envelope[n][time_idx] *
             sin(energy[n] * delta_t * (time_idx - on_start) +
-                current_cep * 2 * pi);
+                current_cep * 2.0 * pi);
         if (helicity_idx[n] == 0) /* right */
         {
           /* We want cos(...) */
@@ -430,7 +433,7 @@ void Pulse::InitializePulse(PetscInt n)
               polarization_vector_minor[n][dim_idx] *
               pulse_envelope[n][time_idx] *
               cos(energy[n] * delta_t * (time_idx - on_start) +
-                  current_cep * 2 * pi);
+                  current_cep * 2.0 * pi);
         }
         else if (helicity_idx[n] == 1) /* left */
         {
@@ -439,7 +442,7 @@ void Pulse::InitializePulse(PetscInt n)
               polarization_vector_minor[n][dim_idx] *
               pulse_envelope[n][time_idx] *
               cos(energy[n] * delta_t * (time_idx - on_start) +
-                  current_cep * 2 * pi);
+                  current_cep * 2.0 * pi);
         }
       }
     }
@@ -482,6 +485,35 @@ void Pulse::InitializeField()
         field[dim_idx][time_idx] += pulse_value[pulse_idx][dim_idx][time_idx];
       }
     }
+  }
+  /* Calculate the E field from A by E= -1/c * (dA/dt)*/
+  if (gauge_idx == 1)
+  {
+    /* Don't overwrite field until calculation is done */
+    double* field_tmp = new double[max_pulse_length];
+    for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+    {
+      /* Forward difference for first point (-1/c)  [-1, 1, 0] (1/dt) */
+      field_tmp[0] = (field[dim_idx][1] - field[dim_idx][0]) / (delta_t * c);
+      for (PetscInt time_idx = 1; time_idx < max_pulse_length - 1; ++time_idx)
+      {
+        /* calculate (-1/c)  [-1/2, 0, 1/2] (1/dt) */
+        field_tmp[time_idx] =
+            (field[dim_idx][time_idx - 1] - field[dim_idx][time_idx + 1]) /
+            (2 * delta_t * c);
+      }
+      /* Backward difference for first point (-1/c)  [0, -1, 1] (1/dt) */
+      field_tmp[max_pulse_length - 1] = (field[dim_idx][max_pulse_length - 2] -
+                                         field[dim_idx][max_pulse_length - 1]) /
+                                        (delta_t * c);
+
+      /* overwrite field with the E field */
+      for (PetscInt time_idx = 0; time_idx < max_pulse_length; ++time_idx)
+      {
+        field[dim_idx][time_idx] = field_tmp[time_idx];
+      }
+    }
+    delete[] field_tmp;
   }
 }
 

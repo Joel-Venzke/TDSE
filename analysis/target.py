@@ -8,7 +8,10 @@ with open('input.json', 'r') as data_file:
 target_name = data["target"]["name"]
 # read data
 target = h5py.File(target_name + ".h5", "r")
-f = h5py.File("TDSE.h5", "r")
+try:
+    f = h5py.File("TDSE.h5", "r")
+except:
+    f = h5py.File("Observables.h5", "r")
 psi_value = target["psi"]
 energy = target["Energy"]
 psi_time = f["Wavefunction"]["time"][:]
@@ -106,11 +109,12 @@ elif len(shape) == 2:
     import matplotlib.animation as animation
     from matplotlib.colors import LogNorm
     import pylab as plb
-    font = {'family': 'normal', 'weight': 'bold', 'size': 22}
+    font = {'size': 22}
 
     matplotlib.rc('font', **font)
     fig = plt.figure()
     for i, psi in enumerate(psi_value):
+        psi_save = np.array(psi)
         print "plotting", i
         # set up initial figure with color bar
         psi = psi[:, 0] + 1j * psi[:, 1]
@@ -161,14 +165,49 @@ elif len(shape) == 2:
         plt.tight_layout()
         fig.savefig("figs/" + target_name + "_log_state_" + str(i).zfill(3) +
                     ".jpg")
+        plb.xlim([-30, 30])
+        plb.ylim([0, 30])
+        plt.tight_layout()
+        fig.savefig("figs/" + target_name + "_log_state_small_" +
+                    str(i).zfill(3) + ".jpg")
         plt.clf()
-        plt.imshow(
-            psi,
-            cmap='viridis',
-            origin='lower',
-            extent=[y[y_min_idx], y[y_max_idx], x[x_min_idx], x[x_max_idx]],
-            norm=LogNorm(vmin=1e-15, vmax=np.max(psi)))
-        plt.colorbar()
+        psi = psi_save
+        psi = psi[:, 0] + 1j * psi[:, 1]
+        psi.shape = tuple(shape)
+        psi = psi[x_min_idx:x_max_idx, y_min_idx:y_max_idx]
+        if f["Parameters"]["coordinate_system_idx"][0] == 1:
+            print np.angle(psi)[np.unravel_index(
+                np.abs(psi).argmax(), psi.shape)]
+            psi = psi * np.exp(-1.0j * np.angle(
+                np.angle(psi)[
+                    np.unravel_index(np.abs(psi).argmax(), psi.shape)])[
+                        np.unravel_index(np.abs(psi).argmax(), psi.shape)])
+            plt.imshow(
+                np.angle(psi),
+                cmap='hsv',
+                origin='lower',
+                extent=[
+                    y[y_min_idx], y[y_max_idx], x[x_min_idx], x[x_max_idx]
+                ])
+        else:
+            print np.angle(psi)[np.unravel_index(
+                np.abs(psi).argmax(), psi.shape)]
+            # psi = psi * np.exp(-1.0j * np.angle(psi)[
+            #     np.unravel_index(np.abs(psi).argmax(), psi.shape)])
+            print np.angle(psi)[psi.shape[0] / 2 - 15:psi.shape[0] / 2 + 15,
+                                psi.shape[1] / 2]
+            plt.imshow(
+                np.angle(psi),
+                cmap='hsv',
+                origin='lower',
+                extent=[
+                    y[y_min_idx], y[y_max_idx], x[x_min_idx], x[x_max_idx]
+                ])
+            # print np.angle(psi)[psi.shape[0] / 2 + 15, psi.shape[1] / 2 -
+        # 15], np.angle(psi)[psi.shape[0] / 2 + 10,
+        #                    psi.shape[1] / 2 - 30]
+        # color bar doesn't change during the video so only set it here
+        plt.colorbar(pad=0.1)
         if f["Parameters"]["coordinate_system_idx"][0] == 1:
             plt.xlabel("z-axis (a.u.)")
             plt.ylabel("$\\rho$-axis  (a.u.)")
@@ -176,10 +215,13 @@ elif len(shape) == 2:
             plt.xlabel("X-axis (a.u.)")
             plt.ylabel("Y-axis  (a.u.)")
         plt.title(name_list[i])
+        plt.tight_layout()
+        fig.savefig("figs/" + target_name + "_log_state_phase_" +
+                    str(i).zfill(3) + ".jpg")
         plb.xlim([-30, 30])
         plb.ylim([0, 30])
         plt.tight_layout()
-        fig.savefig("figs/" + target_name + "_log_state_small_" +
+        fig.savefig("figs/" + target_name + "_log_state_phase_small_" +
                     str(i).zfill(3) + ".jpg")
         plt.clf()
 
@@ -200,7 +242,7 @@ elif len(shape) == 1:
         # color bar doesn't change during the video so only set it here
         plt.xlabel("z-axis (a.u.)")
         plt.ylabel("log10(psi)")
-        plb.xlim([-700, 700])
+        # plb.xlim([-700, 700])
         #plb.ylim([-7, 0])
         plt.title(name_list[i] + " - Energy " + str(energy[i]))
         plt.savefig("figs/" + target_name + "_log_state_" + str(i).zfill(3) +

@@ -52,13 +52,13 @@ int main(int argc, char** argv)
     switch (parameters.GetStateSolverIdx())
     {
       case 0: /* File */
-        s.FromFile(parameters.GetNumStates(), parameters.GetStartState());
+        s.FromFile(parameters.GetNumStates());
         break;
       case 2: /* Power */
-        s.PowerMethod(parameters.GetNumStates(), parameters.GetStartState());
+        s.PowerMethod(parameters.GetNumStates());
         break;
       case 3: /* SLEPC */
-        s.EigenSolve(parameters.GetNumStates(), parameters.GetStartState());
+        s.EigenSolve(parameters.GetNumStates());
         break;
     }
     p_wrap.PopStage(); /* Eigen State */

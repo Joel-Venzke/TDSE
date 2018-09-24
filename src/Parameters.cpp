@@ -21,9 +21,6 @@ void Parameters::Setup(std::string file_name)
   json data = FileToJson(file_name);
 
   /* get numeric information */
-  delta_t           = data["delta_t"];
-  num_dims          = data["dimensions"].size();
-  num_electrons     = data["num_electrons"];
   coordinate_system = data["coordinate_system"];
 
   if (coordinate_system == "Cartesian")
@@ -34,24 +31,59 @@ void Parameters::Setup(std::string file_name)
   {
     coordinate_system_idx = 1;
   }
+  else if (coordinate_system == "RBF")
+  {
+    coordinate_system_idx = 2;
+  }
   else
   {
     coordinate_system_idx = -1;
   }
 
-  dim_size          = std::make_unique< double[] >(num_dims);
-  delta_x_min       = std::make_unique< double[] >(num_dims);
-  delta_x_min_end   = std::make_unique< double[] >(num_dims);
-  delta_x_max       = std::make_unique< double[] >(num_dims);
-  delta_x_max_start = std::make_unique< double[] >(num_dims);
+  delta_t       = data["delta_t"];
+  num_electrons = data["num_electrons"];
 
-  for (PetscInt i = 0; i < num_dims; ++i)
+  if (coordinate_system_idx == 2)
   {
-    dim_size[i]          = data["dimensions"][i]["dim_size"];
-    delta_x_min[i]       = data["dimensions"][i]["delta_x_min"];
-    delta_x_min_end[i]   = data["dimensions"][i]["delta_x_min_end"];
-    delta_x_max[i]       = data["dimensions"][i]["delta_x_max"];
-    delta_x_max_start[i] = data["dimensions"][i]["delta_x_max_start"];
+    num_dims          = 3;
+    dim_size          = std::make_unique< double[] >(num_dims);
+    delta_x_min       = std::make_unique< double[] >(num_dims);
+    delta_x_min_end   = std::make_unique< double[] >(num_dims);
+    delta_x_max       = std::make_unique< double[] >(num_dims);
+    delta_x_max_start = std::make_unique< double[] >(num_dims);
+
+    for (PetscInt i = 0; i < num_dims; ++i)
+    {
+      dim_size[i]          = 0.0;
+      delta_x_min[i]       = 0.0;
+      delta_x_min_end[i]   = 0.0;
+      delta_x_max[i]       = 0.0;
+      delta_x_max_start[i] = 0.0;
+    }
+
+    gobbler = 0.0;
+    order   = 0;
+  }
+  else
+  {
+    num_dims          = data["dimensions"].size();
+    dim_size          = std::make_unique< double[] >(num_dims);
+    delta_x_min       = std::make_unique< double[] >(num_dims);
+    delta_x_min_end   = std::make_unique< double[] >(num_dims);
+    delta_x_max       = std::make_unique< double[] >(num_dims);
+    delta_x_max_start = std::make_unique< double[] >(num_dims);
+
+    for (PetscInt i = 0; i < num_dims; ++i)
+    {
+      dim_size[i]          = data["dimensions"][i]["dim_size"];
+      delta_x_min[i]       = data["dimensions"][i]["delta_x_min"];
+      delta_x_min_end[i]   = data["dimensions"][i]["delta_x_min_end"];
+      delta_x_max[i]       = data["dimensions"][i]["delta_x_max"];
+      delta_x_max_start[i] = data["dimensions"][i]["delta_x_max_start"];
+    }
+
+    gobbler = data["gobbler"];
+    order   = data["order"];
   }
 
   /* get simulation behavior */
@@ -62,8 +94,6 @@ void Parameters::Setup(std::string file_name)
   write_frequency_checkpoint  = data["write_frequency_checkpoint"];
   write_frequency_observables = data["write_frequency_observables"];
   write_frequency_eigin_state = data["write_frequency_eigin_state"];
-  gobbler                     = data["gobbler"];
-  order                       = data["order"];
   sigma                       = data["sigma"];
   tol                         = data["tol"];
   state_solver                = data["state_solver"];
@@ -83,7 +113,44 @@ void Parameters::Setup(std::string file_name)
   {
     state_solver_idx = 3;
   }
-  start_state = data["start_state"];
+
+  gauge = data["gauge"];
+  if (gauge == "Velocity")
+  {
+    gauge_idx = 0;
+  }
+  else if (gauge == "Length")
+  {
+    gauge_idx = 1;
+  }
+  else
+  {
+    gauge_idx = -1;
+  }
+
+  num_start_state = data["start_state"]["index"].size();
+  if (data["start_state"]["amplitude"].size() != num_start_state)
+  {
+    EndRun(
+        "Start state amplitude and index sizes do not match. Double check "
+        "input file.");
+  }
+  if (data["start_state"]["phase"].size() != num_start_state)
+  {
+    EndRun(
+        "Start state phase and index sizes do not match. Double check "
+        "input file.");
+  }
+  start_state_idx       = new PetscInt[num_start_state];
+  start_state_amplitude = new double[num_start_state];
+  start_state_phase     = new double[num_start_state];
+  for (PetscInt i = 0; i < num_start_state; i++)
+  {
+    start_state_idx[i]       = data["start_state"]["index"][i];
+    start_state_amplitude[i] = data["start_state"]["amplitude"][i];
+    start_state_phase[i]     = data["start_state"]["phase"][i];
+  }
+
   if (state_solver_idx != 2)
   {
     num_states = data["states"];
@@ -448,6 +515,9 @@ Parameters::~Parameters()
   }
   delete[] polarization_vector;
   if (num_dims == 3) delete[] poynting_vector;
+  delete start_state_idx;        ///< index of states in super position
+  delete start_state_amplitude;  ///< amplitude of states in super position
+  delete start_state_phase;
 }
 
 /* checks important input parameters for errors */
@@ -468,7 +538,12 @@ void Parameters::Validate()
     err_str += "\nUnsupported coordinate system: ";
     err_str += coordinate_system;
     err_str += "\nSupported coordinate systems are:\n";
-    err_str += "\"Cartesian\" and \"Cylindrical\"\n";
+    err_str += "\"RBF\", \"Cartesian\", and \"Cylindrical\"\n";
+  }
+  if (coordinate_system_idx == 2 and num_electrons != 1)
+  {
+    error_found = true;
+    err_str += "\nRBF only supports 1 electron\n";
   }
   if (coordinate_system_idx == 1)
   {
@@ -640,12 +715,23 @@ void Parameters::Validate()
     err_str += "\"\nvalid solvers are \"File\", \"SLEPC\", and \"Power\"\n";
   }
 
-  if (start_state >= num_states)
+  if (gauge_idx == -1)
   {
     error_found = true;
-    err_str +=
-        "\nThe start_state must be less than the total number of states you "
-        "wish to calculate\n";
+    err_str += "\nInvalid gauge: \"";
+    err_str += gauge;
+    err_str += "\"\nvalid gauges are \"Velocity\", and \"Length\"\n";
+  }
+
+  for (int idx = 0; idx < num_start_state; ++idx)
+  {
+    if (start_state_idx[idx] >= num_states)
+    {
+      error_found = true;
+      err_str +=
+          "\nThe start_state must be less than the total number of states you "
+          "wish to calculate\n";
+    }
   }
 
   /* exit here to get all errors in one run */
@@ -709,13 +795,19 @@ PetscInt Parameters::GetOrder() { return order; }
 double Parameters::GetSigma() { return sigma; }
 
 PetscInt Parameters::GetNumStates() { return num_states; }
-PetscInt Parameters::GetStartState() { return start_state; }
+
+PetscInt Parameters::GetNumStartState() { return num_start_state; }
+PetscInt* Parameters::GetStartStateIdx() { return start_state_idx; }
+double* Parameters::GetStartStateAmplitude() { return start_state_amplitude; }
+double* Parameters::GetStartStatePhase() { return start_state_phase; }
 
 double Parameters::GetTol() { return tol; }
 
 PetscInt Parameters::GetStateSolverIdx() { return state_solver_idx; }
 
 std::string Parameters::GetStateSolver() { return state_solver; }
+
+PetscInt Parameters::GetGaugeIdx() { return gauge_idx; }
 
 PetscInt Parameters::GetPropagate() { return propagate; }
 

@@ -12,6 +12,7 @@ class Pulse : protected Utils
   PetscInt max_pulse_length; /* length of longest pulse; */
   PetscInt *pulse_shape_idx; /* index of pulse shape */
   double gaussian_sigma;  /* number of std before you stop the gaussian pulse */
+  PetscInt gauge_idx;     ///< index of gauge (0 velocity, 1 length)
   PetscInt *power_on;     /* power of sin ramp on */
   PetscInt *power_off;    /* power of sin ramp off */
   double *cycles_on;      /* ramp on cycles */
