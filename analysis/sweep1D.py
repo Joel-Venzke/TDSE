@@ -129,7 +129,7 @@ for i in np.arange(-150.0, 160.0, 10.0):
     os.mkdir(fold)
   
   # update the parameter of interest
-    data["laser"]["pulses"][0]["tau_delay"] \
+    data["laser"]["pulses"][1]["tau_delay"] \
     = i
   # write input file
     with open(fold + "/input.json", 'w') as f:

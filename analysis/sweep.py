@@ -45,32 +45,8 @@ data = {
  "state_solver": "SLEPC",
  "write_frequency_eigin_state": 1,
  "laser": {
-  "experiment_type": "default",
+  "experiment_type": "streaking",
   "pulses": [
-   {
-    "power_on": 1.0,
-    "cycles_on": 2.0,
-    "cycles_off": 2.0,
-    "pulse_shape": "gaussian",
-    "cycles_delay": 0.0,
-    "polarization_vector": [
-     0.0,
-     1.0,
-     0.0
-    ],
-    "energy": 1.0,
-    "power_off": 1.0,
-    "intensity": 100000000000000.0,
-    "cycles_plateau": 0.0,
-    "helicity": "left",
-    "cep": 0.0,
-    "poynting_vector": [
-     0.0,
-     0.0,
-     1.0
-    ],
-    "ellipticity": 0.0
-   },
    {
     "power_on": 2.0,
     "cycles_on": 1.5,
@@ -85,6 +61,30 @@ data = {
     "energy": 0.057,
     "power_off": 2.0,
     "intensity": 100000000000.0,
+    "cycles_plateau": 0.0,
+    "helicity": "left",
+    "cep": 0.0,
+    "poynting_vector": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "ellipticity": 0.0
+   },
+   {
+    "power_on": 1.0,
+    "cycles_on": 2.0,
+    "cycles_off": 2.0,
+    "pulse_shape": "gaussian",
+    "tau_delay": 0.0,
+    "polarization_vector": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "energy": 1.0,
+    "power_off": 1.0,
+    "intensity": 100000000000000.0,
     "cycles_plateau": 0.0,
     "helicity": "left",
     "cep": 0.0,
@@ -136,9 +136,8 @@ for i in np.arange(-150.0, 160.0, 10.0):
     os.mkdir(fold)
   
   # update the parameter of interest
-    data["laser"]["pulses"][0]["cycles_delay"] \
-    = i * data["laser"]["pulses"][0]["energy"] \
-      / (2 * np.pi)
+    data["laser"]["pulses"][1]["tau_delay"] \
+    = i
   # write input file
     with open(fold + "/input.json", 'w') as f:
         f.write(json.dumps(data, sort_keys='True', indent=2))
