@@ -112,7 +112,7 @@ data = {
     }
    }
   ],
-  "name": "soft"
+  "name": "/data/becker/yoge8051/sweep1D/states/soft"
  },
  "coordinate_system": "Cartesian",
  "field_max_states": 0,
@@ -130,8 +130,7 @@ for i in np.arange(-150.0, 160.0, 10.0):
   
   # update the parameter of interest
     data["laser"]["pulses"][0]["tau_delay"] \
-    = i * data["laser"]["pulses"][0]["energy"] \
-      / (2 * np.pi)
+    = i
   # write input file
     with open(fold + "/input.json", 'w') as f:
         f.write(json.dumps(data, sort_keys='True', indent=2))
