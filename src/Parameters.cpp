@@ -596,7 +596,9 @@ void Parameters::Validate()
   if (field_max_states != 0 and propagate == 1)
   {
     error_found = true;
-    err_str += "\nYou're not allowed to propagate a field max state\n";
+    err_str +=
+        "\nYou're not allowed to propagate a field max state.\n" err_str +=
+        "Set propagate or field_max_states to 0\n";
   }
 
   /* Check pulses */
@@ -683,11 +685,11 @@ void Parameters::Validate()
     }
   }
 
-  if (num_electrons > 3)
+  if (num_electrons > 2)
   {
     error_found = true;
     err_str +=
-        "\nOne does not simply calculate more than 3 electrons exactly\n";
+        "\nOne does not simply calculate more than 2 electrons exactly\n";
   }
 
   if (num_dims > 3)
