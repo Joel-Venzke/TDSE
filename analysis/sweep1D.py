@@ -33,7 +33,7 @@ data = {
  "num_electrons": 1,
  "gobbler": 0.95,
  "propagate": 1,
- "alpha": 1.0,
+ "alpha": 0.387,
  "restart": 0,
  "state_solver": "File",
  "write_frequency_eigin_state": 1,
@@ -47,8 +47,8 @@ data = {
     "pulse_shape": "sin",
     "cycles_delay": 0.0,
     "polarization_vector": [
-     0.0,
      1.0,
+     0.0,
      0.0
     ],
     "energy": 0.057,
@@ -71,8 +71,8 @@ data = {
    "pulse_shape": "gaussian",
    "tau_delay": 0.0,
    "polarization_vector": [
-                           0.0,
                            1.0,
+                           0.0,
                            0.0
                            ],
    "energy": 3.01,
@@ -112,11 +112,11 @@ data = {
     }
    }
   ],
-  "name": "/data/becker/yoge8051/sweep1D/states/soft"
+  "name": "/Users/cgoldsmith/Desktop/projects/TDSEstreaking/tempData/test1D/states/soft"
  },
  "coordinate_system": "Cartesian",
  "field_max_states": 0,
- "free_propagate": 0,
+ "free_propagate": 2000,
  "sigma": 3.0,
  "order": 2
 }
