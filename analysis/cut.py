@@ -63,8 +63,58 @@ else:
 time_y = np.max(x[lower_idx[0]:upper_idx[0]]) * 0.9
 
 max_val = 0
+if len(shape) == 1:
+    cut_filter = np.ones(x.shape[0])
+    x_mesh = np.meshgrid(x)
+    r_mesh = np.sqrt(x_mesh**2 + y_mesh**2)
+    cut_array = np.where(r_mesh <= r_critical)
+    alpha = 0.075
+    cut_filter[cut_array] *= (np.exp(-alpha *
+                                     (r_mesh[cut_array] - r_critical)**2))
+    k_max = None
+    print "Plotting", i
+    # define the complex wavefunction and 
+    # sort properly
+    psi = psi[:, 0] + 1j * psi[:, 1]
+    
+    # apply cut filter
+    psi *= cut_filter
+    data = None
+    dataft = None
+    dataft = np.abs(np.fft.fftshift(np.fft.fft(psi)))
+    # cross_sec = (kx**2 / 2.0 + 0.50188)**(7.0 / 2.0)
+    # cross_sec[cross_sec > 1e4] = 1.0
+    # dataft *= cross_sec
+    data = plt.semilogy(kx, dataft)
+    plt.text(
+        time_x,
+        time_y,
+        "Time: " + str(psi_time[i]) + " a.u.",
+        color='k')
+    # color bar doesn't change during the video so only set it here
+    plt.xlabel("$k_x$ (a.u.)")
+    plt.ylabel("DFT($\psi$) (arb.)")
+    plb.xlim([-5, 5])
 
-if len(shape) == 2:
+    #print peaks for last one
+
+    kx_peaks = []
+    peak_values = []
+    thresh = 0.00005
+
+    for element in argrelmax(dataft)[0]:
+        if (dataft[element] > thresh):
+            kx_peaks.append(kx[element])
+            peak_values.append(dataft[element])
+    kx_peaks = np.array(kx_peaks)
+    peak_values = np.array(peak_values)
+
+    for elem in argrelmax(peak_values)[0]:
+        print "k_x:", kx_peaks[elem], peak_values[elem]
+
+    plt.savefig("figs/2d_fft_" + str(i).zfill(8) + ".png")
+    plt.clf()
+elif len(shape) == 2:
     import matplotlib
     # matplotlib.use('Agg')
     import matplotlib.pyplot as plt

@@ -267,7 +267,7 @@ void Parameters::Setup(std::string file_name)
   helicity            = std::make_unique< std::string[] >(num_pulses);
   helicity_idx        = std::make_unique< PetscInt[] >(num_pulses);
   polarization_vector = new double*[num_pulses];
-  if (num_dims == 3) poynting_vector= new double*[num_pulses];
+  if (num_dims == 3) poynting_vector = new double*[num_pulses];
 
   /* set pulses up by experiment type */
 
@@ -596,9 +596,8 @@ void Parameters::Validate()
   if (field_max_states != 0 and propagate == 1)
   {
     error_found = true;
-    err_str +=
-        "\nYou're not allowed to propagate a field max state.\n" err_str +=
-        "Set propagate or field_max_states to 0\n";
+    err_str += "\nYou're not allowed to propagate a field max state.\n";
+    err_str += "Set propagate or field_max_states to 0\n";
   }
 
   /* Check pulses */
