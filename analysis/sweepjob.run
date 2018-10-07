@@ -1,0 +1,21 @@
+#!/bin/bash
+
+#SBATCH -J SweepTest
+
+#SBATCH -p jila
+
+#SBATCH -n 1
+
+#SBATCH -N 1
+
+#SBATCH -t 10:0:0
+
+for entry in /data/becker/yoge8051/sweep1D/*.00
+do
+	#echo $entry
+	echo $entry >> /data/becker/yoge8051/sweep1D/output.txt
+	cd $entry
+	mkdir figs
+	sleep 10
+	sbatch ~/slurm_daisychain
+done

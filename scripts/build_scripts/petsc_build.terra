@@ -14,7 +14,7 @@ module list
   CXXOPTFLAGS=“-O2” \
   COPTFLAGS=“-O2” \
   FOPTFLAGS=“-O2” \
-  --prefix=/users/becker/jove7731/local/intel/petsc \
+  --prefix=/users/becker/yoge8051/local/intel/petsc \
   --with-shared-libraries=0 \
   --with-pthread=0 \
   --with-openmp=0 \

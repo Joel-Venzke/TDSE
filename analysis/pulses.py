@@ -44,6 +44,7 @@ for dim_idx in range(num_dims):
         label="field " + str(dim_idx))
 plt.xlabel("Time (a.u.)")
 plt.ylabel("Field (a.u.)")
+#plt.xlim([0, 10])
 plt.title("E Field")
 plt.legend()
 fig.savefig("figs/Pulse_total_E_field.png")

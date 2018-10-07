@@ -1,5 +1,6 @@
 #!/bin/bash
 export SLEPC_DIR=`pwd`
+export PETSC_DIR=/users/becker/yoge8051/local/intel/petsc
 
 module purge 
 module load intel 
@@ -10,5 +11,5 @@ module load blas
 module list
 
 ./configure \
-  --prefix=/users/becker/jove7731/local/intel/slepc \
+  --prefix=/users/becker/yoge8051/local/intel/slepc \
 
