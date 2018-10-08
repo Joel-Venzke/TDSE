@@ -131,8 +131,11 @@ for fold in folders:
         # to be taken at end of script
         dataft_right = np.where(kx >= 0, dataft, 0)
         nmax = kx[np.argmax(dataft_right)]
-        kx_peaks.append(nmax)
+        norm = np.sum(dataft_right**2)
+        kx_avg = np.sum(np.multiply(kx, dataft_right**2)) / norm
+        kx_peaks.append(kx_avg)
         print "max momentum = " + str(nmax)
+        print "<kx> = " + str(kx_avg)
 
     elif len(shape) == 2:
         import matplotlib
