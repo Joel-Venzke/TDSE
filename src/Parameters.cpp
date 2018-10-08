@@ -596,9 +596,8 @@ void Parameters::Validate()
   if (field_max_states != 0 and propagate == 1)
   {
     error_found = true;
-    err_str +=
-        "\nYou're not allowed to propagate a field max state.\n" err_str +=
-        "Set propagate or field_max_states to 0\n";
+    err_str += "\nYou're not allowed to propagate a field max state.\n";
+    err_str += "Set propagate or field_max_states to 0\n";
   }
 
   /* Check pulses */

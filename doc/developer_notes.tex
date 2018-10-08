@@ -496,16 +496,16 @@ pulses is a list of dictionaries used to describe a pulse. Each component inside
 cep is the carrier envelope phase (CEP) which is $\phi_A$ in Eq.~\ref{eq:afield}. It is in units of 2$\pi$, so a value of 0.5 gives $\phi_A=\pi$. The CEP is defined off of $t_0$ which is defined at the end of cycles\_on (peak of laser field/beginning of the plateau).
 
 \subsubsection{laser - pulses - cycles\_delay}
-cycles\_delay is the number of cycles until the ramp up of the pulse begins. It is units of $\omega_A$ of this pulse. See Fig.~\ref{fig:pulse} for a graphical representation.
+cycles\_delay is the number of cycles until the ramp up of the pulse begins. See Fig.~\ref{fig:pulse} for a graphical representation.
 
 \subsubsection{laser - pulses - cycles\_off}
-cycles\_off is the number of cycles that ramps the pulse back to zero. It is units of $\omega_A$ of this pulse. See Fig.~\ref{fig:pulse} for a graphical representation. Note that this is the full size for ``sin'' envelopes and the FWHM for ``Gaussian''. The ``Gaussian'' shapes are propagated for 5 times the cycles\_on to allow for the envelope to approach zero.
+cycles\_off is the number of cycles that ramps the pulse back to zero. See Fig.~\ref{fig:pulse} for a graphical representation. Note that this is the full size for ``sin'' envelopes and the FWHM for ``Gaussian''. The ``Gaussian'' shapes are propagated for 5 times the cycles\_on to allow for the envelope to approach zero.
 
 \subsubsection{laser - pulses - cycles\_on}
-cycles\_on is the number of cycles that ramps the pulse from zero to its max value. It is units of $\omega_A$ of this pulse. See Fig.~\ref{fig:pulse} for a graphical representation. Note that this is the full size for ``sin'' envelopes and the FWHM for ``Gaussian''. The ``Gaussian'' shapes are propagated for 5 times the cycles\_on to allow for the envelope to approach zero.
+cycles\_on is the number of cycles that ramps the pulse from zero to its max value. See Fig.~\ref{fig:pulse} for a graphical representation. Note that this is the full size for ``sin'' envelopes and the FWHM for ``Gaussian''. The ``Gaussian'' shapes are propagated for 5 times the cycles\_on to allow for the envelope to approach zero.
 
 \subsubsection{laser - pulses - cycles\_plateau}
-cycles\_plateau is the number of cycles the pulse remains at its max value. It is units of $\omega_A$ of this pulse. See Fig.~\ref{fig:pulse} for a graphical representation.
+cycles\_plateau is the number of cycles the pulse remains at its max value. See Fig.~\ref{fig:pulse} for a graphical representation.
 
 Using flat top pulses (cycles\_plateau $>$ 0) can clean up many results, however, they are extremely difficult to produce experimentally for pulses less than a picosecond. Due to this, reviewers may have issues with these pulses. Just something to be aware of.
 
