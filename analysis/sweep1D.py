@@ -116,7 +116,7 @@ data = {
  },
  "coordinate_system": "Cartesian",
  "field_max_states": 0,
- "free_propagate": 2500,
+ "free_propagate": 1500,
  "sigma": 3.0,
  "order": 2
 }
