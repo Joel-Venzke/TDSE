@@ -297,25 +297,17 @@ alpha_guess, k0_guess, delay_guess =\
          1.0, np.sqrt(2 * (2 * xuv_freq - Ip)), -1.0
 guess = np.array([alpha_guess, k0_guess, delay_guess])
 
-if shape == 0:
-    popt, pcov = curve_fit(trace_fit_sinsq, t_adj, kx_peaks, p0=guess)
-    print popt
-    print "Streaking time delay is " + str(popt[2])
-    print "Now plotting trace..."
-    plt.plot(taus, kx_peaks, '*', taus,\
-             trace_fit_sinsq(t_adj, *popt))
-    plt.xlabel('XUV-IR delay (a.u.)')
-    plt.ylabel('final momentum (a.u.)')
-    plt.savefig("trace" + ".png")
-elif shape == 1:
-    popt, pcov = curve_fit(trace_fit_gauss, t_adj, kx_peaks, p0=guess)
-    print popt
-    print "Streaking time delay is " + str(popt[2])
-    print "Now plotting trace..."
-    plt.plot(taus, kx_peaks, '*', taus,\
-             trace_fit_sinsq(t_adj, *popt))
-    plt.xlabel('XUV-IR delay (a.u.)')
-    plt.ylabel('final momentum (a.u.)')
-    plt.savefig("trace" + ".png")
+# if shape == 0:
+popt, pcov = curve_fit(trace_fit_sinsq, t_adj, kx_peaks, p0=guess)
+# elif shape == 1:
+    # popt, pcov = curve_fit(trace_fit_gauss, t_adj, kx_peaks, p0=guess)
+print popt
+print "Streaking time delay is " + str(popt[2])
+print "Now plotting trace..."
+plt.plot(taus, kx_peaks, '*', taus,\
+         trace_fit_sinsq(t_adj, *popt))
+plt.xlabel('XUV-IR delay (a.u.)')
+plt.ylabel('final momentum (a.u.)')
+plt.savefig("trace" + ".png")
 plt.clf()
 print "Done, please see trace.png in the current directory"

@@ -66,8 +66,8 @@ data = {
    },
    {
    "power_on": 1.0,
-   "cycles_on": 2.0,
-   "cycles_off": 2.0,
+   "cycles_on": 2.5,
+   "cycles_off": 2.5,
    "pulse_shape": "gaussian",
    "tau_delay": 0.0,
    "polarization_vector": [
@@ -75,9 +75,9 @@ data = {
                            0.0,
                            0.0
                            ],
-   "energy": 3.01,
+   "energy": 6.02,
    "power_off": 2.0,
-   "intensity": 1e13,
+   "intensity": 1e14,
    "cycles_plateau": 0.0,
    "helicity": "left",
    "cep": 0.0,
@@ -112,11 +112,11 @@ data = {
     }
    }
   ],
-  "name": "/Users/cgoldsmith/Desktop/projects/TDSEstreaking/tempData/test1D/states/soft"
+  "name": "/Users/cgoldsmith/Desktop/projects/TDSEstreaking/tempData/sweep1D/states/soft"
  },
  "coordinate_system": "Cartesian",
  "field_max_states": 0,
- "free_propagate": 2000,
+ "free_propagate": 2500,
  "sigma": 3.0,
  "order": 2
 }

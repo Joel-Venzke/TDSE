@@ -19,3 +19,9 @@ do
 	sleep 10
 	sbatch ~/slurm_daisychain
 done
+
+#put path to parent folder containing all different tau's
+cd /data/becker/yoge8051/sweep1D
+
+#put path to streaking script here
+python ~/repos/TDSE_master/analysis/streaking.py
