@@ -51,7 +51,7 @@ data = {
      0.0,
      0.0
     ],
-    "energy": 0.057,
+    "energy": 0.019,
     "power_off": 2.0,
     "intensity": 100000000000.0,
     "cycles_plateau": 0.0,

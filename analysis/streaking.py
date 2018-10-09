@@ -20,6 +20,7 @@ for tau in np.arange(-150.0, 160.0, 10.0):
     folders.append(key)
     taus.append(tau)
 
+ti = np.arange(-150.0, 151.0, 0.1)
 # Get vector potential of streaking field
 # Obtain parameters for fit
 states = h5py.File("states" + "/soft.h5", "r")
@@ -296,8 +297,14 @@ for fold in folders:
             print "k_f: " + str(kxc[i_vector])
 
 t_adj = taus + 0.5 * ftau
-alpha_guess, k0_guess, delay_guess =\
-         1.0, np.sqrt(2 * (2 * xuv_freq - Ip)), -1.0
+ti_adj = ti + 0.5 * ftau
+
+alpha_guess, delay_guess = 1.0, -1.0
+if Ip < xuv_freq:
+    k0_guess = np.sqrt(2 * (xuv_freq - Ip))
+else:
+    k0_guess = np.sqrt(2 * (2 * xuv_freq - Ip))
+
 guess = np.array([alpha_guess, k0_guess, delay_guess])
 
 # if shape == 0:
@@ -307,8 +314,8 @@ popt, pcov = curve_fit(trace_fit_sinsq, t_adj, kx_peaks, p0=guess)
 print popt
 print "Streaking time delay is " + str(popt[2])
 print "Now plotting trace..."
-plt.plot(taus, kx_peaks, '*', taus,\
-         trace_fit_sinsq(t_adj, *popt))
+plt.plot(taus, kx_peaks, '*', ti,\
+         trace_fit_sinsq(ti_adj, *popt))
 plt.xlabel('XUV-IR delay (a.u.)')
 plt.ylabel('final momentum (a.u.)')
 plt.savefig("trace" + ".png")
