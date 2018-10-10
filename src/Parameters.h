@@ -55,6 +55,7 @@ class Parameters : protected Utils
   PetscInt num_pulses;           ///< number of pulses
   double** polarization_vector;  ///< polarization vector for each pulse
   double** poynting_vector;      ///< poynting vector of the field
+  double* gaussian_length;
 
   void Setup(std::string file_name);
 
@@ -141,4 +142,5 @@ class Parameters : protected Utils
   PetscInt GetNumPulses();
   double** GetPolarizationVector();
   double** GetPoyntingVector();
+  double* GetGaussianLength();
 };

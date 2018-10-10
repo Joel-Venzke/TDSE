@@ -266,8 +266,9 @@ void Parameters::Setup(std::string file_name)
   ellipticity         = std::make_unique< double[] >(num_pulses);
   helicity            = std::make_unique< std::string[] >(num_pulses);
   helicity_idx        = std::make_unique< PetscInt[] >(num_pulses);
+  gaussian_length     = new double[num_pulses];
   polarization_vector = new double*[num_pulses];
-  if (num_dims == 3) poynting_vector= new double*[num_pulses];
+  if (num_dims == 3) poynting_vector = new double*[num_pulses];
 
   /* set pulses up by experiment type */
 
@@ -288,6 +289,7 @@ void Parameters::Setup(std::string file_name)
       field_max[pulse_idx]       = 1.0;
       ellipticity[pulse_idx]     = 0.0;
       helicity_idx[pulse_idx]    = 0;
+      gaussian_length[pulse_idx] = 5.0;
 
       if (num_dims == 3)
       {
@@ -330,8 +332,11 @@ void Parameters::Setup(std::string file_name)
     /* read in IR and XUV parameters */
     for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
     {
-      power_on[pulse_idx]  = 1.0;
-      power_off[pulse_idx] = 1.0;
+      /* set to zero for IO reasons and to ensure it is not used if it is not
+       * read from the input file */
+      power_on[pulse_idx]        = 0.0;
+      power_off[pulse_idx]       = 0.0;
+      gaussian_length[pulse_idx] = 1.0; /* the factor for non Gaussian pulses */
       pulse_shape[pulse_idx] =
           data["laser"]["pulses"][pulse_idx]["pulse_shape"];
 
@@ -351,6 +356,8 @@ void Parameters::Setup(std::string file_name)
       else if (pulse_shape[pulse_idx] == "gaussian")
       {
         pulse_shape_idx[pulse_idx] = 1;
+        gaussian_length[pulse_idx] =
+            data["laser"]["pulses"][pulse_idx]["gaussian_length"];
       }
       else
       {
@@ -454,20 +461,15 @@ void Parameters::Setup(std::string file_name)
         double center_XUV_cycles =
             energy[pulse_idx] *
             ((2 * pi *
-              (cycles_delay[pulse_idx - 1] + cycles_on[pulse_idx - 1]) /
+              (cycles_delay[pulse_idx - 1] +
+               gaussian_length[pulse_idx - 1] * cycles_on[pulse_idx - 1]) /
               energy[pulse_idx - 1]) +
              tau_delay) /
             (2 * pi);
 
-        if (pulse_shape_idx[pulse_idx] == 0)
-          cycles_delay[pulse_idx] = center_XUV_cycles - cycles_on[pulse_idx];
-        else if (pulse_shape_idx[pulse_idx] == 1)
-          cycles_delay[pulse_idx] =
-              center_XUV_cycles - 6 * cycles_on[pulse_idx];
-        else
-          EndRun(
-              "Streaking simulation: XUV does not have a valid "
-              "pulse_shape");
+        cycles_delay[pulse_idx] =
+            center_XUV_cycles -
+            gaussian_length[pulse_idx] * cycles_on[pulse_idx];
 
         if (cycles_delay[pulse_idx] < 0)
         {
@@ -515,6 +517,7 @@ Parameters::~Parameters()
   }
   delete[] polarization_vector;
   if (num_dims == 3) delete[] poynting_vector;
+  delete gaussian_length;
   delete start_state_idx;        ///< index of states in super position
   delete start_state_amplitude;  ///< amplitude of states in super position
   delete start_state_phase;
@@ -831,3 +834,5 @@ double** Parameters::GetPoyntingVector()
     return NULL;
   }
 }
+
+double* Parameters::GetGaussianLength() { return gaussian_length; }

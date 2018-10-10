@@ -22,7 +22,7 @@ Pulse::Pulse(HDF5Wrapper& data_file, Parameters& p)
   max_pulse_length = 0; /* stores longest pulse */
 
   pulse_shape_idx = p.pulse_shape_idx.get();
-  gaussian_sigma  = 4.0;
+  gaussian_length = p.GetGaussianLength();
   gauge_idx       = p.GetGaugeIdx();
   power_on        = p.power_on.get();
   power_off       = p.power_off.get();
@@ -165,8 +165,10 @@ void Pulse::InitializePulseLength()
       else if (pulse_shape_idx[pulse_idx] == 1) /* Gaussian needs sigma tails */
       {
         cycles_total[pulse_idx] =
-            cycles_delay[pulse_idx] + gaussian_sigma * cycles_on[pulse_idx] +
-            cycles_plateau[pulse_idx] + gaussian_sigma * cycles_off[pulse_idx];
+            cycles_delay[pulse_idx] +
+            gaussian_length[pulse_idx] * cycles_on[pulse_idx] +
+            cycles_plateau[pulse_idx] +
+            gaussian_length[pulse_idx] * cycles_off[pulse_idx];
       }
 
       /* calculate length (number of array cells) of each pulse */
@@ -275,7 +277,7 @@ void Pulse::InitializePulse(PetscInt n)
     {
       /* Time integral */
       if (time_idx > 0)
-      {
+      { /* This is a */
         pulse_envelope[n][time_idx] = pulse_envelope[n][time_idx - 1] -
                                       pulse_envelope[n][time_idx] * c * delta_t;
       }
@@ -325,22 +327,22 @@ void Pulse::InitializePulse(PetscInt n)
     }
     else if (pulse_shape_idx[n] == 1) /* Gaussian needs sigma tails */
     {
-      current_cep = cep[n] + (((int)gaussian_sigma * cycles_on[n]) -
-                              gaussian_sigma * cycles_on[n]);
+      current_cep = cep[n] + (((int)gaussian_length[n] * cycles_on[n]) -
+                              gaussian_length[n] * cycles_on[n]);
       /* index that holds pulse at max */
       plateau_start =
-          ceil(period * (gaussian_sigma * cycles_on[n] + cycles_delay[n]) /
+          ceil(period * (gaussian_length[n] * cycles_on[n] + cycles_delay[n]) /
                (delta_t));
       /* index that turns pulse off */
       off_start = ceil(period *
-                       (cycles_plateau[n] + gaussian_sigma * cycles_on[n] +
+                       (cycles_plateau[n] + gaussian_length[n] * cycles_on[n] +
                         cycles_delay[n]) /
                        (delta_t));
 
       /* index that holds pulse at 0 */
       off_end = ceil(period *
-                     (gaussian_sigma * cycles_off[n] + cycles_plateau[n] +
-                      gaussian_sigma * cycles_on[n] + cycles_delay[n]) /
+                     (gaussian_length[n] * cycles_off[n] + cycles_plateau[n] +
+                      gaussian_length[n] * cycles_on[n] + cycles_delay[n]) /
                      (delta_t));
     }
 

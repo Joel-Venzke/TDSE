@@ -342,6 +342,7 @@ The following is an input file for simulating an 8 cycle, 800nm, sine squared pu
         "cycles_plateau": 0.0,
         "ellipticity": 0.0,
         "energy": 0.057,
+        "gaussian_length": 5.0,
         "helicity": "left",
         "intensity": 1e14,
         "polarization_vector": [
@@ -514,6 +515,9 @@ ellipticity is the ratio of the minor over major axis for the laser polarization
 
 \subsubsection{laser - pulses - energy}
 energy provides the central frequency ($\omega_A$) in Eq.~\ref{eq:afield}. Given in atomic units (800nm $\approx$ 0.057a.u.). Note that the frequency shift (Eq.~\ref{eq:fshift}) described in Sec~\ref{sub:lasers}should be accounted for when pulses are around 15 optical cycles or less.
+
+\subsubsection{laser - pulses - gaussian\_length}
+gaussian\_length is the number of times the FWHM a gaussian pulse is propagated for. The parameters cycles\_on and cycles\_off control the half width half max on the rising and falling parts of the pulse. This controls how close to zero the envelope gets to zero. For non gaussian pulse shapes, this is not read and set to one in the code. A good value appears to be 5.0 though feel free to test this out.
 
 \subsubsection{laser - pulses - helicity}
 helicity is the handedness of elliptical and circular polarized lasers. It take the values of:
