@@ -327,6 +327,7 @@ The following is an input file for simulating an 8 cycle, 800nm, sine squared pu
       "dim_size": 200.0
     }
   ],
+  "ee_soft_core": 0.01,
   "field_max_states": 0,
   "free_propagate": 0,
   "gauge": "Velocity",
@@ -342,6 +343,7 @@ The following is an input file for simulating an 8 cycle, 800nm, sine squared pu
         "cycles_plateau": 0.0,
         "ellipticity": 0.0,
         "energy": 0.057,
+        "gaussian_length": 5.0,
         "helicity": "left",
         "intensity": 1e14,
         "polarization_vector": [
@@ -417,7 +419,7 @@ The following is my attempt as describing what each parameter does. Each paramet
 \textbf{Make sure to use ASCII characters, copy and paste could cause issues!}
 
 \subsubsection{alpha}
-alpha is the soft core parameter described in Sec~\ref{ssub:soft_core_like}. A floating point number can be input, and a value of 0.0 leads to the standard Euclidean distance $r=\sqrt{x^2+y^2+\cdots}$. It is used in the Coulomb (Hydrogen like) potentials. It is also used for any $r$ that comes in the denominator of the Single Active Electron (SAE) Potentials in Sec~\ref{ssub:single_active_electron}. Any $r$ that comes in the numerator is the standard Euclidean distance. The soft core takes the mathematical form of
+alpha is the soft core parameter described in Sec~\ref{ssub:soft_core_like} used in nuclear interactions. A floating point number can be input, and a value of 0.0 leads to the standard Euclidean distance $r=\sqrt{x^2+y^2+\cdots}$. It is used in the Coulomb (Hydrogen like) potentials. It is also used for any $r$ that comes in the denominator of the Single Active Electron (SAE) Potentials in Sec~\ref{ssub:single_active_electron}. Any $r$ that comes in the numerator is the standard Euclidean distance. The soft core takes the mathematical form of
 \begin{equation}
   r_{soft} = \sqrt{r^2 + \alpha^2}
 \end{equation}
@@ -464,6 +466,9 @@ field\_max\_states allows for the peak of the electric field or vector potential
   \item ``1'' Field max (still in beta)
 \end{itemize}
 
+\subsubsection{ee\_soft\_core}
+ee\_soft\_core is the soft core parameter described in Sec~\ref{ssub:soft_core_like} used in the electron-electron repulsion term.
+
 \subsubsection{free\_propagate}
 free\_propagate is the number of time steps the wavefunction is propagated after the last laser ``finishes'' (integer). Total free propagation is delta\_t * free\_propagate in atomic units.
 
@@ -496,16 +501,16 @@ pulses is a list of dictionaries used to describe a pulse. Each component inside
 cep is the carrier envelope phase (CEP) which is $\phi_A$ in Eq.~\ref{eq:afield}. It is in units of 2$\pi$, so a value of 0.5 gives $\phi_A=\pi$. The CEP is defined off of $t_0$ which is defined at the end of cycles\_on (peak of laser field/beginning of the plateau).
 
 \subsubsection{laser - pulses - cycles\_delay}
-cycles\_delay is the number of cycles until the ramp up of the pulse begins. It is units of $\omega_A$ of this pulse. See Fig.~\ref{fig:pulse} for a graphical representation.
+cycles\_delay is the number of cycles until the ramp up of the pulse begins. See Fig.~\ref{fig:pulse} for a graphical representation.
 
 \subsubsection{laser - pulses - cycles\_off}
-cycles\_off is the number of cycles that ramps the pulse back to zero. It is units of $\omega_A$ of this pulse. See Fig.~\ref{fig:pulse} for a graphical representation. Note that this is the full size for ``sin'' envelopes and the FWHM for ``Gaussian''. The ``Gaussian'' shapes are propagated for 5 times the cycles\_on to allow for the envelope to approach zero.
+cycles\_off is the number of cycles that ramps the pulse back to zero. See Fig.~\ref{fig:pulse} for a graphical representation. Note that this is the full size for ``sin'' envelopes and the FWHM for ``Gaussian''. The ``Gaussian'' shapes are propagated for 5 times the cycles\_on to allow for the envelope to approach zero.
 
 \subsubsection{laser - pulses - cycles\_on}
-cycles\_on is the number of cycles that ramps the pulse from zero to its max value. It is units of $\omega_A$ of this pulse. See Fig.~\ref{fig:pulse} for a graphical representation. Note that this is the full size for ``sin'' envelopes and the FWHM for ``Gaussian''. The ``Gaussian'' shapes are propagated for 5 times the cycles\_on to allow for the envelope to approach zero.
+cycles\_on is the number of cycles that ramps the pulse from zero to its max value. See Fig.~\ref{fig:pulse} for a graphical representation. Note that this is the full size for ``sin'' envelopes and the FWHM for ``Gaussian''. The ``Gaussian'' shapes are propagated for 5 times the cycles\_on to allow for the envelope to approach zero.
 
 \subsubsection{laser - pulses - cycles\_plateau}
-cycles\_plateau is the number of cycles the pulse remains at its max value. It is units of $\omega_A$ of this pulse. See Fig.~\ref{fig:pulse} for a graphical representation.
+cycles\_plateau is the number of cycles the pulse remains at its max value. See Fig.~\ref{fig:pulse} for a graphical representation.
 
 Using flat top pulses (cycles\_plateau $>$ 0) can clean up many results, however, they are extremely difficult to produce experimentally for pulses less than a picosecond. Due to this, reviewers may have issues with these pulses. Just something to be aware of.
 
@@ -514,6 +519,9 @@ ellipticity is the ratio of the minor over major axis for the laser polarization
 
 \subsubsection{laser - pulses - energy}
 energy provides the central frequency ($\omega_A$) in Eq.~\ref{eq:afield}. Given in atomic units (800nm $\approx$ 0.057a.u.). Note that the frequency shift (Eq.~\ref{eq:fshift}) described in Sec~\ref{sub:lasers}should be accounted for when pulses are around 15 optical cycles or less.
+
+\subsubsection{laser - pulses - gaussian\_length}
+gaussian\_length is the number of times the FWHM a gaussian pulse is propagated for. The parameters cycles\_on and cycles\_off control the half width half max on the rising and falling parts of the pulse. This controls how close to zero the envelope gets to zero. For non gaussian pulse shapes, this is not read and set to one in the code. A good value appears to be 5.0 though feel free to test this out.
 
 \subsubsection{laser - pulses - helicity}
 helicity is the handedness of elliptical and circular polarized lasers. It take the values of:

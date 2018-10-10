@@ -117,7 +117,7 @@ std::unique_ptr< hsize_t[] > HDF5Wrapper::GetHsizeT(int size, bool complex)
   }
   auto h5_size = std::make_unique< hsize_t[] >(alloc_size);
   h5_size[0]   = size;
-  if (complex) h5_size[1]= 2;
+  if (complex) h5_size[1] = 2;
   return h5_size;
 }
 
@@ -903,6 +903,9 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
     WriteObject(p.GetAlpha(), "/Parameters/alpha",
                 "Soft core used in atomic term of Hamiltonian");
     WriteObject(
+        p.GetEESoftCore(), "/Parameters/ee_soft_core",
+        "Soft core used in electron-electron repulsion term of Hamiltonian");
+    WriteObject(
         p.GetWriteFrequencyObservables(),
         "/Parameters/write_frequency_observables",
         "How often are observables are printed done during propagation");
@@ -948,6 +951,10 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
                   "The helicity idx for the " + std::to_string(pulse_idx) +
                       " pulse right:0, left:1");
     }
+    WriteObject(
+        p.GetGaussianLength(), num_pulses, "/Parameters/gaussian_length",
+        "The number of times the FWHM of a Gaussian pulse that the code is "
+        "propagated for. This is set to one for non Gaussian pulse shapes");
     WriteObject(p.pulse_shape_idx.get(), num_pulses,
                 "/Parameters/pulse_shape_idx",
                 "The index of the pulse shape. sin:0, gaussian:1");
@@ -967,7 +974,7 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
     WriteObject(p.cep.get(), num_pulses, "/Parameters/cep",
                 "The carrying phase envelope of the pulse. It is defined at "
                 "the end of cycles on as a fraction of a cycle (i.e. 0.5 -> "
-                "90^0 or pi/2 phase)");
+                "180^0 or pi phase)");
     WriteObject(p.energy.get(), num_pulses, "/Parameters/energy",
                 "The fundamental angular frequency of the pulse. Corresponds "
                 "to the energy of the photons in atomic units.");

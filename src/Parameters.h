@@ -23,6 +23,7 @@ class Parameters : protected Utils
   double** a;           ///< SAE a for each nuclei (coefficient of exponential)
   double** b;           ///< SAE b for each nuclei (in exponential)
   double alpha;         ///< atomic soft core
+  double ee_soft_core;  ///< electron-electron repulsion soft core
   PetscInt write_frequency_checkpoint;   ///< how many steps between checkpoints
                                          /// during propagation
   PetscInt write_frequency_observables;  ///< how many steps between observable
@@ -55,6 +56,7 @@ class Parameters : protected Utils
   PetscInt num_pulses;           ///< number of pulses
   double** polarization_vector;  ///< polarization vector for each pulse
   double** poynting_vector;      ///< poynting vector of the field
+  double* gaussian_length;
 
   void Setup(std::string file_name);
 
@@ -117,6 +119,7 @@ class Parameters : protected Utils
   double** GetA();
   double** GetB();
   double GetAlpha();
+  double GetEESoftCore();
   PetscInt GetWriteFrequencyCheckpoint();
   PetscInt GetWriteFrequencyObservables();
   PetscInt GetWriteFrequencyEigenState();
@@ -141,4 +144,5 @@ class Parameters : protected Utils
   PetscInt GetNumPulses();
   double** GetPolarizationVector();
   double** GetPoyntingVector();
+  double* GetGaussianLength();
 };

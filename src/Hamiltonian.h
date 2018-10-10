@@ -27,8 +27,10 @@ class Hamiltonian : protected Utils
   double *z_c;        /* SAE z_0 for each nuclei */
   PetscInt *sae_size; /* number of elements in a and b */
 
-  double alpha;   /* soft core atomic */
-  double alpha_2; /* square of soft core atomic */
+  double alpha;          /* soft core atomic */
+  double alpha_2;        /* square of soft core atomic */
+  double ee_soft_core;   /* soft core atomic */
+  double ee_soft_core_2; /* square of soft core atomic */
   double **field;
   double *delta_x_min;       /* step sizes of each dimension in a.u. */
   double *delta_x_min_end;   /* step sizes of each dimension in a.u. */
