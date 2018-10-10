@@ -28,6 +28,7 @@
  "delta_t": 0.1,
  "propagate": 0,
  "alpha": 0.8,
+ "ee_soft_core": 0.01,
  "restart": 0,
  "state_solver": "SLEPC",
  "write_frequency_eigin_state": 100,

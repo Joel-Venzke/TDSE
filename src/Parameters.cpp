@@ -87,10 +87,14 @@ void Parameters::Setup(std::string file_name)
   }
 
   /* get simulation behavior */
-  restart                     = data["restart"];
-  target                      = data["target"]["name"];
-  num_nuclei                  = data["target"]["nuclei"].size();
-  alpha                       = data["alpha"];
+  restart    = data["restart"];
+  target     = data["target"]["name"];
+  num_nuclei = data["target"]["nuclei"].size();
+  alpha      = data["alpha"];
+  if (num_electrons > 1)
+    ee_soft_core = data["ee_soft_core"];
+  else
+    ee_soft_core = 0.0;
   write_frequency_checkpoint  = data["write_frequency_checkpoint"];
   write_frequency_observables = data["write_frequency_observables"];
   write_frequency_eigin_state = data["write_frequency_eigin_state"];
@@ -776,6 +780,8 @@ double** Parameters::GetA() { return a; }
 double** Parameters::GetB() { return b; }
 
 double Parameters::GetAlpha() { return alpha; }
+
+double Parameters::GetEESoftCore() { return ee_soft_core; }
 
 PetscInt Parameters::GetWriteFrequencyCheckpoint()
 {

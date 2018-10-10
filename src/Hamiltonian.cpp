@@ -22,6 +22,8 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
   sae_size              = p.sae_size.get();
   alpha                 = p.GetAlpha();
   alpha_2               = alpha * alpha;
+  ee_soft_core          = p.GetEESoftCore();
+  ee_soft_core_2        = ee_soft_core * ee_soft_core;
   field                 = pulse.GetField();
 
   if (coordinate_system_idx != 2)
@@ -1378,7 +1380,7 @@ double Hamiltonian::SoftCoreDistance(double* location,
 double Hamiltonian::SoftCoreDistance(std::vector< PetscInt >& idx_array,
                                      PetscInt elec_idx_1, PetscInt elec_idx_2)
 {
-  double distance = alpha_2; /* Make sure we include the soft core */
+  double distance = ee_soft_core_2; /* Make sure we include the soft core */
   double diff     = 0.0;
   /* loop over all dims */
   for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)

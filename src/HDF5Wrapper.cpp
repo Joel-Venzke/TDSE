@@ -903,6 +903,9 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
     WriteObject(p.GetAlpha(), "/Parameters/alpha",
                 "Soft core used in atomic term of Hamiltonian");
     WriteObject(
+        p.GetEESoftCore(), "/Parameters/ee_soft_core",
+        "Soft core used in electron-electron repulsion term of Hamiltonian");
+    WriteObject(
         p.GetWriteFrequencyObservables(),
         "/Parameters/write_frequency_observables",
         "How often are observables are printed done during propagation");
