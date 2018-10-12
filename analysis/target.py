@@ -88,7 +88,7 @@ if num_electrons == 2:
                 plot_name = "figs/" + target_name + "_projection_on_dim_" + str(
                     dim_idx) + "_electron_" + str(
                         electron_idx) + "_state_" + str(i).zfill(8) + ".png"
-                current_dim = electron_idx + dim_idx * num_electrons
+                current_dim = electron_idx * num_dims + dim_idx
                 axis_sum_list = []
                 for this_dim in range(num_axis):
                     if this_dim != current_dim:
@@ -115,7 +115,7 @@ if num_electrons == 2:
             # plot electron 0
             plot_name = "figs/" + target_name + "_2d_electron_0_state_" + str(
                 i).zfill(8) + ".png"
-            axis_sum_list = tuple([1, 3])
+            axis_sum_list = tuple([2, 3])
             fig = plt.figure()
             data = np.sum(psi, axis=axis_sum_list)
             axis = f["Wavefunction"]["x_value_" + str(dim_idx)][:]
@@ -135,7 +135,7 @@ if num_electrons == 2:
             # plot electron 1
             plot_name = "figs/" + target_name + "_2d_electron_1_state_" + str(
                 i).zfill(8) + ".png"
-            axis_sum_list = tuple([0, 2])
+            axis_sum_list = tuple([0, 1])
             fig = plt.figure()
             data = np.sum(psi, axis=axis_sum_list)
             axis = f["Wavefunction"]["x_value_" + str(dim_idx)][:]
@@ -155,7 +155,7 @@ if num_electrons == 2:
             # plot dim 0 for both electrons
             plot_name = "figs/" + target_name + "_2d_dim_0_state_" + str(
                 i).zfill(8) + ".png"
-            axis_sum_list = tuple([2, 3])
+            axis_sum_list = tuple([1, 3])
             fig = plt.figure()
             data = np.sum(psi, axis=axis_sum_list)
             axis = f["Wavefunction"]["x_value_" + str(dim_idx)][:]
@@ -175,7 +175,7 @@ if num_electrons == 2:
             # plot dim 0 for both electrons
             plot_name = "figs/" + target_name + "_2d_dim_1_state_" + str(
                 i).zfill(8) + ".png"
-            axis_sum_list = tuple([0, 1])
+            axis_sum_list = tuple([0, 2])
             fig = plt.figure()
             data = np.sum(psi, axis=axis_sum_list)
             axis = f["Wavefunction"]["x_value_" + str(dim_idx)][:]
