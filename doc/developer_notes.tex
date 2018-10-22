@@ -40,14 +40,14 @@ Finally, we want this code be useful in future iterations. Therefor we used GitH
 
 \subsection{Key Features} % (fold)
 \label{sub:key_features}
-
+TODO
 % subsection key_features (end)
+
+\subsection{Recommended Programing Background} % (fold)
+\label{sub:recommended_programing_background}
+
+% subsection recommended_programing_background (end)
 % section introduction (end)
-
-\section{Running TDSE and Best Practices} % (fold)
-\label{sec:running_tdse_and_best_practices}
-
-% section running_tdse_and_best_practices (end)
 
 \section{Theory} % (fold)
 \label{sec:theory}
@@ -56,7 +56,7 @@ The TDSE can be written simply as
 \begin{equation}
     i\frac{\partial}{\partial t}\psi(x,t) = \hat{H}\psi(x,t)
 \end{equation}
-In the velocity gauge the Hamiltonian becomes
+In the velocity gauge the Hamiltonian ($\hat{H}$) becomes
 \begin{equation}
     \label{eq:atoms_and_molecules}
     \hat{H} = \sum_{e}\left(\frac{\hat{\mathbf{p}}^2_e}{2} - \frac{\mathbf{A}(t) \cdot \hat{\mathbf{p}}_e}{c} - \sum_{n} \frac{Z_n}{r_{e,n}}\right) + \sum_{e_1 < e_2}\frac{1}{r_{e_1, e_2}}
@@ -70,7 +70,7 @@ In the velocity gauge the Hamiltonian becomes
     \item $Z_n$ is the nuclear charge
     \item $r_{i,j}$ is the Euclidean distance between $i$ and $j$
 \end{itemize}
-This Hamiltonian assumes that the wavelength is much larger than the radius of the atom (dipole approximation), the field has a large number of photons (it treats fields classically), and the nuclei are fixed in space during the simulation (molecular motion is much slower than electron motion). Moving (classically and quantum mechanically) nuclei are on the wish list for this code.
+This Hamiltonian assumes that the wavelength is much larger than the radius of the atom (dipole approximation), the field has a large number of photons (it treats fields classically), the dynamics are non relativistic (the electron energy is much less than its rest mass), and the nuclei are fixed in space during the simulation (molecular motion is much slower than electron motion). Moving (classically and quantum mechanically) nuclei are on the wish list for this code.
 
 The first term in Equation~\ref{eq:atoms_and_molecules} is the kinetic energy of the electron. In atomic units, this can be written such that
 \begin{equation}
@@ -289,6 +289,93 @@ TODO
 \label{sec:build_system}
 The build system changes from time to time. For the most up to date version, see the README in the root directory of this repository.
 % section build_system (end)
+
+\section{Running Calculations} % (fold)
+\label{sec:running_tdse_and_best_practices}
+\subsection{Running the Code} % (fold)
+\label{sub:running_the_code}
+\subsubsection{Basic usage} % (fold)
+\label{ssub:basic_usage}
+TODO
+% subsubsection basic_usage (end)
+
+\subsubsection{Ground State Calculations} % (fold)
+\label{ssub:ground_state_calculations}
+TODO
+% subsubsection ground_state_calculations (end)
+
+\subsubsection{Time Propagation} % (fold)
+\label{ssub:time_propagation}
+TODO
+% subsubsection time_propagation (end)
+
+\subsubsection{Command line options} % (fold)
+\label{ssub:command_line_options}
+TODO
+% subsubsection command_line_options (end)
+
+\subsubsection{Restart mode} % (fold)
+\label{ssub:restart_mode}
+TODO
+% subsubsection restart_mode (end)
+
+\subsubsection{Daisey Chain Script} % (fold)
+\label{ssub:daisey_chain_script}
+TODO
+% subsubsection daisey_chain_script (end)
+
+\subsubsection{Visualization of Results} % (fold)
+\label{ssub:visualization_of_results}
+TODO
+% subsubsection visualization_of_results (end)
+
+% subsection running_the_code (end)
+
+\subsection{TDSE Best Practices} % (fold)
+\label{sub:tdse_best_practices}
+
+\subsubsection{Convergence Tests} % (fold)
+\label{ssub:convergence_tests}
+TODO
+% subsection convergence_tests (end)
+
+\subsubsection{Minimizing IO} % (fold)
+\label{ssub:minimizing_io}
+TODO
+% subsubsection minimizing_io (end)
+
+\subsubsection{Vector Potential vs Electric Field} % (fold)
+\label{ssub:vector_potential_vs_electric_field}
+TODO
+% subsubsection vector_potential_vs_electric_field (end)
+
+\subsubsection{Flat Top Pulse} % (fold)
+\label{ssub:flat_top_pulse}
+TODO
+% subsubsection flat_top_pulse (end)
+
+\subsubsection{Soft Core Potentials} % (fold)
+\label{ssub:soft_core_potentials}
+TODO
+% subsubsection soft_core_potentials (end)
+
+\subsubsection{Extracting Photoelectron Spectra} % (fold)
+\label{ssub:extracting_photoelectron_spectra}
+TODO
+% subsubsection extracting_photoelectron_spectra (end)
+
+\subsubsection{High Harmonic Generation} % (fold)
+\label{ssub:high_harmonic_generation}
+TODO
+% subsubsection high_harmonic_generation (end)
+
+\subsubsection{Bound State Populations} % (fold)
+\label{ssub:bound_state_populations}
+
+% subsubsection bound_state_populations (end)
+
+% subsection tdse_best_practices (end)
+% section running_tdse_and_best_practices (end)
 
 \section{Input} % (fold)
 \label{sec:input}
@@ -657,6 +744,37 @@ write\_frequency\_observables is the number of time steps between writing calcul
 
 % section input (end)
 
+\section{Output} % (fold)
+\label{sec:output}
+TODO
+
+\subsection{TDSE.h5} % (fold)
+\label{sub:tdse_h5}
+TODO
+% subsection tdse_h5 (end)
+
+\subsection{Pulse.h5} % (fold)
+\label{sub:pulse_h5}
+TODO
+% subsection pulse_h5 (end)
+
+\subsection{Target.h5} % (fold)
+\label{sub:target_h5}
+TODO
+% subsection target_h5 (end)
+
+\subsection{Observables.h5} % (fold)
+\label{sub:observables_h5}
+TODO
+% subsection observables_h5 (end)
+
+% section output (end)
+
+\section{Analysis} % (fold)
+\label{sec:analysis}
+TODO
+
+% section analysis (end)
 
 
 \section{Classes} % (fold)
@@ -751,15 +869,15 @@ There is very little testing used in this code. If you would like to work on thi
 
 \subsection{Posters} % (fold)
 \label{sub:posters}
-
+TODO
 % subsection posters (end)
 \subsection{Talks} % (fold)
 \label{sub:talks}
-
+TODO
 % subsection talks (end)
 \subsection{Papers} % (fold)
 \label{sub:papers}
-
+TODO
 % subsection papers (end)
 % section supporting_works (end)
 \section{Contributors} % (fold)

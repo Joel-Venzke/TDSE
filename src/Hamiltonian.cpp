@@ -1385,8 +1385,8 @@ double Hamiltonian::SoftCoreDistance(std::vector< PetscInt >& idx_array,
   /* loop over all dims */
   for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
   {
-    diff = x_value[dim_idx][idx_array[2 * elec_idx_1]] -
-           x_value[dim_idx][idx_array[2 * elec_idx_2]];
+    diff = x_value[dim_idx][idx_array[2 * (dim_idx + elec_idx_1 * num_dims)]] -
+           x_value[dim_idx][idx_array[2 * (dim_idx + elec_idx_2 * num_dims)]];
     distance += diff * diff;
   }
   return sqrt(distance);

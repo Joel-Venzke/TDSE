@@ -17,7 +17,7 @@ rank = comm.Get_rank()
 w_0 = 0.057
 ground_state = np.abs(-0.503829)
 min_harm = 5
-max_harm = 16
+max_harm = 12
 
 w_list = range(3, 100, 5)
 # w_list = range(38, 100, 5)
@@ -120,7 +120,7 @@ for scale_type in ["lin"]:
         plt.grid(c='gray', ls='--')
         plt.tight_layout()
         if scale_type == "lin":
-            plt.savefig(str(num).zfill(6) + "_lin_gird.png")
+            plt.savefig("wavelet_" + str(num).zfill(6) + "_lin_gird.png")
         elif scale_type == "log":
-            plt.savefig(str(num).zfill(6) + "_log_gird.png")
+            plt.savefig("wavelet_" + str(num).zfill(6) + "_log_gird.png")
         plt.close()
