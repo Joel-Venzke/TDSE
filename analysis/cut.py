@@ -105,7 +105,7 @@ if len(shape) == 2:
     #             cut_filter[j][k] = (np.exp(-alpha * (r - r_critical)**2))
 
     for i, psi in enumerate(psi_value):
-        if i == 8:
+        if i > 8:
             k_max = None
             print "Plotting", i
             # set up initial figure with color bar

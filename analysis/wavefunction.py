@@ -92,6 +92,7 @@ elif len(shape) == 2:
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     from matplotlib.colors import LogNorm
+    import pylab as plb
     # shape into a 3d array with time as the first axis
     fig = plt.figure()
     font = {'size': 18}
@@ -106,7 +107,7 @@ elif len(shape) == 2:
             if f["Parameters"]["coordinate_system_idx"][0] == 1:
                 x_min_idx = 0
             else:
-                x_min_idx = lower_idx[0]
+                x_min_idx = 0
             x_max_idx = upper_idx[0]
             y_min_idx = lower_idx[1]
             y_max_idx = upper_idx[1]
@@ -153,6 +154,24 @@ elif len(shape) == 2:
             # plt.axis('off')
             plt.colorbar()
             fig.savefig("figs/Wave_" + str(i).zfill(8) + ".png")
+            plb.xlim([-100, 100])
+            plb.ylim([-100,100])
+            plt.tight_layout()
+            fig.savefig("figs/Wave_small_" + str(i).zfill(8) + ".png")
+            plt.clf()
+
+            plt.semilogy(x[0:-1], np.abs(psi[:,psi.shape[1]/2]))
+            plt.xlabel("X-axis  (a.u.)")
+            plt.xlim([-100,100])
+            plt.ylim([1e-10,1])
+            fig.savefig("figs/Wave_x_cut_" + str(i).zfill(8) + ".png")
+            plt.clf()
+
+            plt.semilogy(y[0:-1], np.abs(psi[psi.shape[0]/2,:]))
+            plt.xlabel("Y-axis  (a.u.)")
+            plt.xlim([-100,100])
+            plt.ylim([1e-10,1])
+            fig.savefig("figs/Wave_y_cut_" + str(i).zfill(8) + ".png")
             plt.clf()
 
             psi = psi_save
