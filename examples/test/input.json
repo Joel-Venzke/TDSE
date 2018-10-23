@@ -37,7 +37,7 @@
   "pulses": [
    {
     "power_on": 2.0,
-    "cycles_on": 1.0,
+    "cycles_on": 1.5,
     "cycles_off": 1.0,
     "pulse_shape": "gaussian",
     "cycles_delay": 0.0,

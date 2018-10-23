@@ -330,7 +330,7 @@ void Simulation::EigenSolve(PetscInt num_states)
   {
     EPSGetEigenpair(eps, j, &eigen_real, NULL, *psi, NULL);
     if (world.rank() == 0)
-      std::cout << "Eigen " << eigen_real << " " << eigen_imag << " " << i
+      std::cout << "Eigen " << eigen_real << " " << eigen_imag << " " << j
                 << "\n";
     wavefunction->Normalize();
     CheckpointState(h_states_file, v_states_file, j, h);

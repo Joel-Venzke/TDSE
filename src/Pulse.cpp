@@ -327,7 +327,7 @@ void Pulse::InitializePulse(PetscInt n)
     }
     else if (pulse_shape_idx[n] == 1) /* Gaussian needs sigma tails */
     {
-      current_cep = cep[n] + (((int)gaussian_length[n] * cycles_on[n]) -
+      current_cep = cep[n] + (((int)(gaussian_length[n] * cycles_on[n])) -
                               gaussian_length[n] * cycles_on[n]);
       /* index that holds pulse at max */
       plateau_start =
