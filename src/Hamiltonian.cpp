@@ -4,27 +4,33 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
                          Parameters& p)
 {
   if (world.rank() == 0) std::cout << "Creating Hamiltonian\n";
-  num_dims              = p.GetNumDims();
-  num_electrons         = p.GetNumElectrons();
-  num_nuclei            = p.GetNumNuclei();
-  coordinate_system_idx = p.GetCoordinateSystemIdx();
-  num_x                 = w.GetNumX();
-  num_psi               = w.GetNumPsi();
-  gauge_idx             = p.GetGaugeIdx();
-  x_value               = w.GetXValue();
-  z                     = p.z.get();
-  location              = p.GetLocation();
-  a                     = p.GetA();
-  b                     = p.GetB();
-  r0                    = p.r0.get();
-  c0                    = p.c0.get();
-  z_c                   = p.z_c.get();
-  sae_size              = p.sae_size.get();
-  alpha                 = p.GetAlpha();
-  alpha_2               = alpha * alpha;
-  ee_soft_core          = p.GetEESoftCore();
-  ee_soft_core_2        = ee_soft_core * ee_soft_core;
-  field                 = pulse.GetField();
+  num_dims               = p.GetNumDims();
+  num_electrons          = p.GetNumElectrons();
+  num_nuclei             = p.GetNumNuclei();
+  coordinate_system_idx  = p.GetCoordinateSystemIdx();
+  num_x                  = w.GetNumX();
+  num_psi                = w.GetNumPsi();
+  gauge_idx              = p.GetGaugeIdx();
+  x_value                = w.GetXValue();
+  z                      = p.z.get();
+  location               = p.GetLocation();
+  exponential_r_0        = p.GetExponentialR0();
+  exponential_amplitude  = p.GetExponentialAmplitude();
+  exponential_decay_rate = p.GetExponentialDecayRate();
+  exponential_size       = p.exponential_size.get();
+  gaussian_r_0           = p.GetGaussianR0();
+  gaussian_amplitude     = p.GetGaussianAmplitude();
+  gaussian_decay_rate    = p.GetGaussianDecayRate();
+  gaussian_size          = p.gaussian_size.get();
+  yukawa_r_0             = p.GetYukawaR0();
+  yukawa_amplitude       = p.GetYukawaAmplitude();
+  yukawa_decay_rate      = p.GetYukawaDecayRate();
+  yukawa_size            = p.yukawa_size.get();
+  alpha                  = p.GetAlpha();
+  alpha_2                = alpha * alpha;
+  ee_soft_core           = p.GetEESoftCore();
+  ee_soft_core_2         = ee_soft_core * ee_soft_core;
+  field                  = pulse.GetField();
 
   if (coordinate_system_idx != 2)
   {
@@ -1253,34 +1259,45 @@ dcomp Hamiltonian::GetNucleiTerm(std::vector< PetscInt >& idx_array)
   dcomp nuclei(0.0, 0.0);
   double r_soft;
   double r;
+  double tmp;
+  double tmp_soft;
   /* loop over each electron */
   for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
   {
     /* loop over each nuclei */
     for (PetscInt nuclei_idx = 0; nuclei_idx < num_nuclei; ++nuclei_idx)
     {
-      if (z[nuclei_idx] != 0.0) /* Column term */
+      r_soft = SoftCoreDistance(location[nuclei_idx], idx_array, elec_idx);
+      r      = EuclideanDistance(location[nuclei_idx], idx_array, elec_idx);
+
+      /* Coulomb term */
+      nuclei -= dcomp(z[nuclei_idx] / r_soft, 0.0);
+
+      /* Gaussian Donuts */
+      for (PetscInt i = 0; i < gaussian_size[nuclei_idx]; ++i)
       {
-        nuclei -= dcomp(z[nuclei_idx] / SoftCoreDistance(location[nuclei_idx],
-                                                         idx_array, elec_idx),
-                        0.0);
+        tmp = gaussian_decay_rate[nuclei_idx][i] *
+              (r - gaussian_r_0[nuclei_idx][i]);
+        nuclei -= dcomp(
+            gaussian_amplitude[nuclei_idx][i] * exp(-0.5 * (tmp * tmp)), 0.0);
       }
-      else /* SAE */
+
+      /* Exponential Donuts */
+      for (PetscInt i = 0; i < exponential_size[nuclei_idx]; ++i)
       {
-        r_soft = SoftCoreDistance(location[nuclei_idx], idx_array, elec_idx);
-        r      = EuclideanDistance(location[nuclei_idx], idx_array, elec_idx);
-        nuclei -= dcomp(c0[nuclei_idx] / r_soft, 0.0);
+        tmp = exponential_decay_rate[nuclei_idx][i] *
+              std::abs(r - exponential_r_0[nuclei_idx][i]);
+        nuclei -= dcomp(exponential_amplitude[nuclei_idx][i] * exp(-tmp), 0.0);
+      }
+
+      /* Yukawa Donuts */
+      for (PetscInt i = 0; i < yukawa_size[nuclei_idx]; ++i)
+      {
+        tmp = yukawa_decay_rate[nuclei_idx][i] *
+              std::abs(r - yukawa_r_0[nuclei_idx][i]);
+        tmp_soft = std::abs(r_soft - yukawa_r_0[nuclei_idx][i]);
         nuclei -=
-            dcomp(z_c[nuclei_idx] * exp(-r0[nuclei_idx] * r) / r_soft, 0.0);
-
-        // Tong Lin He Only
-        // clean up hack later
-        // nuclei -= dcomp(-0.231 * exp(-0.480 * r) / r, 0.0);
-
-        for (PetscInt i = 0; i < sae_size[nuclei_idx]; ++i)
-        {
-          nuclei -= dcomp(a[nuclei_idx][i] * exp(-b[nuclei_idx][i] * r), 0.0);
-        }
+            dcomp(yukawa_amplitude[nuclei_idx][i] * exp(-tmp) / tmp_soft, 0.0);
       }
     }
   }
@@ -1293,36 +1310,45 @@ dcomp Hamiltonian::GetNucleiTerm(PetscInt idx)
   dcomp nuclei(0.0, 0.0);
   double r_soft;
   double r;
+  double tmp;
+  double tmp_soft;
   /* loop over each electron */
   for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
   {
     /* loop over each nuclei */
     for (PetscInt nuclei_idx = 0; nuclei_idx < num_nuclei; ++nuclei_idx)
     {
-      if (z[nuclei_idx] != 0.0) /* Column term */
+      r_soft = SoftCoreDistance(location[nuclei_idx], idx);
+      r      = EuclideanDistance(location[nuclei_idx], idx);
+
+      /* Coulomb term */
+      nuclei -= dcomp(z[nuclei_idx] / r_soft, 0.0);
+
+      /* Gaussian Donuts */
+      for (PetscInt i = 0; i < gaussian_size[nuclei_idx]; ++i)
       {
+        tmp = gaussian_decay_rate[nuclei_idx][i] *
+              (r - gaussian_r_0[nuclei_idx][i]);
         nuclei -= dcomp(
-            z[nuclei_idx] / SoftCoreDistance(location[nuclei_idx], idx), 0.0);
-        // std::cout << "soft core" << SoftCoreDistance(location[nuclei_idx],
-        // idx)
-        //           << "\n";
+            gaussian_amplitude[nuclei_idx][i] * exp(-0.5 * (tmp * tmp)), 0.0);
       }
-      else /* SAE */
+
+      /* Exponential Donuts */
+      for (PetscInt i = 0; i < exponential_size[nuclei_idx]; ++i)
       {
-        r_soft = SoftCoreDistance(location[nuclei_idx], idx);
-        r      = EuclideanDistance(location[nuclei_idx], idx);
-        nuclei -= dcomp(c0[nuclei_idx] / r_soft, 0.0);
+        tmp = exponential_decay_rate[nuclei_idx][i] *
+              std::abs(r - exponential_r_0[nuclei_idx][i]);
+        nuclei -= dcomp(exponential_amplitude[nuclei_idx][i] * exp(-tmp), 0.0);
+      }
+
+      /* Yukawa Donuts */
+      for (PetscInt i = 0; i < yukawa_size[nuclei_idx]; ++i)
+      {
+        tmp = yukawa_decay_rate[nuclei_idx][i] *
+              std::abs(r - yukawa_r_0[nuclei_idx][i]);
+        tmp_soft = std::abs(r_soft - yukawa_r_0[nuclei_idx][i]);
         nuclei -=
-            dcomp(z_c[nuclei_idx] * exp(-r0[nuclei_idx] * r) / r_soft, 0.0);
-
-        // Tong Lin He Only
-        // clean up hack later
-        // nuclei -= dcomp(-0.231 * exp(-0.480 * r) / r, 0.0);
-
-        for (PetscInt i = 0; i < sae_size[nuclei_idx]; ++i)
-        {
-          nuclei -= dcomp(a[nuclei_idx][i] * exp(-b[nuclei_idx][i] * r), 0.0);
-        }
+            dcomp(yukawa_amplitude[nuclei_idx][i] * exp(-tmp) / tmp_soft, 0.0);
       }
     }
   }

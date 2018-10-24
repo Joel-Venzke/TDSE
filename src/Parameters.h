@@ -20,10 +20,17 @@ class Parameters : protected Utils
   PetscInt target_idx;  ///< index of target
   PetscInt num_nuclei;  ///< number of nuclei in potential
   double** location;    ///< location of each nuclei
-  double** a;           ///< SAE a for each nuclei (coefficient of exponential)
-  double** b;           ///< SAE b for each nuclei (in exponential)
-  double alpha;         ///< atomic soft core
-  double ee_soft_core;  ///< electron-electron repulsion soft core
+  double** exponential_r_0;         ///< exponential radial center
+  double** exponential_amplitude;   ///< exponential  amplitude
+  double** exponential_decay_rate;  ///< exponential  decay rate
+  double** gaussian_r_0;            ///< Gaussian radial center
+  double** gaussian_amplitude;      ///< Gaussian amplitude
+  double** gaussian_decay_rate;     ///< Gaussian decay rate
+  double** yukawa_r_0;              ///< yukawa radial center
+  double** yukawa_amplitude;        ///< yukawa amplitude
+  double** yukawa_decay_rate;       ///< yukawa decay rate
+  double alpha;                     ///< atomic soft core
+  double ee_soft_core;              ///< electron-electron repulsion soft core
   PetscInt write_frequency_checkpoint;   ///< how many steps between checkpoints
                                          /// during propagation
   PetscInt write_frequency_observables;  ///< how many steps between observable
@@ -69,10 +76,10 @@ class Parameters : protected Utils
   std::unique_ptr< double[] >
       delta_x_max_start;          ///< point in space grid step stops increasing
   std::unique_ptr< double[] > z;  ///< atomic number for each nuclei
-  std::unique_ptr< double[] > r0;          ///< SAE r_0 for each nuclei
-  std::unique_ptr< double[] > c0;          ///< SAE C_0 for each nuclei
-  std::unique_ptr< double[] > z_c;         ///< SAE z_0 for each nuclei
-  std::unique_ptr< PetscInt[] > sae_size;  ///< number of elements in a and b
+  std::unique_ptr< PetscInt[] >
+      exponential_size;  ///< number of exponential elements
+  std::unique_ptr< PetscInt[] > gaussian_size;  ///< number of Gaussian elements
+  std::unique_ptr< PetscInt[] > yukawa_size;    ///< number of Gaussian elements
   std::unique_ptr< double[] >
       state_energy;  ///< theoretical eigenvalues for each state
 
@@ -116,8 +123,15 @@ class Parameters : protected Utils
   PetscInt GetTargetIdx();
   PetscInt GetNumNuclei();
   double** GetLocation();
-  double** GetA();
-  double** GetB();
+  double** GetExponentialR0();
+  double** GetExponentialAmplitude();
+  double** GetExponentialDecayRate();
+  double** GetGaussianR0();
+  double** GetGaussianAmplitude();
+  double** GetGaussianDecayRate();
+  double** GetYukawaR0();
+  double** GetYukawaAmplitude();
+  double** GetYukawaDecayRate();
   double GetAlpha();
   double GetEESoftCore();
   PetscInt GetWriteFrequencyCheckpoint();

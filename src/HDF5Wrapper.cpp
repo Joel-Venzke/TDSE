@@ -882,23 +882,49 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
                 "The index of the target. He:0 ");
     WriteObject(p.z.get(), p.GetNumNuclei(), "/Parameters/z",
                 "Atomic number used in Hamiltonian ");
-    WriteObject(p.z_c.get(), p.GetNumNuclei(), "/Parameters/z_c",
-                "Z_c in the SAE potential for each nuclei");
-    WriteObject(p.c0.get(), p.GetNumNuclei(), "/Parameters/c0",
-                "C_0 in the SAE potential for each nuclei");
-    WriteObject(p.r0.get(), p.GetNumNuclei(), "/Parameters/r0",
-                "R_0 in the SAE potential for each nuclei");
     for (int i = 0; i < p.GetNumNuclei(); ++i)
     {
       WriteObject(p.GetLocation()[i], p.GetNumDims(),
                   "/Parameters/location_" + std::to_string(i),
                   "location of nuclei " + std::to_string(i));
-      WriteObject(p.GetA()[i], p.sae_size[i],
-                  "/Parameters/a_" + std::to_string(i),
-                  "SAE a terms for nuclei " + std::to_string(i));
-      WriteObject(p.GetB()[i], p.sae_size[i],
-                  "/Parameters/b_" + std::to_string(i),
-                  "SAE a terms for nuclei " + std::to_string(i));
+
+      WriteObject(p.GetExponentialR0()[i], p.exponential_size[i],
+                  "/Parameters/exponential_r_0_" + std::to_string(i),
+                  "Exponential r_0 terms for centering donut like potentials "
+                  "around nuclei " +
+                      std::to_string(i));
+      WriteObject(
+          p.GetExponentialAmplitude()[i], p.exponential_size[i],
+          "/Parameters/exponential_amplitude_" + std::to_string(i),
+          "Exponential amplitude terms for  nuclei " + std::to_string(i));
+      WriteObject(
+          p.GetExponentialDecayRate()[i], p.exponential_size[i],
+          "/Parameters/exponential_decay_rate_" + std::to_string(i),
+          "Exponential decay rate terms for nuclei " + std::to_string(i));
+
+      WriteObject(p.GetGaussianR0()[i], p.gaussian_size[i],
+                  "/Parameters/gaussian_r_0_" + std::to_string(i),
+                  "Gaussian r_0 terms for centering donut like potentials "
+                  "around nuclei " +
+                      std::to_string(i));
+      WriteObject(p.GetGaussianAmplitude()[i], p.gaussian_size[i],
+                  "/Parameters/gaussian_amplitude_" + std::to_string(i),
+                  "Gaussian amplitude terms for nuclei " + std::to_string(i));
+      WriteObject(p.GetGaussianDecayRate()[i], p.gaussian_size[i],
+                  "/Parameters/gaussian_decay_rate_" + std::to_string(i),
+                  "Gaussian decay rate terms for nuclei " + std::to_string(i));
+
+      WriteObject(p.GetYukawaR0()[i], p.yukawa_size[i],
+                  "/Parameters/yukawa_r_0_" + std::to_string(i),
+                  "yukawa r_0 terms for centering donut like potentials "
+                  "around nuclei " +
+                      std::to_string(i));
+      WriteObject(p.GetYukawaAmplitude()[i], p.yukawa_size[i],
+                  "/Parameters/yukawa_amplitude_" + std::to_string(i),
+                  "yukawa amplitude terms for nuclei " + std::to_string(i));
+      WriteObject(p.GetYukawaDecayRate()[i], p.yukawa_size[i],
+                  "/Parameters/yukawa_decay_rate_" + std::to_string(i),
+                  "yukawa decay rate terms for nuclei " + std::to_string(i));
     }
     WriteObject(p.GetAlpha(), "/Parameters/alpha",
                 "Soft core used in atomic term of Hamiltonian");
