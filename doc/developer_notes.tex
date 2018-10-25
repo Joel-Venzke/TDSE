@@ -45,7 +45,9 @@ TODO
 
 \subsection{Recommended Programing Background} % (fold)
 \label{sub:recommended_programing_background}
+It is recommended you are familiar with python including the numpy, matplotlib, and h5py modules. This will allow you to make changes to the analysis software and analyze the results of the code beyond what already exists. It is also recommended you are familiar with the command prompt (terminal). Useful knowledge includes general bash commands such as cd, mkdir, sed, grep, chmod, and how to execute a binary file. There are other commands such as mpiexec, h5ls, and h5dump that are useful to know, but will be talked about when needed in this documentation. You should also become familiar with any schedulers you may need to use on the various clusters and super computers you plan to use.
 
+If you need to update the main code, you will need knowledge of C++. Most updates at this point are standard C++ code, however, the PETSc and SLEPc libraries are used for any matrix vector operations, and the IO is preformed through the HDF5 library.
 % subsection recommended_programing_background (end)
 % section introduction (end)
 
@@ -94,7 +96,17 @@ The last term is the electron electron coloration term.
 \begin{equation}
   \sum_{e_1 < e_2}\frac{1}{r_{e_1, e_2}}
 \end{equation}
-It gives the repulsion of the electron with all other electrons. This is the term that couples every electron in the system and leads to an N electron calculation becoming a 3N dimensional Hilbert space leading to 2 electron simulations being the biggest we can hope to simulate with current computing technologies. If you neglect this term and put it into some effective potential, you can get either a TDDFT type calculation (not supported in this code) or a single active electron potential depending on how you do it.
+It gives the repulsion of the electron with all other electrons. This is the term that couples every electron in the system and leads to an N electron calculation becoming a 3N dimensional Hilbert space leading to 2 electron simulations being the biggest we can hope to simulate with current computing technologies. If you neglect this term and put it into some effective potential, you can use a single (many) active electron (SAE) potential. In that case, your Hamiltonian becomes
+\begin{equation}
+    \label{eq:H_SAE}
+    \hat{H} = \frac{\hat{\mathbf{p}}^2}{2} - \frac{\mathbf{A}(t) \cdot \hat{\mathbf{p}}}{c} + V(r)
+\end{equation}
+for single active electron and
+\begin{equation}
+    \label{eq:H_TAE}
+    \hat{H} = \sum_{e}\left(\frac{\hat{\mathbf{p}}^2_e}{2} - \frac{\mathbf{A}(t) \cdot \hat{\mathbf{p}}_e}{c}\right) + \sum_{e_1 < e_2}\frac{1}{r_{e_1, e_2}} + V(r)
+\end{equation}
+for more than one electron where $V(r)$ is the single (many) active electron potential. See Sec~\ref{ssub:single_active_electron} and  Sec~\ref{ssub:two_active_electrons} for a short discussion on these potentials.
 
 \subsection{Spacial Derivatives} % (fold)
 \label{sub:spacial_derivatives}
@@ -321,8 +333,8 @@ Using flat top pulses (cycles\_plateau $>$ 0) can clean up many results, however
 TODO
 \begin{itemize}
   \item ``default''
-  \item ``File''
-  \item ``streaking''
+  \item ``File'' describe input file
+  \item ``streaking'' 2 pulses, tau\_delay
 \end{itemize}
 % subsubsection experiment_type (end)
 
@@ -333,6 +345,22 @@ TODO
 \section{Build System} % (fold)
 \label{sec:build_system}
 The build system changes from time to time. For the most up to date version, see the README in the root directory of this repository.
+
+TODO
+
+install HDF5
+
+install PETSc
+
+install SLEPc
+
+make bin directory
+
+new build file
+
+new Makefile
+
+run build
 % section build_system (end)
 
 \section{Running Calculations} % (fold)
@@ -341,27 +369,129 @@ The build system changes from time to time. For the most up to date version, see
 \label{sub:running_the_code}
 \subsubsection{Basic usage} % (fold)
 \label{ssub:basic_usage}
-TODO
+Once the code has been properly built, a binary file ``\$\{TDSE\_ROOT\}/bin/TDSE'' should exist with \$\{TDSE\_ROOT\} as the path to the TDSE repository. You will need to define this variable yourself, or type the path out. To run the code, change directory (cd) to a directory with ``input.json'' file that contains the parameters for the simulation you wish to run. (see Sec.~\ref{sec:input} for details on the ``input.json'' file) Then execute the binary file. This can be done by just typing 
+\begin{verbatim}
+${TDSE_ROOT}/bin/TDSE
+\end{verbatim}
+into the command line (replacing \$\{TDSE\_ROOT\}) and pressing enter.
+
+An example output is on the following page (Sec~\ref{ssub:example_output}).
+\newpage
+\subsubsection{Example output}
+\label{ssub:example_output}
+Not all parts of the output will exist depending on the options you have chosen in the input file. The output file is generally easy to understand. If you have questions let me know.
+\begin{verbatim}
+
+******************* Setting up Simulation *******************
+
+Simulation running on 1 Processors
+Reading input file: input.json
+Validating input
+Input valid
+Reading input complete
+Creating pulses
+Pulses created
+Creating Wavefunction
+Checkpointing Psi: 0
+Wavefunction created
+Creating Hamiltonian
+Hamiltonian Created
+Creating Simulation
+Simulation Created
+
+****************** Eigen State Calculation ******************
+
+
+Calculating the lowest 1 eigenvectors using SLEPC
+Eigen (-0.904578,-1.94079e-14) (0,0) 1
+Checkpointing Wavefunction in He.h5:  0
+
+************************ Propagation ************************
+
+
+Propagating in time
+Total writes: 2
+Starting propagation
+Checkpointing Psi: 1
+
+Iteration: 2000
+Pulse ends: 2940
+Average time for time-step: 1.77576
+Checkpointing Psi: 2
+Checkpoint time: 0.199936
+Checkpointing Psi: 3
+Checkpointing Psi Projections: 1
+
+Propagating until step: 2940
+Checkpointing Psi: 4
+Checkpointing Psi Projections: 2
+
+******************** Simulation Complete ********************
+
+Deleting Hamiltonian
+Deleting Wavefunction
+Deleting Pulse
+\end{verbatim}
+\newpage
 % subsubsection basic_usage (end)
+
+\subsubsection{Command line options} % (fold)
+\label{ssub:command_line_options}
+Here are a few command line options to make this codes log file a bit more useful. Running the code with command line options will look like
+\begin{verbatim}
+${TDSE_ROOT}/bin/TDSE -command_line_option_0 -command_line_option_1
+\end{verbatim}
+
+If you are using SLEPc I recommend adding
+\begin{verbatim}
+-eps_monitor
+\end{verbatim}
+to your command line. This will allow you to monitor the convergence of your eigen state calculations
+
+For profiling the code use
+\begin{verbatim}
+-log_view
+\end{verbatim}
+This will provide a large amount of details relating to how the code preformed during a run. It is useful for estimating future job runtimes and profiling the overall code.
+
+If you wish to change to propagation solver (default is GMRES) use
+\begin{verbatim}
+-prop_ksp_type ${KSP_TYPE}
+\end{verbatim}
+See PETSc's documentation for the available options. Use ``-log\_view'' to compare them.
+
+If you want to change the solver for the eigen state method (only for Power method) use
+\begin{verbatim}
+-eigen_ksp_type ${KSP_TYPE}
+\end{verbatim}
+A recommended setup if you keep getting divergence issues is
+\begin{verbatim}
+-eigen_ksp_type preonly -eigen_pc_type lu -eigen_pc_factor_mat_solver_package superlu_dist
+\end{verbatim}
+% subsubsection command_line_options (end)
+
+\subsubsection{Parallel Execution} % (fold)
+\label{ssub:parallel_execution}
+This code scales well on modern HPC systems. To utilize this, you can run the code in parrallel utilizing ``mpiexec'' or a similar command. The bash command to run the code will look like
+\begin{verbatim}
+mpiexec -n ${number_of_processors} {TDSE_ROOT}/bin/TDSE -command_line_options
+\end{verbatim}
+where \$\{number\_of\_processors\} is the number of processors you wish to run this code on. We have used upwards of 3,000 without issue. The number of processors being used is printed near the top of the output.
+% subsubsection parallel_execution (end)
 
 \subsubsection{Ground State Calculations} % (fold)
 \label{ssub:ground_state_calculations}
-TODO
+If you wish to produce only ground states that can be read in to other calculations, set ``propagation'' to 0 (Sec~\ref{ssub:propagate}) and ``state\_solver'' to something other than ``File'' (Sec.~\ref{ssub:state_solver}). This will produce a ground state file once the calculation completes. This can be read in using the ``name'' parameter (Sec~\ref{ssub:target_name}). By setting the full path in name (leaving off the .h5), many calculations can read the same file. This saves storage space and computational time.
 % subsubsection ground_state_calculations (end)
 
 \subsubsection{Time Propagation} % (fold)
 \label{ssub:time_propagation}
-TODO
+To propagate in the laser field, set ``propagation'' to 1 (Sec~\ref{ssub:propagate}) and ensure your laser (Sec~\ref{ssub:laser_parameter}) is set up correctly. It is also useful to set ``state\_solver'' to ``File'' (Sec.~\ref{ssub:state_solver}) if you have already calculated a set of ground states.
 % subsubsection time_propagation (end)
-
-\subsubsection{Command line options} % (fold)
-\label{ssub:command_line_options}
-TODO
-% subsubsection command_line_options (end)
 
 \subsubsection{Restart mode} % (fold)
 \label{ssub:restart_mode}
-TODO
+This code provides the ability to restart a simulation that has timed out or crashed during laser propagation. To run a new simulation that starts at the beginning of the laser pulse set ``restart'' to 0 (Sec~\ref{ssub:restart}). If you wish to start from the last checkpoint in the TDSE.h5 file set ``restart'' to 1.
 % subsubsection restart_mode (end)
 
 \subsubsection{Daisey Chain Script} % (fold)
@@ -374,10 +504,20 @@ TODO
 TODO
 % subsubsection visualization_of_results (end)
 
+\subsubsection{Create Observables file} % (fold)
+\label{ssub:create_observables_file}
+The output from this code is stored in very few HDF5 files. This keeps the run directory clean and avoids running into file count limits imposed at some super computing facilities. However, large files are hard to transfer, and often the wavefunctions are not needed to analyze the physics. To produce a smaller data file with many useful obserables, go to the directory your simulation was run in. The execute the ``make\_obs.sh'' which can be found at ``\$\{TDSE\_ROOT\}/scripts/make\_obs.sh''. If the base script doesn't satisfy your needs, feel free to edit away as it is a relatively easy to understand script.
+% subsubsection create_observables_file (end)
+
 % subsection running_the_code (end)
 
 \subsection{TDSE Best Practices} % (fold)
 \label{sub:tdse_best_practices}
+
+\subsubsection{Sharing Ground State files} % (fold)
+\label{ssub:sharing_ground_state_files}
+TODO
+% subsubsection sharing_ground_state_files (end)
 
 \subsubsection{Convergence Tests} % (fold)
 \label{ssub:convergence_tests}
@@ -386,7 +526,7 @@ TODO
 
 \subsubsection{Minimizing IO} % (fold)
 \label{ssub:minimizing_io}
-TODO
+Writing wavefunctions and other large vectors to disk is a time consuming task (can take many minutes) and the data produced can add up quickly (I have seen upwards of a terrabyte for one simulation). Because of this, it is best to set ``write\_frequency\_checkpoint'' to a large number if the wavefunction itself is not needed. However, if the number is set to high, no checkpoints to restart will be available in case a computer crashes or a simulation times out. It is up to you to determining the best frequency on your particular situation, though 1-4 hours between checkpoints is a good starting value on modern super computers.
 % subsubsection minimizing_io (end)
 
 \subsubsection{Vector Potential vs Electric Field} % (fold)
@@ -396,12 +536,12 @@ TODO
 
 \subsubsection{Flat Top Pulse} % (fold)
 \label{ssub:flat_top_pulse}
-TODO
+Utilizing flat top pulses (cycles\_plateau > 0) can make various observables cleaner. However, flat top pulses with durations less than a picosecond are difficult to create in experiment. As a result, there uses should be limited to understanding and highlighting physical phenomena that can be observed without the need for a flat top pulse.
 % subsubsection flat_top_pulse (end)
 
 \subsubsection{Soft Core Potentials} % (fold)
 \label{ssub:soft_core_potentials}
-TODO
+Soft cores are a common way of adjusting ground state energies to match experimental or theoretical values. They also remove the issues with the coulomb singularity. However, some reviewers have been known to have issues with them. If it is possible to avoid, it is best not to use them.
 % subsubsection soft_core_potentials (end)
 
 \subsubsection{Extracting Photoelectron Spectra} % (fold)
@@ -416,7 +556,7 @@ TODO
 
 \subsubsection{Bound State Populations} % (fold)
 \label{ssub:bound_state_populations}
-
+TODO
 % subsubsection bound_state_populations (end)
 
 % subsection tdse_best_practices (end)
@@ -444,7 +584,7 @@ The following is an input file for simulating an 8 cycle, 800nm, sine squared pu
   "coordinate_system": "Cylindrical",
   "delta_t": 0.1,
   "dimensions": [
-    {
+  {
       "delta_x_max": 0.1,
       "delta_x_max_start": 4.0,
       "delta_x_min": 0.1,
@@ -478,18 +618,10 @@ The following is an input file for simulating an 8 cycle, 800nm, sine squared pu
         "gaussian_length": 5.0,
         "helicity": "left",
         "intensity": 1e14,
-        "polarization_vector": [
-          0.0,
-          1.0,
-          0.0
-        ],
+        "polarization_vector": [0.0, 1.0, 0.0],
         "power_off": 2.0,
         "power_on": 2.0,
-        "poynting_vector": [
-          0.0,
-          0.0,
-          1.0
-        ],
+        "poynting_vector": [0.0, 0.0, 1.0],
         "pulse_shape": "sin"
       }
     ]
@@ -500,15 +632,9 @@ The following is an input file for simulating an 8 cycle, 800nm, sine squared pu
   "restart": 0,
   "sigma": 3.0,
   "start_state": {
-    "amplitude": [
-      1.0
-    ],
-    "index": [
-      0
-    ],
-    "phase": [
-      0.0
-    ]
+    "amplitude": [1.0],
+    "index": [0],
+    "phase": [0.0]
   },
   "state_solver": "SLEPC",
   "states": 5,
@@ -527,7 +653,6 @@ The following is an input file for simulating an 8 cycle, 800nm, sine squared pu
        "yukawa_amplitude": [0.0],
        "yukawa_decay_rate": [0.0],
        "z": 1.0
-      }
       }
     ]
   },
@@ -610,6 +735,7 @@ gauge allows for calculation to be done in Velocity and Length gauge and runtime
 This sets the size of the exterior complex scaling (ECS) potential (Sec~\ref{ssub:exterer_complex_scaling}) which absorbs outgoing wavepackets. A value of 0.9 means that 90\% of the grid is normal and the outer 5\% on each side contains an ECS potential.
 
 \subsubsection{laser}
+\label{ssub:laser_parameter}
 The laser parameter is a dictionary that contains the particular laser being used in the calculation.
 
 \subsubsection{laser - experiment\_type}
@@ -685,6 +811,17 @@ num\_electrons is the number of electrons in the simulation. Having more than on
 \subsubsection{order}
 order is the order of finite difference used. Only 2nd order appears to work, however, and even order seams to work for ground state calculations. I recommend just leaving it set to 2.
 
+\subsubsection{propagate}
+\label{ssub:propagate}
+propagate controls if the wave function is propagated in the laser field. If set to 0, no propagation occurs. If set to 1, the wavefunction is propagated in the laser field.
+
+\subsubsection{restart}
+\label{ssub:restart}
+restart allows the code to restart the propagation off the last checkpoint in the T. If set to 0, the code will start from the beginning of the pulse, and a fresh TDSE.h5 file will be produced. If set to 1, the code will restart off the last checkpoint in the TDSE.h5 file.
+
+\subsubsection{sigma}
+sigma is the size of the Gaussian wavefunction used as an initial guess for the Power method. A value of 3.0 works well for all cases I have run across, but it could be adjusted to make the convergence go faster. I would recommend switching to SLEPC if you want things to speed up.
+
 \subsubsection{states}
 states is the number of bound states of your potential you would like to calculate. It is also the number of states that are used to calculate populations in the code and projected out for removing the bound state population when calculating photoelectron spectra. This is a number, except when using the ``Power'' method as a state\_solver. Then is it a list of dictionaries with target energies provided. Here is an example:
 \begin{verbatim}
@@ -709,6 +846,7 @@ index is the $idx$ wavefunction in the bound state file being used. It takes the
 phase is the value of $\phi_n$ in Eq.~\ref{eq:start_state} where $n$ is the index into this array. Note that the bound state file wavefunctions may have a random phase. If relative phase is important to your system take extra care when setting this.
 
 \subsubsection{state\_solver}
+\label{ssub:state_solver}
 state\_solver it the method used to calculate ground states. ``SLEPC'' or ``File'' are the recommended modes of operation. All of the options are
 \begin{itemize}
   \item ``File''
@@ -729,6 +867,7 @@ state\_solver it the method used to calculate ground states. ``SLEPC'' or ``File
 target is how you define the potential (or target) in which you want to calculate bound states of or shine a laser on.
 
 \subsubsection{target - name}
+\label{ssub:target_name}
 name is the name of the bound state file. It can also be used to provide a path to place/read from the file in a different folder. You should avoid spaces and punctuation in file names (follow good file naming practices). Note that the ``.h5'' is added inside the code, so it should not appear in this name.
 
 \subsubsection{target - nuclei}

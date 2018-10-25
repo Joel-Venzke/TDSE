@@ -13,66 +13,34 @@
    "delta_x_max": 0.2,
    "dim_size": 50.0,
    "delta_x_min_end": 4.0
-  },
-  {
-   "delta_x_max_start": 4.0,
-   "delta_x_min": 0.2,
-   "delta_x_max": 0.2,
-   "dim_size": 50.0,
-   "delta_x_min_end": 4.0
   }
  ],
  "gobbler": 0.95,
  "tol": 1e-10,
  "num_electrons": 1,
  "delta_t": 0.1,
- "propagate": 0,
+ "propagate": 1,
  "alpha": 0.8,
  "ee_soft_core": 0.01,
  "restart": 0,
  "state_solver": "SLEPC",
  "write_frequency_eigin_state": 100,
  "laser": {
-  "experiment_type": "streaking",
+  "experiment_type": "default",
   "pulses": [
-   {
-    "power_on": 2.0,
-    "cycles_on": 1.5,
-    "cycles_off": 1.0,
-    "pulse_shape": "gaussian",
-    "cycles_delay": 0.0,
-    "gaussian_length": 5.0,
-    "polarization_vector": [
-     0.0,
-     1.0,
-     0.0
-    ],
-    "energy": 0.057,
-    "power_off": 2.0,
-    "intensity": 1e14,
-    "cycles_plateau": 0.0,
-    "helicity": "left",
-    "cep": 0.0,
-    "poynting_vector": [
-     0.0,
-     0.0,
-     1.0
-    ],
-    "ellipticity": 0.0
-   },
    {
     "power_on": 2.0,
     "cycles_on": 1.0,
     "cycles_off": 1.0,
     "pulse_shape": "gaussian",
-    "tau_delay": 100.0,
+    "cycles_delay": 0.0,
     "gaussian_length": 5.0,
     "polarization_vector": [
-     0.0,
      1.0,
+     0.0,
      0.0
     ],
-    "energy": 0.1,
+    "energy": 1.0,
     "power_off": 2.0,
     "intensity": 1e14,
     "cycles_plateau": 0.0,
