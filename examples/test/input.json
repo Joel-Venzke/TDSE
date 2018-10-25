@@ -2,23 +2,23 @@
  "start_state": {"index":     [0],
                   "amplitude": [1.0],
                   "phase":     [0.0]},
- "states": 5,
+ "states": 1,
  "write_frequency_checkpoint": 100,
  "gauge": "Velocity",
  "write_frequency_observables": 1,
  "dimensions": [
   {
    "delta_x_max_start": 4.0,
-   "delta_x_min": 0.3,
-   "delta_x_max": 0.3,
-   "dim_size": 40.0,
+   "delta_x_min": 0.2,
+   "delta_x_max": 0.2,
+   "dim_size": 50.0,
    "delta_x_min_end": 4.0
   },
   {
    "delta_x_max_start": 4.0,
-   "delta_x_min": 0.3,
-   "delta_x_max": 0.3,
-   "dim_size": 40.0,
+   "delta_x_min": 0.2,
+   "delta_x_max": 0.2,
+   "dim_size": 50.0,
    "delta_x_min_end": 4.0
   }
  ],
@@ -91,44 +91,19 @@
   "nuclei": [
    {
     "z": 1.0,
-    "location": [
-     0.7,
-     0.0,
-     0.0
-    ],
-    "SAE": {
-     "a": [
-      0.0
-     ],
-     "c0": 0.0,
-     "z_c": 0.0,
-     "r0": 0.0,
-     "b": [
-      0.0
-     ]
-    }
-   },
-   {
-    "z": 1.0,
-    "location": [
-     -0.7,
-     0.0,
-     0.0
-    ],
-    "SAE": {
-     "a": [
-      0.0
-     ],
-     "c0": 0.0,
-     "z_c": 0.0,
-     "r0": 0.0,
-     "b": [
-      0.0
-     ]
-    }
+    "gaussian_r_0": [10.0],
+    "gaussian_amplitude": [0.4],
+    "gaussian_decay_rate": [2.0],
+    "exponential_r_0": [0.0],
+    "exponential_amplitude": [0.0],
+    "exponential_decay_rate": [0.0],
+    "yukawa_r_0": [0.0],
+    "yukawa_amplitude": [0.0],
+    "yukawa_decay_rate": [0.0],
+    "location": [0.0, 0.0, 0.0]
    }
   ],
-  "name": "H2"
+  "name": "H"
  },
  "coordinate_system": "Cartesian",
  "field_max_states": 0,

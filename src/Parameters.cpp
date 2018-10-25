@@ -171,52 +171,89 @@ void Parameters::Setup(std::string file_name)
     }
   }
 
-  z        = std::make_unique< double[] >(num_nuclei);
-  z_c      = std::make_unique< double[] >(num_nuclei);
-  c0       = std::make_unique< double[] >(num_nuclei);
-  r0       = std::make_unique< double[] >(num_nuclei);
-  sae_size = std::make_unique< PetscInt[] >(num_nuclei);
-  a        = new double*[num_nuclei];
-  b        = new double*[num_nuclei];
-  location = new double*[num_nuclei];
+  z                      = std::make_unique< double[] >(num_nuclei);
+  exponential_size       = std::make_unique< PetscInt[] >(num_nuclei);
+  exponential_r_0        = new double*[num_nuclei];
+  exponential_amplitude  = new double*[num_nuclei];
+  exponential_decay_rate = new double*[num_nuclei];
+  gaussian_size          = std::make_unique< PetscInt[] >(num_nuclei);
+  gaussian_r_0           = new double*[num_nuclei];
+  gaussian_amplitude     = new double*[num_nuclei];
+  gaussian_decay_rate    = new double*[num_nuclei];
+  yukawa_size            = std::make_unique< PetscInt[] >(num_nuclei);
+  yukawa_r_0             = new double*[num_nuclei];
+  yukawa_amplitude       = new double*[num_nuclei];
+  yukawa_decay_rate      = new double*[num_nuclei];
+  location               = new double*[num_nuclei];
   for (PetscInt i = 0; i < num_nuclei; ++i)
   {
+    /* Coulomb term */
     z[i] = data["target"]["nuclei"][i]["z"];
 
-    if (z[i] == 0.0)
+    /* Gaussian Donuts */
+    gaussian_size[i]       = data["target"]["nuclei"][i]["gaussian_r_0"].size();
+    gaussian_r_0[i]        = new double[gaussian_size[i]];
+    gaussian_amplitude[i]  = new double[gaussian_size[i]];
+    gaussian_decay_rate[i] = new double[gaussian_size[i]];
+    if (data["target"]["nuclei"][i]["gaussian_r_0"].size() !=
+            data["target"]["nuclei"][i]["gaussian_amplitude"].size() or
+        data["target"]["nuclei"][i]["gaussian_r_0"].size() !=
+            data["target"]["nuclei"][i]["gaussian_decay_rate"].size())
     {
-      z_c[i] = data["target"]["nuclei"][i]["SAE"]["z_c"];
-      c0[i]  = data["target"]["nuclei"][i]["SAE"]["c0"];
-      r0[i]  = data["target"]["nuclei"][i]["SAE"]["r0"];
-      if (data["target"]["nuclei"][i]["SAE"]["a"].size() !=
-          data["target"]["nuclei"][i]["SAE"]["b"].size())
-      {
-        EndRun("Nuclei " + std::to_string(i) +
-               " SAE potential a and b must have the same size");
-      }
-      sae_size[i] = data["target"]["nuclei"][i]["SAE"]["a"].size();
-
-      a[i] = new double[sae_size[i]];
-      b[i] = new double[sae_size[i]];
-      for (PetscInt j = 0; j < sae_size[i]; ++j)
-      {
-        a[i][j] = data["target"]["nuclei"][i]["SAE"]["a"][j];
-        b[i][j] = data["target"]["nuclei"][i]["SAE"]["b"][j];
-      }
+      EndRun("Nuclei " + std::to_string(i) +
+             " all Gaussian terms must have the same size");
     }
-    else
+    for (PetscInt j = 0; j < gaussian_size[i]; ++j)
     {
-      /* So we don't have issues deleting them*/
-      a[i] = new double[1];
-      b[i] = new double[1];
+      gaussian_r_0[i][j] = data["target"]["nuclei"][i]["gaussian_r_0"][j];
+      gaussian_amplitude[i][j] =
+          data["target"]["nuclei"][i]["gaussian_amplitude"][j];
+      gaussian_decay_rate[i][j] =
+          data["target"]["nuclei"][i]["gaussian_decay_rate"][j];
+    }
 
-      /* So they write nicely */
-      z_c[i]      = 0.0;
-      c0[i]       = 0.0;
-      r0[i]       = 0.0;
-      sae_size[i] = 0;
-      a[i][0]     = 0.0;
-      b[i][0]     = 0.0;
+    /* exponential Donuts */
+    exponential_size[i] = data["target"]["nuclei"][i]["exponential_r_0"].size();
+    exponential_r_0[i]  = new double[exponential_size[i]];
+    exponential_amplitude[i]  = new double[exponential_size[i]];
+    exponential_decay_rate[i] = new double[exponential_size[i]];
+    if (data["target"]["nuclei"][i]["exponential_r_0"].size() !=
+            data["target"]["nuclei"][i]["exponential_amplitude"].size() or
+        data["target"]["nuclei"][i]["exponential_r_0"].size() !=
+            data["target"]["nuclei"][i]["exponential_decay_rate"].size())
+    {
+      EndRun("Nuclei " + std::to_string(i) +
+             " all exponential terms must have the same size");
+    }
+    for (PetscInt j = 0; j < exponential_size[i]; ++j)
+    {
+      exponential_r_0[i][j] = data["target"]["nuclei"][i]["exponential_r_0"][j];
+      exponential_amplitude[i][j] =
+          data["target"]["nuclei"][i]["exponential_amplitude"][j];
+      exponential_decay_rate[i][j] =
+          data["target"]["nuclei"][i]["exponential_decay_rate"][j];
+    }
+
+    /* yukawa Donuts */
+    yukawa_size[i]       = data["target"]["nuclei"][i]["yukawa_r_0"].size();
+    yukawa_r_0[i]        = new double[yukawa_size[i]];
+    yukawa_amplitude[i]  = new double[yukawa_size[i]];
+    yukawa_decay_rate[i] = new double[yukawa_size[i]];
+    if (data["target"]["nuclei"][i]["yukawa_r_0"].size() !=
+            data["target"]["nuclei"][i]["yukawa_amplitude"].size() or
+        data["target"]["nuclei"][i]["yukawa_r_0"].size() !=
+            data["target"]["nuclei"][i]["yukawa_decay_rate"].size())
+    {
+      EndRun("Nuclei " + std::to_string(i) +
+             " all yukawa terms must have the same size");
+    }
+    for (PetscInt j = 0; j < yukawa_size[i]; ++j)
+    {
+      yukawa_r_0[i][j] = data["target"]["nuclei"][i]["yukawa_r_0"][j];
+      yukawa_amplitude[i][j] =
+          data["target"]["nuclei"][i]["yukawa_amplitude"][j];
+      yukawa_decay_rate[i][j] =
+          data["target"]["nuclei"][i]["yukawa_decay_rate"][j];
     }
 
     location[i] = new double[num_dims];
@@ -508,12 +545,26 @@ Parameters::~Parameters()
   for (PetscInt i = 0; i < num_nuclei; ++i)
   {
     delete location[i];
-    delete a[i];
-    delete b[i];
+    delete gaussian_r_0[i];
+    delete gaussian_amplitude[i];
+    delete gaussian_decay_rate[i];
+    delete exponential_r_0[i];
+    delete exponential_amplitude[i];
+    delete exponential_decay_rate[i];
+    delete yukawa_r_0[i];
+    delete yukawa_amplitude[i];
+    delete yukawa_decay_rate[i];
   }
   delete[] location;
-  delete[] a;
-  delete[] b;
+  delete[] gaussian_r_0;
+  delete[] gaussian_amplitude;
+  delete[] gaussian_decay_rate;
+  delete[] exponential_r_0;
+  delete[] exponential_amplitude;
+  delete[] exponential_decay_rate;
+  delete[] yukawa_r_0;
+  delete[] yukawa_amplitude;
+  delete[] yukawa_decay_rate;
   for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
   {
     delete polarization_vector[pulse_idx];
@@ -775,9 +826,26 @@ PetscInt Parameters::GetNumNuclei() { return num_nuclei; }
 
 double** Parameters::GetLocation() { return location; }
 
-double** Parameters::GetA() { return a; }
+double** Parameters::GetExponentialR0() { return exponential_r_0; }
 
-double** Parameters::GetB() { return b; }
+double** Parameters::GetExponentialAmplitude() { return exponential_amplitude; }
+
+double** Parameters::GetExponentialDecayRate()
+{
+  return exponential_decay_rate;
+}
+
+double** Parameters::GetGaussianR0() { return gaussian_r_0; }
+
+double** Parameters::GetGaussianAmplitude() { return gaussian_amplitude; }
+
+double** Parameters::GetGaussianDecayRate() { return gaussian_decay_rate; }
+
+double** Parameters::GetYukawaR0() { return yukawa_r_0; }
+
+double** Parameters::GetYukawaAmplitude() { return yukawa_amplitude; }
+
+double** Parameters::GetYukawaDecayRate() { return yukawa_decay_rate; }
 
 double Parameters::GetAlpha() { return alpha; }
 
@@ -807,8 +875,11 @@ double Parameters::GetSigma() { return sigma; }
 PetscInt Parameters::GetNumStates() { return num_states; }
 
 PetscInt Parameters::GetNumStartState() { return num_start_state; }
+
 PetscInt* Parameters::GetStartStateIdx() { return start_state_idx; }
+
 double* Parameters::GetStartStateAmplitude() { return start_state_amplitude; }
+
 double* Parameters::GetStartStatePhase() { return start_state_phase; }
 
 double Parameters::GetTol() { return tol; }

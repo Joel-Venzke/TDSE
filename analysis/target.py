@@ -295,12 +295,12 @@ elif num_electrons == 1:
             psi.shape = tuple(shape)
             psi = psi[x_min_idx:x_max_idx, y_min_idx:y_max_idx]
             if f["Parameters"]["coordinate_system_idx"][0] == 1:
+                print psi.shape
                 print np.angle(psi)[np.unravel_index(
                     np.abs(psi).argmax(), psi.shape)]
                 psi = psi * np.exp(-1.0j * np.angle(
                     np.angle(psi)[
-                        np.unravel_index(np.abs(psi).argmax(), psi.shape)])[
-                            np.unravel_index(np.abs(psi).argmax(), psi.shape)])
+                        np.unravel_index(np.abs(psi).argmax(), psi.shape)]))
                 plt.imshow(
                     np.angle(psi),
                     cmap='hsv',

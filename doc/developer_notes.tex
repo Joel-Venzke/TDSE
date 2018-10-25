@@ -183,35 +183,80 @@ To absorb any outgoing wave packets, we utilize an exterior complex scaling (ECS
 \label{sub:atoms_and_molecules}
 The code allows for nuclei to be placed at any location assuming the coordinate system supports it. This allows for molecular targets to be build by hand with each nuclei having a unique potential. The potentials available are laid out below.
 
+\subsubsection{Molecular Targets} % (fold)
+\label{ssub:molecular_targets}
+To model molecular targets, you can place the center of each nuclei at various locations on the grid. You can then add coulomb, Gaussian, exponential, and Yukawa potentials to approximate the potential made by that nuclei. By including many nuclei, you can simulate complicated molecular targets with a one or two active electron potential.
+% subsubsection molecular_targets (end)
+
 \subsubsection{Soft Core} % (fold)
 \label{ssub:soft_core_like}
 A soft core can be used to calculate distances. This removes the singularity of the coulomb potential, however, reviewers are often not a fan of such a method. Use a soft core only when required. The soft core is calculated using
 \begin{equation}
   r_{soft} = \sqrt{r^2 + \alpha^2}
+  \label{eq:soft_core}
 \end{equation}
-where $r$ is the euclidean distance and $\alpha$ is the soft core parameter.
+where $r$ is the euclidean distance $r=\sqrt{\sum\limits_i x_i^2}$ and $\alpha$ is the soft core parameter.
 % subsubsection soft_core(end)
 
-\subsubsection{Hydrogen Like} % (fold)
+\subsubsection{Hydrogen Like (coulomb) Potentials} % (fold)
 \label{ssub:hydrogen_like}
 The code provides a coulomb potential with the form
 \begin{equation}
-  V(r) = -\frac{Z}{r}
+  V(r) = -\frac{z}{r_{soft}}
+  \label{eq:H_like}
 \end{equation}
-where $Z$ is the nuclear charge and $r$ is the euclidean distance (or soft core if $\alpha \ne 0$)
+where $z$ is the nuclear charge and $r$ is the euclidean distance if $\alpha = 0$.
 % subsubsection hydrogen_like (end)
+
+\subsubsection{Donut Potentials} % (fold)
+\label{ssub:donut_potentials}
+For various projects, it has been useful to add a donut potential to model a molecule like $C_{60}$ surrounding an atom. This can be done by adjusting the $r_0$ parameter of the potential being used to the radius of the molecule. Setting $r_0=0$ provides the usual radial potentials used in atomic single active electron potentials.
+% subsubsection donut_potentials (end)
+
+\subsubsection{Gaussian Potentials} % (fold)
+\label{ssub:gaussian_potentials}
+Gaussian potentials take the form:
+\begin{equation}
+  V(r) = - \sum\limits_i a_i e^{-\frac{1}{2} (c_i (r-r_{0,i}))^2}
+  \label{eq:gaussian}
+\end{equation}
+where $a_i$ is the amplitude, $c_i$ is the decay rate, $r$ is the Euclidean distance, and $r_{0,i}$ is the radius of the donut (Sec~\ref{ssub:donut_potentials}).
+% subsubsection gaussian_potentials (end)
+
+\subsubsection{Exponential Potentials} % (fold)
+\label{ssub:exponential_potentials}
+Exponential potentials take the form:
+\begin{equation}
+  V(r) = - \sum\limits_i a_i e^{-c_i |r-r_{0,i}|}
+  \label{eq:exponential}
+\end{equation}
+where $a_i$ is the amplitude, $c_i$ is the decay rate, $r$ is the Euclidean distance, and $r_{0,i}$ is the radius of the donut (Sec~\ref{ssub:donut_potentials}).
+% subsubsection exponential_potentials (end)
+
+\subsubsection{Yukawa Potentials} % (fold)
+\label{ssub:yukawa_potentials}
+Yukawa potentials take the form:
+\begin{equation}
+  V(r) = - \sum\limits_i \frac{a_i e^{-c_i |r-r_{0,i}|}}{|r_{soft}-r_{0,i}|}
+  \label{eq:yukawa}
+\end{equation}
+where $a_i$ is the amplitude, $c_i$ is the decay rate, $r$ is the Euclidean distance, $r_{soft}$ is the soft core distance (Sec~\ref{ssub:soft_core_like}), and $r_{0,i}$ is the radius of the donut (Sec~\ref{ssub:donut_potentials}).
+% subsubsection yukawa_potentials (end)
 
 \subsubsection{Single Active Electron} % (fold)
 \label{ssub:single_active_electron}
-Single active electron (SAE) potentials allow for a multi electron system, such as Helium, to be approximated by studying on active electron. The potentials available in this code take the form:
+Bryn's Single active electron (SAE) potentials for atomic targets allow for a multi electron system, such as Helium, to be approximated by studying on active electron. His potentials take the form:
 \begin{equation}
-  V(r, r_{soft}) = - \frac{c_0}{r_{soft}} - \frac{Z_c e^{-r_0 r}}{r_{soft}} - \sum_n a_n e^{-b_n r}
+  V(r, r_{soft}) = - \frac{z}{r_{soft}} - \frac{Z_c e^{-c r}}{r_{soft}} - \sum_n a_n e^{-b_n r}
     \label{eq:SAE}
 \end{equation}
-where $r_{soft}$ is the soft core distance from the nuclei's location and $r$ is the euclidean distance form the nuclei's location. Talk to Brynn or I to get parameters for different targets.
-
-I would like to make this a tad more general.
+where $r_{soft}$ is the soft core distance from the nuclei's location and $r$ is the euclidean distance form the nuclei's location. Talk to Brynn or I to get parameters for different targets. There exists many other SAE potentials and the code now supports most forms.
 % subsubsection single_active_electron (end)
+
+\subsubsection{Two Active Electrons} % (fold)
+\label{ssub:two_active_electrons}
+This code is slowly gaining support for two active electron simulations. We have interest in developing two active electron (TAE) potentials, though little work has been done on this front.
+% subsubsection two_active_electrons (end)
 % subsection atoms_and_molecules (end)
 
 \subsection{Lasers} % (fold)
@@ -471,23 +516,18 @@ The following is an input file for simulating an 8 cycle, 800nm, sine squared pu
     "name": "H",
     "nuclei": [
       {
-        "SAE": {
-          "a": [
-            0.66294407
-          ],
-          "b": [
-            4.073942
-          ],
-          "c0": 1.0,
-          "r0": 2.353059,
-          "z_c": 1.0
-        },
-        "location": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "z": 1.0
+       "exponential_r_0": [0.0],
+       "exponential_amplitude": [0.0],
+       "exponential_decay_rate": [0.0],
+       "gaussian_r_0": [0.0],
+       "gaussian_amplitude": [0.0],
+       "gaussian_decay_rate": [0.0],
+       "location": [0.0, 0.0, 0.0],
+       "yukawa_r_0": [0.0],
+       "yukawa_amplitude": [0.0],
+       "yukawa_decay_rate": [0.0],
+       "z": 1.0
+      }
       }
     ]
   },
@@ -694,40 +734,38 @@ name is the name of the bound state file. It can also be used to provide a path 
 \subsubsection{target - nuclei}
 nuclei is a list that allows for nuclei to be placed at various places in space. Each can be coulomb or SAE (this may change later).
 
+\subsubsection{target - nuclei - exponential\_r\_0}
+exponential\_r\_0 is the donut radius for an exponential potential. This is the value of $r_{0,i}$ in Eq.~\ref{eq:exponential} with $i$ being the index into the array. Set to zero for atomic like behavior. See Sec~\ref{ssub:exponential_potentials} for exact form of the potential.
 
-\subsubsection{target - nuclei - SAE}
-SAE is used when z is set to 0, otherwise the SAE potential is ignored. This allows for SAE potentials from Brynn to be used. They take the form
-\begin{equation}
-  V(r, r_{soft}) = - \frac{c_0}{r_{soft}} - \frac{Z_c e^{-r_0 r}}{r_{soft}} - \sum_n a_n e^{-b_n r}
-    \label{eq:SAE_target}
-\end{equation}
-where $r_{soft}$ is the soft core distance from the nuclei's location and $r$ is the euclidean distance form the nuclei's location.
+\subsubsection{target - nuclei - exponential\_amplitude}
+exponential\_amplitude is the amplitude for an exponential potential. This is the value of $a_i$ in Eq.~\ref{eq:exponential} with $i$ being the index into the array. If set to 0 the potential has no effect. See Sec~\ref{ssub:exponential_potentials} for exact form of the potential.
 
-\subsubsection{target - nuclei - SAE - a}
-a is the $a_n$ value in Eq.~\ref{eq:SAE_target} where $n$ is the index into this array.
+\subsubsection{target - nuclei - exponential\_decay\_rate}
+exponential\_decay\_rate is the decay rate for an exponential potential. This is the value of $c_i$ in Eq.~\ref{eq:exponential} with $i$ being the index into the array. See Sec~\ref{ssub:exponential_potentials} for exact form of the potential.
 
-\subsubsection{target - nuclei - SAE - b}
-b is the $b_n$ value in Eq.~\ref{eq:SAE_target} where $n$ is the index into this array.
+\subsubsection{target - nuclei - gaussian\_r\_0}
+gaussian\_r\_0 is the donut radius for an Gaussian potential. This is the value of $r_{0,i}$ in Eq.~\ref{eq:gaussian} with $i$ being the index into the array. Set to zero for atomic like behavior. See Sec~\ref{ssub:gaussian_potentials} for exact form of the potential.
 
-\subsubsection{target - nuclei - SAE - c0}
-c0 is the $c_0$ value in Eq.~\ref{eq:SAE_target}.
+\subsubsection{target - nuclei - gaussian\_amplitude}
+gaussian\_amplitude is the amplitude for an Gaussian potential. This is the value of $a_i$ in Eq.~\ref{eq:gaussian} with $i$ being the index into the array. If set to 0 the potential has no effect. See Sec~\ref{ssub:gaussian_potentials} for exact form of the potential.
 
-\subsubsection{target - nuclei - SAE - r0}
-r0 is the $r_0$ value in Eq.~\ref{eq:SAE_target}.
-
-\subsubsection{target - nuclei - SAE - z\_c}
-z\_c is the $Z_c$ value in Eq.~\ref{eq:SAE_target}.
+\subsubsection{target - nuclei - gaussian\_decay\_rate}
+gaussian\_decay\_rate is the decay rate for an Gaussian potential. This is the value of $c_i$ in Eq.~\ref{eq:gaussian} with $i$ being the index into the array. See Sec~\ref{ssub:gaussian_potentials} for exact form of the potential.
 
 \subsubsection{target - nuclei - location}
 location is a list that corresponds to the nuclei center. The distances $r$ and $r_{soft}$ are calculated from it. The order of dimensions is the same as the coordinate system defined in Sec.~\ref{ssub:dimensions}.
 
+\subsubsection{target - nuclei - yukawa\_r\_0}
+yukawa\_r\_0 is the donut radius for an Yukawa potential. This is the value of $r_{0,i}$ in Eq.~\ref{eq:yukawa} with $i$ being the index into the array. Set to zero for atomic like behavior. See Sec~\ref{ssub:yukawa_potentials} for exact form of the potential.
+
+\subsubsection{target - nuclei - yukawa\_amplitude}
+yukawa\_amplitude is the amplitude for an Yukawa potential. This is the value of $a_i$ in Eq.~\ref{eq:yukawa} with $i$ being the index into the array. If set to 0 the potential has no effect. See Sec~\ref{ssub:yukawa_potentials} for exact form of the potential.
+
+\subsubsection{target - nuclei - yukawa\_decay\_rate}
+yukawa\_decay\_rate is the decay rate for an Yukawa potential. This is the value of $c_i$ in Eq.~\ref{eq:yukawa} with $i$ being the index into the array. See Sec~\ref{ssub:yukawa_potentials} for exact form of the potential.
+
 \subsubsection{target - nuclei - z}
-z is the value of z in a coulomb like potential (Ea.~\ref{eq:coulomb}. If set to 0, the SAE potential is used otherwise the SAE potential is ignored. The potential is explicitly written as
-\begin{equation}
-  V(r_{soft}) = - \frac{z}{r_{soft}}
-    \label{eq:coulomb}
-\end{equation}
-where $r_{soft}$ is the soft core distance from the nuclei's location.
+z is the value of z in a coulomb like potential (Eq.~\ref{eq:H_like}). If set to 0 the potential has no effect. See Sec~\ref{ssub:hydrogen_like} for exact form of the potential.
 
 \subsubsection{tol}
 tol is used whenever a convergence tolerance is needed in the code. The only place I remember is for the eigen state calculations. A value of $1e-10$ is a good starting point.
