@@ -551,6 +551,9 @@ Parameters::~Parameters()
     delete exponential_r_0[i];
     delete exponential_amplitude[i];
     delete exponential_decay_rate[i];
+    delete yukawa_r_0[i];
+    delete yukawa_amplitude[i];
+    delete yukawa_decay_rate[i];
   }
   delete[] location;
   delete[] gaussian_r_0;
@@ -559,6 +562,9 @@ Parameters::~Parameters()
   delete[] exponential_r_0;
   delete[] exponential_amplitude;
   delete[] exponential_decay_rate;
+  delete[] yukawa_r_0;
+  delete[] yukawa_amplitude;
+  delete[] yukawa_decay_rate;
   for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
   {
     delete polarization_vector[pulse_idx];
