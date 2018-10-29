@@ -193,7 +193,7 @@ To absorb any outgoing wave packets, we utilize an exterior complex scaling (ECS
 
 \subsection{Atoms and Molecules} % (fold)
 \label{sub:atoms_and_molecules}
-The code allows for nuclei to be placed at any location assuming the coordinate system supports it. This allows for molecular targets to be build by hand with each nuclei having a unique potential. The potentials available are laid out below.
+The code allows for nuclei to be placed at any location assuming the coordinate system supports it. This allows for molecular targets to be build by hand with each nuclei having a unique potential. The potentials available are laid out below. If you need to add your own potential please follow the step by step procedure in Sec~\ref{ssub:adding_new_potentials}.
 
 \subsubsection{Molecular Targets} % (fold)
 \label{ssub:molecular_targets}
@@ -285,6 +285,41 @@ where $r_{soft}$ is the soft core distance from the nuclei's location and $r$ is
 This code is slowly gaining support for two active electron simulations. We have interest in developing two active electron (TAE) potentials, though little work has been done on this front.
 % subsubsection two_active_electrons (end)
 % subsection atoms_and_molecules (end)
+
+\subsubsection{Adding New Potentials} % (fold)
+\label{ssub:adding_new_potentials}
+To add a new potential follow these steps and make a pull request.
+\begin{itemize}
+  \item Start new branch
+  \item Add the parameters to the input.json file under ``target - nuclei'' in the same format as other potentials
+  \item Add new double arrays for the potential parameters in Parameters.h
+  \begin{itemize}
+    \item See ``exponential\_r\_0'' to see an example
+    \item Don't forget to add something like ``exponential\_size''
+  \end{itemize}
+  \item Read in the parameter in Parameters.cpp
+  \begin{itemize}
+    \item Allocate the memory
+    \item Read in parameters
+    \item Clean up memory under \~Parameters
+    \item Create getter functions to allow access to the pointer
+    \item Follow ``exponential\_r\_0'' for an example
+  \end{itemize}
+  \item Write the data to disc in the HDF5Wrapper.cpp file.
+  \begin{itemize}
+    \item Goes in the WriteHeader function
+  \end{itemize}
+  \item Add pointers to Hamiltonian.h file
+  \item Construct potential in Hamiltonian.cpp file
+  \begin{itemize}
+    \item Read in potential values in constructor
+    \item Add your potential form to the GetNucleiTerm functions (\textbf{there are two of them})
+  \end{itemize}
+  \item compile your code
+  \item test potential
+  \item make pull request
+\end{itemize}
+% subsubsection adding_new_potentials (end)
 
 \subsection{Lasers} % (fold)
 \label{sub:lasers}
