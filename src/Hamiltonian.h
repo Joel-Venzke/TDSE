@@ -28,6 +28,10 @@ class Hamiltonian : protected Utils
   double **gaussian_amplitude;      ///< Gaussian amplitude
   double **gaussian_decay_rate;     ///< Gaussian decay rate
   PetscInt *gaussian_size;          /* number of elements in Gaussian */
+  double **square_well_r_0;         ///< square well radial center
+  double **square_well_amplitude;   ///< square well  amplitude
+  double **square_well_width;       ///< square well width
+  PetscInt *square_well_size;       /* number of elements in Gaussian */
   double **yukawa_r_0;              ///< yukawa radial center
   double **yukawa_amplitude;        ///< yukawa amplitude
   double **yukawa_decay_rate;       ///< yukawa decay rate

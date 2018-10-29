@@ -26,6 +26,9 @@ class Parameters : protected Utils
   double** gaussian_r_0;            ///< Gaussian radial center
   double** gaussian_amplitude;      ///< Gaussian amplitude
   double** gaussian_decay_rate;     ///< Gaussian decay rate
+  double** square_well_r_0;         ///< square well radial center
+  double** square_well_amplitude;   ///< square well  amplitude
+  double** square_well_width;       ///< square well width
   double** yukawa_r_0;              ///< yukawa radial center
   double** yukawa_amplitude;        ///< yukawa amplitude
   double** yukawa_decay_rate;       ///< yukawa decay rate
@@ -76,6 +79,8 @@ class Parameters : protected Utils
   std::unique_ptr< double[] >
       delta_x_max_start;          ///< point in space grid step stops increasing
   std::unique_ptr< double[] > z;  ///< atomic number for each nuclei
+  std::unique_ptr< PetscInt[] >
+      square_well_size;  ///< number of square well elements
   std::unique_ptr< PetscInt[] >
       exponential_size;  ///< number of exponential elements
   std::unique_ptr< PetscInt[] > gaussian_size;  ///< number of Gaussian elements
@@ -129,6 +134,9 @@ class Parameters : protected Utils
   double** GetGaussianR0();
   double** GetGaussianAmplitude();
   double** GetGaussianDecayRate();
+  double** GetSquareWellR0();
+  double** GetSquareWellAmplitude();
+  double** GetSquareWellWidth();
   double** GetYukawaR0();
   double** GetYukawaAmplitude();
   double** GetYukawaDecayRate();

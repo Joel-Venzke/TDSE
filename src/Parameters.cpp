@@ -180,6 +180,10 @@ void Parameters::Setup(std::string file_name)
   gaussian_r_0           = new double*[num_nuclei];
   gaussian_amplitude     = new double*[num_nuclei];
   gaussian_decay_rate    = new double*[num_nuclei];
+  square_well_size       = std::make_unique< PetscInt[] >(num_nuclei);
+  square_well_r_0        = new double*[num_nuclei];
+  square_well_amplitude  = new double*[num_nuclei];
+  square_well_width      = new double*[num_nuclei];
   yukawa_size            = std::make_unique< PetscInt[] >(num_nuclei);
   yukawa_r_0             = new double*[num_nuclei];
   yukawa_amplitude       = new double*[num_nuclei];
@@ -189,6 +193,28 @@ void Parameters::Setup(std::string file_name)
   {
     /* Coulomb term */
     z[i] = data["target"]["nuclei"][i]["z"];
+
+    /* exponential Donuts */
+    exponential_size[i] = data["target"]["nuclei"][i]["exponential_r_0"].size();
+    exponential_r_0[i]  = new double[exponential_size[i]];
+    exponential_amplitude[i]  = new double[exponential_size[i]];
+    exponential_decay_rate[i] = new double[exponential_size[i]];
+    if (data["target"]["nuclei"][i]["exponential_r_0"].size() !=
+            data["target"]["nuclei"][i]["exponential_amplitude"].size() or
+        data["target"]["nuclei"][i]["exponential_r_0"].size() !=
+            data["target"]["nuclei"][i]["exponential_decay_rate"].size())
+    {
+      EndRun("Nuclei " + std::to_string(i) +
+             " all exponential terms must have the same size");
+    }
+    for (PetscInt j = 0; j < exponential_size[i]; ++j)
+    {
+      exponential_r_0[i][j] = data["target"]["nuclei"][i]["exponential_r_0"][j];
+      exponential_amplitude[i][j] =
+          data["target"]["nuclei"][i]["exponential_amplitude"][j];
+      exponential_decay_rate[i][j] =
+          data["target"]["nuclei"][i]["exponential_decay_rate"][j];
+    }
 
     /* Gaussian Donuts */
     gaussian_size[i]       = data["target"]["nuclei"][i]["gaussian_r_0"].size();
@@ -212,26 +238,26 @@ void Parameters::Setup(std::string file_name)
           data["target"]["nuclei"][i]["gaussian_decay_rate"][j];
     }
 
-    /* exponential Donuts */
-    exponential_size[i] = data["target"]["nuclei"][i]["exponential_r_0"].size();
-    exponential_r_0[i]  = new double[exponential_size[i]];
-    exponential_amplitude[i]  = new double[exponential_size[i]];
-    exponential_decay_rate[i] = new double[exponential_size[i]];
-    if (data["target"]["nuclei"][i]["exponential_r_0"].size() !=
-            data["target"]["nuclei"][i]["exponential_amplitude"].size() or
-        data["target"]["nuclei"][i]["exponential_r_0"].size() !=
-            data["target"]["nuclei"][i]["exponential_decay_rate"].size())
+    /* Square well Donuts */
+    square_well_size[i] = data["target"]["nuclei"][i]["square_well_r_0"].size();
+    square_well_r_0[i]  = new double[square_well_size[i]];
+    square_well_amplitude[i] = new double[square_well_size[i]];
+    square_well_width[i]     = new double[square_well_size[i]];
+    if (data["target"]["nuclei"][i]["square_well_r_0"].size() !=
+            data["target"]["nuclei"][i]["square_well_amplitude"].size() or
+        data["target"]["nuclei"][i]["square_well_r_0"].size() !=
+            data["target"]["nuclei"][i]["square_well_width"].size())
     {
       EndRun("Nuclei " + std::to_string(i) +
-             " all exponential terms must have the same size");
+             " all square_well terms must have the same size");
     }
-    for (PetscInt j = 0; j < exponential_size[i]; ++j)
+    for (PetscInt j = 0; j < square_well_size[i]; ++j)
     {
-      exponential_r_0[i][j] = data["target"]["nuclei"][i]["exponential_r_0"][j];
-      exponential_amplitude[i][j] =
-          data["target"]["nuclei"][i]["exponential_amplitude"][j];
-      exponential_decay_rate[i][j] =
-          data["target"]["nuclei"][i]["exponential_decay_rate"][j];
+      square_well_r_0[i][j] = data["target"]["nuclei"][i]["square_well_r_0"][j];
+      square_well_amplitude[i][j] =
+          data["target"]["nuclei"][i]["square_well_amplitude"][j];
+      square_well_width[i][j] =
+          data["target"]["nuclei"][i]["square_well_width"][j];
     }
 
     /* yukawa Donuts */
@@ -551,6 +577,9 @@ Parameters::~Parameters()
     delete exponential_r_0[i];
     delete exponential_amplitude[i];
     delete exponential_decay_rate[i];
+    delete square_well_r_0[i];
+    delete square_well_amplitude[i];
+    delete square_well_width[i];
     delete yukawa_r_0[i];
     delete yukawa_amplitude[i];
     delete yukawa_decay_rate[i];
@@ -562,6 +591,9 @@ Parameters::~Parameters()
   delete[] exponential_r_0;
   delete[] exponential_amplitude;
   delete[] exponential_decay_rate;
+  delete[] square_well_r_0;
+  delete[] square_well_amplitude;
+  delete[] square_well_width;
   delete[] yukawa_r_0;
   delete[] yukawa_amplitude;
   delete[] yukawa_decay_rate;
@@ -840,6 +872,10 @@ double** Parameters::GetGaussianR0() { return gaussian_r_0; }
 double** Parameters::GetGaussianAmplitude() { return gaussian_amplitude; }
 
 double** Parameters::GetGaussianDecayRate() { return gaussian_decay_rate; }
+
+double** Parameters::GetSquareWellR0() { return square_well_r_0; }
+double** Parameters::GetSquareWellAmplitude() { return square_well_amplitude; }
+double** Parameters::GetSquareWellWidth() { return square_well_width; }
 
 double** Parameters::GetYukawaR0() { return yukawa_r_0; }
 

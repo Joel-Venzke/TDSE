@@ -22,6 +22,10 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
   gaussian_amplitude     = p.GetGaussianAmplitude();
   gaussian_decay_rate    = p.GetGaussianDecayRate();
   gaussian_size          = p.gaussian_size.get();
+  square_well_r_0        = p.GetSquareWellR0();
+  square_well_amplitude  = p.GetSquareWellAmplitude();
+  square_well_width      = p.GetSquareWellWidth();
+  square_well_size       = p.square_well_size.get();
   yukawa_r_0             = p.GetYukawaR0();
   yukawa_amplitude       = p.GetYukawaAmplitude();
   yukawa_decay_rate      = p.GetYukawaDecayRate();
@@ -1290,6 +1294,18 @@ dcomp Hamiltonian::GetNucleiTerm(std::vector< PetscInt >& idx_array)
         nuclei -= dcomp(exponential_amplitude[nuclei_idx][i] * exp(-tmp), 0.0);
       }
 
+      /* Square Well Donuts */
+      for (PetscInt i = 0; i < square_well_size[nuclei_idx]; ++i)
+      {
+        /* only apply square well between r_0 and r_0+width */
+        if ((r >= square_well_r_0[nuclei_idx][i]) and
+            (r <= (square_well_r_0[nuclei_idx][i] +
+                   square_well_width[nuclei_idx][i])))
+        {
+          nuclei -= dcomp(square_well_amplitude[nuclei_idx][i], 0.0);
+        }
+      }
+
       /* Yukawa Donuts */
       for (PetscInt i = 0; i < yukawa_size[nuclei_idx]; ++i)
       {
@@ -1339,6 +1355,18 @@ dcomp Hamiltonian::GetNucleiTerm(PetscInt idx)
         tmp = exponential_decay_rate[nuclei_idx][i] *
               std::abs(r - exponential_r_0[nuclei_idx][i]);
         nuclei -= dcomp(exponential_amplitude[nuclei_idx][i] * exp(-tmp), 0.0);
+      }
+
+      /* Square Well Donuts */
+      for (PetscInt i = 0; i < square_well_size[nuclei_idx]; ++i)
+      {
+        /* only apply square well between r_0 and r_0+width */
+        if ((r >= square_well_r_0[nuclei_idx][i]) and
+            (r <= (square_well_r_0[nuclei_idx][i] +
+                   square_well_width[nuclei_idx][i])))
+        {
+          nuclei -= dcomp(square_well_amplitude[nuclei_idx][i], 0.0);
+        }
       }
 
       /* Yukawa Donuts */

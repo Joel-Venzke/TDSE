@@ -914,6 +914,19 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
                   "/Parameters/gaussian_decay_rate_" + std::to_string(i),
                   "Gaussian decay rate terms for nuclei " + std::to_string(i));
 
+      WriteObject(p.GetSquareWellR0()[i], p.square_well_size[i],
+                  "/Parameters/square_well_r_0_" + std::to_string(i),
+                  "square_well_r_0 terms for centering donut like potentials "
+                  "around nuclei " +
+                      std::to_string(i));
+      WriteObject(
+          p.GetSquareWellAmplitude()[i], p.square_well_size[i],
+          "/Parameters/square_well_amplitude_" + std::to_string(i),
+          "square_well_amplitude terms for nuclei " + std::to_string(i));
+      WriteObject(p.GetSquareWellWidth()[i], p.square_well_size[i],
+                  "/Parameters/square_well_width_" + std::to_string(i),
+                  "square_well_width terms for nuclei " + std::to_string(i));
+
       WriteObject(p.GetYukawaR0()[i], p.yukawa_size[i],
                   "/Parameters/yukawa_r_0_" + std::to_string(i),
                   "yukawa r_0 terms for centering donut like potentials "

@@ -245,6 +245,21 @@ Exponential potentials take the form:
 where $a_i$ is the amplitude, $c_i$ is the decay rate, $r$ is the Euclidean distance, and $r_{0,i}$ is the radius of the donut (Sec~\ref{ssub:donut_potentials}).
 % subsubsection exponential_potentials (end)
 
+\subsubsection{Square Well Potentials} % (fold)
+\label{ssub:square_well_potentials}
+Gaussian potentials take the form:
+\begin{equation}
+V(r) = \sum\limits_i
+  \begin{cases}
+        -a_i, & r_{0,i} \le r \le r_{0,i} + \Delta_i\\
+        0, & \text{otherwise}
+    \end{cases}
+  \label{eq:square_well}
+\end{equation}
+where $a_i$ is the amplitude, $\Delta_i$ is the width, $r$ is the Euclidean distance, and $r_{0,i}$ is the radius of the donut (Sec~\ref{ssub:donut_potentials}).
+% subsubsection square_well_potentials (end)
+
+
 \subsubsection{Yukawa Potentials} % (fold)
 \label{ssub:yukawa_potentials}
 Yukawa potentials take the form:
@@ -649,6 +664,9 @@ The following is an input file for simulating an 8 cycle, 800nm, sine squared pu
        "gaussian_amplitude": [0.0],
        "gaussian_decay_rate": [0.0],
        "location": [0.0, 0.0, 0.0],
+       "square_well_r_0": [0.0],
+       "square_well_amplitude": [0.0],
+       "square_well_width": [0.0],
        "yukawa_r_0": [0.0],
        "yukawa_amplitude": [0.0],
        "yukawa_decay_rate": [0.0],
@@ -883,25 +901,34 @@ exponential\_amplitude is the amplitude for an exponential potential. This is th
 exponential\_decay\_rate is the decay rate for an exponential potential. This is the value of $c_i$ in Eq.~\ref{eq:exponential} with $i$ being the index into the array. See Sec~\ref{ssub:exponential_potentials} for exact form of the potential.
 
 \subsubsection{target - nuclei - gaussian\_r\_0}
-gaussian\_r\_0 is the donut radius for an Gaussian potential. This is the value of $r_{0,i}$ in Eq.~\ref{eq:gaussian} with $i$ being the index into the array. Set to zero for atomic like behavior. See Sec~\ref{ssub:gaussian_potentials} for exact form of the potential.
+gaussian\_r\_0 is the donut radius for a Gaussian potential. This is the value of $r_{0,i}$ in Eq.~\ref{eq:gaussian} with $i$ being the index into the array. Set to zero for atomic like behavior. See Sec~\ref{ssub:gaussian_potentials} for exact form of the potential.
 
 \subsubsection{target - nuclei - gaussian\_amplitude}
-gaussian\_amplitude is the amplitude for an Gaussian potential. This is the value of $a_i$ in Eq.~\ref{eq:gaussian} with $i$ being the index into the array. If set to 0 the potential has no effect. See Sec~\ref{ssub:gaussian_potentials} for exact form of the potential.
+gaussian\_amplitude is the amplitude for a Gaussian potential. This is the value of $a_i$ in Eq.~\ref{eq:gaussian} with $i$ being the index into the array. If set to 0 the potential has no effect. See Sec~\ref{ssub:gaussian_potentials} for exact form of the potential.
 
 \subsubsection{target - nuclei - gaussian\_decay\_rate}
-gaussian\_decay\_rate is the decay rate for an Gaussian potential. This is the value of $c_i$ in Eq.~\ref{eq:gaussian} with $i$ being the index into the array. See Sec~\ref{ssub:gaussian_potentials} for exact form of the potential.
+gaussian\_decay\_rate is the decay rate for a Gaussian potential. This is the value of $c_i$ in Eq.~\ref{eq:gaussian} with $i$ being the index into the array. See Sec~\ref{ssub:gaussian_potentials} for exact form of the potential.
 
 \subsubsection{target - nuclei - location}
 location is a list that corresponds to the nuclei center. The distances $r$ and $r_{soft}$ are calculated from it. The order of dimensions is the same as the coordinate system defined in Sec.~\ref{ssub:dimensions}.
 
+\subsubsection{target - nuclei - square\_well\_r\_0}
+square\_well\_r\_0 is the donut radius for a square well potential. This is the value of $r_{0,i}$ in Eq.~\ref{eq:square_well} with $i$ being the index into the array. Set to zero for atomic like behavior. See Sec~\ref{ssub:square_well_potentials} for exact form of the potential.
+
+\subsubsection{target - nuclei - square\_well\_amplitude}
+square\_well\_amplitude is the amplitude or depth of a square well potential. This is the value of $a_i$ in Eq.~\ref{eq:square_well} with $i$ being the index into the array. If set to 0 the potential has no effect. See Sec~\ref{ssub:square_well_potentials} for exact form of the potential.
+
+\subsubsection{target - nuclei - square\_well\_width}
+square\_well\_width is the width of the square well potential. This is the value of $\Delta_i$ in Eq.~\ref{eq:square_well} with $i$ being the index into the array. See Sec~\ref{ssub:square_well_potentials} for exact form of the potential.
+
 \subsubsection{target - nuclei - yukawa\_r\_0}
-yukawa\_r\_0 is the donut radius for an Yukawa potential. This is the value of $r_{0,i}$ in Eq.~\ref{eq:yukawa} with $i$ being the index into the array. Set to zero for atomic like behavior. See Sec~\ref{ssub:yukawa_potentials} for exact form of the potential.
+yukawa\_r\_0 is the donut radius for a Yukawa potential. This is the value of $r_{0,i}$ in Eq.~\ref{eq:yukawa} with $i$ being the index into the array. Set to zero for atomic like behavior. See Sec~\ref{ssub:yukawa_potentials} for exact form of the potential.
 
 \subsubsection{target - nuclei - yukawa\_amplitude}
-yukawa\_amplitude is the amplitude for an Yukawa potential. This is the value of $a_i$ in Eq.~\ref{eq:yukawa} with $i$ being the index into the array. If set to 0 the potential has no effect. See Sec~\ref{ssub:yukawa_potentials} for exact form of the potential.
+yukawa\_amplitude is the amplitude for a Yukawa potential. This is the value of $a_i$ in Eq.~\ref{eq:yukawa} with $i$ being the index into the array. If set to 0 the potential has no effect. See Sec~\ref{ssub:yukawa_potentials} for exact form of the potential.
 
 \subsubsection{target - nuclei - yukawa\_decay\_rate}
-yukawa\_decay\_rate is the decay rate for an Yukawa potential. This is the value of $c_i$ in Eq.~\ref{eq:yukawa} with $i$ being the index into the array. See Sec~\ref{ssub:yukawa_potentials} for exact form of the potential.
+yukawa\_decay\_rate is the decay rate for a Yukawa potential. This is the value of $c_i$ in Eq.~\ref{eq:yukawa} with $i$ being the index into the array. See Sec~\ref{ssub:yukawa_potentials} for exact form of the potential.
 
 \subsubsection{target - nuclei - z}
 z is the value of z in a coulomb like potential (Eq.~\ref{eq:H_like}). If set to 0 the potential has no effect. See Sec~\ref{ssub:hydrogen_like} for exact form of the potential.
