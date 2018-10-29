@@ -193,7 +193,7 @@ To absorb any outgoing wave packets, we utilize an exterior complex scaling (ECS
 
 \subsection{Atoms and Molecules} % (fold)
 \label{sub:atoms_and_molecules}
-The code allows for nuclei to be placed at any location assuming the coordinate system supports it. This allows for molecular targets to be build by hand with each nuclei having a unique potential. The potentials available are laid out below. If you need to add your own potential please follow the step by step procedure in Sec~\ref{ssub:adding_new_potentials}.
+The code allows for nuclei to be placed at any location assuming the coordinate system supports it. This allows for molecular targets to be build by hand with each nuclei having a unique potential. The potentials available are laid out below. If you need to add your own potential please follow the step by step procedure in Sec~\ref{ssub:adding_new_potentials}. \textbf{Please don't hard code potentials!}
 
 \subsubsection{Molecular Targets} % (fold)
 \label{ssub:molecular_targets}
@@ -288,6 +288,10 @@ This code is slowly gaining support for two active electron simulations. We have
 
 \subsubsection{Adding New Potentials} % (fold)
 \label{ssub:adding_new_potentials}
+\textbf{Please don't hard code potentials!}
+
+Adding potentials that are not currently available only takes a 10ish minutes. Providing access from the input file allows all users of the code to easily use various potentials. Hard coding potentials is a poor practice and leads to unmaintainable and difficult to use code. \textbf{Please don't hard code potentials!}
+
 To add a new potential follow these steps and make a pull request.
 \begin{itemize}
   \item Start new branch
