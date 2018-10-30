@@ -523,29 +523,6 @@ void Parameters::Setup(std::string file_name)
       /* XUV specific */
       else if (experiment_type == "streaking" and pulse_idx > 0)
       {
-        // tau_delay = data["laser"]["pulses"][pulse_idx]["tau_delay"];
-
-        // double center_XUV_cycles =
-        //     energy[pulse_idx] *
-        //     ((2 * pi *
-        //       (cycles_delay[pulse_idx - 1] +
-        //        gaussian_length[pulse_idx - 1] * cycles_on[pulse_idx - 1]) /
-        //       energy[pulse_idx - 1]) +
-        //      tau_delay) /
-        //     (2 * pi);
-
-        // cycles_delay[pulse_idx] =
-        //     center_XUV_cycles -
-        //     gaussian_length[pulse_idx] * cycles_on[pulse_idx];
-
-        // if (cycles_delay[pulse_idx] < 0)
-        // {
-        //   cycles_delay[pulse_idx - 1] -= cycles_delay[pulse_idx] *
-        //                                  energy[pulse_idx - 1] /
-        //                                  energy[pulse_idx];
-        //   cycles_delay[pulse_idx] = 0;
-        // }
-
         tau_delay = data["laser"]["pulses"][pulse_idx]["tau_delay"];
 
         double center_XUV_cycles =
