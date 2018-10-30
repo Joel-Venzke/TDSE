@@ -289,9 +289,6 @@ void Simulation::EigenSolve(PetscInt num_states)
     std::cout << "\nCalculating the lowest " << num_states
               << " eigenvectors using SLEPC\n"
               << std::flush;
-  /* write index for checkpoints, Starts at 1 to avoid writing on first
-   * iteration*/
-  int i      = 1;
   double tol = parameters->GetTol();
   dcomp eigen_real;
   dcomp eigen_imag;

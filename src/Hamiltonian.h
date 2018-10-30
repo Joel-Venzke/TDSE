@@ -20,12 +20,22 @@ class Hamiltonian : protected Utils
   PetscInt gauge_idx;  ///< index of gauge (0 velocity, 1 length)
 
   /* SAE stuff */
-  double **a;         /* SAE a for each nuclei (coefficient of exponential) */
-  double **b;         /* SAE b for each nuclei (in exponential) */
-  double *r0;         /* SAE r_0 for each nuclei */
-  double *c0;         /* SAE C_0 for each nuclei */
-  double *z_c;        /* SAE z_0 for each nuclei */
-  PetscInt *sae_size; /* number of elements in a and b */
+  double **exponential_r_0;         ///< exponential radial center
+  double **exponential_amplitude;   ///< exponential  amplitude
+  double **exponential_decay_rate;  ///< exponential  decay rate
+  PetscInt *exponential_size;       /* number of elements in exponential */
+  double **gaussian_r_0;            ///< Gaussian radial center
+  double **gaussian_amplitude;      ///< Gaussian amplitude
+  double **gaussian_decay_rate;     ///< Gaussian decay rate
+  PetscInt *gaussian_size;          /* number of elements in Gaussian */
+  double **square_well_r_0;         ///< square well radial center
+  double **square_well_amplitude;   ///< square well  amplitude
+  double **square_well_width;       ///< square well width
+  PetscInt *square_well_size;       /* number of elements in Gaussian */
+  double **yukawa_r_0;              ///< yukawa radial center
+  double **yukawa_amplitude;        ///< yukawa amplitude
+  double **yukawa_decay_rate;       ///< yukawa decay rate
+  PetscInt *yukawa_size;            /* number of elements in Gaussian */
 
   double alpha;          /* soft core atomic */
   double alpha_2;        /* square of soft core atomic */

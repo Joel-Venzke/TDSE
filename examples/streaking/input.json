@@ -1,72 +1,134 @@
 {
-  "delta_t": 0.005,
-  "dimensions": [
-    {"dim_size":         20.0,
-    "delta_x_min":       0.2,
-    "delta_x_min_end":   10.0,
-    "delta_x_max":       0.2,
-    "delta_x_max_start": 11.0},
-    {"dim_size":         40.0,
-    "delta_x_min":       0.2,
-    "delta_x_min_end":   5.0,
-    "delta_x_max":       0.2,
-    "delta_x_max_start": 10.0}],
-  "coordinate_system": "Cylindrical",
-  "num_electrons": 1,
-  "restart": 0,
-  "target": {
-    "name":  "He",
-    "nuclei" : [
-      { "z": 1.0,
-      "location": [0.0,0.0,0.0],
-      "SAE": {
-        "z_c": 1.0,
-        "c0": 1.0,
-        "r0": 2.353059,
-        "a" : [0.66294407],
-        "b" : [4.073942]}
-      }]},
-  "alpha":   0.0,
-  "gobbler": 0.9,
-  "order":   2,
-  "sigma":   3.0,
-  "write_frequency_checkpoint": 100,
-  "write_frequency_observables": 2,
-  "write_frequency_eigin_state": 1,
-  "state_solver":    "SLEPC",
-  "propagate": 1,
-  "free_propagate": 0,
-  "start_state": 0,
-  "states": 1,
-  "tol":        1e-10,
-  "laser": {
-    "experiment_type": "streaking",
-    "pulses": [
-    { "polarization_vector": [0.0,1.0,0.0],
-      "poynting_vector": [0.0,0.0,1.0],
-      "helicity" : "left",
-      "ellipticity" : 0.0,
-      "pulse_shape":   "sin",
-      "power_on":       2.0,
-      "power_off":      16.0,
-      "cycles_on":      1.5,
-      "cycles_plateau": 0.0,
-      "cycles_off":     1.5,
-      "cycles_delay":   0.0,
-      "cep":            0.0,
-      "energy":         0.057,
-      "intensity":      1e11},
-     { "polarization_vector": [0.0,1.0,0.0],
-      "poynting_vector": [0.0,0.0,1.0],
-      "helicity" : "left",
-      "ellipticity" : 0.0,
-      "pulse_shape":   "gaussian",
-      "cycles_on":      1.0,
-      "cycles_plateau": 0.0,
-      "cycles_off":     1.0,
-      "tau_delay":      -10.0,
-      "cep":            0.0,
-      "energy":         1.5,
-      "intensity":      1e14}]
+ "start_state": {"index":     [0],
+                  "amplitude": [1.0],
+                  "phase":     [0.0]},
+ "states": 1,
+ "write_frequency_checkpoint": 100,
+ "gauge": "Velocity",
+ "write_frequency_observables": 1,
+ "dimensions": [
+  {
+   "delta_x_max_start": 4.0,
+   "delta_x_min": 0.2,
+   "delta_x_max": 0.2,
+   "dim_size": 50.0,
+   "delta_x_min_end": 4.0
   }
+ ],
+ "gobbler": 0.95,
+ "tol": 1e-10,
+ "num_electrons": 1,
+ "delta_t": 0.1,
+ "propagate": 0,
+ "alpha": 0.8,
+ "ee_soft_core": 0.01,
+ "restart": 0,
+ "state_solver": "SLEPC",
+ "write_frequency_eigin_state": 100,
+ "laser": {
+  "experiment_type": "streaking",
+  "pulses": [
+   {
+    "power_on": 2.0,
+    "cycles_on": 1.0,
+    "cycles_off": 1.0,
+    "pulse_shape": "gaussian",
+    "cycles_delay": 0.0,
+    "gaussian_length": 5.0,
+    "polarization_vector": [
+     1.0,
+     0.0,
+     0.0
+    ],
+    "energy": 2.0,
+    "power_off": 2.0,
+    "intensity": 1e14,
+    "cycles_plateau": 0.0,
+    "helicity": "left",
+    "cep": 0.0,
+    "poynting_vector": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "ellipticity": 0.0
+   },
+   {
+    "power_on": 2.0,
+    "cycles_on": 1.0,
+    "cycles_off": 1.0,
+    "pulse_shape": "gaussian",
+    "tau_delay": 0.0,
+    "gaussian_length": 5.0,
+    "polarization_vector": [
+     1.0,
+     0.0,
+     0.0
+    ],
+    "energy": 1.0,
+    "power_off": 2.0,
+    "intensity": 1e14,
+    "cycles_plateau": 0.0,
+    "helicity": "left",
+    "cep": 0.0,
+    "poynting_vector": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "ellipticity": 0.0
+   },
+   {
+    "power_on": 2.0,
+    "cycles_on": 1.0,
+    "cycles_off": 1.0,
+    "pulse_shape": "gaussian",
+    "tau_delay": 0.0,
+    "gaussian_length": 5.0,
+    "polarization_vector": [
+     1.0,
+     0.0,
+     0.0
+    ],
+    "energy": 0.5,
+    "power_off": 2.0,
+    "intensity": 1e14,
+    "cycles_plateau": 0.0,
+    "helicity": "left",
+    "cep": 0.0,
+    "poynting_vector": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "ellipticity": 0.0
+   }
+  ]
+ },
+ "target": {
+  "nuclei": [
+   {
+    "z": 1.0,
+    "exponential_r_0": [0.0],
+    "exponential_amplitude": [0.0],
+    "exponential_decay_rate": [0.0],
+    "gaussian_r_0": [0.0],
+    "gaussian_amplitude": [0.0],
+    "gaussian_decay_rate": [0.0],
+    "square_well_r_0": [5.8],
+    "square_well_amplitude": [0.302],
+    "square_well_width": [1.9],
+    "yukawa_r_0": [0.0],
+    "yukawa_amplitude": [0.0],
+    "yukawa_decay_rate": [0.0],
+    "location": [0.0, 0.0, 0.0]
+   }
+  ],
+  "name": "H"
+ },
+ "coordinate_system": "Cartesian",
+ "field_max_states": 0,
+ "free_propagate": 0,
+ "sigma": 3.0,
+ "order": 2
 }
