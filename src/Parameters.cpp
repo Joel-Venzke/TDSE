@@ -391,9 +391,9 @@ void Parameters::Setup(std::string file_name)
   else
   {
     /* streaking */
-    if (experiment_type == "streaking" and num_pulses != 2)
+    if (experiment_type == "streaking" and num_pulses < 2)
     {
-      EndRun(" streaking only allows 2 pulses");
+      EndRun(" streaking requires 2 or more pulses");
     }
 
     /* read in IR and XUV parameters */
@@ -521,16 +521,37 @@ void Parameters::Setup(std::string file_name)
             data["laser"]["pulses"][pulse_idx]["cycles_delay"];
       }
       /* XUV specific */
-      else if (experiment_type == "streaking" and pulse_idx == 1)
+      else if (experiment_type == "streaking" and pulse_idx > 0)
       {
+        // tau_delay = data["laser"]["pulses"][pulse_idx]["tau_delay"];
+
+        // double center_XUV_cycles =
+        //     energy[pulse_idx] *
+        //     ((2 * pi *
+        //       (cycles_delay[pulse_idx - 1] +
+        //        gaussian_length[pulse_idx - 1] * cycles_on[pulse_idx - 1]) /
+        //       energy[pulse_idx - 1]) +
+        //      tau_delay) /
+        //     (2 * pi);
+
+        // cycles_delay[pulse_idx] =
+        //     center_XUV_cycles -
+        //     gaussian_length[pulse_idx] * cycles_on[pulse_idx];
+
+        // if (cycles_delay[pulse_idx] < 0)
+        // {
+        //   cycles_delay[pulse_idx - 1] -= cycles_delay[pulse_idx] *
+        //                                  energy[pulse_idx - 1] /
+        //                                  energy[pulse_idx];
+        //   cycles_delay[pulse_idx] = 0;
+        // }
+
         tau_delay = data["laser"]["pulses"][pulse_idx]["tau_delay"];
 
         double center_XUV_cycles =
             energy[pulse_idx] *
-            ((2 * pi *
-              (cycles_delay[pulse_idx - 1] +
-               gaussian_length[pulse_idx - 1] * cycles_on[pulse_idx - 1]) /
-              energy[pulse_idx - 1]) +
+            ((2 * pi * (cycles_delay[0] + gaussian_length[0] * cycles_on[0]) /
+              energy[0]) +
              tau_delay) /
             (2 * pi);
 
@@ -540,9 +561,17 @@ void Parameters::Setup(std::string file_name)
 
         if (cycles_delay[pulse_idx] < 0)
         {
-          cycles_delay[pulse_idx - 1] -= cycles_delay[pulse_idx] *
-                                         energy[pulse_idx - 1] /
-                                         energy[pulse_idx];
+          std::cout << "here\n";
+          for (PetscInt prev_pulse_idx = 0; prev_pulse_idx < pulse_idx;
+               ++prev_pulse_idx)
+          {
+            /* delay all other pulses */
+            cycles_delay[prev_pulse_idx] -= cycles_delay[pulse_idx] *
+                                            energy[prev_pulse_idx] /
+                                            energy[pulse_idx];
+          }
+
+          /* set the pulse to zero delay */
           cycles_delay[pulse_idx] = 0;
         }
       }
