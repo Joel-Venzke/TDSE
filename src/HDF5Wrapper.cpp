@@ -322,13 +322,13 @@ void HDF5Wrapper::WriteObject(T data, H5std_string var_path, int write_idx)
       {
         h5_max_size[0] = H5S_UNLIMITED; /* time dim */
         h5_max_size[1] = 2;
-        h5_chunk[0]    = 1;
+        h5_chunk[0]    = 1024;
         h5_chunk[1]    = 2;
       }
       else
       {
         h5_max_size[0] = H5S_UNLIMITED; /* time dim */
-        h5_chunk[0]    = 1;
+        h5_chunk[0]    = 1024;
       }
 
       /* set up data space */
@@ -420,13 +420,13 @@ void HDF5Wrapper::WriteObject(T data, H5std_string var_path,
       {
         h5_max_size[0] = H5S_UNLIMITED; /* time dim */
         h5_max_size[1] = 2;
-        h5_chunk[0]    = 1;
+        h5_chunk[0]    = 1024;
         h5_chunk[1]    = 2;
       }
       else
       {
         h5_max_size[0] = H5S_UNLIMITED; /* time dim */
-        h5_chunk[0]    = 1;
+        h5_chunk[0]    = 1024;
       }
 
       /* set up data space */
@@ -520,7 +520,7 @@ void HDF5Wrapper::WriteObject(T data, int size, H5std_string var_path,
         h5_max_size[0] = H5S_UNLIMITED; /* time dim */
         h5_max_size[1] = size;
         h5_max_size[2] = 2;
-        h5_chunk[0]    = 1;
+        h5_chunk[0]    = 1024;
         h5_chunk[1]    = size;
         h5_chunk[2]    = 2;
       }
@@ -530,7 +530,7 @@ void HDF5Wrapper::WriteObject(T data, int size, H5std_string var_path,
         h5_size[1]     = size;
         h5_max_size[0] = H5S_UNLIMITED; /* time dim */
         h5_max_size[1] = size;
-        h5_chunk[0]    = 1;
+        h5_chunk[0]    = 1024;
         h5_chunk[1]    = size;
       }
 
@@ -634,7 +634,7 @@ void HDF5Wrapper::WriteObject(T data, int size, H5std_string var_path,
         h5_max_size[0] = H5S_UNLIMITED; /* time dim */
         h5_max_size[1] = size;
         h5_max_size[2] = 2;
-        h5_chunk[0]    = 1;
+        h5_chunk[0]    = 1024;
         h5_chunk[1]    = size;
         h5_chunk[2]    = 2;
       }
@@ -644,7 +644,7 @@ void HDF5Wrapper::WriteObject(T data, int size, H5std_string var_path,
         h5_size[1]     = size;
         h5_max_size[0] = H5S_UNLIMITED; /* time dim */
         h5_max_size[1] = size;
-        h5_chunk[0]    = 1;
+        h5_chunk[0]    = 1024;
         h5_chunk[1]    = size;
       }
 
