@@ -172,6 +172,7 @@ void Parameters::Setup(std::string file_name)
     state_solver_idx = -1;
   }
 
+  CheckParameter(data["gauge"].size(), "gauge");
   gauge = data["gauge"];
   if (gauge == "Velocity")
   {
@@ -186,41 +187,51 @@ void Parameters::Setup(std::string file_name)
     gauge_idx = -1;
   }
 
+  CheckParameter(data["start_state"]["index"].size(), "start_state - index");
   num_start_state = data["start_state"]["index"].size();
   if (data["start_state"]["amplitude"].size() != num_start_state)
   {
     EndRun(
-        "start_state amplitude and index sizes do not match. Double check "
-        "input file.");
+        "'start_state - amplitude' and 'start_state - index' sizes do not "
+        "match. Double check input file.");
   }
   if (data["start_state"]["phase"].size() != num_start_state)
   {
     EndRun(
-        "start_state phase and index sizes do not match. Double check "
-        "input file.");
+        "'start_state - phase' and 'start_state - index' sizes do not match. "
+        "Double check input file.");
   }
   start_state_idx       = new PetscInt[num_start_state];
   start_state_amplitude = new double[num_start_state];
   start_state_phase     = new double[num_start_state];
   for (PetscInt i = 0; i < num_start_state; i++)
   {
-    start_state_idx[i]       = data["start_state"]["index"][i];
+    CheckParameter(data["start_state"]["index"][i].size(),
+                   "start_state - index");
+    start_state_idx[i] = data["start_state"]["index"][i];
+    CheckParameter(data["start_state"]["amplitude"][i].size(),
+                   "start_state - amplitude");
     start_state_amplitude[i] = data["start_state"]["amplitude"][i];
-    start_state_phase[i]     = data["start_state"]["phase"][i];
+    CheckParameter(data["start_state"]["phase"][i].size(),
+                   "start_state - phase");
+    start_state_phase[i] = data["start_state"]["phase"][i];
   }
 
   if (state_solver_idx != 2)
   {
+    CheckParameter(data["states"].size(), "states");
     num_states = data["states"];
   }
   else
   {
+    CheckParameter(data["states"].size(), "states");
     num_states = data["states"].size();
 
     state_energy = std::make_unique< double[] >(num_states);
 
     for (PetscInt i = 0; i < num_states; i++)
     {
+      CheckParameter(data["states"][i]["energy"].size(), "states - energy");
       state_energy[i] = data["states"][i]["energy"];
     }
   }
@@ -246,6 +257,8 @@ void Parameters::Setup(std::string file_name)
   for (PetscInt i = 0; i < num_nuclei; ++i)
   {
     /* Coulomb term */
+    CheckParameter(data["target"]["nuclei"][i]["z"].size(),
+                   "target - nuclei - z");
     z[i] = data["target"]["nuclei"][i]["z"];
 
     /* exponential Donuts */
@@ -253,10 +266,14 @@ void Parameters::Setup(std::string file_name)
     exponential_r_0[i]  = new double[exponential_size[i]];
     exponential_amplitude[i]  = new double[exponential_size[i]];
     exponential_decay_rate[i] = new double[exponential_size[i]];
-    if (data["target"]["nuclei"][i]["exponential_r_0"].size() !=
-            data["target"]["nuclei"][i]["exponential_amplitude"].size() or
-        data["target"]["nuclei"][i]["exponential_r_0"].size() !=
-            data["target"]["nuclei"][i]["exponential_decay_rate"].size())
+    if (exponential_size[i] == 0 and world.rank() == 0)
+    {
+      std::cout << "WARNING: No exponential potential for nuclei " << i << "\n";
+    }
+    else if (data["target"]["nuclei"][i]["exponential_r_0"].size() !=
+                 data["target"]["nuclei"][i]["exponential_amplitude"].size() or
+             data["target"]["nuclei"][i]["exponential_r_0"].size() !=
+                 data["target"]["nuclei"][i]["exponential_decay_rate"].size())
     {
       EndRun("Nuclei " + std::to_string(i) +
              " all exponential terms must have the same size");
@@ -275,10 +292,14 @@ void Parameters::Setup(std::string file_name)
     gaussian_r_0[i]        = new double[gaussian_size[i]];
     gaussian_amplitude[i]  = new double[gaussian_size[i]];
     gaussian_decay_rate[i] = new double[gaussian_size[i]];
-    if (data["target"]["nuclei"][i]["gaussian_r_0"].size() !=
-            data["target"]["nuclei"][i]["gaussian_amplitude"].size() or
-        data["target"]["nuclei"][i]["gaussian_r_0"].size() !=
-            data["target"]["nuclei"][i]["gaussian_decay_rate"].size())
+    if (gaussian_size[i] == 0 and world.rank() == 0)
+    {
+      std::cout << "WARNING: No Gaussian potential for nuclei " << i << "\n";
+    }
+    else if (data["target"]["nuclei"][i]["gaussian_r_0"].size() !=
+                 data["target"]["nuclei"][i]["gaussian_amplitude"].size() or
+             data["target"]["nuclei"][i]["gaussian_r_0"].size() !=
+                 data["target"]["nuclei"][i]["gaussian_decay_rate"].size())
     {
       EndRun("Nuclei " + std::to_string(i) +
              " all Gaussian terms must have the same size");
@@ -297,10 +318,14 @@ void Parameters::Setup(std::string file_name)
     square_well_r_0[i]  = new double[square_well_size[i]];
     square_well_amplitude[i] = new double[square_well_size[i]];
     square_well_width[i]     = new double[square_well_size[i]];
-    if (data["target"]["nuclei"][i]["square_well_r_0"].size() !=
-            data["target"]["nuclei"][i]["square_well_amplitude"].size() or
-        data["target"]["nuclei"][i]["square_well_r_0"].size() !=
-            data["target"]["nuclei"][i]["square_well_width"].size())
+    if (square_well_size[i] == 0 and world.rank() == 0)
+    {
+      std::cout << "WARNING: No square well potential for nuclei " << i << "\n";
+    }
+    else if (data["target"]["nuclei"][i]["square_well_r_0"].size() !=
+                 data["target"]["nuclei"][i]["square_well_amplitude"].size() or
+             data["target"]["nuclei"][i]["square_well_r_0"].size() !=
+                 data["target"]["nuclei"][i]["square_well_width"].size())
     {
       EndRun("Nuclei " + std::to_string(i) +
              " all square_well terms must have the same size");
@@ -319,10 +344,14 @@ void Parameters::Setup(std::string file_name)
     yukawa_r_0[i]        = new double[yukawa_size[i]];
     yukawa_amplitude[i]  = new double[yukawa_size[i]];
     yukawa_decay_rate[i] = new double[yukawa_size[i]];
-    if (data["target"]["nuclei"][i]["yukawa_r_0"].size() !=
-            data["target"]["nuclei"][i]["yukawa_amplitude"].size() or
-        data["target"]["nuclei"][i]["yukawa_r_0"].size() !=
-            data["target"]["nuclei"][i]["yukawa_decay_rate"].size())
+    if (yukawa_size[i] == 0 and world.rank() == 0)
+    {
+      std::cout << "WARNING: No Yukawa potential for nuclei " << i << "\n";
+    }
+    else if (data["target"]["nuclei"][i]["yukawa_r_0"].size() !=
+                 data["target"]["nuclei"][i]["yukawa_amplitude"].size() or
+             data["target"]["nuclei"][i]["yukawa_r_0"].size() !=
+                 data["target"]["nuclei"][i]["yukawa_decay_rate"].size())
     {
       EndRun("Nuclei " + std::to_string(i) +
              " all yukawa terms must have the same size");
@@ -337,6 +366,8 @@ void Parameters::Setup(std::string file_name)
     }
 
     location[i] = new double[num_dims];
+    CheckParameter(data["target"]["nuclei"][i]["location"].size(),
+                   "target - nuclei - location");
     if (data["target"]["nuclei"][i]["location"].size() < num_dims)
     {
       EndRun("Nuclei " + std::to_string(i) +
@@ -363,13 +394,21 @@ void Parameters::Setup(std::string file_name)
     target_idx = -1;
   }
 
-  propagate      = data["propagate"];
+  CheckParameter(data["propagate"].size(), "propagate");
+  propagate = data["propagate"];
+
+  CheckParameter(data["free_propagate"].size(), "free_propagate");
   free_propagate = data["free_propagate"];
 
+  CheckParameter(data["field_max_states"].size(), "field_max_states");
   field_max_states = data["field_max_states"];
 
   /* get pulse information */
-  num_pulses      = data["laser"]["pulses"].size();
+  CheckParameter(data["laser"]["pulses"].size(), "laser - pulses");
+  num_pulses = data["laser"]["pulses"].size();
+
+  CheckParameter(data["laser"]["experiment_type"].size(),
+                 "laser - experiment_type");
   experiment_type = data["laser"]["experiment_type"];
 
   /* allocate memory */
@@ -425,6 +464,10 @@ void Parameters::Setup(std::string file_name)
       polar_norm                     = 0.0;
       for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
       {
+        CheckParameter(
+            data["laser"]["pulses"][pulse_idx]["polarization_vector"][dim_idx]
+                .size(),
+            "laser - pulses - polarization_vector");
         polarization_vector[pulse_idx][dim_idx] =
             data["laser"]["pulses"][pulse_idx]["polarization_vector"][dim_idx];
         polar_norm += polarization_vector[pulse_idx][dim_idx] *
@@ -458,6 +501,8 @@ void Parameters::Setup(std::string file_name)
       power_on[pulse_idx]        = 0.0;
       power_off[pulse_idx]       = 0.0;
       gaussian_length[pulse_idx] = 1.0; /* the factor for non Gaussian pulses */
+      CheckParameter(data["laser"]["pulses"][pulse_idx]["pulse_shape"].size(),
+                     "laser - pulses - pulse_shape");
       pulse_shape[pulse_idx] =
           data["laser"]["pulses"][pulse_idx]["pulse_shape"];
 
@@ -471,12 +516,19 @@ void Parameters::Setup(std::string file_name)
       else if (pulse_shape[pulse_idx] == "sin")
       {
         pulse_shape_idx[pulse_idx] = 0;
-        power_on[pulse_idx]  = data["laser"]["pulses"][pulse_idx]["power_on"];
+        CheckParameter(data["laser"]["pulses"][pulse_idx]["power_on"].size(),
+                       "laser - pulses - power_on");
+        power_on[pulse_idx] = data["laser"]["pulses"][pulse_idx]["power_on"];
+        CheckParameter(data["laser"]["pulses"][pulse_idx]["power_off"].size(),
+                       "laser - pulses - power_off");
         power_off[pulse_idx] = data["laser"]["pulses"][pulse_idx]["power_off"];
       }
       else if (pulse_shape[pulse_idx] == "gaussian")
       {
         pulse_shape_idx[pulse_idx] = 1;
+        CheckParameter(
+            data["laser"]["pulses"][pulse_idx]["gaussian_length"].size(),
+            "laser - pulses - gaussian_length");
         gaussian_length[pulse_idx] =
             data["laser"]["pulses"][pulse_idx]["gaussian_length"];
       }
@@ -488,8 +540,12 @@ void Parameters::Setup(std::string file_name)
       if (data["laser"]["pulses"][pulse_idx]["polarization_vector"].size() <
           num_dims)
       {
-        EndRun("Polarization vector dimension is to small for pulse " +
-               std::to_string(pulse_idx));
+        std::cout
+            << "ERROR: Polarization vector dimension is to small for pulse " +
+                   std::to_string(pulse_idx) + "\n";
+        CheckParameter(
+            data["laser"]["pulses"][pulse_idx]["polarization_vector"].size(),
+            "laser - pulses - polarization_vector");
       }
 
       polarization_vector[pulse_idx] = new double[num_dims];
@@ -501,6 +557,10 @@ void Parameters::Setup(std::string file_name)
       }
       for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
       {
+        CheckParameter(
+            data["laser"]["pulses"][pulse_idx]["polarization_vector"][dim_idx]
+                .size(),
+            "laser - pulses - polarization_vector");
         polarization_vector[pulse_idx][dim_idx] =
             data["laser"]["pulses"][pulse_idx]["polarization_vector"][dim_idx];
         polar_norm += polarization_vector[pulse_idx][dim_idx] *
@@ -508,6 +568,10 @@ void Parameters::Setup(std::string file_name)
 
         if (num_dims == 3)
         {
+          CheckParameter(
+              data["laser"]["pulses"][pulse_idx]["poynting_vector"][dim_idx]
+                  .size(),
+              "laser - pulses - poynting_vector");
           poynting_vector[pulse_idx][dim_idx] =
               data["laser"]["pulses"][pulse_idx]["poynting_vector"][dim_idx];
           poynting_norm += poynting_vector[pulse_idx][dim_idx] *
@@ -537,12 +601,25 @@ void Parameters::Setup(std::string file_name)
         }
       }
 
-      cep[pulse_idx]    = data["laser"]["pulses"][pulse_idx]["cep"];
+      CheckParameter(data["laser"]["pulses"][pulse_idx]["cep"].size(),
+                     "laser - pulses - cep");
+      cep[pulse_idx] = data["laser"]["pulses"][pulse_idx]["cep"];
+
+      CheckParameter(data["laser"]["pulses"][pulse_idx]["energy"].size(),
+                     "laser - pulses - energy");
       energy[pulse_idx] = data["laser"]["pulses"][pulse_idx]["energy"];
+
+      CheckParameter(data["laser"]["pulses"][pulse_idx]["ellipticity"].size(),
+                     "laser - pulses - ellipticity");
       ellipticity[pulse_idx] =
           data["laser"]["pulses"][pulse_idx]["ellipticity"];
+
+      CheckParameter(data["laser"]["pulses"][pulse_idx]["helicity"].size(),
+                     "laser - pulses - helicity");
       helicity[pulse_idx] = data["laser"]["pulses"][pulse_idx]["helicity"];
 
+      CheckParameter(data["laser"]["pulses"][pulse_idx]["intensity"].size(),
+                     "laser - pulses - intensity");
       intensity = data["laser"]["pulses"][pulse_idx]["intensity"];
       field_max[pulse_idx] =
           std::sqrt(intensity / 3.51e16) * c /
@@ -562,21 +639,47 @@ void Parameters::Setup(std::string file_name)
         helicity_idx[pulse_idx] = -1;
       }
 
+      CheckParameter(data["laser"]["pulses"][pulse_idx]["cycles_on"].size(),
+                     "laser - pulses - cycles_on");
       cycles_on[pulse_idx] = data["laser"]["pulses"][pulse_idx]["cycles_on"];
+
+      CheckParameter(
+          data["laser"]["pulses"][pulse_idx]["cycles_plateau"].size(),
+          "laser - pulses - cycles_plateau");
       cycles_plateau[pulse_idx] =
           data["laser"]["pulses"][pulse_idx]["cycles_plateau"];
+
+      CheckParameter(data["laser"]["pulses"][pulse_idx]["cycles_off"].size(),
+                     "laser - pulses - cycles_off");
       cycles_off[pulse_idx] = data["laser"]["pulses"][pulse_idx]["cycles_off"];
 
       /* IR specific */
       if (experiment_type == "default" or
           (experiment_type == "streaking" and pulse_idx == 0))
       {
+        CheckParameter(
+            data["laser"]["pulses"][pulse_idx]["cycles_delay"].size(),
+            "laser - pulses - cycles_delay");
         cycles_delay[pulse_idx] =
             data["laser"]["pulses"][pulse_idx]["cycles_delay"];
       }
       /* XUV specific */
       else if (experiment_type == "streaking" and pulse_idx > 0)
       {
+        if (data["laser"]["pulses"][pulse_idx]["tau_delay"].size() == 0)
+        {
+          std::cout
+              << "\n\nERROR: You are using the streaking 'experiment_type'\n   "
+                 "    For every pulse after the first one you need to "
+                 "replace 'cycles_delay' with 'tau_delay'.\n       Use the "
+                 "default 'experiment_type' if you wish to uses "
+                 "'cycles_delay'";
+          EndRun(
+              "You must provide a 'laser - pulses - tau_delay' parameter in "
+              "the input.json file.\n       See the Input section of the "
+              "documentation for "
+              "details.\n");
+        }
         tau_delay = data["laser"]["pulses"][pulse_idx]["tau_delay"];
 
         double center_XUV_cycles =
@@ -592,7 +695,6 @@ void Parameters::Setup(std::string file_name)
 
         if (cycles_delay[pulse_idx] < 0)
         {
-          std::cout << "here\n";
           for (PetscInt prev_pulse_idx = 0; prev_pulse_idx < pulse_idx;
                ++prev_pulse_idx)
           {
@@ -783,6 +885,28 @@ void Parameters::Validate()
       err_str += pulse_shape[pulse_idx] + "\"\n";
       err_str += "Current support includes: ";
       err_str += "\"sin\" and \"gaussian\"\n";
+    }
+
+    if (pulse_shape[pulse_idx] == "sin")
+    {
+      if ((power_on[pulse_idx] % 2) != 0)
+      {
+        error_found = true;
+        err_str += "\nPulse ";
+        err_str += std::to_string(pulse_idx);
+        err_str += " has power_on: \"";
+        err_str += std::to_string(power_on[pulse_idx]) + "\"\n";
+        err_str += "power_on should be even\n";
+      }
+      if ((power_off[pulse_idx] % 2) != 0)
+      {
+        error_found = true;
+        err_str += "\nPulse ";
+        err_str += std::to_string(pulse_idx);
+        err_str += " has power_off: \"";
+        err_str += std::to_string(power_off[pulse_idx]) + "\"\n";
+        err_str += "power_off should be even\n";
+      }
     }
 
     /* check cycles_on */
