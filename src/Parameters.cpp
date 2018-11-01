@@ -109,20 +109,48 @@ void Parameters::Setup(std::string file_name)
   }
 
   /* get simulation behavior */
-  restart    = data["restart"];
-  target     = data["target"]["name"];
+  CheckParameter(data["restart"].size(), "restart");
+  restart = data["restart"];
+
+  CheckParameter(data["target"]["name"].size(), "target - name");
+  target = data["target"]["name"];
+
+  CheckParameter(data["target"]["nuclei"].size(), "target - nuclei");
   num_nuclei = data["target"]["nuclei"].size();
-  alpha      = data["alpha"];
+
+  CheckParameter(data["alpha"].size(), "alpha");
+  alpha = data["alpha"];
+
   if (num_electrons > 1)
+  {
+    CheckParameter(data["ee_soft_core"].size(), "ee_soft_core");
     ee_soft_core = data["ee_soft_core"];
+  }
   else
+  {
     ee_soft_core = 0.0;
-  write_frequency_checkpoint  = data["write_frequency_checkpoint"];
+  }
+
+  CheckParameter(data["write_frequency_checkpoint"].size(),
+                 "write_frequency_checkpoint");
+  write_frequency_checkpoint = data["write_frequency_checkpoint"];
+
+  CheckParameter(data["write_frequency_observables"].size(),
+                 "write_frequency_observables");
   write_frequency_observables = data["write_frequency_observables"];
+
+  CheckParameter(data["write_frequency_eigin_state"].size(),
+                 "write_frequency_eigin_state");
   write_frequency_eigin_state = data["write_frequency_eigin_state"];
-  sigma                       = data["sigma"];
-  tol                         = data["tol"];
-  state_solver                = data["state_solver"];
+
+  CheckParameter(data["sigma"].size(), "sigma");
+  sigma = data["sigma"];
+
+  CheckParameter(data["tol"].size(), "tol");
+  tol = data["tol"];
+
+  CheckParameter(data["state_solver"].size(), "state_solver");
+  state_solver = data["state_solver"];
   if (state_solver == "File")
   {
     state_solver_idx = 0;
@@ -138,6 +166,10 @@ void Parameters::Setup(std::string file_name)
   else if (state_solver == "SLEPC")
   {
     state_solver_idx = 3;
+  }
+  else
+  {
+    state_solver_idx = -1;
   }
 
   gauge = data["gauge"];
@@ -594,6 +626,14 @@ void Parameters::Setup(std::string file_name)
   }
 }
 
+/**
+ * @brief Ensures the parameter exists in the input.json file
+ * @details If the size is zero, an error message is printed and the simulation
+ * is aborted
+ *
+ * @param size the size of the json object (use the .size() function)
+ * @param doc_string the subsubsection of the Input documentation
+ */
 void Parameters::CheckParameter(int size, std::string doc_string)
 {
   if (size == 0)
@@ -836,8 +876,7 @@ void Parameters::Validate()
     err_str += "\"\nITP sucks, so I dropped support for it\n";
     err_str += "\nvalid solvers are \"File\", \"SLEPC\", and \"Power\"\n";
   }
-  else if (state_solver != "Power" and state_solver != "SLEPC" and
-           state_solver != "File")
+  else if (state_solver_idx == -1)
   {
     error_found = true;
     err_str += "\nInvalid state solver: \"";
