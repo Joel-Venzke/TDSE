@@ -21,6 +21,13 @@ void Parameters::Setup(std::string file_name)
   json data = FileToJson(file_name);
 
   /* get numeric information */
+  if (data["coordinate_system"].size() == 0)
+  {
+    EndRun(
+        "You must provide a 'coordinate_system' parameter in the input.json "
+        "file.\n"
+        "      See the Input section of the documentation for details.\n");
+  }
   coordinate_system = data["coordinate_system"];
 
   if (coordinate_system == "Cartesian")
@@ -40,7 +47,20 @@ void Parameters::Setup(std::string file_name)
     coordinate_system_idx = -1;
   }
 
-  delta_t       = data["delta_t"];
+  if (data["delta_t"].size() == 0)
+  {
+    EndRun(
+        "You must provide a 'delta_t' parameter in the input.json file.\n"
+        "      See the Input section of the documentation for details.\n");
+  }
+  delta_t = data["delta_t"];
+
+  if (data["num_electrons"].size() == 0)
+  {
+    EndRun(
+        "You must provide a 'num_electrons' parameter in the input.json file.\n"
+        "      See the Input section of the documentation for details.\n");
+  }
   num_electrons = data["num_electrons"];
 
   if (coordinate_system_idx == 2)
@@ -66,6 +86,12 @@ void Parameters::Setup(std::string file_name)
   }
   else
   {
+    if (data["dimensions"].size() == 0)
+    {
+      EndRun(
+          "You must provide a 'dimensions' parameter in the input.json file.\n"
+          "      See the Input section of the documentation for details.\n");
+    }
     num_dims          = data["dimensions"].size();
     dim_size          = std::make_unique< double[] >(num_dims);
     delta_x_min       = std::make_unique< double[] >(num_dims);
@@ -75,15 +101,66 @@ void Parameters::Setup(std::string file_name)
 
     for (PetscInt i = 0; i < num_dims; ++i)
     {
-      dim_size[i]          = data["dimensions"][i]["dim_size"];
-      delta_x_min[i]       = data["dimensions"][i]["delta_x_min"];
-      delta_x_min_end[i]   = data["dimensions"][i]["delta_x_min_end"];
-      delta_x_max[i]       = data["dimensions"][i]["delta_x_max"];
+      if (data["dimensions"][i]["dim_size"].size() == 0)
+      {
+        EndRun(
+            "You must provide a 'dimensions - dim_size' parameter in the "
+            "input.json file.\n"
+            "      See the Input section of the documentation for details.\n");
+      }
+      dim_size[i] = data["dimensions"][i]["dim_size"];
+      if (data["dimensions"][i]["delta_x_min"].size() == 0)
+      {
+        EndRun(
+            "You must provide a 'dimensions - delta_x_min' parameter in the "
+            "input.json file.\n"
+            "      See the Input section of the documentation for details.\n");
+      }
+      delta_x_min[i] = data["dimensions"][i]["delta_x_min"];
+      if (data["dimensions"][i]["delta_x_min_end"].size() == 0)
+      {
+        EndRun(
+            "You must provide a 'dimensions - delta_x_min_end' parameter in "
+            "the "
+            "input.json file.\n"
+            "      See the Input section of the documentation for details.\n");
+      }
+      delta_x_min_end[i] = data["dimensions"][i]["delta_x_min_end"];
+      if (data["dimensions"][i]["delta_x_max"].size() == 0)
+      {
+        EndRun(
+            "You must provide a 'dimensions - delta_x_max' parameter in the "
+            "input.json file.\n"
+            "      See the Input section of the documentation for details.\n");
+      }
+      delta_x_max[i] = data["dimensions"][i]["delta_x_max"];
+      if (data["dimensions"][i]["delta_x_max_start"].size() == 0)
+      {
+        EndRun(
+            "You must provide a 'dimensions - delta_x_max_start' parameter in "
+            "the input.json file.\n"
+            "      See the Input section of the documentation for details.\n");
+      }
       delta_x_max_start[i] = data["dimensions"][i]["delta_x_max_start"];
     }
 
+    if (data["gobbler"].size() == 0)
+    {
+      EndRun(
+          "You must provide a 'gobbler' parameter in "
+          "the input.json file.\n"
+          "      See the Input section of the documentation for details.\n");
+    }
     gobbler = data["gobbler"];
-    order   = data["order"];
+
+    if (data["order"].size() == 0)
+    {
+      EndRun(
+          "You must provide a 'order' parameter in "
+          "the input.json file.\n"
+          "      See the Input section of the documentation for details.\n");
+    }
+    order = data["order"];
   }
 
   /* get simulation behavior */
