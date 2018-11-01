@@ -69,6 +69,7 @@ class Parameters : protected Utils
   double* gaussian_length;
 
   void Setup(std::string file_name);
+  void CheckParameter(int size, std::string doc_string);
 
  public:
   std::unique_ptr< double[] > dim_size;     ///< size of nth dimension in a.u.
