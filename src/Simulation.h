@@ -33,6 +33,7 @@ class Simulation : protected Utils
   HDF5Wrapper *h5_file;
   ViewWrapper *viewer_file;
   Vec *psi;
+  Vec *psi_small;
   Vec psi_right;
   double *time;
   PetscInt time_length;
@@ -45,6 +46,8 @@ class Simulation : protected Utils
   PetscLogEvent create_matrix;
   PetscLogEvent create_observables;
   PetscLogEvent create_checkpoint;
+  PetscInt coordinate_system_idx;
+  PetscInt *num_x;
 
   /* destroys psi_old*/
   bool CheckConvergence(Vec &psi_1, Vec &psi_2, double tol);

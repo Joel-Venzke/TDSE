@@ -22,14 +22,16 @@ Simulation::Simulation(Hamiltonian &hamiltonian_in, Wavefunction &w,
                        ViewWrapper &v_file, Parameters &p)
 {
   if (world.rank() == 0) std::cout << "Creating Simulation\n";
-  hamiltonian  = &hamiltonian_in;
-  wavefunction = &w;
-  pulse        = &pulse_in;
-  h5_file      = &h_file;
-  viewer_file  = &v_file;
-  parameters   = &p;
-  time         = pulse_in.GetTime();
-  time_length  = pulse_in.GetMaxPulseLength();
+  hamiltonian           = &hamiltonian_in;
+  wavefunction          = &w;
+  pulse                 = &pulse_in;
+  h5_file               = &h_file;
+  viewer_file           = &v_file;
+  parameters            = &p;
+  time                  = pulse_in.GetTime();
+  time_length           = pulse_in.GetMaxPulseLength();
+  coordinate_system_idx = p.GetCoordinateSystemIdx();
+  num_x                 = w.GetNumX();
 
   /* allocated left and right */
   h = hamiltonian->GetTimeIndependent();
@@ -37,6 +39,10 @@ Simulation::Simulation(Hamiltonian &hamiltonian_in, Wavefunction &w,
                &left);
   MatDuplicate(left, MAT_DO_NOT_COPY_VALUES, &right);
   psi = wavefunction->GetPsi();
+  if (coordinate_system_idx == 3)
+  {
+    psi_small = wavefunction->GetPsiSmall();
+  }
   VecDuplicate(*psi, &psi_right);
 
   /* Create the solver */
@@ -301,7 +307,7 @@ void Simulation::EigenSolve(PetscInt num_states)
   v_states_file.Close();
   HDF5Wrapper h_states_file(parameters->GetTarget() + ".h5"); /* HDF5 viewer */
 
-  psi = wavefunction->GetPsi();
+  psi = wavefunction->GetPsiSmall();
 
   EPS eps; /* eigen solver */
   EPSCreate(PETSC_COMM_WORLD, &eps);
@@ -318,20 +324,29 @@ void Simulation::EigenSolve(PetscInt num_states)
   EPSSetProblemType(eps, EPS_NHEP);
   EPSSetTolerances(eps, tol, PETSC_DECIDE);
   EPSSetWhichEigenpairs(eps, EPS_SMALLEST_REAL);
-  EPSSetDimensions(eps, num_states, PETSC_DECIDE, PETSC_DECIDE);
+  if (coordinate_system_idx == 3 and num_x[2] > 100)
+  {
+    EPSSetDimensions(eps, num_states, PETSC_DECIDE, num_x[2] * 0.1);
+  }
+  else
+  {
+    EPSSetDimensions(eps, num_states, PETSC_DECIDE, PETSC_DECIDE);
+  }
   EPSSetFromOptions(eps);
   EPSSolve(eps);
   EPSGetConverged(eps, &nconv);
 
+  std::cout << "nconv: " << nconv << "\n";
   for (int j = 0; j < nconv; j++)
   {
     EPSGetEigenpair(eps, j, &eigen_real, NULL, *psi, NULL);
     if (world.rank() == 0)
       std::cout << "Eigen " << eigen_real << " " << eigen_imag << " " << j
                 << "\n";
-    wavefunction->Normalize();
-    CheckpointState(h_states_file, v_states_file, j, h);
+    // wavefunction->Normalize();
+    // CheckpointState(h_states_file, v_states_file, j, h);
   }
+  EndRun("");
   FromFile(num_states);
   EPSDestroy(&eps);
 }

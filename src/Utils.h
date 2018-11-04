@@ -1,4 +1,5 @@
 #pragma once
+#include <gsl/gsl_sf_coupling.h>
 #include <math.h>
 #include <slepc.h>
 #include <stdlib.h>
@@ -33,4 +34,5 @@ class Utils
 
   std::string FileToString(std::string file_name);
   json FileToJson(std::string file_name);
+  double ClebschGordanCoef(int l1, int l2, int l3, int m1, int m2, int m3);
 };

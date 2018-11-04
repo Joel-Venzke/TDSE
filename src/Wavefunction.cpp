@@ -68,24 +68,27 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
           EndRun("ECS (gobbler) starts inside delta_x_max_start");
         }
       }
-      for (int i = 0; i < num_x[dim_idx]; ++i)
+      if (not(coordinate_system_idx == 3 and dim_idx != 2))
       {
-        if (x_value[dim_idx][i] < -1.0 * dim_size[dim_idx] / 2.0 * ecs)
+        for (int i = 0; i < num_x[dim_idx]; ++i)
         {
-          gobbler_idx[dim_idx][0] = i;
-        }
-        if (coordinate_system_idx == 1 and dim_idx == 0)
-        {
-          if (x_value[dim_idx][i] < dim_size[dim_idx] * ecs)
+          if (x_value[dim_idx][i] < -1.0 * dim_size[dim_idx] / 2.0 * ecs)
           {
-            gobbler_idx[dim_idx][1] = i;
+            gobbler_idx[dim_idx][0] = i;
           }
-        }
-        else
-        {
-          if (x_value[dim_idx][i] < dim_size[dim_idx] / 2.0 * ecs)
+          if (coordinate_system_idx == 1 and dim_idx == 0)
           {
-            gobbler_idx[dim_idx][1] = i;
+            if (x_value[dim_idx][i] < dim_size[dim_idx] * ecs)
+            {
+              gobbler_idx[dim_idx][1] = i;
+            }
+          }
+          else
+          {
+            if (x_value[dim_idx][i] < dim_size[dim_idx] / 2.0 * ecs)
+            {
+              gobbler_idx[dim_idx][1] = i;
+            }
           }
         }
       }
@@ -120,8 +123,6 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
 
   /* delete psi_1 and psi_2 */
   CleanUp();
-
-  if (world.rank() == 0) std::cout << "Wavefunction created\n";
 }
 
 void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
@@ -145,7 +146,6 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   const char* tmp;
   std::string name;
   std::string group_name = "/Wavefunction/";
-
   /* only write out at start */
   if (first_pass)
   {
@@ -573,6 +573,136 @@ void Wavefunction::CreateGrid()
     }
     delete nodes_z;
   }
+  else if (coordinate_system_idx == 3) /* spherical code*/
+  {
+    double slope;
+    double x_total;
+    double max_x;
+    double amplitude;
+    double w;
+    double s1;
+    PetscInt count;
+    PetscInt dim_idx;
+
+    /* initialize for loop */
+    num_psi_build = 1.0;
+
+    /* build grid */
+    /***************************/
+    /***************************/
+    /* m values                */
+    /***************************/
+    /***************************/
+    dim_idx = 0;
+
+    /* m goes from -m_max to m_max giving 2*m_max+1 terms */
+    num_x[dim_idx] = 2 * dim_size[dim_idx] + 1;
+
+    /* allocate grid */
+    x_value[dim_idx] = new double[num_x[dim_idx]];
+
+    /* size of 1d array for psi */
+    num_psi_build *= num_x[dim_idx];
+
+    x_value[dim_idx][0] = 0;
+    for (int x_idx = 0; x_idx < num_x[dim_idx]; ++x_idx)
+    {
+      x_value[dim_idx][x_idx] = x_idx - dim_size[dim_idx];
+    }
+
+    /***************************/
+    /***************************/
+    /* l values                */
+    /***************************/
+    /***************************/
+    dim_idx = 1;
+
+    /* l goes from 0 to l_max giving l_max+1 terms */
+    num_x[dim_idx] = dim_size[dim_idx] + 1;
+
+    /* allocate grid */
+    x_value[dim_idx] = new double[num_x[dim_idx]];
+
+    /* size of 1d array for psi */
+    num_psi_build *= num_x[dim_idx];
+
+    x_value[dim_idx][0] = 0;
+    for (int x_idx = 0; x_idx < num_x[dim_idx]; ++x_idx)
+    {
+      x_value[dim_idx][x_idx] = x_idx;
+    }
+
+    /***************************/
+    /***************************/
+    /* handle radial direction */
+    /***************************/
+    /***************************/
+    dim_idx = 2;
+
+    /* get change in dx */
+    amplitude = delta_x_max[dim_idx] - delta_x_min[dim_idx];
+    w = pi / (2.0 * (delta_x_max_start[dim_idx] - delta_x_min_end[dim_idx]));
+
+    /* start at dx */
+    x_total = delta_x_min[dim_idx];
+    count   = 0;
+    max_x   = dim_size[dim_idx];
+
+    while (x_total < max_x)
+    {
+      if (x_total < delta_x_min_end[dim_idx])
+      {
+        x_total += delta_x_min[dim_idx];
+      }
+      else if (x_total < delta_x_max_start[dim_idx])
+      {
+        s1 = std::sin(w * (x_total - delta_x_min_end[dim_idx]));
+        x_total += amplitude * s1 * s1 + delta_x_min[dim_idx];
+      }
+      else
+      {
+        x_total += delta_x_max[dim_idx];
+      }
+      count++;
+    }
+    num_x[dim_idx] = count;
+
+    if (num_x[dim_idx] % 2 != 0)
+    {
+      num_x[dim_idx]++;
+    }
+
+    /* allocate grid */
+    x_value[dim_idx] = new double[num_x[dim_idx]];
+
+    /* size of 1d array for psi */
+    num_psi_build *= num_x[dim_idx];
+
+    slope = (delta_x_max[dim_idx] - delta_x_min[dim_idx]) /
+            (delta_x_max_start[dim_idx] - delta_x_min_end[dim_idx]);
+
+    x_value[dim_idx][0] = delta_x_min[dim_idx];
+    for (int x_idx = 1; x_idx < num_x[dim_idx]; ++x_idx)
+    {
+      if (x_value[dim_idx][x_idx - 1] < delta_x_min_end[dim_idx])
+      {
+        x_value[dim_idx][x_idx] =
+            x_value[dim_idx][x_idx - 1] + delta_x_min[dim_idx];
+      }
+      else if (x_value[dim_idx][x_idx - 1] < delta_x_max_start[dim_idx])
+      {
+        s1                      = std::sin(w *
+                      (x_value[dim_idx][x_idx - 1] - delta_x_min_end[dim_idx]));
+        x_value[dim_idx][x_idx] = x_value[dim_idx][x_idx - 1] +
+                                  amplitude * s1 * s1 + delta_x_min[dim_idx];
+      }
+      else
+      {
+        x_value[dim_idx][x_idx] =
+            x_value[dim_idx][x_idx - 1] + delta_x_max[dim_idx];
+      }
+    }
+  }
   else
   {
     PetscInt center;  /* idx of the 0.0 in the grid */
@@ -785,6 +915,14 @@ void Wavefunction::CreatePsi()
     VecSetFromOptions(psi);
     ierr = PetscObjectSetName((PetscObject)psi, "psi");
 
+    if (coordinate_system_idx == 3)
+    {
+      VecCreate(PETSC_COMM_WORLD, &psi_small);
+      VecSetSizes(psi_small, PETSC_DECIDE, num_x[2]);
+      VecSetFromOptions(psi_small);
+      ierr = PetscObjectSetName((PetscObject)psi_small, "psi");
+    }
+
     VecCreate(PETSC_COMM_WORLD, &psi_tmp);
     VecSetSizes(psi_tmp, PETSC_DECIDE, num_psi);
     VecSetFromOptions(psi_tmp);
@@ -859,6 +997,18 @@ void Wavefunction::CreatePsi()
   }
   VecAssemblyBegin(psi);
   VecAssemblyEnd(psi);
+
+  if (coordinate_system_idx == 3)
+  {
+    VecGetOwnershipRange(psi_small, &low, &high);
+    for (PetscInt idx = low; idx < high; idx++)
+    {
+      val = psi_build[0][2][idx];
+      VecSetValues(psi_small, 1, &idx, &val, INSERT_VALUES);
+    }
+    VecAssemblyBegin(psi_small);
+    VecAssemblyEnd(psi_small);
+  }
 
   CreateObservables();
 
@@ -1298,6 +1448,8 @@ PetscInt Wavefunction::GetNumPsiBuild() { return num_psi_build; }
 
 Vec* Wavefunction::GetPsi() { return &psi; }
 
+Vec* Wavefunction::GetPsiSmall() { return &psi_small; }
+
 double** Wavefunction::GetXValue() { return x_value; }
 
 PetscInt** Wavefunction::GetGobblerIdx() { return gobbler_idx; }
@@ -1322,4 +1474,8 @@ Wavefunction::~Wavefunction()
   CleanUp();
   VecDestroy(&psi);
   VecDestroy(&psi_tmp);
+  if (coordinate_system_idx == 3)
+  {
+    VecDestroy(&psi_small);
+  }
 }

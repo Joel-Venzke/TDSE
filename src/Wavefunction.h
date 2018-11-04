@@ -25,6 +25,7 @@ class Wavefunction : protected Utils
   double **x_value;       /* location of grid point in each dimension */
   dcomp ***psi_build;     /* used for allocating new wave functions */
   Vec psi;                /* wavefunction for 2 electron system */
+  Vec psi_small;          /* wavefunction for spherical eigen states */
   Vec psi_tmp;            /* wavefunction for 2 electron system */
   Vec psi_proj;           /* wavefunction for 2 electron system */
   Vec psi_tmp_cyl;        /* wavefunction for 2 electron system */
@@ -107,6 +108,7 @@ class Wavefunction : protected Utils
   PetscInt GetNumPsi();
   PetscInt GetNumPsiBuild();
   Vec *GetPsi();
+  Vec *GetPsiSmall();
   double **GetXValue();
   PetscInt **GetGobblerIdx();
   PetscInt GetWriteCounterCheckpoint();

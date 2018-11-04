@@ -36,6 +36,10 @@ void Parameters::Setup(std::string file_name)
   {
     coordinate_system_idx = 2;
   }
+  else if (coordinate_system == "Spherical")
+  {
+    coordinate_system_idx = 3;
+  }
   else
   {
     coordinate_system_idx = -1;
@@ -67,6 +71,71 @@ void Parameters::Setup(std::string file_name)
 
     gobbler = 0.0;
     order   = 0;
+  }
+  else if (coordinate_system_idx == 3)
+  {
+    CheckParameter(data["dimensions"].size(), "dimensions");
+    if (data["dimensions"].size() != 1)
+    {
+      EndRun(
+          "The Spherical code take 1 dimension parameter with 'l_max' and "
+          "'m_max' as additional parameter");
+    }
+    num_dims          = 3;
+    dim_size          = std::make_unique< double[] >(num_dims);
+    delta_x_min       = std::make_unique< double[] >(num_dims);
+    delta_x_min_end   = std::make_unique< double[] >(num_dims);
+    delta_x_max       = std::make_unique< double[] >(num_dims);
+    delta_x_max_start = std::make_unique< double[] >(num_dims);
+
+    /* The fist dimension is r and we use Finite difference for this*/
+    int dim_input_idx = 0;
+    int dim_idx       = 2;
+    CheckParameter(data["dimensions"][dim_input_idx]["dim_size"].size(),
+                   "dimensions - dim_size");
+    dim_size[dim_idx] = data["dimensions"][dim_input_idx]["dim_size"];
+
+    CheckParameter(data["dimensions"][dim_input_idx]["delta_x_min"].size(),
+                   "dimensions - delta_x_min");
+    delta_x_min[dim_idx] = data["dimensions"][dim_input_idx]["delta_x_min"];
+
+    CheckParameter(data["dimensions"][dim_input_idx]["delta_x_min_end"].size(),
+                   "dimensions - delta_x_min_end");
+    delta_x_min_end[dim_idx] =
+        data["dimensions"][dim_input_idx]["delta_x_min_end"];
+
+    CheckParameter(data["dimensions"][dim_input_idx]["delta_x_max"].size(),
+                   "dimensions - delta_x_max");
+    delta_x_max[dim_idx] = data["dimensions"][dim_input_idx]["delta_x_max"];
+
+    CheckParameter(
+        data["dimensions"][dim_input_idx]["delta_x_max_start"].size(),
+        "dimensions - delta_x_max_start");
+    delta_x_max_start[dim_idx] =
+        data["dimensions"][dim_input_idx]["delta_x_max_start"];
+
+    /* The next two dimensions are expanded in spherical harmonics with indexes
+     * l and m */
+    for (dim_idx = 0; dim_idx < 2; ++dim_idx)
+    {
+      delta_x_min[dim_idx]     = 1.0;
+      delta_x_min_end[dim_idx] = 0.0;
+      delta_x_max[dim_idx]     = 1.0;
+    }
+
+    /* get l_max */
+    CheckParameter(data["dimensions"][0]["l_max"].size(), "dimensions - l_max");
+    dim_size[1] = data["dimensions"][0]["l_max"];
+
+    /* get m_max note m goes from -m to m so 2m+1 terms*/
+    CheckParameter(data["dimensions"][0]["m_max"].size(), "dimensions - m_max");
+    dim_size[0] = data["dimensions"][0]["m_max"];
+
+    CheckParameter(data["gobbler"].size(), "gobbler");
+    gobbler = data["gobbler"];
+
+    CheckParameter(data["order"].size(), "order");
+    order = data["order"];
   }
   else
   {
@@ -815,6 +884,62 @@ void Parameters::Validate()
   {
     error_found = true;
     err_str += "\nRBF only supports 1 electron\n";
+  }
+  if (coordinate_system_idx == 3) /* Spherical code */
+  {
+    if (num_electrons != 1)
+    {
+      error_found = true;
+      err_str += "\nSpherical only supports 1 electron currently\n";
+    }
+    if (propagate != 0)
+    {
+      error_found = true;
+      err_str += "\nSpherical does not have time propagation\n";
+    }
+    if (dim_size[0] != 0)
+    {
+      error_found = true;
+      err_str += "\nSpherical only supports m=0 currently\n";
+    }
+    if (gauge_idx != 1)
+    {
+      error_found = true;
+      err_str += "\nSpherical only supports \"Length\" gauge currently\n";
+    }
+    for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; pulse_idx++)
+    {
+      if (polarization_vector[pulse_idx][0] > 1e-14 or
+          polarization_vector[pulse_idx][1] > 1e-14)
+      {
+        error_found = true;
+        err_str +=
+            "\nSpherical coordinate systems only supports polarization "
+            "vectors\npointing in the z direction (i.e. "
+            "[0.0,0.0,1.0])\nPulse " +
+            std::to_string(pulse_idx) + " does not meet this requirement\n";
+      }
+      if (ellipticity[pulse_idx] > 1e-14)
+      {
+        error_found = true;
+        err_str +=
+            "\nSpherical coordinate systems only supports linear polarized "
+            "light\nPulse " +
+            std::to_string(pulse_idx) + " has a non zero ellipticity\n";
+      }
+    }
+    for (PetscInt nuclei_idx = 0; nuclei_idx < num_nuclei; ++nuclei_idx)
+    {
+      if (location[nuclei_idx][0] > 1e-14 or location[nuclei_idx][1] > 1e-14 or
+          location[nuclei_idx][2] > 1e-14)
+      {
+        error_found = true;
+        err_str +=
+            "\nCylindrical coordinate systems only supports nuclei on the z "
+            "axis (i.e. [0.0, 0.0, 0.0])\nNuclei " +
+            std::to_string(nuclei_idx) + " has a non zero radial coordinate\n";
+      }
+    }
   }
   if (coordinate_system_idx == 1)
   {

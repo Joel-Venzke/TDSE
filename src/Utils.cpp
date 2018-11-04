@@ -34,3 +34,33 @@ json Utils::FileToJson(std::string file_name)
   auto j = json::parse(FileToString(file_name));
   return j;
 }
+
+/**
+ * @brief Calculates Clebsch-Gordan Coefficients
+ * @details Calculates Clebsch-Gordan Coefficients in the form
+ * <l1,m1,l2,m2|l3,m3>. Note for dipole we get non zero values for
+ * <l,m,1,0|(l+-1),m>
+ *
+ * @param l1 value in <l1,m1,l2,m2|l3,m3>
+ * @param l2 value in <l1,m1,l2,m2|l3,m3>
+ * @param l3 value in <l1,m1,l2,m2|l3,m3>
+ * @param m1 value in <l1,m1,l2,m2|l3,m3>
+ * @param m2 value in <l1,m1,l2,m2|l3,m3>
+ * @param m3 value in <l1,m1,l2,m2|l3,m3>
+ */
+double Utils::ClebschGordanCoef(int l1, int l2, int l3, int m1, int m2, int m3)
+{
+  int neg_power = l1 - l2 + m3;
+
+  /* include */
+  if (neg_power % 2 == 0)
+  {
+    return sqrt(2 * l3 + 1) *
+           gsl_sf_coupling_3j(2 * l1, 2 * l2, 2 * l3, 2 * m1, 2 * m2, -2 * m3);
+  }
+  else
+  {
+    return -1.0 * sqrt(2 * l3 + 1) *
+           gsl_sf_coupling_3j(2 * l1, 2 * l2, 2 * l3, 2 * m1, 2 * m2, -2 * m3);
+  }
+}

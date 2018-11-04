@@ -68,7 +68,7 @@ class Hamiltonian : protected Utils
 
   void CreateHamlitonian();
   void GenerateHamlitonian();
-  void CalculateHamlitonian0();
+  void CalculateHamlitonian0(PetscInt l_val = 0);
   void CalculateHamlitonian0ECS();
   void CalculateHamlitonianLaser();
   void SetUpCoefficients();
@@ -81,7 +81,8 @@ class Hamiltonian : protected Utils
   Mat *GetTotalHamiltonian(PetscInt time_idx, bool ecs = true);
   Mat *GetTimeIndependent(bool ecs = true);
 
-  dcomp GetVal(PetscInt idx_i, PetscInt idx_j, bool &insert_val, bool ecs);
+  dcomp GetVal(PetscInt idx_i, PetscInt idx_j, bool &insert_val, bool ecs,
+               PetscInt l_val = 0);
   dcomp GetValLaser(PetscInt idx_i, PetscInt idx_j, bool &insert_val,
                     PetscInt only_dim_idx);
   void FDWeights(std::vector< dcomp > &x_vals, PetscInt max_derivative,
@@ -101,6 +102,7 @@ class Hamiltonian : protected Utils
   dcomp GetNucleiTerm(std::vector< PetscInt > &idx_array);
   dcomp GetNucleiTerm(PetscInt idx);
   dcomp GetElectronElectronTerm(std::vector< PetscInt > &idx_array);
+  dcomp GetCentrifugalTerm(std::vector< PetscInt > &idx_array);
   PetscInt GetOffset(PetscInt elec_idx, PetscInt dim_idx);
   double SoftCoreDistance(double *location, PetscInt idx);
   double SoftCoreDistance(double *location, std::vector< PetscInt > &idx_array,
