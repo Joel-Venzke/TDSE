@@ -18,6 +18,7 @@ class Hamiltonian : protected Utils
   double *z;           /* atomic number of each nuclei */
   double **location;   /* location of each nuclei */
   PetscInt gauge_idx;  ///< index of gauge (0 velocity, 1 length)
+  PetscInt current_l_val;
 
   /* SAE stuff */
   double **exponential_r_0;         ///< exponential radial center
@@ -79,7 +80,7 @@ class Hamiltonian : protected Utils
               Parameters &p);
 
   Mat *GetTotalHamiltonian(PetscInt time_idx, bool ecs = true);
-  Mat *GetTimeIndependent(bool ecs = true);
+  Mat *GetTimeIndependent(bool ecs = true, PetscInt l_val = 0);
 
   dcomp GetVal(PetscInt idx_i, PetscInt idx_j, bool &insert_val, bool ecs,
                PetscInt l_val = 0);

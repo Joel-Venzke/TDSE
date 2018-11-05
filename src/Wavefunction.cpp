@@ -671,6 +671,12 @@ void Wavefunction::CreateGrid()
     {
       num_x[dim_idx]++;
     }
+    if (num_x[dim_idx] < 2 * order + 1)
+    {
+      EndRun(
+          "Not enough gird points to support this order of Finite Difference. "
+          "Please increase grid size.");
+    }
 
     /* allocate grid */
     x_value[dim_idx] = new double[num_x[dim_idx]];

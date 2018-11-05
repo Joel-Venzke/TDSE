@@ -297,7 +297,6 @@ void Simulation::EigenSolve(PetscInt num_states)
               << std::flush;
   double tol = parameters->GetTol();
   dcomp eigen_real;
-  dcomp eigen_imag;
   int nconv;
 
   /* Files for */
@@ -312,40 +311,94 @@ void Simulation::EigenSolve(PetscInt num_states)
   EPS eps; /* eigen solver */
   EPSCreate(PETSC_COMM_WORLD, &eps);
 
-  if (parameters->GetFieldMaxStates())
+  if (coordinate_system_idx == 3)
   {
-    h = hamiltonian->GetTotalHamiltonian(pulse->GetFieldMaxIdx(), false);
+    for (int l_val = 0; l_val < num_x[1]; ++l_val)
+    {
+      /* make sure we still have states to calculate */
+      /* for every increase in l, there is one less state in n */
+      if (num_states > l_val)
+      {
+        if (parameters->GetFieldMaxStates())
+        {
+          EndRun("Field max states not supported in spherical coordinates");
+        }
+        else
+        {
+          h = hamiltonian->GetTimeIndependent(false, l_val);
+        }
+        EPSSetOperators(eps, *(h), NULL);
+        EPSSetProblemType(eps, EPS_NHEP);
+        EPSSetTolerances(eps, tol, PETSC_DECIDE);
+        EPSSetWhichEigenpairs(eps, EPS_SMALLEST_REAL);
+        if (coordinate_system_idx == 3 and num_x[2] > 500)
+        {
+          EPSSetDimensions(eps, num_states - l_val, PETSC_DECIDE,
+                           num_x[2] * 0.1);
+        }
+        else
+        {
+          EPSSetDimensions(eps, num_states - l_val, PETSC_DECIDE,
+                           num_x[2] * 0.5);
+        }
+        EPSSetFromOptions(eps);
+        EPSSolve(eps);
+        EPSGetConverged(eps, &nconv);
+        if (world.rank() == 0)
+        {
+          std::cout << "\n";
+        }
+        for (int j = 0; j < nconv; j++)
+        {
+          EPSGetEigenpair(eps, j, &eigen_real, NULL, *psi, NULL);
+          if (world.rank() == 0 and j < num_states - l_val)
+          {
+            std::cout << "Eigen (n,l):  " << j + 1 + l_val << "," << l_val
+                      << "\t" << eigen_real.real() << "\t" << eigen_real.imag()
+                      << "\t"
+                      << std::abs((eigen_real +
+                                   0.5 / ((j + 1 + l_val) * (j + 1 + l_val))) /
+                                  (0.5 / ((j + 1 + l_val) * (j + 1 + l_val))))
+                      << "\t"
+                      << std::abs(eigen_real +
+                                  0.5 / ((j + 1 + l_val) * (j + 1 + l_val)))
+                      << "\n";
+          }
+          // wavefunction->Normalize();
+          // CheckpointState(h_states_file, v_states_file, j, h);
+        }
+      }
+    }
   }
   else
   {
-    h = hamiltonian->GetTimeIndependent(false);
-  }
-  EPSSetOperators(eps, *(h), NULL);
-  EPSSetProblemType(eps, EPS_NHEP);
-  EPSSetTolerances(eps, tol, PETSC_DECIDE);
-  EPSSetWhichEigenpairs(eps, EPS_SMALLEST_REAL);
-  if (coordinate_system_idx == 3 and num_x[2] > 100)
-  {
-    EPSSetDimensions(eps, num_states, PETSC_DECIDE, num_x[2] * 0.1);
-  }
-  else
-  {
+    if (parameters->GetFieldMaxStates())
+    {
+      h = hamiltonian->GetTotalHamiltonian(pulse->GetFieldMaxIdx(), false);
+    }
+    else
+    {
+      h = hamiltonian->GetTimeIndependent(false);
+    }
+    EPSSetOperators(eps, *(h), NULL);
+    EPSSetProblemType(eps, EPS_NHEP);
+    EPSSetTolerances(eps, tol, PETSC_DECIDE);
+    EPSSetWhichEigenpairs(eps, EPS_SMALLEST_REAL);
     EPSSetDimensions(eps, num_states, PETSC_DECIDE, PETSC_DECIDE);
-  }
-  EPSSetFromOptions(eps);
-  EPSSolve(eps);
-  EPSGetConverged(eps, &nconv);
+    EPSSetFromOptions(eps);
+    EPSSolve(eps);
+    EPSGetConverged(eps, &nconv);
 
-  std::cout << "nconv: " << nconv << "\n";
-  for (int j = 0; j < nconv; j++)
-  {
-    EPSGetEigenpair(eps, j, &eigen_real, NULL, *psi, NULL);
-    if (world.rank() == 0)
-      std::cout << "Eigen " << eigen_real << " " << eigen_imag << " " << j
-                << "\n";
-    // wavefunction->Normalize();
-    // CheckpointState(h_states_file, v_states_file, j, h);
+    for (int j = 0; j < nconv; j++)
+    {
+      EPSGetEigenpair(eps, j, &eigen_real, NULL, *psi, NULL);
+      if (world.rank() == 0)
+        std::cout << "Eigen: " << j << "\t" << eigen_real << "\n";
+      // wavefunction->Normalize();
+      // CheckpointState(h_states_file, v_states_file, j, h);
+    }
   }
+  world.barrier();
   EndRun("");
   FromFile(num_states);
   EPSDestroy(&eps);
