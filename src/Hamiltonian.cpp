@@ -302,8 +302,6 @@ void Hamiltonian::CalculateHamlitonian0(PetscInt l_val)
             {
               j_val = i_val - offset;
               val   = GetVal(i_val, j_val, insert_val, ecs, l_val);
-              std::cout << "data: " << offset << " " << val << " "
-                        << " " << i_val << " " << j_val << "\n";
               if (insert_val)
               {
                 MatSetValues(hamiltonian_0, 1, &i_val, 1, &j_val, &val,
@@ -977,6 +975,7 @@ void Hamiltonian::SetUpCoefficients()
         radial_bc_coef[discontinuity_idx][1][order] = 0.0;
         radial_bc_coef[discontinuity_idx][2][order] = 0.0;
       }
+      std::cout << discontinuity_idx << " " << order - 1 << "\n";
       for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
       {
         if (world.rank() == 0)
@@ -1056,8 +1055,7 @@ dcomp Hamiltonian::GetVal(PetscInt idx_i, PetscInt idx_j, bool& insert_val,
     {
       return GetOffDiagonal(idx_array, diff_array, ecs);
     }
-    else if (coordinate_system_idx == 3 and
-             diff_array[2 * (2 + 0 * num_dims)] > 0)
+    else if (coordinate_system_idx == 3)
     {
       /* TODO update for more than one electron Probably a for loop */
 
@@ -1938,11 +1936,11 @@ std::vector< PetscInt > Hamiltonian::GetIndexArray(PetscInt idx_i,
 std::vector< PetscInt > Hamiltonian::GetDiffArray(
     std::vector< PetscInt >& idx_array)
 {
-  std::vector< PetscInt > diff_array(num_dims * num_electrons);
+  std::vector< PetscInt > diff_array;
   /* Calculated difference between i and j indexes */
   for (PetscInt i = 0; i < num_dims * num_electrons; ++i)
   {
-    diff_array[i] = idx_array[2 * i + 1] - idx_array[2 * i];
+    diff_array.push_back(idx_array[2 * i + 1] - idx_array[2 * i]);
   }
   return diff_array;
 }
