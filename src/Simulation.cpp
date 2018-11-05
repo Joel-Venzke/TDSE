@@ -351,21 +351,14 @@ void Simulation::EigenSolve(PetscInt num_states)
         for (int j = 0; j < nconv; j++)
         {
           EPSGetEigenpair(eps, j, &eigen_real, NULL, *psi, NULL);
-          if (world.rank() == 0 and j < num_states - l_val)
+          if (world.rank() == 0)
           {
             std::cout << "Eigen (n,l):  " << j + 1 + l_val << "," << l_val
                       << "\t" << eigen_real.real() << "\t" << eigen_real.imag()
-                      << "\t"
-                      << std::abs((eigen_real +
-                                   0.5 / ((j + 1 + l_val) * (j + 1 + l_val))) /
-                                  (0.5 / ((j + 1 + l_val) * (j + 1 + l_val))))
-                      << "\t"
-                      << std::abs(eigen_real +
-                                  0.5 / ((j + 1 + l_val) * (j + 1 + l_val)))
                       << "\n";
           }
-          // wavefunction->Normalize();
-          // CheckpointState(h_states_file, v_states_file, j, h);
+          CheckpointSmallState(h_states_file, v_states_file, j, eigen_real,
+                               l_val);
         }
       }
     }
@@ -698,6 +691,26 @@ void Simulation::ModifiedGramSchmidt(std::vector< Vec > &states)
  * @param h_file HDF5Wapper file
  * @param v_file ViewWapper file
  * @param write_idx Index of the eigen state
+ * @param energy the Energy of the state
+ * @param l_val the l_value of the state
+ */
+void Simulation::CheckpointSmallState(HDF5Wrapper &h_file, ViewWrapper &v_file,
+                                      PetscInt write_idx, dcomp energy,
+                                      PetscInt l_val)
+{
+  wavefunction->CheckpointPsiSmall(v_file, write_idx, l_val);
+  h_file.WriteObject(&energy, 1, "/Energy_l_" + std::to_string(l_val),
+                     "Energy of the corresponding state", write_idx);
+}
+
+/**
+ * @brief Writes psi to a eigen state file
+ * @details Used to save eigen states to a file
+ *
+ * @param h_file HDF5Wapper file
+ * @param v_file ViewWapper file
+ * @param write_idx Index of the eigen state
+ * @param cur_hamiltonian The Hamiltonian used to get the energy
  */
 void Simulation::CheckpointState(HDF5Wrapper &h_file, ViewWrapper &v_file,
                                  PetscInt write_idx, Mat *cur_hamiltonian)

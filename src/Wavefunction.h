@@ -85,6 +85,8 @@ class Wavefunction : protected Utils
   void Checkpoint(HDF5Wrapper &data_file, ViewWrapper &view_file, double time,
                   PetscInt checkpoint_psi = 0);
   void CheckpointPsi(ViewWrapper &view_file, PetscInt write_idx);
+  void CheckpointPsiSmall(ViewWrapper &view_file, PetscInt write_idx,
+                          PetscInt l_val);
 
   /* tools */
   void Normalize();

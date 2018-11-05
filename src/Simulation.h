@@ -68,4 +68,6 @@ class Simulation : protected Utils
 
   void CheckpointState(HDF5Wrapper &h_file, ViewWrapper &v_file,
                        PetscInt write_idx, Mat *cur_hamiltonian);
+  void CheckpointSmallState(HDF5Wrapper &h_file, ViewWrapper &v_file,
+                            PetscInt write_idx, dcomp energy, PetscInt l_val);
 };

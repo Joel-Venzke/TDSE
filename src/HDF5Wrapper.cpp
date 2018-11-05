@@ -1064,6 +1064,13 @@ template void HDF5Wrapper::WriteObject< double >(double data,
                                                  H5std_string var_path,
                                                  H5std_string attribute,
                                                  int write_idx);
+template void HDF5Wrapper::WriteObject< dcomp >(dcomp data,
+                                                H5std_string var_path,
+                                                int write_idx);
+template void HDF5Wrapper::WriteObject< dcomp >(dcomp data,
+                                                H5std_string var_path,
+                                                H5std_string attribute,
+                                                int write_idx);
 template void HDF5Wrapper::WriteObject< int * >(int *, int, std::string,
                                                 std::string);
 template void HDF5Wrapper::WriteObject< double * >(double *, int, std::string,

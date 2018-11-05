@@ -158,7 +158,7 @@ void Hamiltonian::CreateHamlitonian()
     }
   }
   GenerateHamlitonian();
-  MatView(hamiltonian_0, PETSC_VIEWER_STDOUT_WORLD);
+  // MatView(hamiltonian_0, PETSC_VIEWER_STDOUT_WORLD);
   // MatView(hamiltonian_0_ecs, PETSC_VIEWER_STDOUT_WORLD);
   // MatView(hamiltonian_laser[0], PETSC_VIEWER_STDOUT_WORLD);
   // MatView(hamiltonian_laser[1], PETSC_VIEWER_STDOUT_WORLD);
@@ -951,10 +951,7 @@ void Hamiltonian::SetUpCoefficients()
     for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
     {
       x_vals_bc[coef_idx] = delta_x_min[2] * (coef_idx);
-
-      if (world.rank() == 0) std::cout << x_vals_bc[coef_idx] << " ";
     }
-    if (world.rank() == 0) std::cout << "\n";
 
     /* We don't need forward and backward difference thus order-1 terms */
     for (int discontinuity_idx = 0; discontinuity_idx < order - 1;
@@ -975,13 +972,6 @@ void Hamiltonian::SetUpCoefficients()
         radial_bc_coef[discontinuity_idx][1][order] = 0.0;
         radial_bc_coef[discontinuity_idx][2][order] = 0.0;
       }
-      std::cout << discontinuity_idx << " " << order - 1 << "\n";
-      for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
-      {
-        if (world.rank() == 0)
-          std::cout << radial_bc_coef[discontinuity_idx][2][coef_idx] << " ";
-      }
-      if (world.rank() == 0) std::cout << "\n";
     }
   }
 }
@@ -1491,8 +1481,19 @@ dcomp Hamiltonian::GetKineticTerm(std::vector< PetscInt >& idx_array, bool ecs)
                             (num_x[dim_idx] - 1 -
                              idx_array[2 * (elec_idx * num_dims + dim_idx)]);
 
-        kinetic -=
-            radial_bc_coef[discontinuity_idx][2][discontinuity_idx + 1] / 2.0;
+        /* For ecs you need to divide by 1/exp(-i*eta*2) to account for the
+         * 1/dx^2 in the Finite difference formula */
+        if (ecs)
+        {
+          kinetic -=
+              radial_bc_coef[discontinuity_idx][2][discontinuity_idx + 1] /
+              (2.0 * std::exp(imag * 2.0 * eta));
+        }
+        else
+        {
+          kinetic -=
+              radial_bc_coef[discontinuity_idx][2][discontinuity_idx + 1] / 2.0;
+        }
       }
       /* right ECS */
       else if (idx_array[2 * (elec_idx * num_dims + dim_idx)] >=
@@ -1527,15 +1528,6 @@ dcomp Hamiltonian::GetKineticTerm(std::vector< PetscInt >& idx_array, bool ecs)
                 radial_bc_coef[discontinuity_idx][2][discontinuity_idx] / 2.0;
             kinetic -= radial_bc_coef[discontinuity_idx][1][discontinuity_idx] /
                        (2.0 * x_value[dim_idx][discontinuity_idx]);
-            // std::cout << discontinuity_idx << " "
-            //           << " "
-            //           <<
-            //           radial_bc_coef[discontinuity_idx][1][discontinuity_idx]
-            //           << " "
-            //           <<
-            //           radial_bc_coef[discontinuity_idx][2][discontinuity_idx]
-            //           << " " << x_value[dim_idx][discontinuity_idx] << " "
-            //           << x_value[dim_idx + 1][discontinuity_idx] << "\n";
           }
           /* right ECS */
           else if (idx_array[2 * (elec_idx * num_dims + dim_idx)] >=

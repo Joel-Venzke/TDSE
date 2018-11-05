@@ -527,6 +527,30 @@ void Wavefunction::CheckpointPsi(ViewWrapper& viewer_file, PetscInt write_idx)
   viewer_file.Close();
 }
 
+void Wavefunction::CheckpointPsiSmall(ViewWrapper& viewer_file,
+                                      PetscInt write_idx, PetscInt l_val)
+{
+  /* create group name */
+  std::string group_name = "/psi_l_" + std::to_string(l_val) + "/";
+  if (world.rank() == 0)
+    std::cout << "Checkpointing Wavefunction in " << viewer_file.file_name
+              << ": "
+              << " " << write_idx << "\n";
+
+  /* open file */
+  viewer_file.Open("a");
+  /* push group */
+  viewer_file.PushGroup(group_name);
+  /* set time step */
+  viewer_file.SetTime(write_idx);
+  /* write vector */
+  viewer_file.WriteObject((PetscObject)psi_small);
+  /* pop group */
+  viewer_file.PopGroup();
+  /* close file */
+  viewer_file.Close();
+}
+
 void Wavefunction::CreateGrid()
 {
   /* allocation */
