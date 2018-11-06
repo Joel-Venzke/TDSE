@@ -74,6 +74,8 @@ class Wavefunction : protected Utils
                    PetscInt write_frequency_checkpoint,
                    PetscInt write_frequency_observables);
 
+  void InsertRadialPsi(Vec &psi_radial, Vec &psi_total, PetscInt l_val);
+
  public:
   /* Constructor */
   Wavefunction(HDF5Wrapper &h5_file, ViewWrapper &view_file, Parameters &p);
@@ -104,6 +106,10 @@ class Wavefunction : protected Utils
   void LoadPsi(std::string file_name, PetscInt num_states,
                PetscInt num_start_state, PetscInt *start_state_idx,
                double *start_state_amplitude, double *start_state_phase);
+  void LoadPsi(std::string file_name, PetscInt num_states,
+               PetscInt num_start_state, PetscInt *start_state_idx,
+               PetscInt *start_state_l_idx, double *start_state_amplitude,
+               double *start_state_phase);
   void ResetPsi();
 
   PetscInt *GetNumX();

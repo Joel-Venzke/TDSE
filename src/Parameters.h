@@ -47,6 +47,7 @@ class Parameters : protected Utils
   PetscInt num_states;  ///< number of ground states
   PetscInt num_start_state;       ///< number of states in super position
   PetscInt* start_state_idx;      ///< index of states in super position
+  PetscInt* start_state_l_idx;    ///< index of states in super position
   double* start_state_amplitude;  ///< amplitude of states in super position
   double* start_state_phase;      ///< phase of states in super position
   double tol;                     ///< tolerance in error
@@ -152,6 +153,7 @@ class Parameters : protected Utils
   PetscInt GetNumStates();
   PetscInt GetNumStartState();
   PetscInt* GetStartStateIdx();
+  PetscInt* GetStartStateLIdx();
   double* GetStartStateAmplitude();
   double* GetStartStatePhase();
   double GetTol();

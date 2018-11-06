@@ -511,6 +511,108 @@ void Wavefunction::LoadPsi(std::string file_name, PetscInt num_states,
   viewer_file.Close();
 }
 
+void Wavefunction::LoadPsi(std::string file_name, PetscInt num_states,
+                           PetscInt num_start_state, PetscInt* start_state_idx,
+                           PetscInt* start_state_l_idx,
+                           double* start_state_amplitude,
+                           double* start_state_phase)
+{
+  if (world.rank() == 0)
+    std::cout << "Loading wavefunction from " << file_name << "\n";
+  /* Get write index for last checkpoint */
+  HDF5Wrapper h5_file(file_name);
+  ViewWrapper viewer_file(file_name);
+
+  PetscInt file_states = h5_file.GetTimeIdx("/psi_l_0/psi/") + 1;
+  if (file_states < num_states)
+  {
+    EndRun("Not enough states in the target file");
+  }
+
+  for (int idx = 0; idx < num_start_state; ++idx)
+  {
+    if (start_state_idx[idx] - 1 >= num_states)
+    {
+      EndRun("The start state must be less than the total number of states");
+    }
+  }
+
+  /* Open File */
+  viewer_file.Open("r");
+
+  /* Produce wavefunctions */
+  Vec psi_super_pos;
+  Vec psi_small_local;
+  VecDuplicate(psi, &psi_super_pos);
+  ierr = PetscObjectSetName((PetscObject)psi_super_pos, "psi");
+
+  VecCreateSeq(PETSC_COMM_SELF, num_x[2], &psi_small_local);
+  VecSetFromOptions(psi_small_local);
+  ierr = PetscObjectSetName((PetscObject)psi_small_local, "psi");
+
+  /* Read the first psi */
+  viewer_file.SetTime(start_state_idx[0] - start_state_l_idx[0] - 1);
+  viewer_file.PushGroup("psi_l_" + std::to_string(start_state_l_idx[0]));
+  viewer_file.ReadObject(psi_small_local);
+  viewer_file.PopGroup();
+  InsertRadialPsi(psi_small_local, psi_super_pos, start_state_l_idx[0]);
+  Normalize(psi_super_pos, 0.0);
+  VecScale(psi_super_pos, dcomp(start_state_amplitude[0], 0.0) *
+                              std::exp(dcomp(0.0, start_state_phase[0])));
+  VecCopy(psi_super_pos, psi);
+
+  /* add on all other psi in super position*/
+  for (int idx = 1; idx < num_start_state; ++idx)
+  {
+    viewer_file.SetTime(start_state_idx[idx] - start_state_l_idx[idx] - 1);
+    viewer_file.PushGroup("psi_l_" + std::to_string(start_state_l_idx[idx]));
+    viewer_file.ReadObject(psi_small_local);
+    viewer_file.PopGroup();
+    InsertRadialPsi(psi_small_local, psi_super_pos, start_state_l_idx[idx]);
+    Normalize(psi_super_pos, 0.0);
+    VecAXPY(psi,
+            dcomp(start_state_amplitude[idx], 0.0) *
+                std::exp(dcomp(0.0, start_state_phase[idx])),
+            psi_super_pos);
+  }
+
+  VecDestroy(&psi_super_pos);
+  VecDestroy(&psi_small_local);
+
+  /* Normalize */
+  Normalize(psi, 0.0);
+  VecView(psi, PETSC_VIEWER_STDOUT_WORLD);
+  world.barrier();
+  EndRun("");
+
+  /* Close file */
+  viewer_file.Close();
+}
+
+void Wavefunction::InsertRadialPsi(Vec& psi_radial, Vec& psi_total,
+                                   PetscInt l_val)
+{
+  PetscInt low, high;
+  PetscComplex val;
+
+  VecGetOwnershipRange(psi_total, &low, &high);
+  for (PetscInt idx = low; idx < high; idx++)
+  {
+    std::vector< PetscInt > idx_array = GetIntArray(idx);
+    if (idx_array[1] == l_val)
+    {
+      VecGetValues(psi_radial, 1, &idx_array[2], &val);
+    }
+    else
+    {
+      val = dcomp(0.0, 0.0);
+    }
+    VecSetValues(psi_total, 1, &idx, &val, INSERT_VALUES);
+  }
+  VecAssemblyBegin(psi_total);
+  VecAssemblyEnd(psi_total);
+}
+
 void Wavefunction::CheckpointPsi(ViewWrapper& viewer_file, PetscInt write_idx)
 {
   // if (world.rank() == 0)

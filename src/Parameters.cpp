@@ -256,8 +256,18 @@ void Parameters::Setup(std::string file_name)
     gauge_idx = -1;
   }
 
-  CheckParameter(data["start_state"]["index"].size(), "start_state - index");
-  num_start_state = data["start_state"]["index"].size();
+  if (coordinate_system_idx == 3)
+  {
+    CheckParameter(data["start_state"]["n_index"].size(),
+                   "start_state - n_index");
+    num_start_state   = data["start_state"]["n_index"].size();
+    start_state_l_idx = new PetscInt[num_start_state];
+  }
+  else
+  {
+    CheckParameter(data["start_state"]["index"].size(), "start_state - index");
+    num_start_state = data["start_state"]["index"].size();
+  }
   if (data["start_state"]["amplitude"].size() != num_start_state)
   {
     EndRun(
@@ -275,11 +285,22 @@ void Parameters::Setup(std::string file_name)
   start_state_phase     = new double[num_start_state];
   for (PetscInt i = 0; i < num_start_state; i++)
   {
-    CheckParameter(data["start_state"]["index"][i].size(),
-                   "start_state - index");
-    start_state_idx[i] = data["start_state"]["index"][i];
-    CheckParameter(data["start_state"]["amplitude"][i].size(),
-                   "start_state - amplitude");
+    /* You need an n and l index for spherical */
+    if (coordinate_system_idx == 3)
+    {
+      CheckParameter(data["start_state"]["n_index"][i].size(),
+                     "start_state - n_index");
+      start_state_idx[i] = data["start_state"]["n_index"][i];
+      CheckParameter(data["start_state"]["l_index"][i].size(),
+                     "start_state - l_index");
+      start_state_l_idx[i] = data["start_state"]["l_index"][i];
+    }
+    else
+    {
+      CheckParameter(data["start_state"]["index"][i].size(),
+                     "start_state - index");
+      start_state_idx[i] = data["start_state"]["index"][i];
+    }
     start_state_amplitude[i] = data["start_state"]["amplitude"][i];
     CheckParameter(data["start_state"]["phase"][i].size(),
                    "start_state - phase");
@@ -855,7 +876,11 @@ Parameters::~Parameters()
   delete[] polarization_vector;
   if (num_dims == 3) delete[] poynting_vector;
   delete gaussian_length;
-  delete start_state_idx;        ///< index of states in super position
+  delete start_state_idx;  ///< index of states in super position
+  if (coordinate_system_idx == 3)
+  {
+    delete start_state_l_idx;
+  }                              ///< index of states in super position
   delete start_state_amplitude;  ///< amplitude of states in super position
   delete start_state_phase;
 }
@@ -1143,11 +1168,19 @@ void Parameters::Validate()
 
   for (int idx = 0; idx < num_start_state; ++idx)
   {
-    if (start_state_idx[idx] >= num_states)
+    if (coordinate_system_idx == 3 and start_state_idx[idx] - 1 >= num_states)
     {
       error_found = true;
       err_str +=
           "\nThe start_state must be less than the total number of states you "
+          "wish to calculate\n";
+    }
+    else if (start_state_idx[idx] >= num_states and coordinate_system_idx != 3)
+    {
+      error_found = true;
+      err_str +=
+          "\nThe start_state must be less than the total number of states "
+          "you "
           "wish to calculate\n";
     }
   }
@@ -1240,6 +1273,8 @@ PetscInt Parameters::GetNumStates() { return num_states; }
 PetscInt Parameters::GetNumStartState() { return num_start_state; }
 
 PetscInt* Parameters::GetStartStateIdx() { return start_state_idx; }
+
+PetscInt* Parameters::GetStartStateLIdx() { return start_state_l_idx; }
 
 double* Parameters::GetStartStateAmplitude() { return start_state_amplitude; }
 

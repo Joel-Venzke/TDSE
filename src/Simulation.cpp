@@ -275,10 +275,21 @@ void Simulation::Propagate()
  */
 void Simulation::FromFile(PetscInt num_states)
 {
-  wavefunction->LoadPsi(
-      parameters->GetTarget() + ".h5", num_states,
-      parameters->GetNumStartState(), parameters->GetStartStateIdx(),
-      parameters->GetStartStateAmplitude(), parameters->GetStartStatePhase());
+  if (coordinate_system_idx == 3)
+  {
+    wavefunction->LoadPsi(
+        parameters->GetTarget() + ".h5", num_states,
+        parameters->GetNumStartState(), parameters->GetStartStateIdx(),
+        parameters->GetStartStateLIdx(), parameters->GetStartStateAmplitude(),
+        parameters->GetStartStatePhase());
+  }
+  else
+  {
+    wavefunction->LoadPsi(
+        parameters->GetTarget() + ".h5", num_states,
+        parameters->GetNumStartState(), parameters->GetStartStateIdx(),
+        parameters->GetStartStateAmplitude(), parameters->GetStartStatePhase());
+  }
 }
 
 /**
@@ -392,7 +403,6 @@ void Simulation::EigenSolve(PetscInt num_states)
     }
   }
   world.barrier();
-  EndRun("");
   FromFile(num_states);
   EPSDestroy(&eps);
 }
