@@ -398,8 +398,8 @@ void Simulation::EigenSolve(PetscInt num_states)
       EPSGetEigenpair(eps, j, &eigen_real, NULL, *psi, NULL);
       if (world.rank() == 0)
         std::cout << "Eigen: " << j << "\t" << eigen_real << "\n";
-      // wavefunction->Normalize();
-      // CheckpointState(h_states_file, v_states_file, j, h);
+      wavefunction->Normalize();
+      CheckpointState(h_states_file, v_states_file, j, h);
     }
   }
   world.barrier();
@@ -460,6 +460,8 @@ void Simulation::CrankNicolson(double dt, PetscInt time_idx, PetscInt dim_idx)
   KSPGetConvergedReason(ksp, &reason);
   if (reason < 0)
   {
+    std::cout << "Time step: " << time_idx << "\n";
+    std::cout << "Divergence Reason: " << KSPConvergedReason(reason);
     EndRun("Divergence!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
   }
 }
@@ -708,6 +710,7 @@ void Simulation::CheckpointSmallState(HDF5Wrapper &h_file, ViewWrapper &v_file,
                                       PetscInt write_idx, dcomp energy,
                                       PetscInt l_val)
 {
+  wavefunction->ZeroPhasePsiSmall();
   wavefunction->CheckpointPsiSmall(v_file, write_idx, l_val);
   h_file.WriteObject(&energy, 1, "/Energy_l_" + std::to_string(l_val),
                      "Energy of the corresponding state", write_idx);

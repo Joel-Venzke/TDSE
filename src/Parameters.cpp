@@ -917,11 +917,6 @@ void Parameters::Validate()
       error_found = true;
       err_str += "\nSpherical only supports 1 electron currently\n";
     }
-    if (propagate != 0)
-    {
-      error_found = true;
-      err_str += "\nSpherical does not have time propagation\n";
-    }
     if (dim_size[0] != 0)
     {
       error_found = true;

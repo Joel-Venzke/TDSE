@@ -485,7 +485,7 @@ void Hamiltonian::CalculateHamlitonian0ECS()
   dcomp val(0.0, 0.0); /* diagonal terms */
   PetscInt start, end; /* start end rows */
 
-  MatGetOwnershipRange(hamiltonian_0, &start, &end);
+  MatGetOwnershipRange(hamiltonian_0_ecs, &start, &end);
   if (coordinate_system_idx == 2) /* RBF */
   {
     HDF5Wrapper node_set("nodes.h5", "r");
@@ -520,6 +520,156 @@ void Hamiltonian::CalculateHamlitonian0ECS()
     delete hyperviscosity;
     delete laplace_real;
     delete laplace_imag;
+  }
+  else if (coordinate_system_idx == 3) /* Spherical */
+  {
+    PetscInt j_val;       /* j index for matrix */
+    PetscInt base_offset; /* offset of diagonal */
+    PetscInt offset;      /* offset of diagonal */
+    bool insert_val, ecs;
+    std::vector< PetscInt > idx_array;
+    std::vector< dcomp > x_vals(order + 1, 0.0);
+    PetscInt dim_idx;
+
+    ecs = true;
+    for (PetscInt i_val = start; i_val < end; i_val++)
+    {
+      j_val     = i_val;
+      idx_array = GetIndexArray(i_val, j_val);
+      dim_idx   = 0;
+      /* avoid recalculating if the grid is uniform */
+      if (delta_x_max[dim_idx] != delta_x_min[dim_idx])
+      {
+        /* Set up real gird */
+        for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
+        {
+          if (idx_array[dim_idx * 2] < (order / 2 + 1) or
+              num_x[dim_idx] - 1 - idx_array[dim_idx * 2] < (order / 2 + 1))
+          {
+            x_vals[coef_idx] = delta_x_max[dim_idx] * coef_idx;
+          }
+          else
+          {
+            x_vals[coef_idx] =
+                x_value[dim_idx][coef_idx - order / 2 + idx_array[dim_idx * 2]];
+          }
+        }
+        /* Get real coefficients for each dimension */
+        FDWeights(x_vals, 2, real_coef[dim_idx]);
+      }
+
+      /* Diagonal element */
+      val = GetVal(i_val, j_val, insert_val, ecs);
+      if (insert_val)
+      {
+        MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
+                     INSERT_VALUES);
+      }
+
+      /* Loop over off diagonal elements */
+      for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
+      {
+        dim_idx     = 0;
+        base_offset = GetOffset(elec_idx, dim_idx);
+        if (dim_idx == 0 and
+            idx_array[2 * (2 + elec_idx * num_dims)] < order_middle_idx - 1)
+        {
+          /* loop over all off diagonals up to the order needed */
+          for (int diagonal_idx = 0; diagonal_idx < order; ++diagonal_idx)
+          {
+            offset = (diagonal_idx + 1) * base_offset;
+            /* Lower diagonal */
+            if (i_val - offset >= 0 and i_val - offset < num_psi)
+            {
+              j_val = i_val - offset;
+              val   = GetVal(i_val, j_val, insert_val, ecs);
+              if (insert_val)
+              {
+                MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
+                             INSERT_VALUES);
+              }
+            }
+
+            /* Upper diagonal */
+            if (i_val + offset >= 0 and i_val + offset < num_psi)
+            {
+              j_val = i_val + offset;
+              val   = GetVal(i_val, j_val, insert_val, ecs);
+              if (insert_val)
+              {
+                MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
+                             INSERT_VALUES);
+              }
+            }
+          }
+        }
+        else if (dim_idx == 0 and
+                 num_x[2] - 1 - idx_array[2 * (2 + elec_idx * num_dims)] <
+                     order_middle_idx - 1)
+        {
+          /* loop over all off diagonals up to the order needed */
+          for (int diagonal_idx = 0; diagonal_idx < order - 1; ++diagonal_idx)
+          {
+            offset = (diagonal_idx + 1) * base_offset;
+            /* Lower diagonal */
+            if (i_val - offset >= 0 and i_val - offset < num_psi)
+            {
+              j_val = i_val - offset;
+              val   = GetVal(i_val, j_val, insert_val, ecs);
+              if (insert_val)
+              {
+                MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
+                             INSERT_VALUES);
+              }
+            }
+
+            /* Upper diagonal */
+            if (i_val + offset >= 0 and i_val + offset < num_psi)
+            {
+              j_val = i_val + offset;
+              val   = GetVal(i_val, j_val, insert_val, ecs);
+              if (insert_val)
+              {
+                MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
+                             INSERT_VALUES);
+              }
+            }
+          }
+        }
+        else
+        {
+          /* loop over all off diagonals up to the order needed */
+          for (int diagonal_idx = 0; diagonal_idx < order_middle_idx;
+               ++diagonal_idx)
+          {
+            offset = (diagonal_idx + 1) * base_offset;
+            /* Lower diagonal */
+            if (i_val - offset >= 0 and i_val - offset < num_psi)
+            {
+              j_val = i_val - offset;
+              val   = GetVal(i_val, j_val, insert_val, ecs);
+              if (insert_val)
+              {
+                MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
+                             INSERT_VALUES);
+              }
+            }
+
+            /* Upper diagonal */
+            if (i_val + offset >= 0 and i_val + offset < num_psi)
+            {
+              j_val = i_val + offset;
+              val   = GetVal(i_val, j_val, insert_val, ecs);
+              if (insert_val)
+              {
+                MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
+                             INSERT_VALUES);
+              }
+            }
+          }
+        }
+      }
+    }
   }
   else
   {
@@ -1016,8 +1166,8 @@ dcomp Hamiltonian::GetVal(PetscInt idx_i, PetscInt idx_j, bool& insert_val,
     {
       for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
       {
-        idx_array[2 * (0 + elec_idx * num_dims)] += l_val;
-        idx_array[2 * (0 + elec_idx * num_dims) + 1] += l_val;
+        idx_array[2 * (1 + elec_idx * num_dims)] += l_val;
+        idx_array[2 * (1 + elec_idx * num_dims) + 1] += l_val;
       }
     }
     return GetDiagonal(idx_array, ecs);
@@ -1307,11 +1457,27 @@ dcomp Hamiltonian::GetOffDiagonal(std::vector< PetscInt >& idx_array,
                 (num_x[dim_idx] - 1 -
                  idx_array[2 * (elec_idx * num_dims + dim_idx)]);
 
-            off_diagonal -=
-                radial_bc_coef[discontinuity_idx][2]
-                              [discontinuity_idx +
-                               diff_array[elec_idx * num_dims + dim_idx] + 1] /
-                2.0;
+            /* For ecs you need to divide by 1/exp(-i*eta*2) to account for the
+             * 1/dx^2 in the Finite difference formula */
+            if (ecs and idx_array[2 * (elec_idx * num_dims + dim_idx)] >=
+                            gobbler_idx[dim_idx][1])
+            {
+              off_diagonal -=
+                  radial_bc_coef[discontinuity_idx][2]
+                                [discontinuity_idx +
+                                 diff_array[elec_idx * num_dims + dim_idx] +
+                                 1] /
+                  (2.0 * std::exp(imag * 2.0 * eta));
+            }
+            else
+            {
+              off_diagonal -=
+                  radial_bc_coef[discontinuity_idx][2]
+                                [discontinuity_idx +
+                                 diff_array[elec_idx * num_dims + dim_idx] +
+                                 1] /
+                  2.0;
+            }
           }
           /* right ECS */
           else if (idx_array[2 * (elec_idx * num_dims + dim_idx)] >=
@@ -1483,7 +1649,8 @@ dcomp Hamiltonian::GetKineticTerm(std::vector< PetscInt >& idx_array, bool ecs)
 
         /* For ecs you need to divide by 1/exp(-i*eta*2) to account for the
          * 1/dx^2 in the Finite difference formula */
-        if (ecs)
+        if (ecs and idx_array[2 * (elec_idx * num_dims + dim_idx)] >=
+                        gobbler_idx[dim_idx][1])
         {
           kinetic -=
               radial_bc_coef[discontinuity_idx][2][discontinuity_idx + 1] /
@@ -1777,7 +1944,7 @@ dcomp Hamiltonian::GetCentrifugalTerm(std::vector< PetscInt >& idx_array)
   double l_val;
   for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
   {
-    l_val = idx_array[2 * (0 + elec_idx * num_dims)];
+    l_val = idx_array[2 * (1 + elec_idx * num_dims)];
     centrifugal_val +=
         dcomp(l_val * (l_val + 1) /
                   (2.0 * x_value[2][idx_array[2 * (2 + elec_idx * num_dims)]] *

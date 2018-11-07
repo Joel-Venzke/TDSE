@@ -100,6 +100,7 @@ class Wavefunction : protected Utils
   double GetPosition(PetscInt elec_idx, PetscInt dim_idx);
   double GetDipoleAcceration(PetscInt elec_idx, PetscInt dim_idx);
   double GetGobbler();
+  PetscInt GetProjectionSize();
   std::vector< dcomp > Projections(std::string file_name);
   void ProjectOut(std::string file_name, HDF5Wrapper &h5_file,
                   ViewWrapper &viewer_file, double time);
@@ -111,6 +112,7 @@ class Wavefunction : protected Utils
                PetscInt *start_state_l_idx, double *start_state_amplitude,
                double *start_state_phase);
   void ResetPsi();
+  void ZeroPhasePsiSmall();
 
   PetscInt *GetNumX();
   PetscInt GetNumPsi();

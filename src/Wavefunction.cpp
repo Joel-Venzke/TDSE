@@ -70,26 +70,20 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
       }
       if (not(coordinate_system_idx == 3 and dim_idx != 2))
       {
+        gobbler_idx[dim_idx][0] = 0;
         for (int i = 0; i < num_x[dim_idx]; ++i)
         {
-          if (x_value[dim_idx][i] < -1.0 * dim_size[dim_idx] / 2.0 * ecs)
+          if (x_value[dim_idx][i] < dim_size[dim_idx] * ecs)
           {
-            gobbler_idx[dim_idx][0] = i;
+            gobbler_idx[dim_idx][1] = i;
           }
-          if (coordinate_system_idx == 1 and dim_idx == 0)
-          {
-            if (x_value[dim_idx][i] < dim_size[dim_idx] * ecs)
-            {
-              gobbler_idx[dim_idx][1] = i;
-            }
-          }
-          else
-          {
-            if (x_value[dim_idx][i] < dim_size[dim_idx] / 2.0 * ecs)
-            {
-              gobbler_idx[dim_idx][1] = i;
-            }
-          }
+        }
+        if (num_x[dim_idx] - gobbler_idx[dim_idx][1] < order)
+        {
+          EndRun(
+              "The Gobbler is not big enough to fit the full "
+              "stencil_size.\nEither decrease the real part of the grid or set "
+              "gobbler=1.0");
         }
       }
     }
@@ -217,7 +211,8 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
                         write_counter_checkpoint);
 
     std::vector< dcomp > projections;
-    projections.resize(num_states, dcomp(0.0, 0.0));
+    PetscInt projection_size = GetProjectionSize();
+    projections.resize(projection_size, dcomp(0.0, 0.0));
     h5_file.WriteObject(
         &projections[0], projections.size(), "/Wavefunction/projections",
         "Projection onto the various excited states", write_counter_checkpoint);
@@ -381,29 +376,69 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
 {
   HDF5Wrapper h5_file(file_name);
   ViewWrapper viewer_file(file_name);
-
-  PetscInt file_states = h5_file.GetTimeIdx("/psi/") + 1;
-  if (file_states < num_states)
-  {
-    EndRun("Not enough states in the target file");
-  }
   std::vector< dcomp > ret_vec;
-  dcomp projection_val;
 
-  viewer_file.Open("r");
-  for (int state_idx = 0; state_idx < num_states; ++state_idx)
+  if (coordinate_system_idx == 3)
   {
-    /* Set time idx */
-    viewer_file.SetTime(state_idx);
-    viewer_file.ReadObject(psi_proj);
-    Normalize(psi_proj, 0.0);
-    VecPointwiseMult(psi_tmp, jacobian, psi_proj);
-    VecDot(psi, psi_tmp, &projection_val);
-    ret_vec.push_back(projection_val);
+    Vec psi_small_local;
+    VecCreateSeq(PETSC_COMM_SELF, num_x[2], &psi_small_local);
+    VecSetFromOptions(psi_small_local);
+    ierr = PetscObjectSetName((PetscObject)psi_small_local, "psi");
+
+    PetscInt file_states = h5_file.GetTimeIdx("/psi_l_0/psi/") + 1;
+    if (file_states < num_states)
+    {
+      EndRun("Not enough states in the target file");
+    }
+    dcomp projection_val;
+
+    viewer_file.Open("r");
+    for (int n_index = 1; n_index <= num_states; ++n_index)
+    {
+      for (int l_idx = 0; l_idx < fmin(n_index, num_x[1]); ++l_idx)
+      {
+        /* Set time idx */
+        viewer_file.SetTime(n_index - l_idx - 1);
+        viewer_file.PushGroup("psi_l_" + std::to_string(l_idx));
+        viewer_file.ReadObject(psi_small_local);
+        viewer_file.PopGroup();
+        InsertRadialPsi(psi_small_local, psi_proj, l_idx);
+        Normalize(psi_proj, 0.0);
+        VecPointwiseMult(psi_tmp, jacobian, psi_proj);
+        VecDot(psi, psi_tmp, &projection_val);
+        ret_vec.push_back(projection_val);
+      }
+    }
+    /* Close file */
+    viewer_file.Close();
+
+    VecDestroy(&psi_small_local);
+  }
+  else
+  {
+    PetscInt file_states = h5_file.GetTimeIdx("/psi/") + 1;
+    if (file_states < num_states)
+    {
+      EndRun("Not enough states in the target file");
+    }
+    std::vector< dcomp > ret_vec;
+    dcomp projection_val;
+
+    viewer_file.Open("r");
+    for (int state_idx = 0; state_idx < num_states; ++state_idx)
+    {
+      /* Set time idx */
+      viewer_file.SetTime(state_idx);
+      viewer_file.ReadObject(psi_proj);
+      Normalize(psi_proj, 0.0);
+      VecPointwiseMult(psi_tmp, jacobian, psi_proj);
+      VecDot(psi, psi_tmp, &projection_val);
+      ret_vec.push_back(projection_val);
+    }
+    /* Close file */
+    viewer_file.Close();
   }
 
-  /* Close file */
-  viewer_file.Close();
   return ret_vec;
 }
 
@@ -421,25 +456,65 @@ void Wavefunction::ProjectOut(std::string file_name, HDF5Wrapper& h5_file_in,
   HDF5Wrapper h5_file(file_name);
   ViewWrapper viewer_file(file_name);
 
-  /* Save psi from projection death */
-  VecCopy(psi, psi_tmp_cyl);
-  viewer_file.Open("r");
-  for (int state_idx = 0; state_idx < num_states; ++state_idx)
+  if (coordinate_system_idx == 3)
   {
-    viewer_file.SetTime(state_idx);
-    viewer_file.ReadObject(psi_proj);
-    Normalize(psi_proj, 0.0);
-    VecAXPY(psi_tmp_cyl, -1.0 * ret_vec[state_idx], psi_proj);
+    Vec psi_small_local;
+    PetscInt state_idx = 0;
+    VecCreateSeq(PETSC_COMM_SELF, num_x[2], &psi_small_local);
+    VecSetFromOptions(psi_small_local);
+    ierr = PetscObjectSetName((PetscObject)psi_small_local, "psi");
+
+    /* Save psi from projection death */
+    VecCopy(psi, psi_tmp_cyl);
+    viewer_file.Open("r");
+    for (int n_index = 1; n_index <= num_states; ++n_index)
+    {
+      for (int l_idx = 0; l_idx < fmin(n_index, num_x[1]); ++l_idx)
+      {
+        /* Set time idx */
+        viewer_file.SetTime(n_index - l_idx - 1);
+        viewer_file.PushGroup("psi_l_" + std::to_string(l_idx));
+        viewer_file.ReadObject(psi_small_local);
+        viewer_file.PopGroup();
+        InsertRadialPsi(psi_small_local, psi_proj, l_idx);
+        Normalize(psi_proj, 0.0);
+        VecAXPY(psi_tmp_cyl, -1.0 * ret_vec[state_idx], psi_proj);
+        state_idx++;
+      }
+    }
+    /* Save psi from projection death */
+    VecCopy(psi, psi_proj);
+    VecCopy(psi_tmp_cyl, psi);
+    Checkpoint(h5_file_in, viewer_file_in, time, 2);
+    VecCopy(psi_proj, psi);
+
+    /* Close file */
+    viewer_file.Close();
+
+    VecDestroy(&psi_small_local);
   }
+  else
+  {
+    /* Save psi from projection death */
+    VecCopy(psi, psi_tmp_cyl);
+    viewer_file.Open("r");
+    for (int state_idx = 0; state_idx < num_states; ++state_idx)
+    {
+      viewer_file.SetTime(state_idx);
+      viewer_file.ReadObject(psi_proj);
+      Normalize(psi_proj, 0.0);
+      VecAXPY(psi_tmp_cyl, -1.0 * ret_vec[state_idx], psi_proj);
+    }
 
-  /* Save psi from projection death */
-  VecCopy(psi, psi_proj);
-  VecCopy(psi_tmp_cyl, psi);
-  Checkpoint(h5_file_in, viewer_file_in, time, 2);
-  VecCopy(psi_proj, psi);
+    /* Save psi from projection death */
+    VecCopy(psi, psi_proj);
+    VecCopy(psi_tmp_cyl, psi);
+    Checkpoint(h5_file_in, viewer_file_in, time, 2);
+    VecCopy(psi_proj, psi);
 
-  /* Close file */
-  viewer_file.Close();
+    /* Close file */
+    viewer_file.Close();
+  }
 }
 
 /**
@@ -581,9 +656,6 @@ void Wavefunction::LoadPsi(std::string file_name, PetscInt num_states,
 
   /* Normalize */
   Normalize(psi, 0.0);
-  VecView(psi, PETSC_VIEWER_STDOUT_WORLD);
-  world.barrier();
-  EndRun("");
 
   /* Close file */
   viewer_file.Close();
@@ -1566,10 +1638,48 @@ double Wavefunction::GetGobbler()
   return expectation.real();
 }
 
+PetscInt Wavefunction::GetProjectionSize()
+{
+  if (coordinate_system_idx == 3)
+  {
+    PetscInt projection_size = 0;
+    for (int n_index = 1; n_index <= num_states; ++n_index)
+    {
+      for (int l_idx = 0; l_idx < fmin(n_index, num_x[1]); ++l_idx)
+      {
+        projection_size++;
+      }
+    }
+    return projection_size;
+  }
+  else
+  {
+    return num_states;
+  }
+}
+
 void Wavefunction::ResetPsi()
 {
   CreatePsi();
   CleanUp();
+}
+
+void Wavefunction::ZeroPhasePsiSmall()
+{
+  dcomp val;
+  double phase;
+  /* Get phase from master */
+  if (world.rank() == 0)
+  {
+    /* use the first entry in the array to set the phase */
+    PetscInt idx = 0;
+    VecGetValues(psi_small, 1, &idx, &val);
+    phase = std::arg(val);
+  }
+  /* Share phase with all processors*/
+  broadcast(world, phase, 0);
+  /* Remove phase from wavefunction */
+  VecScale(psi_small, std::exp(-imag * phase));
 }
 
 PetscInt* Wavefunction::GetNumX() { return num_x; }
