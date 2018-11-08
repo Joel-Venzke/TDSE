@@ -504,7 +504,7 @@ void Pulse::InitializeField()
             (field[dim_idx][time_idx - 1] - field[dim_idx][time_idx + 1]) /
             (2 * delta_t * c);
       }
-      /* Backward difference for first point (-1/c)  [0, -1, 1] (1/dt) */
+      /* Backward difference for last point (-1/c)  [0, -1, 1] (1/dt) */
       field_tmp[max_pulse_length - 1] = (field[dim_idx][max_pulse_length - 2] -
                                          field[dim_idx][max_pulse_length - 1]) /
                                         (delta_t * c);

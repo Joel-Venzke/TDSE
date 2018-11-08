@@ -78,7 +78,8 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
             gobbler_idx[dim_idx][1] = i;
           }
         }
-        if (num_x[dim_idx] - gobbler_idx[dim_idx][1] < order)
+        if (coordinate_system_idx == 3 and
+            num_x[dim_idx] - gobbler_idx[dim_idx][1] < order)
         {
           EndRun(
               "The Gobbler is not big enough to fit the full "

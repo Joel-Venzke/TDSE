@@ -433,13 +433,26 @@ void Simulation::CrankNicolson(double dt, PetscInt time_idx, PetscInt dim_idx)
       h = hamiltonian->GetTotalHamiltonian(time_idx, dim_idx);
     }
 
-    MatCopy(*h, left, SAME_NONZERO_PATTERN);
-    MatScale(left, factor);
-    MatShift(left, 1.0);
+    if (coordinate_system_idx == 3)
+    {
+      MatCopy(*h, left, DIFFERENT_NONZERO_PATTERN);
+      MatScale(left, factor);
+      MatShift(left, 1.0);
 
-    MatCopy(*h, right, SAME_NONZERO_PATTERN);
-    MatScale(right, -1.0 * factor);
-    MatShift(right, 1.0);
+      MatCopy(*h, right, DIFFERENT_NONZERO_PATTERN);
+      MatScale(right, -1.0 * factor);
+      MatShift(right, 1.0);
+    }
+    else
+    {
+      MatCopy(*h, left, SAME_NONZERO_PATTERN);
+      MatScale(left, factor);
+      MatShift(left, 1.0);
+
+      MatCopy(*h, right, SAME_NONZERO_PATTERN);
+      MatScale(right, -1.0 * factor);
+      MatShift(right, 1.0);
+    }
 
     KSPSetOperators(ksp, left, left);
     KSPSetTolerances(ksp, 1.e-15, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);

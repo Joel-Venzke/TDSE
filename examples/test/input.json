@@ -49,7 +49,7 @@
     ],
     "energy": 1.0,
     "power_off": 2.0,
-    "intensity": 1e14,
+    "intensity": 1e12,
     "cycles_plateau": 0.0,
     "helicity": "left",
     "cep": 0.0,

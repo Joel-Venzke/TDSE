@@ -89,6 +89,7 @@ void Hamiltonian::CreateHamlitonian()
     MatCreateAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, num_psi, num_psi,
                  num_dims * num_electrons * order + 1, NULL,
                  num_dims * num_electrons * order + 1, NULL, &hamiltonian);
+    MatSetOption(hamiltonian, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
 
     MatCreateAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, num_x[2],
                  num_x[2], num_dims * num_electrons * order + 1, NULL,
@@ -1130,18 +1131,45 @@ Mat* Hamiltonian::GetTotalHamiltonian(PetscInt time_idx, bool ecs)
 {
   if (ecs)
   {
-    MatCopy(hamiltonian_0_ecs, hamiltonian, SAME_NONZERO_PATTERN);
+    if (coordinate_system_idx == 3)
+    {
+      MatCopy(hamiltonian_0_ecs, hamiltonian, DIFFERENT_NONZERO_PATTERN);
+    }
+    else
+    {
+      MatCopy(hamiltonian_0_ecs, hamiltonian, SAME_NONZERO_PATTERN);
+    }
   }
   else
   {
-    MatCopy(hamiltonian_0, hamiltonian, SAME_NONZERO_PATTERN);
+    if (coordinate_system_idx == 3)
+    {
+      EndRun(
+          "Mat copy hamiltonian_0 to hamiltonian in GetTotalHamiltonian not "
+          "supported due to different shapes in Spherical coordinates.");
+    }
+    else
+    {
+      MatCopy(hamiltonian_0, hamiltonian, SAME_NONZERO_PATTERN);
+    }
   }
   for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
   {
     if (field[dim_idx][time_idx] != 0.0)
     {
-      MatAXPY(hamiltonian, field[dim_idx][time_idx], hamiltonian_laser[dim_idx],
-              SUBSET_NONZERO_PATTERN);
+      if (coordinate_system_idx == 3)
+      {
+        if (dim_idx == 2)
+        {
+          MatAXPY(hamiltonian, field[dim_idx][time_idx],
+                  hamiltonian_laser[dim_idx], DIFFERENT_NONZERO_PATTERN);
+        }
+      }
+      else
+      {
+        MatAXPY(hamiltonian, field[dim_idx][time_idx],
+                hamiltonian_laser[dim_idx], SUBSET_NONZERO_PATTERN);
+      }
     }
   }
   return &hamiltonian;
@@ -1234,35 +1262,96 @@ dcomp Hamiltonian::GetValLaser(PetscInt idx_i, PetscInt idx_j, bool& insert_val,
   PetscInt non_zero_count            = 0;
   insert_val                         = true;
 
-  /* Diagonal elements */
-  if (idx_i == idx_j and gauge_idx == 1) /* length gauge */
+  if (coordinate_system_idx == 3)
   {
-    return GetDiagonalLaser(idx_array, only_dim_idx);
-  }
-
-  if (gauge_idx == 0) /* velocity gauge */
-  {
-    /* Make sure there is exactly 1 non zero index so we can take care of the
-     * off diagonal zeros */
-    for (PetscInt i = 0; i < num_dims * num_electrons; ++i)
+    /* Calulating the z operator */
+    if (only_dim_idx == 2)
     {
-      sum += std::abs(diff_array[i]);
-      if (diff_array[i] != 0) non_zero_count++;
+      /* only non zero elements are l -> l+-1 therefore we only need the dim 1
+       */
+      only_dim_idx = 1;
+      if (gauge_idx == 1) /* length gauge */
+      {
+        /* Make sure there is exactly 1 non zero index so we can take care of
+         * the off diagonal zeros */
+        for (PetscInt i = 0; i < num_dims * num_electrons; ++i)
+        {
+          sum += std::abs(diff_array[i]);
+          if (diff_array[i] != 0) non_zero_count++;
+        }
+
+        /* if non zero off diagonal */
+        if (non_zero_count == 1)
+        {
+          /* normal off diagonal */
+          if (sum == 1 and diff_array[1] != 0)
+          {
+            return GetOffDiagonalLaser(idx_array, diff_array, only_dim_idx);
+          }
+        }
+      }
+    }
+    // else
+    // {
+    //   /* Make sure there is exactly 1 non zero index so we can take care of
+    //    * the off diagonal zeros */
+    //   for (PetscInt i = 0; i < num_dims * num_electrons; ++i)
+    //   {
+    //     sum += std::abs(diff_array[i]);
+    //     if (diff_array[i] != 0) non_zero_count++;
+    //   }
+
+    //   /* if non zero off diagonal */
+    //   if (non_zero_count == 1)
+    //   {
+    //     /* only non zero elements are l -> l+-1 therefore we only need the
+    //     dim 1
+    //      */
+    //     only_dim_idx = 1;
+    //     if (gauge_idx == 1) /* length gauge */
+    //     {
+    //       /* normal off diagonal */
+    //       if (sum == 1)
+    //       {
+    //         insert_val = false;
+    //         return dcomp(0.0, 0.0);
+    //       }
+    //     }
+    //   }
+    // }
+  }
+  else
+  {
+    /* Diagonal elements */
+    if (idx_i == idx_j and gauge_idx == 1) /* length gauge */
+    {
+      return GetDiagonalLaser(idx_array, only_dim_idx);
     }
 
-    /* if non zero off diagonal */
-    if (non_zero_count == 1)
+    if (gauge_idx == 0) /* velocity gauge */
     {
-      /* normal off diagonal */
-      if (sum <= order / 2)
+      /* Make sure there is exactly 1 non zero index so we can take care of
+       * the off diagonal zeros */
+      for (PetscInt i = 0; i < num_dims * num_electrons; ++i)
       {
-        return GetOffDiagonalLaser(idx_array, diff_array, only_dim_idx);
+        sum += std::abs(diff_array[i]);
+        if (diff_array[i] != 0) non_zero_count++;
       }
-      /* Cylindrical boundary condition */
-      else if (coordinate_system_idx == 1 and diff_array[0] > 0 and
-               sum < order - idx_array[0] and idx_array[0] < order_middle_idx)
+
+      /* if non zero off diagonal */
+      if (non_zero_count == 1)
       {
-        return GetOffDiagonalLaser(idx_array, diff_array, only_dim_idx);
+        /* normal off diagonal */
+        if (sum <= order / 2)
+        {
+          return GetOffDiagonalLaser(idx_array, diff_array, only_dim_idx);
+        }
+        /* Cylindrical boundary condition */
+        else if (coordinate_system_idx == 1 and diff_array[0] > 0 and
+                 sum < order - idx_array[0] and idx_array[0] < order_middle_idx)
+        {
+          return GetOffDiagonalLaser(idx_array, diff_array, only_dim_idx);
+        }
       }
     }
   }
@@ -1430,8 +1519,8 @@ dcomp Hamiltonian::GetOffDiagonal(std::vector< PetscInt >& idx_array,
         else if (coordinate_system_idx == 3 and dim_idx == 2)
         {
           /* r=0  boundary condition */
-          /* We use a forward difference like formula until the full stencil can
-           * fit in the matrix (We include one ghost node that imposes
+          /* We use a forward difference like formula until the full stencil
+           * can fit in the matrix (We include one ghost node that imposes
            * psi(0)=0) */
           if (idx_array[2 * (elec_idx * num_dims + dim_idx)] <
               order_middle_idx - 1)
@@ -1445,8 +1534,8 @@ dcomp Hamiltonian::GetOffDiagonal(std::vector< PetscInt >& idx_array,
                 2.0;
           }
           /* r=r_max  boundary condition */
-          /* We use a forward difference like formula until the full stencil can
-           * fit in the matrix (We include one ghost node that imposes
+          /* We use a forward difference like formula until the full stencil
+           * can fit in the matrix (We include one ghost node that imposes
            * psi(r_max)=0) */
           else if ((num_x[dim_idx] - 1 -
                     idx_array[2 * (elec_idx * num_dims + dim_idx)]) <
@@ -1457,8 +1546,8 @@ dcomp Hamiltonian::GetOffDiagonal(std::vector< PetscInt >& idx_array,
                 (num_x[dim_idx] - 1 -
                  idx_array[2 * (elec_idx * num_dims + dim_idx)]);
 
-            /* For ecs you need to divide by 1/exp(-i*eta*2) to account for the
-             * 1/dx^2 in the Finite difference formula */
+            /* For ecs you need to divide by 1/exp(-i*eta*2) to account for
+             * the 1/dx^2 in the Finite difference formula */
             if (ecs and idx_array[2 * (elec_idx * num_dims + dim_idx)] >=
                             gobbler_idx[dim_idx][1])
             {
@@ -1557,6 +1646,8 @@ dcomp Hamiltonian::GetOffDiagonalLaser(std::vector< PetscInt >& idx_array,
                                        PetscInt only_dim_idx)
 {
   dcomp off_diagonal(0.0, 0.0);
+  PetscInt l0, l1, l_tot;
+  PetscInt m0, m1, m_tot;
   for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
   {
     for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
@@ -1565,8 +1656,32 @@ dcomp Hamiltonian::GetOffDiagonalLaser(std::vector< PetscInt >& idx_array,
       {
         if (diff_array[elec_idx * num_dims + dim_idx] != 0)
         {
+          if (coordinate_system_idx == 3 and gauge_idx == 1)
+          {
+            if (delta_x_min[2] != delta_x_max[2])
+            {
+              EndRun(
+                  "Laser operator does not support nonunifrom grid in "
+                  "Spherical coordinates.");
+            }
+            l0 = ((int)x_value[1][idx_array[2. * (elec_idx * num_dims + 1)]]);
+            l1 = ((
+                int)x_value[1][idx_array[2. * (elec_idx * num_dims + 1) + 1]]);
+            l_tot = l0 + l1;
+            m0 = ((int)x_value[1][idx_array[2. * (elec_idx * num_dims + 0)]]);
+            m1 = ((
+                int)x_value[1][idx_array[2. * (elec_idx * num_dims + 0) + 1]]);
+            m_tot = m0 + m1;
+            off_diagonal +=
+                x_value[2][idx_array[2. * (elec_idx * num_dims + 2)]] *
+                std::sqrt(4.0 * pi / 3.0) *
+                std::sqrt((2 * l0 + 1) * (2 * l1 + 1) /
+                          (4 * pi * (2 * l_tot + 1))) *
+                ClebschGordanCoef(l0, l1, l_tot, 0, 0, 0) *
+                ClebschGordanCoef(l0, l1, l_tot, m0, m1, m_tot);
+          }
           /* DONT TOUCH FIELD WITH ECS */
-          if (gauge_idx == 0) /* Time dependent matrix */
+          else if (gauge_idx == 0) /* Time dependent matrix */
           {
             /* DONT TOUCH FIELD WITH ECS */
             /* Polarization vector for linear polarization */
