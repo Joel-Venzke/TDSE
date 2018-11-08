@@ -1174,7 +1174,7 @@ Mat* Hamiltonian::GetTotalHamiltonian(PetscInt time_idx, bool ecs)
   }
   if (time_idx == 1000)
   {
-    MatView(hamiltonian_0, PETSC_VIEWER_STDOUT_WORLD);
+    MatView(hamiltonian, PETSC_VIEWER_STDOUT_WORLD);
   }
   return &hamiltonian;
 }
