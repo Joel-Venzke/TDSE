@@ -317,13 +317,9 @@ void Simulation::EigenSolve(PetscInt num_states)
   v_states_file.Close();
   HDF5Wrapper h_states_file(parameters->GetTarget() + ".h5"); /* HDF5 viewer */
 
-  psi = wavefunction->GetPsiSmall();
-
-  EPS eps; /* eigen solver */
-  EPSCreate(PETSC_COMM_WORLD, &eps);
-
   if (coordinate_system_idx == 3)
   {
+    psi = wavefunction->GetPsiSmall();
     for (int l_val = 0; l_val < num_x[1]; ++l_val)
     {
       /* make sure we still have states to calculate */
@@ -338,6 +334,8 @@ void Simulation::EigenSolve(PetscInt num_states)
         {
           h = hamiltonian->GetTimeIndependent(false, l_val);
         }
+        EPS eps; /* eigen solver */
+        EPSCreate(PETSC_COMM_WORLD, &eps);
         EPSSetOperators(eps, *(h), NULL);
         EPSSetProblemType(eps, EPS_NHEP);
         EPSSetTolerances(eps, tol, PETSC_DECIDE);
@@ -371,11 +369,15 @@ void Simulation::EigenSolve(PetscInt num_states)
           CheckpointSmallState(h_states_file, v_states_file, j, eigen_real,
                                l_val);
         }
+        EPSDestroy(&eps);
       }
     }
   }
   else
   {
+    psi = wavefunction->GetPsi();
+    EPS eps; /* eigen solver */
+    EPSCreate(PETSC_COMM_WORLD, &eps);
     if (parameters->GetFieldMaxStates())
     {
       h = hamiltonian->GetTotalHamiltonian(pulse->GetFieldMaxIdx(), false);
@@ -401,10 +403,10 @@ void Simulation::EigenSolve(PetscInt num_states)
       wavefunction->Normalize();
       CheckpointState(h_states_file, v_states_file, j, h);
     }
+
+    EPSDestroy(&eps);
   }
-  world.barrier();
   FromFile(num_states);
-  EPSDestroy(&eps);
 }
 
 /**
