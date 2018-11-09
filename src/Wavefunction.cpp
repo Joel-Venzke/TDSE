@@ -70,7 +70,7 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
       }
       if (not(coordinate_system_idx == 3 and dim_idx != 2))
       {
-        gobbler_idx[dim_idx][0] = 0;
+        gobbler_idx[dim_idx][0] = -1;
         for (int i = 0; i < num_x[dim_idx]; ++i)
         {
           if (x_value[dim_idx][i] < dim_size[dim_idx] * ecs)
@@ -1346,6 +1346,10 @@ dcomp Wavefunction::GetVolumeElement(PetscInt idx)
 {
   /* Value to be returned */
   dcomp ret_val(1.0, 0.0);
+  if (GetGobblerVal(idx).real())
+  {
+    return dcomp(0.0, 0.0);
+  }
   /* idx for return */
   std::vector< PetscInt > idx_array = GetIntArray(idx);
   for (PetscInt elec_idx = 0; elec_idx < num_electrons; elec_idx++)
