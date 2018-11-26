@@ -69,7 +69,7 @@ if num_electrons == 2:
                     data = np.sum(psi, axis=axis_sum_list)
                     data = (data * np.conjugate(data)).real
                     axis = f["Wavefunction"]["x_value_" + str(dim_idx)][:]
-                    plt.semilogy(axis, data / data.max())
+                    plt.plot(axis, data / data.max())
                     if dim_idx == 0:
                         plt.axvline(-0.7, color='k')
                         plt.axvline(0.7, color='k')
@@ -93,8 +93,7 @@ if num_electrons == 2:
                 plt.imshow(
                     data / data.max(),
                     cmap='viridis',
-                    extent=[dim_1[-1], dim_1[1], dim_0[-1], dim_0[1]],
-                    norm=LogNorm(vmin=1e-10))
+                    extent=[dim_1[-1], dim_1[1], dim_0[-1], dim_0[1]])
                 plt.ylabel("Dim: 0")
                 plt.xlabel("Dim: 1")
                 plt.colorbar()
