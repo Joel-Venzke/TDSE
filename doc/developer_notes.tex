@@ -1164,12 +1164,12 @@ Which leads to a Hamiltonian of
 \begin{equation}
     \hat{H} = \sum_{e}\left(\frac{\hat{\mathbf{p}}^2_e}{2} - \frac{\mathbf{A}(t) \cdot \hat{\mathbf{p}}_e}{c} - \sum_{n} \frac{Z_n}{r_{e,n}}\right) + \sum_{e_1 < e_2}\frac{1}{r_{e_1, e_2}}
 \end{equation}
-The full problem is pretty much impossible to solve for 3 or more electrons. For a two electron atom (He like), we have the following Hamiltonian.
+The full problem is currently limited to 1 or 2 electrons. For a two electron atom (He like), we have the following Hamiltonian.
 \begin{equation}
   \hat H = \frac{\hat{p_1}^2}{2} + \frac{\hat{p_2}^2}{2} - \frac{\vec{A} \cdot (\hat{p_1}+\hat{p_2})}{c} - \frac{Z}{x_1} - \frac{Z}{x_2} + \frac{1}{r_{12}}
 \end{equation}
 
-The Hamiltonian class takes the input file and defines the appropriate matrix to operate on our wave function. There is tons of index gymnastics going on in this class. Creation of the Hamiltonian is currently around 30\% of the total run time of a simulation. This code has some low hanging optimizations like storing the time independent Hamiltonian. This should be the next priority in optimizations. For a full explanation the numeric methods we use and justification for various tools, see Section~\ref{sec:theory}.
+The Hamiltonian class takes the input file and defines the appropriate matrix to operate on our wave function.
 
 % subsection hamiltonian (end)
 
@@ -1189,10 +1189,10 @@ There is very little testing used in this code. If you would like to work on thi
 \section{Wish list} % (fold)
 \label{sec:wish_list}
 \begin{itemize}
-    \item Faster algorithm (radial code, numerical basis, non uniform grid, RBF, ect.)
+    \item Faster algorithm (radial code, numerical basis, non uniform grid, ect.)
     \item Free propagation support (Density Matrix for bound states)
-    \item New features (fast two electron code)
-    \item Moving nuclei (classical and quantum mechanical)
+    \item New features (two electron code)
+    \item Moving nuclei (classical and/or quantum mechanical)
 \end{itemize}
 % section wish_list (end)
 
@@ -1212,9 +1212,10 @@ TODO
 TODO
 % subsection papers (end)
 % section supporting_works (end)
+
 \section{Contributors} % (fold)
 \label{sec:contributors}
-The following people have contributed to this code. Alphabetical order is used.
+The following people have contributed to this code.
 \begin{itemize}
   \item Goldsmith, Cory
   \item Venzke, Joel

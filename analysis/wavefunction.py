@@ -80,6 +80,24 @@ if num_electrons == 2:
                     plt.tight_layout()
                     plt.savefig(plot_name)
                     plt.close(fig)
+
+                    # plot on log scale
+                    plot_name = "figs/Wave_log_projection_on_dim_" + str(
+                        dim_idx) + "_electron_" + str(
+                            electron_idx) + "_state_" + str(i).zfill(8) + ".png"
+                    fig = plt.figure()
+                    plt.plot(axis, data / data.max())
+                    if dim_idx == 0:
+                        plt.axvline(-0.7, color='k')
+                        plt.axvline(0.7, color='k')
+                    else:
+                        plt.axvline(0.0, color='k')
+                    plt.xlabel("Dim:" + str(dim_idx) + "   Electron:" +
+                               str(electron_idx))
+                    plt.tight_layout()
+                    plt.savefig(plot_name)
+                    plt.close(fig)
+
             if num_dims == 2:
                 dim_0 = f["Wavefunction"]["x_value_0"][:]
                 dim_1 = f["Wavefunction"]["x_value_1"][:]
@@ -101,6 +119,22 @@ if num_electrons == 2:
                 plt.savefig(plot_name)
                 plt.close(fig)
 
+                # log scale electron 0
+                plot_name = "figs/Wave_log_2d_electron_0_state_" + str(
+                    i).zfill(8) + ".png"
+                fig = plt.figure()
+                plt.imshow(
+                    data / data.max(),
+                    cmap='viridis',
+                    extent=[dim_1[-1], dim_1[1], dim_0[-1], dim_0[1]],
+                    norm=LogNorm(vmin=1e-10))
+                plt.ylabel("Dim: 0")
+                plt.xlabel("Dim: 1")
+                plt.colorbar()
+                plt.tight_layout()
+                plt.savefig(plot_name)
+                plt.close(fig)
+
                 # plot electron 1
                 plot_name = "figs/Wave_2d_electron_1_state_" + str(i).zfill(
                     8) + ".png"
@@ -108,6 +142,21 @@ if num_electrons == 2:
                 fig = plt.figure()
                 data = np.sum(psi, axis=axis_sum_list)
                 axis = f["Wavefunction"]["x_value_" + str(dim_idx)][:]
+                plt.imshow(
+                    data / data.max(),
+                    cmap='viridis',
+                    extent=[dim_1[-1], dim_1[1], dim_0[-1], dim_0[1]])
+                plt.ylabel("Dim: 0")
+                plt.xlabel("Dim: 1")
+                plt.colorbar()
+                plt.tight_layout()
+                plt.savefig(plot_name)
+                plt.close(fig)
+
+                # log scale electron 1
+                plot_name = "figs/Wave_log_2d_electron_1_state_" + str(
+                    i).zfill(8) + ".png"
+                fig = plt.figure()
                 plt.imshow(
                     data / data.max(),
                     cmap='viridis',
@@ -130,6 +179,21 @@ if num_electrons == 2:
                 plt.imshow(
                     data / data.max(),
                     cmap='viridis',
+                    extent=[dim_0[-1], dim_0[1], dim_0[-1], dim_0[1]])
+                plt.ylabel("Dim: 0    Electron: 0")
+                plt.xlabel("Dim: 0    Electron: 1")
+                plt.colorbar()
+                plt.tight_layout()
+                plt.savefig(plot_name)
+                plt.close(fig)
+
+                # log scale dim 0 for both electrons
+                plot_name = "figs/Wave_log_2d_dim_0_state_" + str(i).zfill(
+                    8) + ".png"
+                fig = plt.figure()
+                plt.imshow(
+                    data / data.max(),
+                    cmap='viridis',
                     extent=[dim_0[-1], dim_0[1], dim_0[-1], dim_0[1]],
                     norm=LogNorm(vmin=1e-10))
                 plt.ylabel("Dim: 0    Electron: 0")
@@ -139,7 +203,7 @@ if num_electrons == 2:
                 plt.savefig(plot_name)
                 plt.close(fig)
 
-                # plot dim 0 for both electrons
+                # plot dim 1 for both electrons
                 plot_name = "figs/Wave_2d_dim_1_state_" + str(i).zfill(
                     8) + ".png"
                 axis_sum_list = tuple([0, 2])
@@ -149,15 +213,30 @@ if num_electrons == 2:
                 plt.imshow(
                     data / data.max(),
                     cmap='viridis',
-                    extent=[dim_0[-1], dim_0[1], dim_0[-1], dim_0[1]],
-                    # norm=LogNorm(vmin=1e-15)
-                )
+                    extent=[dim_0[-1], dim_0[1], dim_0[-1], dim_0[1]])
                 plt.ylabel("Dim: 1    Electron: 0")
                 plt.xlabel("Dim: 1    Electron: 1")
                 plt.colorbar()
                 plt.tight_layout()
                 plt.savefig(plot_name)
                 plt.close(fig)
+
+                # plot dim 1 for both electrons
+                plot_name = "figs/Wave_2d_dim_1_state_" + str(i).zfill(
+                    8) + ".png"
+                fig = plt.figure()
+                plt.imshow(
+                    data / data.max(),
+                    cmap='viridis',
+                    extent=[dim_0[-1], dim_0[1], dim_0[-1], dim_0[1]],
+                    norm=LogNorm(vmin=1e-10))
+                plt.ylabel("Dim: 1    Electron: 0")
+                plt.xlabel("Dim: 1    Electron: 1")
+                plt.colorbar()
+                plt.tight_layout()
+                plt.savefig(plot_name)
+                plt.close(fig)
+
 else:
     if len(shape) == 3:
         from mayavi import mlab
@@ -290,22 +369,22 @@ else:
                 plt.clf()
                 fig.savefig("figs/Wave_" + str(i).zfill(8) + ".png")
                 plb.xlim([-100, 100])
-                plb.ylim([-100,100])
+                plb.ylim([-100, 100])
                 plt.tight_layout()
                 fig.savefig("figs/Wave_small_" + str(i).zfill(8) + ".png")
                 plt.clf()
 
-                plt.semilogy(x[0:-1], np.abs(psi[:,psi.shape[1]/2]))
+                plt.semilogy(x[0:-1], np.abs(psi[:, psi.shape[1] / 2]))
                 plt.xlabel("X-axis  (a.u.)")
-                plt.xlim([-100,100])
-                plt.ylim([1e-10,1])
+                plt.xlim([-100, 100])
+                plt.ylim([1e-10, 1])
                 fig.savefig("figs/Wave_x_cut_" + str(i).zfill(8) + ".png")
                 plt.clf()
 
-                plt.semilogy(y[0:-1], np.abs(psi[psi.shape[0]/2,:]))
+                plt.semilogy(y[0:-1], np.abs(psi[psi.shape[0] / 2, :]))
                 plt.xlabel("Y-axis  (a.u.)")
-                plt.xlim([-100,100])
-                plt.ylim([1e-10,1])
+                plt.xlim([-100, 100])
+                plt.ylim([1e-10, 1])
                 fig.savefig("figs/Wave_y_cut_" + str(i).zfill(8) + ".png")
                 plt.clf()
 
