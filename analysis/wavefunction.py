@@ -81,12 +81,12 @@ if num_electrons == 2:
                     plt.savefig(plot_name)
                     plt.close(fig)
 
-                    # plot on log scale
+                    # plot on log scale without recalculating
                     plot_name = "figs/Wave_log_projection_on_dim_" + str(
                         dim_idx) + "_electron_" + str(
                             electron_idx) + "_state_" + str(i).zfill(8) + ".png"
                     fig = plt.figure()
-                    plt.plot(axis, data / data.max())
+                    plt.semilogy(axis, data / data.max())
                     if dim_idx == 0:
                         plt.axvline(-0.7, color='k')
                         plt.axvline(0.7, color='k')
@@ -119,7 +119,7 @@ if num_electrons == 2:
                 plt.savefig(plot_name)
                 plt.close(fig)
 
-                # log scale electron 0
+                # log scale electron 0 without recalculating
                 plot_name = "figs/Wave_log_2d_electron_0_state_" + str(
                     i).zfill(8) + ".png"
                 fig = plt.figure()
@@ -153,7 +153,7 @@ if num_electrons == 2:
                 plt.savefig(plot_name)
                 plt.close(fig)
 
-                # log scale electron 1
+                # log scale electron 1 without recalculating
                 plot_name = "figs/Wave_log_2d_electron_1_state_" + str(
                     i).zfill(8) + ".png"
                 fig = plt.figure()
@@ -187,7 +187,7 @@ if num_electrons == 2:
                 plt.savefig(plot_name)
                 plt.close(fig)
 
-                # log scale dim 0 for both electrons
+                # log scale dim 0 for both electrons without recalculating
                 plot_name = "figs/Wave_log_2d_dim_0_state_" + str(i).zfill(
                     8) + ".png"
                 fig = plt.figure()
@@ -221,8 +221,8 @@ if num_electrons == 2:
                 plt.savefig(plot_name)
                 plt.close(fig)
 
-                # plot dim 1 for both electrons
-                plot_name = "figs/Wave_2d_dim_1_state_" + str(i).zfill(
+                # log scale dim 1 for both electrons without recalculating
+                plot_name = "figs/Wave_log_2d_dim_1_state_" + str(i).zfill(
                     8) + ".png"
                 fig = plt.figure()
                 plt.imshow(
