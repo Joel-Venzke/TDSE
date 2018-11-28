@@ -8,6 +8,8 @@
 class Hamiltonian : protected Utils
 {
  private:
+  Wavefunction *wavefunction;
+
   PetscInt num_dims;
   PetscInt num_electrons;
   PetscInt num_nuclei; /* number of nuclei in potential */

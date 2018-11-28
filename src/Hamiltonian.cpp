@@ -4,6 +4,7 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
                          Parameters& p)
 {
   if (world.rank() == 0) std::cout << "Creating Hamiltonian\n";
+  wavefunction           = &w;
   num_dims               = p.GetNumDims();
   num_electrons          = p.GetNumElectrons();
   num_nuclei             = p.GetNumNuclei();

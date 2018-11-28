@@ -33,6 +33,7 @@ class Wavefunction : protected Utils
   Vec ECS;
   Vec *position_expectation;
   Vec *dipole_acceleration;
+  Mat *position_mat;
   bool psi_alloc_build;
   bool psi_alloc;
   /* false if its not the first time checkpointing the wavefunction */
@@ -113,6 +114,7 @@ class Wavefunction : protected Utils
                double *start_state_phase);
   void ResetPsi();
   void ZeroPhasePsiSmall();
+  void SetPositionMat(Mat *input_mat);
 
   PetscInt *GetNumX();
   PetscInt GetNumPsi();

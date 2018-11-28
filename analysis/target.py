@@ -94,11 +94,27 @@ if num_electrons == 2:
                     if this_dim != current_dim:
                         axis_sum_list.append(this_dim)
                 axis_sum_list = tuple(axis_sum_list)
-                fig = plt.figure()
                 data = np.sum(psi, axis=axis_sum_list)
                 data = (data * np.conjugate(data)).real
                 axis = f["Wavefunction"]["x_value_" + str(dim_idx)][:]
+                fig = plt.figure()
                 plt.plot(axis, data / data.max())
+                if dim_idx == 0:
+                    plt.axvline(-0.7, color='k')
+                    plt.axvline(0.7, color='k')
+                else:
+                    plt.axvline(0.0, color='k')
+                plt.xlabel("Dim:" + str(dim_idx) + "   Electron:" +
+                           str(electron_idx))
+                plt.tight_layout()
+                plt.savefig(plot_name)
+                plt.close(fig)
+
+                plot_name = "figs/" + target_name + "_log_projection_on_dim_" + str(
+                    dim_idx) + "_electron_" + str(
+                        electron_idx) + "_state_" + str(i).zfill(8) + ".png"
+                fig = plt.figure()
+                plt.semilogy(axis, data / data.max())
                 if dim_idx == 0:
                     plt.axvline(-0.7, color='k')
                     plt.axvline(0.7, color='k')
@@ -122,9 +138,22 @@ if num_electrons == 2:
             plt.imshow(
                 data / data.max(),
                 cmap='viridis',
+                extent=[dim_1[-1], dim_1[1], dim_0[-1], dim_0[1]])
+            plt.ylabel("Dim: 0")
+            plt.xlabel("Dim: 1")
+            plt.colorbar()
+            plt.tight_layout()
+            plt.savefig(plot_name)
+            plt.close(fig)
+
+            plot_name = "figs/" + target_name + "_log_2d_electron_0_state_" + str(
+                i).zfill(8) + ".png"
+            fig = plt.figure()
+            plt.imshow(
+                data / data.max(),
+                cmap='viridis',
                 extent=[dim_1[-1], dim_1[1], dim_0[-1], dim_0[1]],
-                # norm=LogNorm(vmin=1e-15)
-            )
+                norm=LogNorm(vmin=1e-15))
             plt.ylabel("Dim: 0")
             plt.xlabel("Dim: 1")
             plt.colorbar()
@@ -142,9 +171,22 @@ if num_electrons == 2:
             plt.imshow(
                 data / data.max(),
                 cmap='viridis',
+                extent=[dim_1[-1], dim_1[1], dim_0[-1], dim_0[1]])
+            plt.ylabel("Dim: 0")
+            plt.xlabel("Dim: 1")
+            plt.colorbar()
+            plt.tight_layout()
+            plt.savefig(plot_name)
+            plt.close(fig)
+
+            plot_name = "figs/" + target_name + "_log_2d_electron_1_state_" + str(
+                i).zfill(8) + ".png"
+            fig = plt.figure()
+            plt.imshow(
+                data / data.max(),
+                cmap='viridis',
                 extent=[dim_1[-1], dim_1[1], dim_0[-1], dim_0[1]],
-                # norm=LogNorm(vmin=1e-15)
-            )
+                norm=LogNorm(vmin=1e-15))
             plt.ylabel("Dim: 0")
             plt.xlabel("Dim: 1")
             plt.colorbar()
@@ -162,9 +204,22 @@ if num_electrons == 2:
             plt.imshow(
                 data / data.max(),
                 cmap='viridis',
+                extent=[dim_0[-1], dim_0[1], dim_0[-1], dim_0[1]])
+            plt.ylabel("Dim: 0    Electron: 0")
+            plt.xlabel("Dim: 0    Electron: 1")
+            plt.colorbar()
+            plt.tight_layout()
+            plt.savefig(plot_name)
+            plt.close(fig)
+
+            plot_name = "figs/" + target_name + "_log_2d_dim_0_state_" + str(
+                i).zfill(8) + ".png"
+            fig = plt.figure()
+            plt.imshow(
+                data / data.max(),
+                cmap='viridis',
                 extent=[dim_0[-1], dim_0[1], dim_0[-1], dim_0[1]],
-                # norm=LogNorm(vmin=1e-15)
-            )
+                norm=LogNorm(vmin=1e-15))
             plt.ylabel("Dim: 0    Electron: 0")
             plt.xlabel("Dim: 0    Electron: 1")
             plt.colorbar()
@@ -182,9 +237,22 @@ if num_electrons == 2:
             plt.imshow(
                 data / data.max(),
                 cmap='viridis',
+                extent=[dim_0[-1], dim_0[1], dim_0[-1], dim_0[1]])
+            plt.ylabel("Dim: 1    Electron: 0")
+            plt.xlabel("Dim: 1    Electron: 1")
+            plt.colorbar()
+            plt.tight_layout()
+            plt.savefig(plot_name)
+            plt.close(fig)
+
+            plot_name = "figs/" + target_name + "_log_2d_dim_1_state_" + str(
+                i).zfill(8) + ".png"
+            fig = plt.figure()
+            plt.imshow(
+                data / data.max(),
+                cmap='viridis',
                 extent=[dim_0[-1], dim_0[1], dim_0[-1], dim_0[1]],
-                # norm=LogNorm(vmin=1e-15)
-            )
+                norm=LogNorm(vmin=1e-15))
             plt.ylabel("Dim: 1    Electron: 0")
             plt.xlabel("Dim: 1    Electron: 1")
             plt.colorbar()

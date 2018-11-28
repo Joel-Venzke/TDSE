@@ -5,6 +5,35 @@ import matplotlib.pyplot as plt
 import h5py
 from scipy.signal import argrelmin, argrelmax
 from matplotlib.colors import LogNorm
+
+
+def shifted_energy(tdse_file, pulse_idx=0):
+    # central frequency of A field (hbar=1)
+    energy = f["Parameters"]["energy"][pulse_idx]
+    # index of pulse shape, sin=0, gauss=1
+    pulse_shape_idx = f["Parameters"]["pulse_shape_idx"][pulse_idx]
+    # power sin like pulses are raised to
+    power_on = f["Parameters"]["power_on"][pulse_idx]
+    power_off = f["Parameters"]["power_off"][pulse_idx]
+    cycles_on = f["Parameters"]["cycles_on"][pulse_idx]
+    cycles_off = f["Parameters"]["cycles_off"][pulse_idx]
+    cycles_plateau = f["Parameters"]["cycles_plateau"][pulse_idx]
+    mu = None
+    if pulse_shape_idx == 0 and power_on == 2 and power_off == 2 and np.abs(
+            cycles_plateau) < 1e-10 and cycles_off == cycles_on:
+        mu = 4.0 * (np.arcsin(np.exp(-1.0 / 4.0)))**2
+    elif pulse_shape_idx == 1 and np.abs(
+            cycles_plateau) < 1e-10 and cycles_off == cycles_on:
+        mu = 4 * 2 * np.log(2.0) / np.pi**2
+    else:
+        print "WARNING: using uncorrected energy."
+        print "         The frequency shift is not implemented for this pulse shape."
+        return energy
+    shift = (1.0 + np.sqrt(1 + mu / (cycles_off + cycles_on)**2)) / 2.0
+    print "SHIFT:", energy, shift * energy
+    return energy * shift
+
+
 f = None
 p = None
 
@@ -189,8 +218,7 @@ plt.close(fig)
 # HHG Spectrum
 print "Plotting HHG Spectrum"
 fig = plt.figure(figsize=(24, 18), dpi=80)
-energy = f["Parameters"]["energy"][0]
-energy = 0.057
+energy = shifted_energy(f, 0)
 for elec_idx in range(num_electrons):
     for dim_idx in range(num_dims):
         if (not (dim_idx == 0
@@ -220,7 +248,7 @@ plt.ylabel("HHG Spectrum (a.u.)")
 plt.title("HHG Spectrum")
 plt.legend()
 x_min = 0
-x_max = 5
+x_max = 7
 plt.xticks(np.arange(x_min + 1, x_max + 1, 2.0))
 plt.xlim([x_min, x_max])
 plt.ylim([1e-8, 1])
@@ -233,8 +261,7 @@ plt.close(fig)
 # HHG Spectrum from Dipole
 print "Plotting HHG Spectrum from Dipole"
 fig = plt.figure(figsize=(24, 18), dpi=80)
-energy = f["Parameters"]["energy"][0]
-energy = 0.057
+energy = shifted_energy(f, 0)
 for elec_idx in range(num_electrons):
     for dim_idx in range(num_dims):
         if (not (dim_idx == 0
@@ -258,7 +285,7 @@ for elec_idx in range(num_electrons):
                                    int(np.ceil((padd2 - data.shape[0]) / 2))),
                             'constant',
                             constant_values=(0.0, 0.0))))
-                data /= data.max()
+                # data /= data.max()
                 plt.semilogy(
                     np.arange(data.shape[0]) * dH,
                     data,
@@ -267,10 +294,10 @@ plt.ylabel("HHG Spectrum (a.u.)")
 plt.title("HHG Spectrum")
 plt.legend()
 x_min = 0
-x_max = 60
+x_max = 7
 plt.xticks(np.arange(x_min + 1, x_max + 1, 2.0))
 plt.xlim([x_min, x_max])
-plt.ylim([1e-8, 1])
+plt.ylim(ymin=1e-8)
 plt.grid(True, which='both')
 plt.tight_layout()
 fig.savefig("figs/HHG_Spectrum_dipole.png")

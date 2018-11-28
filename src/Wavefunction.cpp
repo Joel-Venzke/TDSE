@@ -1687,6 +1687,12 @@ void Wavefunction::ZeroPhasePsiSmall()
   VecScale(psi_small, std::exp(-imag * phase));
 }
 
+void Wavefunction::SetPositionMat(Mat* input_mat)
+{
+  MatView(input_mat[0], PETSC_VIEWER_STDOUT_WORLD);
+  EndRun("");
+}
+
 PetscInt* Wavefunction::GetNumX() { return num_x; }
 
 PetscInt Wavefunction::GetNumPsi() { return num_psi; }

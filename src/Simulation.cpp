@@ -340,12 +340,13 @@ void Simulation::EigenSolve(PetscInt num_states)
         EPSSetProblemType(eps, EPS_NHEP);
         EPSSetTolerances(eps, tol, PETSC_DECIDE);
         EPSSetWhichEigenpairs(eps, EPS_SMALLEST_REAL);
-        if (coordinate_system_idx == 3 and num_x[2] > 500)
+        /* EPS doesn't converge unless we increase the subspace */
+        if (coordinate_system_idx == 3 and num_x[2] > 1000)
         {
           EPSSetDimensions(eps, num_states - l_val, PETSC_DECIDE,
                            num_x[2] * 0.1);
         }
-        else
+        else /* make it big for super small calculations */
         {
           EPSSetDimensions(eps, num_states - l_val, PETSC_DECIDE,
                            num_x[2] * 0.5);
