@@ -34,6 +34,7 @@ class Wavefunction : protected Utils
   Vec *position_expectation;
   Vec *dipole_acceleration;
   Mat *position_mat;
+  bool position_mat_alloc;
   bool psi_alloc_build;
   bool psi_alloc;
   /* false if its not the first time checkpointing the wavefunction */

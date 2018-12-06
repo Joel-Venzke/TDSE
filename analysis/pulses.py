@@ -24,6 +24,7 @@ energy = 0.057
 print "Plotting A Field"
 fig = plt.figure()
 for dim_idx in range(num_dims):
+    print np.max(np.abs(pulses["field_" + str(dim_idx)][:]))
     plt.plot(
         p_time,
         pulses["field_" + str(dim_idx)][:],

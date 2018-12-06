@@ -69,7 +69,7 @@ if num_electrons == 2:
                     data = np.sum(psi, axis=axis_sum_list)
                     data = (data * np.conjugate(data)).real
                     axis = f["Wavefunction"]["x_value_" + str(dim_idx)][:]
-                    plt.semilogy(axis, data / data.max())
+                    plt.plot(axis, data / data.max())
                     if dim_idx == 0:
                         plt.axvline(-0.7, color='k')
                         plt.axvline(0.7, color='k')
@@ -77,6 +77,7 @@ if num_electrons == 2:
                         plt.axvline(0.0, color='k')
                     plt.xlabel("Dim:" + str(dim_idx) + "   Electron:" +
                                str(electron_idx))
+                    plt.xlim([-5, 5])
                     plt.tight_layout()
                     plt.savefig(plot_name)
                     plt.close(fig)
@@ -291,22 +292,22 @@ else:
                 plt.clf()
                 fig.savefig("figs/Wave_" + str(i).zfill(8) + ".png")
                 plb.xlim([-100, 100])
-                plb.ylim([-100,100])
+                plb.ylim([-100, 100])
                 plt.tight_layout()
                 fig.savefig("figs/Wave_small_" + str(i).zfill(8) + ".png")
                 plt.clf()
 
-                plt.semilogy(x[0:-1], np.abs(psi[:,psi.shape[1]/2]))
+                plt.semilogy(x[0:-1], np.abs(psi[:, psi.shape[1] / 2]))
                 plt.xlabel("X-axis  (a.u.)")
-                plt.xlim([-100,100])
-                plt.ylim([1e-10,1])
+                plt.xlim([-100, 100])
+                plt.ylim([1e-10, 1])
                 fig.savefig("figs/Wave_x_cut_" + str(i).zfill(8) + ".png")
                 plt.clf()
 
-                plt.semilogy(y[0:-1], np.abs(psi[psi.shape[0]/2,:]))
+                plt.semilogy(y[0:-1], np.abs(psi[psi.shape[0] / 2, :]))
                 plt.xlabel("Y-axis  (a.u.)")
-                plt.xlim([-100,100])
-                plt.ylim([1e-10,1])
+                plt.xlim([-100, 100])
+                plt.ylim([1e-10, 1])
                 fig.savefig("figs/Wave_y_cut_" + str(i).zfill(8) + ".png")
                 plt.clf()
 

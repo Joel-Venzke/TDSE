@@ -141,11 +141,11 @@ void Simulation::Propagate()
       PetscLogEventBegin(create_checkpoint, 0, 0, 0, 0);
 
       if (world.rank() == 0)
-        std::cout << "\nIteration: " << i << "\nPulse ends: " << time_length
+        std::cout << "\nIteration:  " << i << "\nPulse ends: " << time_length
                   << "\n"
                   << "Average time for time-step: "
-                  << ((float)clock() - t) /
-                         (CLOCKS_PER_SEC * write_frequency_checkpoint)
+                  << ((float)clock() - t) / CLOCKS_PER_SEC /
+                         write_frequency_checkpoint
                   << "\n"
                   << std::flush;
       t = clock();
@@ -358,7 +358,7 @@ void Simulation::EigenSolve(PetscInt num_states)
         {
           std::cout << "\n";
         }
-        for (int j = 0; j < nconv; j++)
+        for (int j = 0; j < num_states - l_val; j++)
         {
           EPSGetEigenpair(eps, j, &eigen_real, NULL, *psi, NULL);
           if (world.rank() == 0)

@@ -248,7 +248,7 @@ plt.ylabel("HHG Spectrum (a.u.)")
 plt.title("HHG Spectrum")
 plt.legend()
 x_min = 0
-x_max = 7
+x_max = 25
 plt.xticks(np.arange(x_min + 1, x_max + 1, 2.0))
 plt.xlim([x_min, x_max])
 plt.ylim([1e-8, 1])
@@ -294,7 +294,7 @@ plt.ylabel("HHG Spectrum (a.u.)")
 plt.title("HHG Spectrum")
 plt.legend()
 x_min = 0
-x_max = 7
+x_max = 25
 plt.xticks(np.arange(x_min + 1, x_max + 1, 2.0))
 plt.xlim([x_min, x_max])
 plt.ylim(ymin=1e-8)

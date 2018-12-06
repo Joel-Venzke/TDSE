@@ -7,6 +7,7 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   double ecs = ((1 - p.GetGobbler()) / 2.0) + p.GetGobbler();
 
   /* initialize values */
+  position_mat_alloc        = false;
   psi_alloc_build           = false;
   psi_alloc                 = false;
   first_pass                = true;
@@ -1261,11 +1262,15 @@ void Wavefunction::CreateObservables()
         val = GetPositionVal(idx, 0, 0, true);
       else
         val = 1.0;
-      val *= GetVolumeElement(idx);
+      if (coordinate_system_idx != 3)
+      {
+        val *= GetVolumeElement(idx);
+      }
       VecSetValues(jacobian, 1, &idx, &val, INSERT_VALUES);
     }
     VecAssemblyBegin(jacobian);
     VecAssemblyEnd(jacobian);
+    VecView(jacobian, PETSC_VIEWER_STDOUT_WORLD);
 
     VecGetOwnershipRange(ECS, &low, &high);
     for (PetscInt idx = low; idx < high; idx++)
@@ -1518,6 +1523,12 @@ dcomp Wavefunction::GetDipoleAccerationVal(PetscInt idx, PetscInt elec_idx,
              x_value[2][idx] * x_value[2][idx]);
     ret_val += x_value[dim_idx][idx] / (r * r * r);
   }
+  else if (coordinate_system_idx == 3) /* spherical */
+  {
+    std::vector< PetscInt > idx_array = GetIntArray(idx);
+    r = x_value[2][idx_array[elec_idx * num_dims + 2]];
+    ret_val += 1.0 / (r * r * r);
+  }
   else
   {
     /* idx for return */
@@ -1611,10 +1622,31 @@ double Wavefunction::GetPosition(PetscInt elec_idx, PetscInt dim_idx)
 {
   PetscLogEventBegin(time_position, 0, 0, 0, 0);
   PetscComplex expectation;
-  VecPointwiseMult(psi_tmp_cyl, jacobian, psi);
-  VecPointwiseMult(psi_tmp, position_expectation[elec_idx * num_dims + dim_idx],
-                   psi_tmp_cyl);
-  VecDot(psi, psi_tmp, &expectation);
+  if (coordinate_system_idx == 3)
+  {
+    if (position_mat_alloc)
+    {
+      /* apply position matrix */
+      MatMult(position_mat[dim_idx], psi, psi_tmp_cyl);
+      /* apply Jacobian after (doesn't commute with matrix) */
+      VecPointwiseMult(psi_tmp, jacobian, psi_tmp_cyl);
+      VecDot(psi, psi_tmp, &expectation);
+    }
+    else /* return zero if the position expectation matrix has not been built */
+    {
+      expectation = 0.0;
+    }
+  }
+  else
+  {
+    /* apply Jacobian */
+    VecPointwiseMult(psi_tmp_cyl, jacobian, psi);
+    /* scale by location */
+    VecPointwiseMult(psi_tmp,
+                     position_expectation[elec_idx * num_dims + dim_idx],
+                     psi_tmp_cyl);
+    VecDot(psi, psi_tmp, &expectation);
+  }
   PetscLogEventEnd(time_position, 0, 0, 0, 0);
   return expectation.real();
 }
@@ -1624,10 +1656,33 @@ double Wavefunction::GetDipoleAcceration(PetscInt elec_idx, PetscInt dim_idx)
 {
   PetscLogEventBegin(time_dipole_acceration, 0, 0, 0, 0);
   PetscComplex expectation;
-  VecPointwiseMult(psi_tmp_cyl, jacobian, psi);
-  VecPointwiseMult(psi_tmp, dipole_acceleration[elec_idx * num_dims + dim_idx],
-                   psi_tmp_cyl);
-  VecDot(psi, psi_tmp, &expectation);
+  if (coordinate_system_idx == 3)
+  {
+    if (position_mat_alloc)
+    {
+      /* apply position matrix */
+      MatMult(position_mat[dim_idx], psi, psi_tmp_cyl);
+      /* apply 1/r^3 (doesn't commute with matrix) */
+      VecPointwiseMult(psi_tmp_cyl,
+                       dipole_acceleration[elec_idx * num_dims + dim_idx],
+                       psi_tmp_cyl);
+      /* apply Jacobian after (doesn't commute with matrix) */
+      VecPointwiseMult(psi_tmp, jacobian, psi_tmp_cyl);
+      VecDot(psi, psi_tmp, &expectation);
+    }
+    else /* return zero if the position expectation matrix has not been built */
+    {
+      expectation = 0.0;
+    }
+  }
+  else
+  {
+    VecPointwiseMult(psi_tmp_cyl, jacobian, psi);
+    VecPointwiseMult(psi_tmp,
+                     dipole_acceleration[elec_idx * num_dims + dim_idx],
+                     psi_tmp_cyl);
+    VecDot(psi, psi_tmp, &expectation);
+  }
   PetscLogEventEnd(time_dipole_acceration, 0, 0, 0, 0);
   return expectation.real();
 }
@@ -1689,8 +1744,17 @@ void Wavefunction::ZeroPhasePsiSmall()
 
 void Wavefunction::SetPositionMat(Mat* input_mat)
 {
-  MatView(input_mat[0], PETSC_VIEWER_STDOUT_WORLD);
-  EndRun("");
+  position_mat = new Mat[num_dims];
+  for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+  {
+    MatCreateAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, num_psi, num_psi,
+                 num_dims * num_electrons * (order + 3), NULL,
+                 num_dims * num_electrons * (order + 3), NULL,
+                 &(position_mat[dim_idx]));
+    MatCopy(input_mat[dim_idx], position_mat[dim_idx],
+            DIFFERENT_NONZERO_PATTERN);
+  }
+  position_mat_alloc = true;
 }
 
 PetscInt* Wavefunction::GetNumX() { return num_x; }

@@ -95,6 +95,7 @@ if num_electrons == 2:
                         axis_sum_list.append(this_dim)
                 axis_sum_list = tuple(axis_sum_list)
                 data = np.sum(psi, axis=axis_sum_list)
+                phase = np.angle(data)
                 data = (data * np.conjugate(data)).real
                 axis = f["Wavefunction"]["x_value_" + str(dim_idx)][:]
                 fig = plt.figure()
