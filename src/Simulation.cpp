@@ -729,7 +729,7 @@ void Simulation::CheckpointSmallState(HDF5Wrapper &h_file, ViewWrapper &v_file,
                                       PetscInt write_idx, dcomp energy,
                                       PetscInt l_val)
 {
-  wavefunction->ZeroPhasePsiSmall();
+  // wavefunction->ZeroPhasePsiSmall();
   wavefunction->CheckpointPsiSmall(v_file, write_idx, l_val);
   h_file.WriteObject(&energy, 1, "/Energy_l_" + std::to_string(l_val),
                      "Energy of the corresponding state", write_idx);

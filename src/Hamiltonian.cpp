@@ -1670,13 +1670,13 @@ dcomp Hamiltonian::GetOffDiagonalLaser(std::vector< PetscInt >& idx_array,
                   "Spherical coordinates.");
             }
             l0 = ((int)x_value[1][idx_array[2. * (elec_idx * num_dims + 1)]]);
-            l1 = ((
+            l1 = 1;
+            l_tot = ((
                 int)x_value[1][idx_array[2. * (elec_idx * num_dims + 1) + 1]]);
-            l_tot = l0 + l1;
             m0 = ((int)x_value[1][idx_array[2. * (elec_idx * num_dims + 0)]]);
-            m1 = ((
+            m1 = 0;
+            m_tot = ((
                 int)x_value[1][idx_array[2. * (elec_idx * num_dims + 0) + 1]]);
-            m_tot = m0 + m1;
             off_diagonal +=
                 x_value[2][idx_array[2. * (elec_idx * num_dims + 2)]] *
                 std::sqrt(4.0 * pi / 3.0) *
