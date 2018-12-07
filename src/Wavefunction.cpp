@@ -1270,7 +1270,6 @@ void Wavefunction::CreateObservables()
     }
     VecAssemblyBegin(jacobian);
     VecAssemblyEnd(jacobian);
-    VecView(jacobian, PETSC_VIEWER_STDOUT_WORLD);
 
     VecGetOwnershipRange(ECS, &low, &high);
     for (PetscInt idx = low; idx < high; idx++)
@@ -1740,6 +1739,30 @@ void Wavefunction::ZeroPhasePsiSmall()
   broadcast(world, phase, 0);
   /* Remove phase from wavefunction */
   VecScale(psi_small, std::exp(-imag * phase));
+}
+
+void Wavefunction::RadialHGroundPsiSmall()
+{
+  PetscInt low, high;
+  PetscComplex val;
+  PetscReal r;
+
+  VecGetOwnershipRange(psi_small, &low, &high);
+  for (PetscInt idx = low; idx < high; idx++)
+  {
+    r = x_value[2][idx];
+    if (r > 0)
+    {
+      val = dcomp(2.0 * std::exp(-r) / r, 0.0);
+    }
+    else
+    {
+      val = 0.0;
+    }
+    VecSetValues(psi_small, 1, &idx, &val, INSERT_VALUES);
+  }
+  VecAssemblyBegin(psi_small);
+  VecAssemblyEnd(psi_small);
 }
 
 void Wavefunction::SetPositionMat(Mat* input_mat)

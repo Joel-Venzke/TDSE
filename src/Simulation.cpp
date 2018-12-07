@@ -319,6 +319,7 @@ void Simulation::EigenSolve(PetscInt num_states)
 
   if (coordinate_system_idx == 3)
   {
+    /* only the radial part is needed for the states */
     psi = wavefunction->GetPsiSmall();
     for (int l_val = 0; l_val < num_x[1]; ++l_val)
     {
@@ -351,6 +352,9 @@ void Simulation::EigenSolve(PetscInt num_states)
           EPSSetDimensions(eps, num_states - l_val, PETSC_DECIDE,
                            num_x[2] * 0.5);
         }
+        /* set up initial space */
+        wavefunction->RadialHGroundPsiSmall();
+        EPSSetInitialSpace(eps, 1, psi);
         EPSSetFromOptions(eps);
         EPSSolve(eps);
         EPSGetConverged(eps, &nconv);
@@ -556,7 +560,6 @@ void Simulation::PowerMethod(PetscInt num_states)
     KSPSetOperators(ksp, left, left);
     KSPSetTolerances(ksp, 1.e-15, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
     /* Allow command line options */
-    KSPSetTolerances(ksp, 1.e-15, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
     KSPSetFromOptions(ksp);
 
     /* Do we need to use gram schmidt */

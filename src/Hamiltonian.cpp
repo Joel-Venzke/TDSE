@@ -1684,10 +1684,6 @@ dcomp Hamiltonian::GetOffDiagonalLaser(std::vector< PetscInt >& idx_array,
                           (4 * pi * (2 * l_tot + 1))) *
                 ClebschGordanCoef(l0, l1, l_tot, 0, 0, 0) *
                 ClebschGordanCoef(l0, l1, l_tot, m0, m1, m_tot);
-            std::cout << "l_vals: " << l0 << " " << l1 << " " << l_tot << " "
-                      << m0 << " " << m1 << " " << m_tot << " "
-                      << ClebschGordanCoef(l0, l1, l_tot, m0, m1, m_tot)
-                      << "\n";
           }
           /* DONT TOUCH FIELD WITH ECS */
           else if (gauge_idx == 0) /* Time dependent matrix */

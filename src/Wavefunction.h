@@ -115,6 +115,7 @@ class Wavefunction : protected Utils
                double *start_state_phase);
   void ResetPsi();
   void ZeroPhasePsiSmall();
+  void RadialHGroundPsiSmall();
   void SetPositionMat(Mat *input_mat);
 
   PetscInt *GetNumX();
