@@ -35,4 +35,5 @@ class Utils
   std::string FileToString(std::string file_name);
   json FileToJson(std::string file_name);
   double ClebschGordanCoef(int l1, int l2, int l3, int m1, int m2, int m3);
+  PetscInt GetIdxFromLM(PetscInt l_val, PetscInt m_val, PetscInt m_max);
 };

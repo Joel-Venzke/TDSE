@@ -16,6 +16,8 @@ class Wavefunction : protected Utils
   double *delta_x_max;       /* step sizes of each dimension in a.u. */
   double *delta_x_max_start; /* step sizes of each dimension in a.u. */
   double delta_t;            /* time step in a.u. */
+  PetscInt l_max;
+  PetscInt m_max;
   PetscInt coordinate_system_idx;
   std::string target_file_name;
   PetscInt num_states;
@@ -23,6 +25,8 @@ class Wavefunction : protected Utils
   PetscInt num_psi_build; /* number of points in psi_1 and psi_2 */
   PetscInt num_psi;       /* number of points in psi */
   double **x_value;       /* location of grid point in each dimension */
+  double *l_values;       /* l_values for the spherical code */
+  double *m_values;       /* m_values for the spherical code */
   dcomp ***psi_build;     /* used for allocating new wave functions */
   Vec psi;                /* wavefunction for 2 electron system */
   Vec psi_small;          /* wavefunction for spherical eigen states */
@@ -76,7 +80,8 @@ class Wavefunction : protected Utils
                    PetscInt write_frequency_checkpoint,
                    PetscInt write_frequency_observables);
 
-  void InsertRadialPsi(Vec &psi_radial, Vec &psi_total, PetscInt l_val);
+  void InsertRadialPsi(Vec &psi_radial, Vec &psi_total, PetscInt l_val,
+                       PetscInt m_val);
 
  public:
   /* Constructor */
@@ -111,8 +116,8 @@ class Wavefunction : protected Utils
                double *start_state_amplitude, double *start_state_phase);
   void LoadPsi(std::string file_name, PetscInt num_states,
                PetscInt num_start_state, PetscInt *start_state_idx,
-               PetscInt *start_state_l_idx, double *start_state_amplitude,
-               double *start_state_phase);
+               PetscInt *start_state_l_idx, PetscInt *start_state_m_idx,
+               double *start_state_amplitude, double *start_state_phase);
   void ResetPsi();
   void ZeroPhasePsiSmall();
   void RadialHGroundPsiSmall();

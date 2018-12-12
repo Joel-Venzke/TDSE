@@ -88,7 +88,8 @@ void Parameters::Setup(std::string file_name)
     delta_x_max       = std::make_unique< double[] >(num_dims);
     delta_x_max_start = std::make_unique< double[] >(num_dims);
 
-    /* The fist dimension is r and we use Finite difference for this*/
+    /* The last dimension (diagonal of matrix) is r and we use Finite
+     * difference for this */
     int dim_input_idx = 0;
     int dim_idx       = 2;
     CheckParameter(data["dimensions"][dim_input_idx]["dim_size"].size(),
@@ -123,13 +124,20 @@ void Parameters::Setup(std::string file_name)
       delta_x_max[dim_idx]     = 1.0;
     }
 
+    /* get m_max note m goes from -m to m so 2m+1 terms*/
+
+    dim_size[0] = 1;
+
     /* get l_max */
     CheckParameter(data["dimensions"][0]["l_max"].size(), "dimensions - l_max");
-    dim_size[1] = data["dimensions"][0]["l_max"];
+    l_max = data["dimensions"][0]["l_max"];
 
-    /* get m_max note m goes from -m to m so 2m+1 terms*/
+    /* get m_max */
     CheckParameter(data["dimensions"][0]["m_max"].size(), "dimensions - m_max");
-    dim_size[0] = data["dimensions"][0]["m_max"];
+    m_max = data["dimensions"][0]["m_max"];
+
+    /* this dimension combines l and m to avoid tensor grid issues */
+    dim_size[1] = GetIdxFromLM(l_max, m_max, m_max) + 1;
 
     CheckParameter(data["gobbler"].size(), "gobbler");
     gobbler = data["gobbler"];
@@ -262,23 +270,49 @@ void Parameters::Setup(std::string file_name)
                    "start_state - n_index");
     num_start_state   = data["start_state"]["n_index"].size();
     start_state_l_idx = new PetscInt[num_start_state];
+    start_state_m_idx = new PetscInt[num_start_state];
+    if (data["start_state"]["amplitude"].size() != num_start_state)
+    {
+      EndRun(
+          "'start_state - amplitude' and 'start_state - n_index' sizes do not "
+          "match. Double check input file.");
+    }
+    if (data["start_state"]["phase"].size() != num_start_state)
+    {
+      EndRun(
+          "'start_state - phase' and 'start_state - n_index' sizes do not "
+          "match. Double check input file.");
+    }
+    if (data["start_state"]["l_index"].size() != num_start_state)
+    {
+      EndRun(
+          "'start_state - l_index' and 'start_state - n_index' sizes do not "
+          "match. Double check input file.");
+    }
+    if (data["start_state"]["m_index"].size() != num_start_state)
+    {
+      EndRun(
+          "'start_state - m_index' and 'start_state - n_index' sizes do not "
+          "match. Double check input file.");
+    }
   }
   else
   {
     CheckParameter(data["start_state"]["index"].size(), "start_state - index");
     num_start_state = data["start_state"]["index"].size();
-  }
-  if (data["start_state"]["amplitude"].size() != num_start_state)
-  {
-    EndRun(
-        "'start_state - amplitude' and 'start_state - index' sizes do not "
-        "match. Double check input file.");
-  }
-  if (data["start_state"]["phase"].size() != num_start_state)
-  {
-    EndRun(
-        "'start_state - phase' and 'start_state - index' sizes do not match. "
-        "Double check input file.");
+
+    if (data["start_state"]["amplitude"].size() != num_start_state)
+    {
+      EndRun(
+          "'start_state - amplitude' and 'start_state - index' sizes do not "
+          "match. Double check input file.");
+    }
+    if (data["start_state"]["phase"].size() != num_start_state)
+    {
+      EndRun(
+          "'start_state - phase' and 'start_state - index' sizes do not match. "
+          "Double check input file.");
+    }
   }
   start_state_idx       = new PetscInt[num_start_state];
   start_state_amplitude = new double[num_start_state];
@@ -294,6 +328,9 @@ void Parameters::Setup(std::string file_name)
       CheckParameter(data["start_state"]["l_index"][i].size(),
                      "start_state - l_index");
       start_state_l_idx[i] = data["start_state"]["l_index"][i];
+      CheckParameter(data["start_state"]["m_index"][i].size(),
+                     "start_state - m_index");
+      start_state_m_idx[i] = data["start_state"]["m_index"][i];
     }
     else
     {
@@ -880,6 +917,7 @@ Parameters::~Parameters()
   if (coordinate_system_idx == 3)
   {
     delete start_state_l_idx;
+    delete start_state_m_idx;
   }                              ///< index of states in super position
   delete start_state_amplitude;  ///< amplitude of states in super position
   delete start_state_phase;
@@ -916,11 +954,6 @@ void Parameters::Validate()
     {
       error_found = true;
       err_str += "\nSpherical only supports 1 electron currently\n";
-    }
-    if (dim_size[0] != 0)
-    {
-      error_found = true;
-      err_str += "\nSpherical only supports m=0 currently\n";
     }
     if (gauge_idx != 1)
     {
@@ -1163,14 +1196,41 @@ void Parameters::Validate()
 
   for (int idx = 0; idx < num_start_state; ++idx)
   {
-    if (coordinate_system_idx == 3 and start_state_idx[idx] - 1 >= num_states)
+    if (coordinate_system_idx == 3)
     {
-      error_found = true;
-      err_str +=
-          "\nThe start_state must be less than the total number of states you "
-          "wish to calculate\n";
+      if (start_state_idx[idx] - 1 >= num_states)
+      {
+        error_found = true;
+        err_str +=
+            "\nThe start_state - n_index must be less than the total number of "
+            "states you wish to calculate\n";
+      }
+      if (start_state_l_idx[idx] >= start_state_idx[idx])
+      {
+        error_found = true;
+        err_str +=
+            "\nThe start_state - l_index must be less than start_state - "
+            "n_index\n";
+      }
+      if (start_state_l_idx[idx] > l_max)
+      {
+        error_found = true;
+        err_str += "\nThe start_state - l_index must be less than l_max\n";
+      }
+      if (std::abs(start_state_m_idx[idx]) > start_state_l_idx[idx])
+      {
+        error_found = true;
+        err_str +=
+            "\nThe magnitude of start_state - m_index must be less than or "
+            "equal to start_state - l_index\n";
+      }
+      if (std::abs(start_state_m_idx[idx]) > m_max)
+      {
+        error_found = true;
+        err_str += "\nThe start_state - m_index must be less than m_max\n";
+      }
     }
-    else if (start_state_idx[idx] >= num_states and coordinate_system_idx != 3)
+    else if (start_state_idx[idx] >= num_states)
     {
       error_found = true;
       err_str +=
@@ -1203,6 +1263,8 @@ PetscInt Parameters::GetNumElectrons() { return num_electrons; }
 
 PetscInt Parameters::GetCoordinateSystemIdx() { return coordinate_system_idx; }
 
+PetscInt Parameters::GetMMax() { return m_max; }
+PetscInt Parameters::GetLMax() { return l_max; }
 PetscInt Parameters::GetRestart() { return restart; }
 
 std::string Parameters::GetTarget() { return target; }
@@ -1270,6 +1332,8 @@ PetscInt Parameters::GetNumStartState() { return num_start_state; }
 PetscInt* Parameters::GetStartStateIdx() { return start_state_idx; }
 
 PetscInt* Parameters::GetStartStateLIdx() { return start_state_l_idx; }
+
+PetscInt* Parameters::GetStartStateMIdx() { return start_state_m_idx; }
 
 double* Parameters::GetStartStateAmplitude() { return start_state_amplitude; }
 

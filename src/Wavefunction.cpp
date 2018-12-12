@@ -29,6 +29,12 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   write_counter_projections = 0;
   order                     = p.GetOrder();
 
+  if (coordinate_system_idx == 3)
+  {
+    l_max = p.GetLMax();
+    m_max = p.GetMMax();
+  }
+
   PetscLogEventRegister("WaveNorm", PETSC_VIEWER_CLASSID, &time_norm);
   PetscLogEventRegister("WaveEner", PETSC_VIEWER_CLASSID, &time_energy);
   PetscLogEventRegister("WavePos", PETSC_VIEWER_CLASSID, &time_position);
@@ -186,6 +192,18 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
       h5_file.WriteObject(
           x_value[i], num_x[i], "/Wavefunction/" + str,
           "The coordinates of the " + std::to_string(i) + " dimension");
+    }
+
+    if (coordinate_system_idx == 3)
+    {
+      h5_file.WriteObject(
+          l_values, num_x[1], "/Wavefunction/l_values",
+          "l values for each point in dimension 1. This combines both the l "
+          "and m values to avoid issues with tensor grids");
+      h5_file.WriteObject(
+          m_values, num_x[1], "/Wavefunction/m_values",
+          "m values for each point in dimension 1. This combines both the l "
+          "and m values to avoid issues with tensor grids");
     }
 
     /* write psi_1 and psi_2 if still allocated */
@@ -404,11 +422,15 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
         viewer_file.PushGroup("psi_l_" + std::to_string(l_idx));
         viewer_file.ReadObject(psi_small_local);
         viewer_file.PopGroup();
-        InsertRadialPsi(psi_small_local, psi_proj, l_idx);
-        Normalize(psi_proj, 0.0);
-        VecPointwiseMult(psi_tmp, jacobian, psi_proj);
-        VecDot(psi, psi_tmp, &projection_val);
-        ret_vec.push_back(projection_val);
+        for (int m_idx = -1. * std::min(m_max, l_idx);
+             m_idx < std::min(m_max, l_idx) + 1; ++m_idx)
+        {
+          InsertRadialPsi(psi_small_local, psi_proj, l_idx, m_idx);
+          Normalize(psi_proj, 0.0);
+          VecPointwiseMult(psi_tmp, jacobian, psi_proj);
+          VecDot(psi, psi_tmp, &projection_val);
+          ret_vec.push_back(projection_val);
+        }
       }
     }
     /* Close file */
@@ -478,10 +500,14 @@ void Wavefunction::ProjectOut(std::string file_name, HDF5Wrapper& h5_file_in,
         viewer_file.PushGroup("psi_l_" + std::to_string(l_idx));
         viewer_file.ReadObject(psi_small_local);
         viewer_file.PopGroup();
-        InsertRadialPsi(psi_small_local, psi_proj, l_idx);
-        Normalize(psi_proj, 0.0);
-        VecAXPY(psi_tmp_cyl, -1.0 * ret_vec[state_idx], psi_proj);
-        state_idx++;
+        for (int m_idx = -1. * std::min(m_max, l_idx);
+             m_idx < std::min(m_max, l_idx) + 1; ++m_idx)
+        {
+          InsertRadialPsi(psi_small_local, psi_proj, l_idx, m_idx);
+          Normalize(psi_proj, 0.0);
+          VecAXPY(psi_tmp_cyl, -1.0 * ret_vec[state_idx], psi_proj);
+          state_idx++;
+        }
       }
     }
     /* Save psi from projection death */
@@ -521,8 +547,8 @@ void Wavefunction::ProjectOut(std::string file_name, HDF5Wrapper& h5_file_in,
 
 /**
  * @brief Uses the "target".h5 file to read in the ground state
- * @details Uses the "target".h5 file to read in the ground state. It also makes
- * sure you have enough states for the projections
+ * @details Uses the "target".h5 file to read in the ground state. It also
+ * makes sure you have enough states for the projections
  *
  * @param num_states The number of states you wish to use for projections
  * @param return_state_idx the index of the state you want the Wavefunction
@@ -591,6 +617,7 @@ void Wavefunction::LoadPsi(std::string file_name, PetscInt num_states,
 void Wavefunction::LoadPsi(std::string file_name, PetscInt num_states,
                            PetscInt num_start_state, PetscInt* start_state_idx,
                            PetscInt* start_state_l_idx,
+                           PetscInt* start_state_m_idx,
                            double* start_state_amplitude,
                            double* start_state_phase)
 {
@@ -632,7 +659,8 @@ void Wavefunction::LoadPsi(std::string file_name, PetscInt num_states,
   viewer_file.PushGroup("psi_l_" + std::to_string(start_state_l_idx[0]));
   viewer_file.ReadObject(psi_small_local);
   viewer_file.PopGroup();
-  InsertRadialPsi(psi_small_local, psi_super_pos, start_state_l_idx[0]);
+  InsertRadialPsi(psi_small_local, psi_super_pos, start_state_l_idx[0],
+                  start_state_m_idx[0]);
   Normalize(psi_super_pos, 0.0);
   VecScale(psi_super_pos, dcomp(start_state_amplitude[0], 0.0) *
                               std::exp(dcomp(0.0, start_state_phase[0])));
@@ -645,7 +673,8 @@ void Wavefunction::LoadPsi(std::string file_name, PetscInt num_states,
     viewer_file.PushGroup("psi_l_" + std::to_string(start_state_l_idx[idx]));
     viewer_file.ReadObject(psi_small_local);
     viewer_file.PopGroup();
-    InsertRadialPsi(psi_small_local, psi_super_pos, start_state_l_idx[idx]);
+    InsertRadialPsi(psi_small_local, psi_super_pos, start_state_l_idx[idx],
+                    start_state_m_idx[idx]);
     Normalize(psi_super_pos, 0.0);
     VecAXPY(psi,
             dcomp(start_state_amplitude[idx], 0.0) *
@@ -664,7 +693,7 @@ void Wavefunction::LoadPsi(std::string file_name, PetscInt num_states,
 }
 
 void Wavefunction::InsertRadialPsi(Vec& psi_radial, Vec& psi_total,
-                                   PetscInt l_val)
+                                   PetscInt l_val, PetscInt m_val)
 {
   PetscInt low, high;
   PetscComplex val;
@@ -673,7 +702,7 @@ void Wavefunction::InsertRadialPsi(Vec& psi_radial, Vec& psi_total,
   for (PetscInt idx = low; idx < high; idx++)
   {
     std::vector< PetscInt > idx_array = GetIntArray(idx);
-    if (idx_array[1] == l_val)
+    if (l_values[idx_array[1]] == l_val and m_values[idx_array[1]] == m_val)
     {
       VecGetValues(psi_radial, 1, &idx_array[2], &val);
     }
@@ -689,7 +718,6 @@ void Wavefunction::InsertRadialPsi(Vec& psi_radial, Vec& psi_total,
 
 void Wavefunction::CheckpointPsi(ViewWrapper& viewer_file, PetscInt write_idx)
 {
-  // if (world.rank() == 0)
   if (world.rank() == 0)
     std::cout << "Checkpointing Wavefunction in " << viewer_file.file_name
               << ": "
@@ -783,20 +811,25 @@ void Wavefunction::CreateGrid()
     double s1;
     PetscInt count;
     PetscInt dim_idx;
+    PetscInt index;
 
     /* initialize for loop */
     num_psi_build = 1.0;
 
     /* build grid */
-    /***************************/
-    /***************************/
-    /* m values                */
-    /***************************/
-    /***************************/
+    /********************************************************************/
+    /********************************************************************/
+    /*                                                                  */
+    /* This dimension is used to tell the code that we are working in 3 */
+    /* spacial dimensions. It is set to size one to avoid unneeded      */
+    /* computation                                                      */
+    /*                                                                  */
+    /********************************************************************/
+    /********************************************************************/
     dim_idx = 0;
 
     /* m goes from -m_max to m_max giving 2*m_max+1 terms */
-    num_x[dim_idx] = 2 * dim_size[dim_idx] + 1;
+    num_x[dim_idx] = 1;
 
     /* allocate grid */
     x_value[dim_idx] = new double[num_x[dim_idx]];
@@ -805,38 +838,53 @@ void Wavefunction::CreateGrid()
     num_psi_build *= num_x[dim_idx];
 
     x_value[dim_idx][0] = 0;
-    for (int x_idx = 0; x_idx < num_x[dim_idx]; ++x_idx)
-    {
-      x_value[dim_idx][x_idx] = x_idx - dim_size[dim_idx];
-    }
 
-    /***************************/
-    /***************************/
-    /* l values                */
-    /***************************/
-    /***************************/
+    /**************************************************************************/
+    /**************************************************************************/
+    /*                                                                        */
+    /* l and m values */
+    /* Since l and m cannot be written as a tensor product we combine them */
+    /* into one dimension. This avoids having |m| > l which would happen with
+     */
+    /* a tensor like grid */
+    /*                                                                        */
+    /**************************************************************************/
+    /**************************************************************************/
     dim_idx = 1;
 
-    /* l goes from 0 to l_max giving l_max+1 terms */
-    num_x[dim_idx] = dim_size[dim_idx] + 1;
+    /* combines both m and l in one dimension  */
+    num_x[dim_idx] = GetIdxFromLM(l_max, m_max, m_max) + 1;
 
     /* allocate grid */
     x_value[dim_idx] = new double[num_x[dim_idx]];
+    /* these vectors are small, so it is easier (and possible faster) to store
+     * them rather than convert and index to l and m values */
+    l_values = new double[num_x[dim_idx]];
+    m_values = new double[num_x[dim_idx]];
 
     /* size of 1d array for psi */
     num_psi_build *= num_x[dim_idx];
 
-    x_value[dim_idx][0] = 0;
-    for (int x_idx = 0; x_idx < num_x[dim_idx]; ++x_idx)
+    for (int l_val = 0; l_val < l_max + 1; ++l_val)
     {
-      x_value[dim_idx][x_idx] = x_idx;
+      for (int m_val = -1. * std::min(m_max, l_val);
+           m_val < std::min(m_max, l_val) + 1; ++m_val)
+      {
+        index                   = GetIdxFromLM(l_val, m_val, m_max);
+        l_values[index]         = l_val;
+        m_values[index]         = m_val;
+        x_value[dim_idx][index] = index;
+      }
     }
 
-    /***************************/
-    /***************************/
-    /* handle radial direction */
-    /***************************/
-    /***************************/
+    /****************************************************************/
+    /****************************************************************/
+    /*                                                              */
+    /* handle radial direction                                      */
+    /* This is a tensor grid with respect to the l and m dimension  */
+    /*                                                              */
+    /****************************************************************/
+    /****************************************************************/
     dim_idx = 2;
 
     /* get change in dx */
@@ -874,7 +922,8 @@ void Wavefunction::CreateGrid()
     if (num_x[dim_idx] < 2 * order + 1)
     {
       EndRun(
-          "Not enough gird points to support this order of Finite Difference. "
+          "Not enough gird points to support this order of Finite "
+          "Difference. "
           "Please increase grid size.");
     }
 
@@ -1631,7 +1680,8 @@ double Wavefunction::GetPosition(PetscInt elec_idx, PetscInt dim_idx)
       VecPointwiseMult(psi_tmp, jacobian, psi_tmp_cyl);
       VecDot(psi, psi_tmp, &expectation);
     }
-    else /* return zero if the position expectation matrix has not been built */
+    else /* return zero if the position expectation matrix has not been built
+          */
     {
       expectation = 0.0;
     }
@@ -1669,7 +1719,8 @@ double Wavefunction::GetDipoleAcceration(PetscInt elec_idx, PetscInt dim_idx)
       VecPointwiseMult(psi_tmp, jacobian, psi_tmp_cyl);
       VecDot(psi, psi_tmp, &expectation);
     }
-    else /* return zero if the position expectation matrix has not been built */
+    else /* return zero if the position expectation matrix has not been built
+          */
     {
       expectation = 0.0;
     }
@@ -1704,9 +1755,13 @@ PetscInt Wavefunction::GetProjectionSize()
     PetscInt projection_size = 0;
     for (int n_index = 1; n_index <= num_states; ++n_index)
     {
-      for (int l_idx = 0; l_idx < fmin(n_index, num_x[1]); ++l_idx)
+      for (int l_idx = 0; l_idx < fmin(n_index, l_max + 1); ++l_idx)
       {
-        projection_size++;
+        for (int m_idx = -1. * std::min(m_max, l_idx);
+             m_idx < std::min(m_max, l_idx) + 1; ++m_idx)
+        {
+          projection_size++;
+        }
       }
     }
     return projection_size;
@@ -1770,10 +1825,13 @@ void Wavefunction::SetPositionMat(Mat* input_mat)
   position_mat = new Mat[num_dims];
   for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
   {
-    MatCreateAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, num_psi, num_psi,
-                 num_dims * num_electrons * (order + 3), NULL,
-                 num_dims * num_electrons * (order + 3), NULL,
-                 &(position_mat[dim_idx]));
+    if (position_mat_alloc == false)
+    {
+      MatCreateAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, num_psi,
+                   num_psi, num_dims * num_electrons * (order + 3), NULL,
+                   num_dims * num_electrons * (order + 3), NULL,
+                   &(position_mat[dim_idx]));
+    }
     MatCopy(input_mat[dim_idx], position_mat[dim_idx],
             DIFFERENT_NONZERO_PATTERN);
   }
@@ -1817,5 +1875,14 @@ Wavefunction::~Wavefunction()
   if (coordinate_system_idx == 3)
   {
     VecDestroy(&psi_small);
+    delete l_values;
+    delete m_values;
+  }
+  if (position_mat_alloc)
+  {
+    for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+    {
+      MatDestroy(&position_mat[dim_idx]);
+    }
   }
 }

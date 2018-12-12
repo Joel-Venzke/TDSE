@@ -280,8 +280,8 @@ void Simulation::FromFile(PetscInt num_states)
     wavefunction->LoadPsi(
         parameters->GetTarget() + ".h5", num_states,
         parameters->GetNumStartState(), parameters->GetStartStateIdx(),
-        parameters->GetStartStateLIdx(), parameters->GetStartStateAmplitude(),
-        parameters->GetStartStatePhase());
+        parameters->GetStartStateLIdx(), parameters->GetStartStateMIdx(),
+        parameters->GetStartStateAmplitude(), parameters->GetStartStatePhase());
   }
   else
   {
