@@ -37,6 +37,21 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
   ee_soft_core_2         = ee_soft_core * ee_soft_core;
   field                  = pulse.GetField();
 
+  if (coordinate_system_idx == 3)
+  {
+    l_max    = p.GetLMax();
+    m_max    = p.GetMMax();
+    l_values = w.GetLValues();
+    m_values = w.GetMValues();
+  }
+  else
+  {
+    l_max    = 0;
+    m_max    = 0;
+    l_values = NULL;
+    m_values = NULL;
+  }
+
   if (coordinate_system_idx != 2)
   {
     num_psi_build     = w.GetNumPsiBuild();
@@ -87,9 +102,12 @@ void Hamiltonian::CreateHamlitonian()
   }
   else if (coordinate_system_idx == 3)
   {
+    /* size is 3 off diagonals in l and m and one main diagonal for r each of
+     * width order + 1 in velocity gauge and smaller in length gauge. This gives
+     * an upper bound of num_electrons * 7 * (order + 1) non zero elements */
     MatCreateAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, num_psi, num_psi,
-                 num_dims * num_electrons * order + 1, NULL,
-                 num_dims * num_electrons * order + 1, NULL, &hamiltonian);
+                 num_electrons * 7 * (order + 1), NULL,
+                 num_electrons * 7 * (order + 1), NULL, &hamiltonian);
     MatSetOption(hamiltonian, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
 
     MatCreateAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, num_x[2],
@@ -97,16 +115,15 @@ void Hamiltonian::CreateHamlitonian()
                  num_dims * num_electrons * order + 1, NULL, &hamiltonian_0);
 
     MatCreateAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, num_psi, num_psi,
-                 num_dims * num_electrons * order + 1, NULL,
-                 num_dims * num_electrons * order + 1, NULL,
-                 &hamiltonian_0_ecs);
+                 num_electrons * 7 * (order + 1), NULL,
+                 num_electrons * 7 * (order + 1), NULL, &hamiltonian_0_ecs);
 
     hamiltonian_laser = new Mat[num_dims];
     for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
     {
       MatCreateAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, num_psi,
-                   num_psi, num_dims * num_electrons * (order + 3), NULL,
-                   num_dims * num_electrons * (order + 3), NULL,
+                   num_psi, num_electrons * 7 * (order + 1), NULL,
+                   num_electrons * 7 * (order + 1), NULL,
                    &(hamiltonian_laser[dim_idx]));
     }
   }
@@ -863,6 +880,159 @@ void Hamiltonian::CalculateHamlitonianLaser()
     delete row_idx;
     delete col_idx;
   }
+  else if (coordinate_system_idx == 3)
+  {
+    PetscInt j_val;             /* j index for matrix */
+    PetscInt r_size = num_x[2]; /* r dimension size */
+    PetscInt r_idx;             /* r_index */
+    PetscInt diag_l_val;        /* l_value */
+    PetscInt diag_m_val;        /* m_value */
+    bool insert_val;
+    std::vector< PetscInt > idx_array;
+    std::vector< dcomp > x_vals(order + 1, 0.0);
+    for (PetscInt ham_dim_idx = 0; ham_dim_idx < num_dims; ham_dim_idx++)
+    {
+      MatGetOwnershipRange(hamiltonian_laser[ham_dim_idx], &start, &end);
+      for (PetscInt i_val = start; i_val < end; i_val++)
+      {
+        /* no true diagonal in spherical harmonics */
+
+        /* Loop over off diagonal elements */
+        for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
+        {
+          j_val      = i_val;
+          idx_array  = GetIndexArray(i_val, j_val);
+          r_idx      = idx_array[2 * (elec_idx * num_dims + 2)];
+          diag_l_val = l_values[idx_array[2 * (elec_idx * num_dims + 1)]];
+          diag_m_val = m_values[idx_array[2 * (elec_idx * num_dims + 1)]];
+
+          /* for the z direction delta l=+-1 and delta m=0*/
+          if (ham_dim_idx == 2)
+          {
+            /* make sure l+1 is part of our grid*/
+            if (diag_l_val + 1 <= l_max)
+            {
+              /* get l -> l+1 here */
+              j_val = GetIdxFromLM(diag_l_val + 1, diag_m_val, m_max) * r_size +
+                      r_idx;
+              val = GetValLaser(i_val, j_val, insert_val, ham_dim_idx);
+              if (insert_val)
+              {
+                MatSetValues(hamiltonian_laser[ham_dim_idx], 1, &i_val, 1,
+                             &j_val, &val, INSERT_VALUES);
+              }
+            }
+            /* make sure l-1 is greater than zero and the m value exists*/
+            if (diag_l_val - 1 >= 0 and diag_l_val - 1 >= std::abs(diag_m_val))
+            {
+              /* get the l -> l-1 */
+              j_val = GetIdxFromLM(diag_l_val - 1, diag_m_val, m_max) * r_size +
+                      r_idx;
+              val = GetValLaser(i_val, j_val, insert_val, ham_dim_idx);
+              if (insert_val)
+              {
+                MatSetValues(hamiltonian_laser[ham_dim_idx], 1, &i_val, 1,
+                             &j_val, &val, INSERT_VALUES);
+              }
+            }
+          }
+
+          /* for the x and y direction delta l=+-1 and delta m=+-1 */
+          if (ham_dim_idx == 0 or ham_dim_idx == 1)
+          {
+            /* make sure l+1 and m+1 is part of our grid*/
+            if (diag_l_val + 1 <= l_max and std::abs(diag_m_val + 1) <= m_max)
+            {
+              /* get l -> l+1 and m -> m+1 */
+              j_val =
+                  GetIdxFromLM(diag_l_val + 1, diag_m_val + 1, m_max) * r_size +
+                  r_idx;
+              val = GetValLaser(i_val, j_val, insert_val, ham_dim_idx);
+              // idx_array = GetIndexArray(i_val, j_val);
+              // std::cout << "(" << diag_l_val << "," << diag_m_val << ")->"
+              //           << "(" << l_values[idx_array[2 * (0 + 1) + 1]] << ","
+              //           << m_values[idx_array[2 * (0 + 1) + 1]] << ") " <<
+              //           val
+              //           << " " << insert_val << "\n";
+              if (insert_val)
+              {
+                MatSetValues(hamiltonian_laser[ham_dim_idx], 1, &i_val, 1,
+                             &j_val, &val, INSERT_VALUES);
+              }
+            }
+            /* make sure l+1 and m-1 is part of our grid*/
+            if (diag_l_val + 1 <= l_max and std::abs(diag_m_val - 1) <= m_max)
+            {
+              /* get l -> l+1 and m -> m-1 */
+              j_val =
+                  GetIdxFromLM(diag_l_val + 1, diag_m_val - 1, m_max) * r_size +
+                  r_idx;
+              val = GetValLaser(i_val, j_val, insert_val, ham_dim_idx);
+              // idx_array = GetIndexArray(i_val, j_val);
+              // std::cout << "(" << diag_l_val << "," << diag_m_val << ")->"
+              //           << "(" << l_values[idx_array[2 * (0 + 1) + 1]] << ","
+              //           << m_values[idx_array[2 * (0 + 1) + 1]] << ") " <<
+              //           val
+              //           << " " << insert_val << "\n";
+              if (insert_val)
+              {
+                MatSetValues(hamiltonian_laser[ham_dim_idx], 1, &i_val, 1,
+                             &j_val, &val, INSERT_VALUES);
+              }
+            }
+            /* make sure l-1 and m+1 is part of our grid */
+            if (diag_l_val - 1 >= 0 and
+                diag_l_val - 1 >= std::abs(diag_m_val + 1) and
+                std::abs(diag_m_val + 1) <= m_max)
+            {
+              /* get l -> l+1 and m -> m-1 */
+              j_val =
+                  GetIdxFromLM(diag_l_val - 1, diag_m_val + 1, m_max) * r_size +
+                  r_idx;
+              val = GetValLaser(i_val, j_val, insert_val, ham_dim_idx);
+              // idx_array = GetIndexArray(i_val, j_val);
+              // std::cout << "(" << diag_l_val << "," << diag_m_val << ")->"
+              //           << "(" << l_values[idx_array[2 * (0 + 1) + 1]] << ","
+              //           << m_values[idx_array[2 * (0 + 1) + 1]] << ") " <<
+              //           val
+              //           << " " << insert_val << "\n";
+              if (insert_val)
+              {
+                MatSetValues(hamiltonian_laser[ham_dim_idx], 1, &i_val, 1,
+                             &j_val, &val, INSERT_VALUES);
+              }
+            }
+            /* make sure l-1 and m-1 is part of our grid */
+            if (diag_l_val - 1 >= 0 and
+                diag_l_val - 1 >= std::abs(diag_m_val - 1) and
+                std::abs(diag_m_val - 1) <= m_max)
+            {
+              /* get l -> l+1 and m -> m-1 */
+              j_val =
+                  GetIdxFromLM(diag_l_val - 1, diag_m_val - 1, m_max) * r_size +
+                  r_idx;
+              // val       = GetValLaser(i_val, j_val, insert_val, ham_dim_idx);
+              // idx_array = GetIndexArray(i_val, j_val);
+              // std::cout << "(" << diag_l_val << "," << diag_m_val << ")->"
+              //           << "(" << l_values[idx_array[2 * (0 + 1) + 1]] << ","
+              //           << m_values[idx_array[2 * (0 + 1) + 1]] << ") " <<
+              //           val
+              //           << " " << insert_val << "\n";
+              if (insert_val)
+              {
+                MatSetValues(hamiltonian_laser[ham_dim_idx], 1, &i_val, 1,
+                             &j_val, &val, INSERT_VALUES);
+              }
+            }
+          }
+        }
+      }
+
+      MatAssemblyBegin(hamiltonian_laser[ham_dim_idx], MAT_FINAL_ASSEMBLY);
+      MatAssemblyEnd(hamiltonian_laser[ham_dim_idx], MAT_FINAL_ASSEMBLY);
+    }
+    wavefunction->SetPositionMat(hamiltonian_laser);
+  }
   else
   {
     PetscInt j_val;       /* j index for matrix */
@@ -1199,8 +1369,12 @@ dcomp Hamiltonian::GetVal(PetscInt idx_i, PetscInt idx_j, bool& insert_val,
     {
       for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
       {
-        idx_array[2 * (1 + elec_idx * num_dims)] += l_val;
-        idx_array[2 * (1 + elec_idx * num_dims) + 1] += l_val;
+        idx_array[2 * (1 + elec_idx * num_dims)] = GetIdxFromLM(
+            l_values[idx_array[2 * (1 + elec_idx * num_dims)]] + l_val, 0,
+            m_max);
+        idx_array[2 * (1 + elec_idx * num_dims) + 1] = GetIdxFromLM(
+            l_values[idx_array[2 * (1 + elec_idx * num_dims) + 1]] + l_val, 0,
+            m_max);
       }
     }
     return GetDiagonal(idx_array, ecs);
@@ -1272,58 +1446,20 @@ dcomp Hamiltonian::GetValLaser(PetscInt idx_i, PetscInt idx_j, bool& insert_val,
     /* Calulating the z operator */
     if (only_dim_idx == 2)
     {
-      /* only non zero elements are l -> l+-1 therefore we only need the dim 1
-       */
-      only_dim_idx = 1;
+      /* only non zero elements are l -> l+-1 and m -> m */
       if (gauge_idx == 1) /* length gauge */
       {
-        /* Make sure there is exactly 1 non zero index so we can take care of
-         * the off diagonal zeros */
-        for (PetscInt i = 0; i < num_dims * num_electrons; ++i)
+        /* ensure r_idx is not changed, l -> l+-1 and m -> m  */
+        if (idx_array[2 * (0 + 2)] == idx_array[2 * (0 + 2) + 1] and
+            std::abs(l_values[idx_array[2 * (0 + 1)]] -
+                     l_values[idx_array[2 * (0 + 1) + 1]]) == 1 and
+            m_values[idx_array[2 * (0 + 1)]] ==
+                m_values[idx_array[2 * (0 + 1) + 1]])
         {
-          sum += std::abs(diff_array[i]);
-          if (diff_array[i] != 0) non_zero_count++;
-        }
-
-        /* if non zero off diagonal */
-        if (non_zero_count == 1)
-        {
-          /* normal off diagonal */
-          if (sum == 1 and diff_array[1] != 0)
-          {
-            return GetOffDiagonalLaser(idx_array, diff_array, only_dim_idx);
-          }
+          return GetOffDiagonalLaser(idx_array, diff_array, only_dim_idx);
         }
       }
     }
-    // else
-    // {
-    //   /* Make sure there is exactly 1 non zero index so we can take care of
-    //    * the off diagonal zeros */
-    //   for (PetscInt i = 0; i < num_dims * num_electrons; ++i)
-    //   {
-    //     sum += std::abs(diff_array[i]);
-    //     if (diff_array[i] != 0) non_zero_count++;
-    //   }
-
-    //   /* if non zero off diagonal */
-    //   if (non_zero_count == 1)
-    //   {
-    //     /* only non zero elements are l -> l+-1 therefore we only need the
-    //     dim 1
-    //      */
-    //     only_dim_idx = 1;
-    //     if (gauge_idx == 1) /* length gauge */
-    //     {
-    //       /* normal off diagonal */
-    //       if (sum == 1)
-    //       {
-    //         insert_val = false;
-    //         return dcomp(0.0, 0.0);
-    //       }
-    //     }
-    //   }
-    // }
   }
   else
   {
@@ -1659,9 +1795,11 @@ dcomp Hamiltonian::GetOffDiagonalLaser(std::vector< PetscInt >& idx_array,
     {
       if (only_dim_idx == -1 or dim_idx == only_dim_idx)
       {
-        if (diff_array[elec_idx * num_dims + dim_idx] != 0)
+        /* spherical grid */
+        if (coordinate_system_idx == 3 and gauge_idx == 1)
         {
-          if (coordinate_system_idx == 3 and gauge_idx == 1)
+          /* z direction */
+          if (dim_idx == 2)
           {
             if (delta_x_min[2] != delta_x_max[2])
             {
@@ -1669,24 +1807,28 @@ dcomp Hamiltonian::GetOffDiagonalLaser(std::vector< PetscInt >& idx_array,
                   "Laser operator does not support nonunifrom grid in "
                   "Spherical coordinates.");
             }
-            l0 = ((int)x_value[1][idx_array[2. * (elec_idx * num_dims + 1)]]);
-            l1 = 1;
-            l_tot = ((
-                int)x_value[1][idx_array[2. * (elec_idx * num_dims + 1) + 1]]);
-            m0 = ((int)x_value[1][idx_array[2. * (elec_idx * num_dims + 0)]]);
-            m1 = 0;
-            m_tot = ((
-                int)x_value[1][idx_array[2. * (elec_idx * num_dims + 0) + 1]]);
-            off_diagonal +=
-                x_value[2][idx_array[2. * (elec_idx * num_dims + 2)]] *
-                std::sqrt(4.0 * pi / 3.0) *
-                std::sqrt((2 * l0 + 1) * (2 * l1 + 1) /
-                          (4 * pi * (2 * l_tot + 1))) *
-                ClebschGordanCoef(l0, l1, l_tot, 0, 0, 0) *
-                ClebschGordanCoef(l0, l1, l_tot, m0, m1, m_tot);
+            l0    = l_values[idx_array[2. * (elec_idx * num_dims + 1)]];
+            l1    = 1;
+            l_tot = l_values[idx_array[2. * (elec_idx * num_dims + 1) + 1]];
+            m0    = m_values[idx_array[2. * (elec_idx * num_dims + 1)]];
+            m1    = 0;
+            m_tot = m_values[idx_array[2. * (elec_idx * num_dims + 1) + 1]];
+            if (std::abs(l0 - l_tot) == 1 and m0 == m_tot)
+            {
+              off_diagonal +=
+                  x_value[2][idx_array[2. * (elec_idx * num_dims + 2)]] *
+                  std::sqrt(4.0 * pi / 3.0) *
+                  std::sqrt((2 * l0 + 1) * (2 * l1 + 1) /
+                            (4 * pi * (2 * l_tot + 1))) *
+                  ClebschGordanCoef(l0, l1, l_tot, 0, 0, 0) *
+                  ClebschGordanCoef(l0, l1, l_tot, m0, m1, m_tot);
+            }
           }
+        }
+        else if (diff_array[elec_idx * num_dims + dim_idx] != 0)
+        {
           /* DONT TOUCH FIELD WITH ECS */
-          else if (gauge_idx == 0) /* Time dependent matrix */
+          if (gauge_idx == 0) /* Time dependent matrix */
           {
             /* DONT TOUCH FIELD WITH ECS */
             /* Polarization vector for linear polarization */
@@ -2064,7 +2206,7 @@ dcomp Hamiltonian::GetCentrifugalTerm(std::vector< PetscInt >& idx_array)
   double l_val;
   for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
   {
-    l_val = idx_array[2 * (1 + elec_idx * num_dims)];
+    l_val = l_values[idx_array[2 * (1 + elec_idx * num_dims)]];
     centrifugal_val +=
         dcomp(l_val * (l_val + 1) /
                   (2.0 * x_value[2][idx_array[2 * (2 + elec_idx * num_dims)]] *

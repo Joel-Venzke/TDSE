@@ -1235,8 +1235,7 @@ void Parameters::Validate()
       error_found = true;
       err_str +=
           "\nThe start_state must be less than the total number of states "
-          "you "
-          "wish to calculate\n";
+          "you wish to calculate\n";
     }
   }
 

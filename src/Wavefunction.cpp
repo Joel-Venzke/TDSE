@@ -34,6 +34,11 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
     l_max = p.GetLMax();
     m_max = p.GetMMax();
   }
+  else
+  {
+    l_max = 0;
+    m_max = 0;
+  }
 
   PetscLogEventRegister("WaveNorm", PETSC_VIEWER_CLASSID, &time_norm);
   PetscLogEventRegister("WaveEner", PETSC_VIEWER_CLASSID, &time_energy);
@@ -859,8 +864,8 @@ void Wavefunction::CreateGrid()
     x_value[dim_idx] = new double[num_x[dim_idx]];
     /* these vectors are small, so it is easier (and possible faster) to store
      * them rather than convert and index to l and m values */
-    l_values = new double[num_x[dim_idx]];
-    m_values = new double[num_x[dim_idx]];
+    l_values = new PetscInt[num_x[dim_idx]];
+    m_values = new PetscInt[num_x[dim_idx]];
 
     /* size of 1d array for psi */
     num_psi_build *= num_x[dim_idx];
@@ -1849,6 +1854,10 @@ Vec* Wavefunction::GetPsi() { return &psi; }
 Vec* Wavefunction::GetPsiSmall() { return &psi_small; }
 
 double** Wavefunction::GetXValue() { return x_value; }
+
+PetscInt* Wavefunction::GetLValues() { return l_values; }
+
+PetscInt* Wavefunction::GetMValues() { return m_values; }
 
 PetscInt** Wavefunction::GetGobblerIdx() { return gobbler_idx; }
 

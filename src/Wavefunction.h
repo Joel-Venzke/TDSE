@@ -25,8 +25,8 @@ class Wavefunction : protected Utils
   PetscInt num_psi_build; /* number of points in psi_1 and psi_2 */
   PetscInt num_psi;       /* number of points in psi */
   double **x_value;       /* location of grid point in each dimension */
-  double *l_values;       /* l_values for the spherical code */
-  double *m_values;       /* m_values for the spherical code */
+  PetscInt *l_values;     /* l_values for the spherical code */
+  PetscInt *m_values;     /* m_values for the spherical code */
   dcomp ***psi_build;     /* used for allocating new wave functions */
   Vec psi;                /* wavefunction for 2 electron system */
   Vec psi_small;          /* wavefunction for spherical eigen states */
@@ -129,6 +129,8 @@ class Wavefunction : protected Utils
   Vec *GetPsi();
   Vec *GetPsiSmall();
   double **GetXValue();
+  PetscInt *GetLValues();
+  PetscInt *GetMValues();
   PetscInt **GetGobblerIdx();
   PetscInt GetWriteCounterCheckpoint();
 };

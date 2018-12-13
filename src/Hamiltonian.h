@@ -17,28 +17,34 @@ class Hamiltonian : protected Utils
   PetscInt *num_x;
   PetscInt num_psi;
   PetscInt num_psi_build;
-  double *z;           /* atomic number of each nuclei */
-  double **location;   /* location of each nuclei */
+
+  PetscInt l_max;
+  PetscInt m_max;
+  PetscInt *l_values; /* l_values for the spherical code */
+  PetscInt *m_values; /* m_values for the spherical code */
+
   PetscInt gauge_idx;  ///< index of gauge (0 velocity, 1 length)
   PetscInt current_l_val;
 
   /* SAE stuff */
+  double *z;                        ///< atomic number of each nuclei
+  double **location;                ///< location of each nuclei
   double **exponential_r_0;         ///< exponential radial center
   double **exponential_amplitude;   ///< exponential  amplitude
   double **exponential_decay_rate;  ///< exponential  decay rate
-  PetscInt *exponential_size;       /* number of elements in exponential */
+  PetscInt *exponential_size;       ///< number of elements in exponential
   double **gaussian_r_0;            ///< Gaussian radial center
   double **gaussian_amplitude;      ///< Gaussian amplitude
   double **gaussian_decay_rate;     ///< Gaussian decay rate
-  PetscInt *gaussian_size;          /* number of elements in Gaussian */
+  PetscInt *gaussian_size;          ///< number of elements in Gaussian
   double **square_well_r_0;         ///< square well radial center
   double **square_well_amplitude;   ///< square well  amplitude
   double **square_well_width;       ///< square well width
-  PetscInt *square_well_size;       /* number of elements in Gaussian */
+  PetscInt *square_well_size;       ///< number of elements in Gaussian
   double **yukawa_r_0;              ///< yukawa radial center
   double **yukawa_amplitude;        ///< yukawa amplitude
   double **yukawa_decay_rate;       ///< yukawa decay rate
-  PetscInt *yukawa_size;            /* number of elements in Gaussian */
+  PetscInt *yukawa_size;            ///< number of elements in Gaussian
 
   double alpha;          /* soft core atomic */
   double alpha_2;        /* square of soft core atomic */
