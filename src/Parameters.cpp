@@ -962,16 +962,6 @@ void Parameters::Validate()
     }
     for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; pulse_idx++)
     {
-      if (polarization_vector[pulse_idx][0] > 1e-14 or
-          polarization_vector[pulse_idx][1] > 1e-14)
-      {
-        error_found = true;
-        err_str +=
-            "\nSpherical coordinate systems only supports polarization "
-            "vectors\npointing in the z direction (i.e. "
-            "[0.0,0.0,1.0])\nPulse " +
-            std::to_string(pulse_idx) + " does not meet this requirement\n";
-      }
       if (ellipticity[pulse_idx] > 1e-14)
       {
         error_found = true;

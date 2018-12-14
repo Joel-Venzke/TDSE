@@ -952,8 +952,7 @@ void Hamiltonian::CalculateHamlitonianLaser()
               // std::cout << "(" << diag_l_val << "," << diag_m_val << ")->"
               //           << "(" << l_values[idx_array[2 * (0 + 1) + 1]] << ","
               //           << m_values[idx_array[2 * (0 + 1) + 1]] << ") " <<
-              //           val
-              //           << " " << insert_val << "\n";
+              //           val << " " << insert_val << "\n";
               if (insert_val)
               {
                 MatSetValues(hamiltonian_laser[ham_dim_idx], 1, &i_val, 1,
@@ -972,8 +971,7 @@ void Hamiltonian::CalculateHamlitonianLaser()
               // std::cout << "(" << diag_l_val << "," << diag_m_val << ")->"
               //           << "(" << l_values[idx_array[2 * (0 + 1) + 1]] << ","
               //           << m_values[idx_array[2 * (0 + 1) + 1]] << ") " <<
-              //           val
-              //           << " " << insert_val << "\n";
+              //           val << " " << insert_val << "\n";
               if (insert_val)
               {
                 MatSetValues(hamiltonian_laser[ham_dim_idx], 1, &i_val, 1,
@@ -994,8 +992,7 @@ void Hamiltonian::CalculateHamlitonianLaser()
               // std::cout << "(" << diag_l_val << "," << diag_m_val << ")->"
               //           << "(" << l_values[idx_array[2 * (0 + 1) + 1]] << ","
               //           << m_values[idx_array[2 * (0 + 1) + 1]] << ") " <<
-              //           val
-              //           << " " << insert_val << "\n";
+              //           val << " " << insert_val << "\n";
               if (insert_val)
               {
                 MatSetValues(hamiltonian_laser[ham_dim_idx], 1, &i_val, 1,
@@ -1011,7 +1008,7 @@ void Hamiltonian::CalculateHamlitonianLaser()
               j_val =
                   GetIdxFromLM(diag_l_val - 1, diag_m_val - 1, m_max) * r_size +
                   r_idx;
-              // val       = GetValLaser(i_val, j_val, insert_val, ham_dim_idx);
+              val = GetValLaser(i_val, j_val, insert_val, ham_dim_idx);
               // idx_array = GetIndexArray(i_val, j_val);
               // std::cout << "(" << diag_l_val << "," << diag_m_val << ")->"
               //           << "(" << l_values[idx_array[2 * (0 + 1) + 1]] << ","
@@ -1334,11 +1331,8 @@ Mat* Hamiltonian::GetTotalHamiltonian(PetscInt time_idx, bool ecs)
     {
       if (coordinate_system_idx == 3)
       {
-        if (dim_idx == 2)
-        {
-          MatAXPY(hamiltonian, field[dim_idx][time_idx],
-                  hamiltonian_laser[dim_idx], DIFFERENT_NONZERO_PATTERN);
-        }
+        MatAXPY(hamiltonian, field[dim_idx][time_idx],
+                hamiltonian_laser[dim_idx], DIFFERENT_NONZERO_PATTERN);
       }
       else
       {
@@ -1443,11 +1437,10 @@ dcomp Hamiltonian::GetValLaser(PetscInt idx_i, PetscInt idx_j, bool& insert_val,
 
   if (coordinate_system_idx == 3)
   {
-    /* Calulating the z operator */
-    if (only_dim_idx == 2)
+    if (gauge_idx == 1) /* length gauge */
     {
-      /* only non zero elements are l -> l+-1 and m -> m */
-      if (gauge_idx == 1) /* length gauge */
+      /* Calulating the z operator */
+      if (only_dim_idx == 2)
       {
         /* ensure r_idx is not changed, l -> l+-1 and m -> m  */
         if (idx_array[2 * (0 + 2)] == idx_array[2 * (0 + 2) + 1] and
@@ -1455,6 +1448,19 @@ dcomp Hamiltonian::GetValLaser(PetscInt idx_i, PetscInt idx_j, bool& insert_val,
                      l_values[idx_array[2 * (0 + 1) + 1]]) == 1 and
             m_values[idx_array[2 * (0 + 1)]] ==
                 m_values[idx_array[2 * (0 + 1) + 1]])
+        {
+          return GetOffDiagonalLaser(idx_array, diff_array, only_dim_idx);
+        }
+      }
+      /* Calulating the x or y operator */
+      else if (only_dim_idx == 0 or only_dim_idx == 1)
+      {
+        /* ensure r_idx is not changed, l -> l+-1 and m -> m+-1  */
+        if (idx_array[2 * (0 + 2)] == idx_array[2 * (0 + 2) + 1] and
+            std::abs(l_values[idx_array[2 * (0 + 1)]] -
+                     l_values[idx_array[2 * (0 + 1) + 1]]) == 1 and
+            std::abs(m_values[idx_array[2 * (0 + 1)]] -
+                     m_values[idx_array[2 * (0 + 1) + 1]]) == 1)
         {
           return GetOffDiagonalLaser(idx_array, diff_array, only_dim_idx);
         }
@@ -1822,6 +1828,89 @@ dcomp Hamiltonian::GetOffDiagonalLaser(std::vector< PetscInt >& idx_array,
                             (4 * pi * (2 * l_tot + 1))) *
                   ClebschGordanCoef(l0, l1, l_tot, 0, 0, 0) *
                   ClebschGordanCoef(l0, l1, l_tot, m0, m1, m_tot);
+            }
+          }
+          /* x direction */
+          if (dim_idx == 0)
+          {
+            if (delta_x_min[2] != delta_x_max[2])
+            {
+              EndRun(
+                  "Laser operator does not support nonunifrom grid in "
+                  "Spherical coordinates.");
+            }
+            l0    = l_values[idx_array[2. * (elec_idx * num_dims + 1)]];
+            l1    = 1;
+            l_tot = l_values[idx_array[2. * (elec_idx * num_dims + 1) + 1]];
+            m0    = m_values[idx_array[2. * (elec_idx * num_dims + 1)]];
+            m_tot = m_values[idx_array[2. * (elec_idx * num_dims + 1) + 1]];
+            m1    = m_tot - m0;
+            if (std::abs(l0 - l_tot) == 1)
+            {
+              /* m -> m+1 */
+              if (m1 == 1)
+              {
+                off_diagonal +=
+                    -1.0 *
+                    x_value[2][idx_array[2. * (elec_idx * num_dims + 2)]] *
+                    std::sqrt(2.0 * pi / 3.0) *
+                    std::sqrt((2 * l0 + 1) * (2 * l1 + 1) /
+                              (4 * pi * (2 * l_tot + 1))) *
+                    ClebschGordanCoef(l0, l1, l_tot, 0, 0, 0) *
+                    ClebschGordanCoef(l0, l1, l_tot, m0, m1, m_tot);
+              }
+              /* m -> m-1 */
+              else if (m1 == -1)
+              {
+                off_diagonal +=
+                    x_value[2][idx_array[2. * (elec_idx * num_dims + 2)]] *
+                    std::sqrt(2.0 * pi / 3.0) *
+                    std::sqrt((2 * l0 + 1) * (2 * l1 + 1) /
+                              (4 * pi * (2 * l_tot + 1))) *
+                    ClebschGordanCoef(l0, l1, l_tot, 0, 0, 0) *
+                    ClebschGordanCoef(l0, l1, l_tot, m0, m1, m_tot);
+              }
+            }
+          }
+          /* y direction */
+          if (dim_idx == 1)
+          {
+            if (delta_x_min[2] != delta_x_max[2])
+            {
+              EndRun(
+                  "Laser operator does not support nonunifrom grid in "
+                  "Spherical coordinates.");
+            }
+            l0    = l_values[idx_array[2. * (elec_idx * num_dims + 1)]];
+            l1    = 1;
+            l_tot = l_values[idx_array[2. * (elec_idx * num_dims + 1) + 1]];
+            m0    = m_values[idx_array[2. * (elec_idx * num_dims + 1)]];
+            m_tot = m_values[idx_array[2. * (elec_idx * num_dims + 1) + 1]];
+            m1    = m_tot - m0;
+            if (std::abs(l0 - l_tot) == 1)
+            {
+              /* m -> m+1 */
+              if (m1 == 1)
+              {
+                off_diagonal +=
+                    x_value[2][idx_array[2. * (elec_idx * num_dims + 2)]] *
+                    std::sqrt(2.0 * pi / 3.0) *
+                    std::sqrt((2 * l0 + 1) * (2 * l1 + 1) /
+                              (4 * pi * (2 * l_tot + 1))) *
+                    ClebschGordanCoef(l0, l1, l_tot, 0, 0, 0) *
+                    ClebschGordanCoef(l0, l1, l_tot, m0, m1, m_tot) / imag;
+              }
+              /* m -> m-1 */
+              else if (m1 == -1)
+              {
+                off_diagonal +=
+                    x_value[2][idx_array[2. * (elec_idx * num_dims + 2)]] *
+                    std::sqrt(2.0 * pi / 3.0) *
+                    std::sqrt((2 * l0 + 1) * (2 * l1 + 1) /
+                              (4 * pi * (2 * l_tot + 1))) *
+                    ClebschGordanCoef(l0, l1, l_tot, 0, 0, 0) *
+                    ClebschGordanCoef(l0, l1, l_tot, m0, m1, m_tot) / imag;
+              }
             }
           }
         }
