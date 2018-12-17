@@ -960,17 +960,6 @@ void Parameters::Validate()
       error_found = true;
       err_str += "\nSpherical only supports \"Length\" gauge currently\n";
     }
-    for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; pulse_idx++)
-    {
-      if (ellipticity[pulse_idx] > 1e-14)
-      {
-        error_found = true;
-        err_str +=
-            "\nSpherical coordinate systems only supports linear polarized "
-            "light\nPulse " +
-            std::to_string(pulse_idx) + " has a non zero ellipticity\n";
-      }
-    }
     for (PetscInt nuclei_idx = 0; nuclei_idx < num_nuclei; ++nuclei_idx)
     {
       if (location[nuclei_idx][0] > 1e-14 or location[nuclei_idx][1] > 1e-14 or

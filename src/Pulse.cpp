@@ -430,8 +430,8 @@ void Pulse::InitializePulse(PetscInt n)
                 current_cep * 2.0 * pi);
         if (helicity_idx[n] == 0) /* right */
         {
-          /* We want cos(...) */
-          pulse_value[n][dim_idx][time_idx] +=
+          /* We want -cos(...) */
+          pulse_value[n][dim_idx][time_idx] -=
               polarization_vector_minor[n][dim_idx] *
               pulse_envelope[n][time_idx] *
               cos(energy[n] * delta_t * (time_idx - on_start) +
@@ -439,8 +439,8 @@ void Pulse::InitializePulse(PetscInt n)
         }
         else if (helicity_idx[n] == 1) /* left */
         {
-          /* We want -1.0 * cos(...) */
-          pulse_value[n][dim_idx][time_idx] -=
+          /* We want -cos(...) */
+          pulse_value[n][dim_idx][time_idx] +=
               polarization_vector_minor[n][dim_idx] *
               pulse_envelope[n][time_idx] *
               cos(energy[n] * delta_t * (time_idx - on_start) +
@@ -496,7 +496,7 @@ void Pulse::InitializeField()
     for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
     {
       /* Forward difference for first point (-1/c)  [-1, 1, 0] (1/dt) */
-      field_tmp[0] = (field[dim_idx][1] - field[dim_idx][0]) / (delta_t * c);
+      field_tmp[0] = (field[dim_idx][0] - field[dim_idx][1]) / (delta_t * c);
       for (PetscInt time_idx = 1; time_idx < max_pulse_length - 1; ++time_idx)
       {
         /* calculate (-1/c)  [-1/2, 0, 1/2] (1/dt) */

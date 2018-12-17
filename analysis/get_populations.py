@@ -68,7 +68,12 @@ data = f["Wavefunction"]["projections"][:, :, :]
 data = np.absolute(data[:, :, 0] + 1j * data[:, :, 1])
 data *= data
 
+data_2 = f["Wavefunction"]["projections"][:, :, :]
+data_2 = data_2[:, :, 0] + 1j * data_2[:, :, 1]
+data_2 = data_2 * data_2.conj()
+
 state_labels = state_name(data.shape[1])
 
 for state_number in range(data.shape[1]):
-    print state_labels[state_number] + "\t" + str(data[-1, state_number])
+    print state_labels[state_number] + "\t" + str(
+        data[-1, state_number]) + "\t" + str(data_2[-1, state_number])

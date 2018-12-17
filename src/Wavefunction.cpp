@@ -425,17 +425,23 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
         /* Set time idx */
         viewer_file.SetTime(n_index - l_idx - 1);
         viewer_file.PushGroup("psi_l_" + std::to_string(l_idx));
-        viewer_file.ReadObject(psi_small_local);
-        viewer_file.PopGroup();
         for (int m_idx = -1. * std::min(m_max, l_idx);
              m_idx < std::min(m_max, l_idx) + 1; ++m_idx)
         {
+          viewer_file.ReadObject(psi_small_local);
           InsertRadialPsi(psi_small_local, psi_proj, l_idx, m_idx);
           Normalize(psi_proj, 0.0);
           VecPointwiseMult(psi_tmp, jacobian, psi_proj);
           VecDot(psi, psi_tmp, &projection_val);
           ret_vec.push_back(projection_val);
+          if (world.rank() == 0)
+          {
+            std::cout << n_index << " (" << l_idx << "," << m_idx << ") "
+                      << (std::conj(projection_val) * projection_val).real()
+                      << "\n";
+          }
         }
+        viewer_file.PopGroup();
       }
     }
     /* Close file */
