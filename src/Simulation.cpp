@@ -65,6 +65,10 @@ void Simulation::Propagate()
 {
   if (world.rank() == 0) std::cout << "\nPropagating in time\n";
   clock_t t;
+  clock_t step_time;
+  std::ofstream timing_file;
+  timing_file.open("timing.log");
+  timing_file << "Iteration (time)\n";
   /* if we are converged */
   bool converged = false;
   /* If we need end of pulse checkpoint */
@@ -119,7 +123,8 @@ void Simulation::Propagate()
     wavefunction->Checkpoint(*h5_file, *viewer_file, 0.0);
   }
 
-  t = clock();
+  t         = clock();
+  step_time = clock();
   for (; i < time_length; i++)
   {
     PetscLogEventBegin(time_step, 0, 0, 0, 0);
@@ -158,6 +163,11 @@ void Simulation::Propagate()
       t = clock();
       PetscLogEventEnd(create_checkpoint, 0, 0, 0, 0);
     }
+
+    timing_file << "Iteration: " << i << "\t("
+                << ((float)clock() - step_time) / CLOCKS_PER_SEC << "s)\n"
+                << std::flush;
+    step_time = clock();
     PetscLogEventEnd(time_step, 0, 0, 0, 0);
   }
 
@@ -216,6 +226,10 @@ void Simulation::Propagate()
                                  *viewer_file, delta_t * (i - 1));
         t = clock();
       }
+      timing_file << "Iteration: " << i << "\t("
+                  << ((float)clock() - step_time) / CLOCKS_PER_SEC << "s)\n"
+                  << std::flush;
+      step_time = clock();
       i++;
     }
   }
@@ -253,6 +267,10 @@ void Simulation::Propagate()
                                  *viewer_file, delta_t * (i - 1));
         t = clock();
       }
+      timing_file << "Iteration: " << i << "\t("
+                  << ((float)clock() - step_time) / CLOCKS_PER_SEC << "s)\n"
+                  << std::flush;
+      step_time = clock();
       i++;
     }
     /* Save last Wavefunction since it might not end on a write frequency*/
@@ -260,6 +278,8 @@ void Simulation::Propagate()
     wavefunction->ProjectOut(parameters->GetTarget() + ".h5", *h5_file,
                              *viewer_file, delta_t * (i - 1));
   }
+
+  timing_file.close();
 
   VecDestroy(&psi_old);
 }

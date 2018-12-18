@@ -542,9 +542,13 @@ void Hamiltonian::CalculateHamlitonian0ECS()
   }
   else if (coordinate_system_idx == 3) /* Spherical */
   {
-    PetscInt j_val;       /* j index for matrix */
-    PetscInt base_offset; /* offset of diagonal */
-    PetscInt offset;      /* offset of diagonal */
+    PetscInt j_val;             /* j index for matrix */
+    PetscInt r_size = num_x[2]; /* r dimension size */
+    PetscInt r_idx;             /* r_index */
+    PetscInt diag_l_val;        /* l_value */
+    PetscInt diag_m_val;        /* m_value */
+    PetscInt base_offset;       /* offset of diagonal */
+    PetscInt offset;            /* offset of diagonal */
     bool insert_val, ecs;
     std::vector< PetscInt > idx_array;
     std::vector< dcomp > x_vals(order + 1, 0.0);
@@ -590,6 +594,7 @@ void Hamiltonian::CalculateHamlitonian0ECS()
       {
         dim_idx     = 0;
         base_offset = GetOffset(elec_idx, dim_idx);
+        /* radial dimension handle boundary for first top rows (near r=0) */
         if (dim_idx == 0 and
             idx_array[2 * (2 + elec_idx * num_dims)] < order_middle_idx - 1)
         {
@@ -622,6 +627,8 @@ void Hamiltonian::CalculateHamlitonian0ECS()
             }
           }
         }
+        /* radial dimension handle boundary for first bottom rows (near r=r_max)
+         */
         else if (dim_idx == 0 and
                  num_x[2] - 1 - idx_array[2 * (2 + elec_idx * num_dims)] <
                      order_middle_idx - 1)
@@ -655,6 +662,8 @@ void Hamiltonian::CalculateHamlitonian0ECS()
             }
           }
         }
+        /* standard finite difference stencils for rows where the entire FD
+         * stencil fits on the grid*/
         else
         {
           /* loop over all off diagonals up to the order needed */
@@ -686,6 +695,76 @@ void Hamiltonian::CalculateHamlitonian0ECS()
               }
             }
           }
+        }
+        /* Preallocate the non zero elements for the laser Hamiltonian */
+        j_val      = i_val;
+        idx_array  = GetIndexArray(i_val, j_val);
+        r_idx      = idx_array[2 * (elec_idx * num_dims + 2)];
+        diag_l_val = l_values[idx_array[2 * (elec_idx * num_dims + 1)]];
+        diag_m_val = m_values[idx_array[2 * (elec_idx * num_dims + 1)]];
+        /* make sure l+1 is part of our grid*/
+        if (diag_l_val + 1 <= l_max)
+        {
+          /* get l -> l+1 here */
+          j_val =
+              GetIdxFromLM(diag_l_val + 1, diag_m_val, m_max) * r_size + r_idx;
+          val = 0.0;
+          MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
+                       INSERT_VALUES);
+        }
+        /* make sure l-1 is greater than zero and the m value exists*/
+        if (diag_l_val - 1 >= 0 and diag_l_val - 1 >= std::abs(diag_m_val))
+        {
+          /* get the l -> l-1 */
+          j_val =
+              GetIdxFromLM(diag_l_val - 1, diag_m_val, m_max) * r_size + r_idx;
+          val = 0.0;
+          MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
+                       INSERT_VALUES);
+        }
+        /* make sure l+1 and m+1 is part of our grid*/
+        if (diag_l_val + 1 <= l_max and std::abs(diag_m_val + 1) <= m_max)
+        {
+          /* get l -> l+1 and m -> m+1 */
+          j_val = GetIdxFromLM(diag_l_val + 1, diag_m_val + 1, m_max) * r_size +
+                  r_idx;
+          val = 0.0;
+          MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
+                       INSERT_VALUES);
+        }
+        /* make sure l+1 and m-1 is part of our grid*/
+        if (diag_l_val + 1 <= l_max and std::abs(diag_m_val - 1) <= m_max)
+        {
+          /* get l -> l+1 and m -> m-1 */
+          j_val = GetIdxFromLM(diag_l_val + 1, diag_m_val - 1, m_max) * r_size +
+                  r_idx;
+          val = 0.0;
+          MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
+                       INSERT_VALUES);
+        }
+        /* make sure l-1 and m+1 is part of our grid */
+        if (diag_l_val - 1 >= 0 and
+            diag_l_val - 1 >= std::abs(diag_m_val + 1) and
+            std::abs(diag_m_val + 1) <= m_max)
+        {
+          /* get l -> l+1 and m -> m-1 */
+          j_val = GetIdxFromLM(diag_l_val - 1, diag_m_val + 1, m_max) * r_size +
+                  r_idx;
+          val = 0.0;
+          MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
+                       INSERT_VALUES);
+        }
+        /* make sure l-1 and m-1 is part of our grid */
+        if (diag_l_val - 1 >= 0 and
+            diag_l_val - 1 >= std::abs(diag_m_val - 1) and
+            std::abs(diag_m_val - 1) <= m_max)
+        {
+          /* get l -> l+1 and m -> m-1 */
+          j_val = GetIdxFromLM(diag_l_val - 1, diag_m_val - 1, m_max) * r_size +
+                  r_idx;
+          val = 0.0;
+          MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
+                       INSERT_VALUES);
         }
       }
     }
@@ -1303,14 +1382,7 @@ Mat* Hamiltonian::GetTotalHamiltonian(PetscInt time_idx, bool ecs)
 {
   if (ecs)
   {
-    if (coordinate_system_idx == 3)
-    {
-      MatCopy(hamiltonian_0_ecs, hamiltonian, DIFFERENT_NONZERO_PATTERN);
-    }
-    else
-    {
-      MatCopy(hamiltonian_0_ecs, hamiltonian, SAME_NONZERO_PATTERN);
-    }
+    MatCopy(hamiltonian_0_ecs, hamiltonian, SAME_NONZERO_PATTERN);
   }
   else
   {
@@ -1329,16 +1401,8 @@ Mat* Hamiltonian::GetTotalHamiltonian(PetscInt time_idx, bool ecs)
   {
     if (field[dim_idx][time_idx] != 0.0)
     {
-      if (coordinate_system_idx == 3)
-      {
-        MatAXPY(hamiltonian, field[dim_idx][time_idx],
-                hamiltonian_laser[dim_idx], DIFFERENT_NONZERO_PATTERN);
-      }
-      else
-      {
-        MatAXPY(hamiltonian, field[dim_idx][time_idx],
-                hamiltonian_laser[dim_idx], SUBSET_NONZERO_PATTERN);
-      }
+      MatAXPY(hamiltonian, field[dim_idx][time_idx], hamiltonian_laser[dim_idx],
+              SUBSET_NONZERO_PATTERN);
     }
   }
   return &hamiltonian;
@@ -2459,7 +2523,14 @@ Mat* Hamiltonian::GetTimeIndependent(bool ecs, PetscInt l_val)
 {
   if (ecs)
   {
-    MatCopy(hamiltonian_0_ecs, hamiltonian, SAME_NONZERO_PATTERN);
+    if (coordinate_system_idx == 3)
+    {
+      MatCopy(hamiltonian_0_ecs, hamiltonian, DIFFERENT_NONZERO_PATTERN);
+    }
+    else
+    {
+      MatCopy(hamiltonian_0_ecs, hamiltonian, SAME_NONZERO_PATTERN);
+    }
     return &hamiltonian;
   }
   else

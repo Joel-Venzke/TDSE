@@ -434,12 +434,6 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
           VecPointwiseMult(psi_tmp, jacobian, psi_proj);
           VecDot(psi, psi_tmp, &projection_val);
           ret_vec.push_back(projection_val);
-          if (world.rank() == 0)
-          {
-            std::cout << n_index << " (" << l_idx << "," << m_idx << ") "
-                      << (std::conj(projection_val) * projection_val).real()
-                      << "\n";
-          }
         }
         viewer_file.PopGroup();
       }
