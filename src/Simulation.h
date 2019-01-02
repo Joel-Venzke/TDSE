@@ -48,6 +48,10 @@ class Simulation : protected Utils
   PetscLogEvent create_checkpoint;
   PetscInt coordinate_system_idx;
   PetscInt *num_x;
+  PetscInt l_max;
+  PetscInt m_max;
+  PetscInt *l_values; /* l_values for the spherical code */
+  PetscInt *m_values; /* m_values for the spherical code */
 
   /* destroys psi_old*/
   bool CheckConvergence(Vec &psi_1, Vec &psi_2, double tol);

@@ -134,22 +134,22 @@ grid_max = 0.0
 fig = plt.figure()
 energy = f["Parameters"]["energy"][0]
 for dim_idx in range(num_dims):
-    data = -1.0 * np.gradient(pulses["field_" + str(dim_idx)][:],
-                              f["Parameters"]["delta_t"][0]) * 7.2973525664e-3
-    if np.max(data) > 1e-10:
-        data_fft = np.absolute(
-            np.fft.fft(
-                np.lib.pad(
-                    data, (300 * data.shape[0], 300 * data.shape[0]),
-                    'constant',
-                    constant_values=(0.0, 0.0))))
-        spec_time = np.arange(data_fft.shape[0]) * 2.0 * np.pi / (
-            data_fft.shape[0] * (p_time[1] - p_time[0]))
-        plt.plot(
-            spec_time, data_fft / data_fft.max(), '--', label="E($\omega$)")
-        grid_max = max(spec_time[np.argmax(data_fft[:data_fft.shape[0] / 2])],
-                       grid_max)
-        print spec_time[2] - spec_time[1]
+    # data = -1.0 * np.gradient(pulses["field_" + str(dim_idx)][:],
+    #                           f["Parameters"]["delta_t"][0]) * 7.2973525664e-3
+    # if np.max(data) > 1e-10:
+    #     data_fft = np.absolute(
+    #         np.fft.fft(
+    #             np.lib.pad(
+    #                 data, (300 * data.shape[0], 300 * data.shape[0]),
+    #                 'constant',
+    #                 constant_values=(0.0, 0.0))))
+    #     spec_time = np.arange(data_fft.shape[0]) * 2.0 * np.pi / (
+    #         data_fft.shape[0] * (p_time[1] - p_time[0]))
+    #     plt.plot(
+    #         spec_time, data_fft / data_fft.max(), '--', label="E($\omega$)")
+    #     grid_max = max(spec_time[np.argmax(data_fft[:data_fft.shape[0] / 2])],
+    #                    grid_max)
+    #     print spec_time[2] - spec_time[1]
     data = pulses["field_" + str(dim_idx)][:]
     if np.max(data) > 1e-10:
         data_fft = np.absolute(
@@ -160,15 +160,16 @@ for dim_idx in range(num_dims):
                     constant_values=(0.0, 0.0))))
         spec_time = np.arange(data_fft.shape[0]) * 2.0 * np.pi / (
             data_fft.shape[0] * (p_time[1] - p_time[0]))
-        plt.semilogy(spec_time, data_fft / data_fft.max(), label="A($\omega$)")
+        plt.plot(spec_time, data_fft / data_fft.max(), label="E($\omega$)")
         grid_max = max(spec_time[np.argmax(data_fft[:data_fft.shape[0] / 2])],
                        grid_max)
     # plt.axvline(x=energy, color='k')
     # plt.axvline(x=grid_max, color='r')
+plt.axvline(x=energy, color='k')
 plt.ylabel("Field Spectrum (arb)")
 plt.xlabel("$\omega$ (a.u.)")
 plt.title("Field Spectrum")
-plt.xlim([0, 3 * energy])
+plt.xlim([0, 2 * energy])
 # plt.ylim([0.5, 1])
 # plt.ylim(ymin=0)
 plt.grid()

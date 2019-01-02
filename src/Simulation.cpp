@@ -41,7 +41,19 @@ Simulation::Simulation(Hamiltonian &hamiltonian_in, Wavefunction &w,
   psi = wavefunction->GetPsi();
   if (coordinate_system_idx == 3)
   {
+    l_max     = p.GetLMax();
+    m_max     = p.GetMMax();
+    l_values  = wavefunction->GetLValues();
+    m_values  = wavefunction->GetMValues();
     psi_small = wavefunction->GetPsiSmall();
+  }
+  else
+  {
+    l_max     = 0;
+    m_max     = 0;
+    l_values  = NULL;
+    m_values  = NULL;
+    psi_small = NULL;
   }
   VecDuplicate(*psi, &psi_right);
 
@@ -67,8 +79,11 @@ void Simulation::Propagate()
   clock_t t;
   clock_t step_time;
   std::ofstream timing_file;
-  timing_file.open("timing.log");
-  timing_file << "Iteration (time)\n";
+  if (world.rank() == 0)
+  {
+    timing_file.open("timing.log");
+    timing_file << "Iteration (time)\n";
+  }
   /* if we are converged */
   bool converged = false;
   /* If we need end of pulse checkpoint */
@@ -113,9 +128,9 @@ void Simulation::Propagate()
 
   if (world.rank() == 0)
     std::cout << "Total writes: "
-              << time_length / write_frequency_checkpoint + 1
-              << "\nStarting propagation\n"
-              << std::flush;
+              << (time_length + free_propagate) / write_frequency_checkpoint + 1
+              << "\nTotal time steps: " << time_length + free_propagate
+              << std::endl;
 
   /* Checkpoint file before propagation starts */
   if (parameters->GetRestart() != 1)
@@ -123,8 +138,12 @@ void Simulation::Propagate()
     wavefunction->Checkpoint(*h5_file, *viewer_file, 0.0);
   }
 
-  t         = clock();
-  step_time = clock();
+  if (world.rank() == 0)
+  {
+    std::cout << "Starting propagation\n\n" << std::flush;
+    t         = clock();
+    step_time = clock();
+  }
   for (; i < time_length; i++)
   {
     PetscLogEventBegin(time_step, 0, 0, 0, 0);
@@ -153,21 +172,18 @@ void Simulation::Propagate()
                          write_frequency_checkpoint
                   << "\n"
                   << std::flush;
-      t = clock();
       /* write a checkpoint */
       wavefunction->Checkpoint(*h5_file, *viewer_file, time[i]);
-      if (world.rank() == 0)
-        std::cout << "Checkpoint time: "
-                  << ((float)clock() - t) / (CLOCKS_PER_SEC) << "\n"
-                  << std::flush;
-      t = clock();
+      if (world.rank() == 0) t = clock();
       PetscLogEventEnd(create_checkpoint, 0, 0, 0, 0);
     }
 
-    timing_file << "Iteration: " << i << "\t("
-                << ((float)clock() - step_time) / CLOCKS_PER_SEC << "s)\n"
-                << std::flush;
-    step_time = clock();
+    if (world.rank() == 0)
+    {
+      timing_file << "Iteration: " << i << "\t("
+                  << ((float)clock() - step_time) / CLOCKS_PER_SEC << "s)\n";
+      step_time = clock();
+    }
     PetscLogEventEnd(time_step, 0, 0, 0, 0);
   }
 
@@ -175,8 +191,6 @@ void Simulation::Propagate()
   {
     /* Save frame after pulse ends*/
     wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
-    wavefunction->ProjectOut(parameters->GetTarget() + ".h5", *h5_file,
-                             *viewer_file, delta_t * (i - 1));
   }
 
   if (free_propagate == -1) /* until norm stops changing */
@@ -222,14 +236,15 @@ void Simulation::Propagate()
         }
         /* write a checkpoint */
         wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
-        wavefunction->ProjectOut(parameters->GetTarget() + ".h5", *h5_file,
-                                 *viewer_file, delta_t * (i - 1));
-        t = clock();
+        if (world.rank() == 0) t = clock();
       }
-      timing_file << "Iteration: " << i << "\t("
-                  << ((float)clock() - step_time) / CLOCKS_PER_SEC << "s)\n"
-                  << std::flush;
-      step_time = clock();
+      if (world.rank() == 0)
+      {
+        timing_file << "Iteration: " << i << "\t("
+                    << ((float)clock() - step_time) / CLOCKS_PER_SEC << "s)\n"
+                    << std::flush;
+        step_time = clock();
+      }
       i++;
     }
   }
@@ -263,23 +278,28 @@ void Simulation::Propagate()
                     << std::flush;
         /* write a checkpoint */
         wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
-        wavefunction->ProjectOut(parameters->GetTarget() + ".h5", *h5_file,
-                                 *viewer_file, delta_t * (i - 1));
-        t = clock();
+        if (world.rank() == 0) t = clock();
       }
-      timing_file << "Iteration: " << i << "\t("
-                  << ((float)clock() - step_time) / CLOCKS_PER_SEC << "s)\n"
-                  << std::flush;
-      step_time = clock();
+      if (world.rank() == 0)
+      {
+        timing_file << "Iteration: " << i << "\t("
+                    << ((float)clock() - step_time) / CLOCKS_PER_SEC << "s)\n"
+                    << std::flush;
+        step_time = clock();
+      }
       i++;
     }
     /* Save last Wavefunction since it might not end on a write frequency*/
-    wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
-    wavefunction->ProjectOut(parameters->GetTarget() + ".h5", *h5_file,
-                             *viewer_file, delta_t * (i - 1));
+    if (free_propagate > 0)
+    {
+      wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
+    }
   }
 
-  timing_file.close();
+  if (world.rank() == 0)
+  {
+    timing_file.close();
+  }
 
   VecDestroy(&psi_old);
 }
@@ -341,7 +361,7 @@ void Simulation::EigenSolve(PetscInt num_states)
   {
     /* only the radial part is needed for the states */
     psi = wavefunction->GetPsiSmall();
-    for (int l_val = 0; l_val < num_x[1]; ++l_val)
+    for (int l_val = 0; l_val < l_max + 1; ++l_val)
     {
       /* make sure we still have states to calculate */
       /* for every increase in l, there is one less state in n */
@@ -594,7 +614,7 @@ void Simulation::PowerMethod(PetscInt num_states)
        * extremely quickly */
       ModifiedGramSchmidt(states);
     }
-    t = clock();
+    if (world.rank() == 0) t = clock();
     /* loop until error is small enough */
     while (!converged)
     {
@@ -633,7 +653,7 @@ void Simulation::PowerMethod(PetscInt num_states)
                     << ((float)clock() - t) / (CLOCKS_PER_SEC * write_frequency)
                     << "\n"
                     << std::flush;
-        t = clock();
+        if (world.rank() == 0) t = clock();
       }
       /* increment counter */
       i++;

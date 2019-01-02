@@ -71,4 +71,5 @@ data *= data
 state_labels = state_name(data.shape[1])
 
 for state_number in range(data.shape[1]):
-    print state_labels[state_number] + "\t" + str(data[-1, state_number])
+    print state_labels[state_number] + "\t" + str(
+        data[1, state_number]) + "\t" + str(data[-1, state_number])

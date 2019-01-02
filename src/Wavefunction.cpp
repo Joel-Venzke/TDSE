@@ -47,6 +47,8 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
                         &time_dipole_acceration);
   PetscLogEventRegister("WaveECS", PETSC_VIEWER_CLASSID, &time_gobbler);
   PetscLogEventRegister("WaveProj", PETSC_VIEWER_CLASSID, &time_projections);
+  PetscLogEventRegister("WaveRadialPsi", PETSC_VIEWER_CLASSID,
+                        &time_insert_radial_psi);
 
   /* allocate grid */
   CreateGrid();
@@ -135,6 +137,7 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
 void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
                               double time, PetscInt checkpoint_psi)
 {
+  clock_t checkpoint_time = clock();
   if (world.rank() == 0)
   {
     if (checkpoint_psi == 0)
@@ -282,6 +285,10 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
 
     /* allow for future passes to write psi or observables only */
     first_pass = false;
+    if (world.rank() == 0)
+      std::cout << "Checkpoint time: "
+                << ((float)clock() - checkpoint_time) / (CLOCKS_PER_SEC) << "\n"
+                << std::flush;
     write_counter_checkpoint++;
     write_counter_observables++;
     write_counter_projections++;
@@ -305,11 +312,25 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
       h5_file.WriteObject(time, "/Wavefunction/time", write_counter_checkpoint);
       h5_file.WriteObject(Norm(), "/Wavefunction/norm",
                           write_counter_checkpoint);
-      std::vector< dcomp > projections = Projections(target_file_name);
+      std::vector< dcomp > projections;
+      if (time < 1e-14)
+      {
+        PetscInt projection_size = GetProjectionSize();
+        projections.resize(projection_size, dcomp(0.0, 0.0));
+      }
+      else
+      {
+        projections = Projections(target_file_name);
+      }
       h5_file.WriteObject(&projections[0], projections.size(),
                           "/Wavefunction/projections",
                           write_counter_checkpoint);
       write_counter_checkpoint++;
+      if (world.rank() == 0)
+        std::cout << "Checkpoint time: "
+                  << ((float)clock() - checkpoint_time) / (CLOCKS_PER_SEC)
+                  << "\n"
+                  << std::flush;
     }
     else if (checkpoint_psi == 1) /* Observables */
     {
@@ -399,6 +420,7 @@ void Wavefunction::LoadRestart(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
  */
 std::vector< dcomp > Wavefunction::Projections(std::string file_name)
 {
+  PetscLogEventBegin(time_projections, 0, 0, 0, 0);
   HDF5Wrapper h5_file(file_name);
   ViewWrapper viewer_file(file_name);
   std::vector< dcomp > ret_vec;
@@ -420,7 +442,7 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
     viewer_file.Open("r");
     for (int n_index = 1; n_index <= num_states; ++n_index)
     {
-      for (int l_idx = 0; l_idx < fmin(n_index, num_x[1]); ++l_idx)
+      for (int l_idx = 0; l_idx < fmin(n_index, l_max + 1); ++l_idx)
       {
         /* Set time idx */
         viewer_file.SetTime(n_index - l_idx - 1);
@@ -468,6 +490,7 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
     viewer_file.Close();
   }
 
+  PetscLogEventEnd(time_projections, 0, 0, 0, 0);
   return ret_vec;
 }
 
@@ -498,7 +521,7 @@ void Wavefunction::ProjectOut(std::string file_name, HDF5Wrapper& h5_file_in,
     viewer_file.Open("r");
     for (int n_index = 1; n_index <= num_states; ++n_index)
     {
-      for (int l_idx = 0; l_idx < fmin(n_index, num_x[1]); ++l_idx)
+      for (int l_idx = 0; l_idx < fmin(n_index, l_max + 1); ++l_idx)
       {
         /* Set time idx */
         viewer_file.SetTime(n_index - l_idx - 1);
@@ -700,6 +723,7 @@ void Wavefunction::LoadPsi(std::string file_name, PetscInt num_states,
 void Wavefunction::InsertRadialPsi(Vec& psi_radial, Vec& psi_total,
                                    PetscInt l_val, PetscInt m_val)
 {
+  PetscLogEventBegin(time_insert_radial_psi, 0, 0, 0, 0);
   PetscInt low, high;
   PetscComplex val;
 
@@ -719,6 +743,7 @@ void Wavefunction::InsertRadialPsi(Vec& psi_radial, Vec& psi_total,
   }
   VecAssemblyBegin(psi_total);
   VecAssemblyEnd(psi_total);
+  PetscLogEventEnd(time_insert_radial_psi, 0, 0, 0, 0);
 }
 
 void Wavefunction::CheckpointPsi(ViewWrapper& viewer_file, PetscInt write_idx)
