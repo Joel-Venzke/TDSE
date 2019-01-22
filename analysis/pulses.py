@@ -132,7 +132,7 @@ fig.savefig("figs/Pulses_Envelope_Derivative.png")
 print "Plotting Spectrum"
 grid_max = 0.0
 fig = plt.figure()
-energy = f["Parameters"]["energy"][0]
+energy = f["Parameters"]["energy"][1]
 for dim_idx in range(num_dims):
     # data = -1.0 * np.gradient(pulses["field_" + str(dim_idx)][:],
     #                           f["Parameters"]["delta_t"][0]) * 7.2973525664e-3
@@ -160,7 +160,7 @@ for dim_idx in range(num_dims):
                     constant_values=(0.0, 0.0))))
         spec_time = np.arange(data_fft.shape[0]) * 2.0 * np.pi / (
             data_fft.shape[0] * (p_time[1] - p_time[0]))
-        plt.plot(spec_time, data_fft / data_fft.max(), label="E($\omega$)")
+        plt.semilogy(spec_time, data_fft / data_fft.max(), label="E($\omega$)")
         grid_max = max(spec_time[np.argmax(data_fft[:data_fft.shape[0] / 2])],
                        grid_max)
     # plt.axvline(x=energy, color='k')

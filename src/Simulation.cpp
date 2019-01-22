@@ -385,7 +385,7 @@ void Simulation::EigenSolve(PetscInt num_states)
         if (coordinate_system_idx == 3 and num_x[2] > 1000)
         {
           EPSSetDimensions(eps, num_states - l_val, PETSC_DECIDE,
-                           num_x[2] * 0.1);
+                           num_x[2] * 0.2);
         }
         else /* make it big for super small calculations */
         {

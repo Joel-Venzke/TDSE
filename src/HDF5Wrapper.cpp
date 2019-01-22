@@ -860,6 +860,8 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
                 "The minimum step sizes in that dimension in atomic units.");
     WriteObject(p.delta_x_max.get(), num_dims, "/Parameters/delta_x_max",
                 "The maximum step sizes in that dimension in atomic units.");
+    WriteObject(p.GetNumStates(), "/Parameters/num_states",
+                "The number of states used in projections.");
     WriteObject(p.GetStartStateIdx(), num_start_state,
                 "/Parameters/start_state_idx",
                 "The index of states in super position.");
@@ -877,6 +879,11 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
       WriteObject(p.GetStartStateMIdx(), num_start_state,
                   "/Parameters/start_state_m_idx",
                   "The m value of each state in the starting super position.");
+
+      WriteObject(p.GetLMax(), "/Parameters/l_max",
+                  "The maximum l value used in the simulation.");
+      WriteObject(p.GetMMax(), "/Parameters/m_max",
+                  "The maximum m value used in the simulation.");
     }
     WriteObject(
         p.delta_x_min_end.get(), num_dims, "/Parameters/delta_x_min_end",

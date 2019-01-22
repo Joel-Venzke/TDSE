@@ -237,7 +237,7 @@ void Hamiltonian::CalculateHamlitonian0(PetscInt l_val)
     std::vector< dcomp > x_vals(order + 1, 0.0);
     PetscInt dim_idx;
 
-    ecs = false;
+    ecs = true;
     for (PetscInt i_val = start; i_val < end; i_val++)
     {
       j_val     = i_val;

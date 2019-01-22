@@ -251,7 +251,7 @@ x_min = 0
 x_max = 25
 plt.xticks(np.arange(x_min + 1, x_max + 1, 2.0))
 plt.xlim([x_min, x_max])
-plt.ylim([1e-4, 1])
+plt.ylim([1e-8, 1])
 plt.grid(True, which='both')
 plt.tight_layout()
 fig.savefig("figs/HHG_Spectrum.png")
@@ -658,8 +658,7 @@ plt.imshow(
     cmap='viridis',
     origin='lower',
     interpolation='none',
-    vmax=2e-4)
-# ,norm=LogNorm(vmax=2e-4, vmin=1e-7))
+    norm=LogNorm(vmax=2e-4, vmin=1e-7))
 # norm=LogNorm(vmax=grid_data[2:].max(), vmin=grid_data[2:].max() / 1e3))
 for val in np.arange(-0.5, grid_data.shape[1], 1):
     plt.axvline(val, c='w')
