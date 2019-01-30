@@ -2523,14 +2523,7 @@ Mat* Hamiltonian::GetTimeIndependent(bool ecs, PetscInt l_val)
 {
   if (ecs)
   {
-    if (coordinate_system_idx == 3)
-    {
-      MatCopy(hamiltonian_0_ecs, hamiltonian, DIFFERENT_NONZERO_PATTERN);
-    }
-    else
-    {
-      MatCopy(hamiltonian_0_ecs, hamiltonian, SAME_NONZERO_PATTERN);
-    }
+    MatCopy(hamiltonian_0_ecs, hamiltonian, SAME_NONZERO_PATTERN);
     return &hamiltonian;
   }
   else

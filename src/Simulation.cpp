@@ -382,19 +382,21 @@ void Simulation::EigenSolve(PetscInt num_states)
         EPSSetTolerances(eps, tol, PETSC_DECIDE);
         EPSSetWhichEigenpairs(eps, EPS_SMALLEST_REAL);
         /* EPS doesn't converge unless we increase the subspace */
-        if (coordinate_system_idx == 3 and num_x[2] > 1000)
+        if (coordinate_system_idx == 3 and num_states > 10)
         {
           EPSSetDimensions(eps, num_states - l_val, PETSC_DECIDE,
-                           num_x[2] * 0.2);
+                           num_x[2] * 0.1);
         }
-        else /* make it big for super small calculations */
+        else /* make it faster for small calculations */
         {
-          EPSSetDimensions(eps, num_states - l_val, PETSC_DECIDE,
-                           num_x[2] * 0.5);
+          EPSSetDimensions(eps, num_states - l_val, 300, PETSC_DECIDE);
         }
         /* set up initial space */
-        wavefunction->RadialHGroundPsiSmall();
-        EPSSetInitialSpace(eps, 1, psi);
+        if (l_val == 0)
+        {
+          wavefunction->RadialHGroundPsiSmall();
+          EPSSetInitialSpace(eps, 1, psi);
+        }
         EPSSetFromOptions(eps);
         EPSSolve(eps);
         EPSGetConverged(eps, &nconv);
@@ -480,26 +482,13 @@ void Simulation::CrankNicolson(double dt, PetscInt time_idx, PetscInt dim_idx)
       h = hamiltonian->GetTotalHamiltonian(time_idx, dim_idx);
     }
 
-    if (coordinate_system_idx == 3)
-    {
-      MatCopy(*h, left, DIFFERENT_NONZERO_PATTERN);
-      MatScale(left, factor);
-      MatShift(left, 1.0);
+    MatCopy(*h, left, SAME_NONZERO_PATTERN);
+    MatScale(left, factor);
+    MatShift(left, 1.0);
 
-      MatCopy(*h, right, DIFFERENT_NONZERO_PATTERN);
-      MatScale(right, -1.0 * factor);
-      MatShift(right, 1.0);
-    }
-    else
-    {
-      MatCopy(*h, left, SAME_NONZERO_PATTERN);
-      MatScale(left, factor);
-      MatShift(left, 1.0);
-
-      MatCopy(*h, right, SAME_NONZERO_PATTERN);
-      MatScale(right, -1.0 * factor);
-      MatShift(right, 1.0);
-    }
+    MatCopy(*h, right, SAME_NONZERO_PATTERN);
+    MatScale(right, -1.0 * factor);
+    MatShift(right, 1.0);
 
     KSPSetOperators(ksp, left, left);
     KSPSetTolerances(ksp, 1.e-15, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
