@@ -89,7 +89,8 @@ def cacluate_xy_plane(psi_cooridnate_values, x_size, y_size, resolution):
     return x, y, z, r, theta, phi, r_vals
 
 
-resolution = 500
+resolution = 1000
+zoom_size = 1.5
 
 f = h5py.File("TDSE.h5", "r")
 psi_value = f["Wavefunction"]["psi"]
@@ -145,7 +146,7 @@ for i, psi in enumerate(psi_value):
         plt.ylabel("x-axis (a.u.)")
         plt.tight_layout()
         plt.savefig("figs/momentum_xy_" + str(i).zfill(8) + ".png")
-        plb.xlim([-1.0, 1.0])
-        plb.ylim([-1.0, 1.0])
+        plb.xlim([-zoom_size, zoom_size])
+        plb.ylim([-zoom_size, zoom_size])
         plt.savefig("figs/momentum_zoom_xy_" + str(i).zfill(8) + ".png")
         plt.clf()
