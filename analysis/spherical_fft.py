@@ -131,7 +131,7 @@ for i, psi in enumerate(psi_value):
         plt.xlabel("y-axis (a.u.)")
         plt.ylabel("x-axis (a.u.)")
         plt.tight_layout()
-        plt.savefig("wave_cut_xy_" + str(i).zfill(8) + ".png")
+        plt.savefig("figs/wave_cut_xy_" + str(i).zfill(8) + ".png")
         plt.clf()
 
         fft_data = np.abs(np.fft.fftshift(np.fft.fft2(plane_data)))**2
@@ -144,8 +144,8 @@ for i, psi in enumerate(psi_value):
         plt.xlabel("y-axis (a.u.)")
         plt.ylabel("x-axis (a.u.)")
         plt.tight_layout()
-        plt.savefig("momentum_xy_" + str(i).zfill(8) + ".png")
+        plt.savefig("figs/momentum_xy_" + str(i).zfill(8) + ".png")
         plb.xlim([-1.0, 1.0])
         plb.ylim([-1.0, 1.0])
-        plt.savefig("momentum_zoom_xy_" + str(i).zfill(8) + ".png")
+        plt.savefig("figs/momentum_zoom_xy_" + str(i).zfill(8) + ".png")
         plt.clf()
