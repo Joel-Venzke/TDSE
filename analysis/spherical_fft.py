@@ -137,10 +137,8 @@ for i, psi in enumerate(psi_value):
 
         fft_data = np.abs(np.fft.fftshift(np.fft.fft2(plane_data)))**2
         cs = plt.imshow(
-            fft_data,
-            # norm=LogNorm(1e-10),
-            extent=[ky.min(), ky.max(), kx.min(),
-                    kx.max()])
+            fft_data, extent=[ky.min(), ky.max(),
+                              kx.min(), kx.max()])
         plt.colorbar(cs)
         plt.xlabel("y-axis (a.u.)")
         plt.ylabel("x-axis (a.u.)")
@@ -149,4 +147,18 @@ for i, psi in enumerate(psi_value):
         plb.xlim([-zoom_size, zoom_size])
         plb.ylim([-zoom_size, zoom_size])
         plt.savefig("figs/momentum_zoom_xy_" + str(i).zfill(8) + ".png")
+        plt.clf()
+        cs = plt.imshow(
+            fft_data,
+            norm=LogNorm(1e-4),
+            extent=[ky.min(), ky.max(), kx.min(),
+                    kx.max()])
+        plt.colorbar(cs)
+        plt.xlabel("y-axis (a.u.)")
+        plt.ylabel("x-axis (a.u.)")
+        plt.tight_layout()
+        plt.savefig("figs/momentum_log_xy_" + str(i).zfill(8) + ".png")
+        plb.xlim([-zoom_size, zoom_size])
+        plb.ylim([-zoom_size, zoom_size])
+        plt.savefig("figs/momentum_log_zoom_xy_" + str(i).zfill(8) + ".png")
         plt.clf()

@@ -94,12 +94,12 @@ for dim_idx in np.arange(shape.shape[0]):
 l_values = f["/Wavefunction/l_values"][:]
 m_values = f["/Wavefunction/m_values"][:]
 
-x_max = psi_cooridnate_values[2].max()
-z_max = psi_cooridnate_values[2].max()
+r_max = 15
+# r_max = psi_cooridnate_values[2].max()
 # pre-calculate grid so the plotting can be vectorized
 print "Calculating index set for xy plane"
 x, y, z, r, theta, phi, r_vals = cacluate_xy_plane(psi_cooridnate_values,
-                                                   x_max, z_max, 500)
+                                                   r_max, r_max, 1000)
 
 fig = plt.figure(figsize=(24, 18), dpi=80)
 for i, psi in enumerate(psi_value):
@@ -117,27 +117,27 @@ for i, psi in enumerate(psi_value):
                               r_vals, l_values, m_values)[:, :, 0]
         cs = plt.imshow(
             np.abs(plane_data)**2,
-            norm=LogNorm(1e-10),
-            extent=[-z_max, z_max, -x_max, x_max])
+            norm=LogNorm(1e-5),
+            extent=[-r_max, r_max, -r_max, r_max])
         plt.colorbar(cs)
         plt.xlabel("y-axis (a.u.)")
         plt.ylabel("x-axis (a.u.)")
         plt.tight_layout()
-        plt.savefig("wave_xy_" + str(i).zfill(8) + ".png")
+        plt.savefig("figs/wave_xy_" + str(i).zfill(8) + ".png")
         plt.clf()
 
         cs = plt.imshow(
-            np.angle(plane_data), extent=[-z_max, z_max, -x_max, x_max])
+            np.angle(plane_data), extent=[-r_max, r_max, -r_max, r_max])
         plt.colorbar(cs)
         plt.xlabel("y-axis (a.u.)")
         plt.ylabel("x-axis (a.u.)")
         plt.tight_layout()
-        plt.savefig("wave_xy_phase_" + str(i).zfill(8) + ".png")
+        plt.savefig("figs/wave_xy_phase_" + str(i).zfill(8) + ".png")
         plt.clf()
 
 print "Calculating index set for xz plane"
 x, y, z, r, theta, phi, r_vals = cacluate_xz_plane(psi_cooridnate_values,
-                                                   x_max, z_max, 500)
+                                                   r_max, r_max, 500)
 
 fig = plt.figure(figsize=(24, 18), dpi=80)
 for i, psi in enumerate(psi_value):
@@ -155,27 +155,27 @@ for i, psi in enumerate(psi_value):
                               r_vals, l_values, m_values)[0]
         cs = plt.imshow(
             np.abs(plane_data)**2,
-            norm=LogNorm(1e-10),
-            extent=[-z_max, z_max, -x_max, x_max])
+            norm=LogNorm(1e-5),
+            extent=[-r_max, r_max, -r_max, r_max])
         plt.colorbar(cs)
         plt.xlabel("z-axis (a.u.)")
         plt.ylabel("x-axis (a.u.)")
         plt.tight_layout()
-        plt.savefig("wave_xz_" + str(i).zfill(8) + ".png")
+        plt.savefig("figs/wave_xz_" + str(i).zfill(8) + ".png")
         plt.clf()
 
         cs = plt.imshow(
-            np.angle(plane_data), extent=[-z_max, z_max, -x_max, x_max])
+            np.angle(plane_data), extent=[-r_max, r_max, -r_max, r_max])
         plt.colorbar(cs)
         plt.xlabel("z-axis (a.u.)")
         plt.ylabel("x-axis (a.u.)")
         plt.tight_layout()
-        plt.savefig("wave_xz_phase_" + str(i).zfill(8) + ".png")
+        plt.savefig("figs/wave_xz_phase_" + str(i).zfill(8) + ".png")
         plt.clf()
 
 print "Calculating index set for yz plane"
 x, y, z, r, theta, phi, r_vals = cacluate_yz_plane(psi_cooridnate_values,
-                                                   x_max, z_max, 500)
+                                                   r_max, r_max, 500)
 
 fig = plt.figure(figsize=(24, 18), dpi=80)
 for i, psi in enumerate(psi_value):
@@ -194,20 +194,20 @@ for i, psi in enumerate(psi_value):
         print r.shape
         cs = plt.imshow(
             np.abs(plane_data)**2,
-            norm=LogNorm(1e-10),
-            extent=[-z_max, z_max, -x_max, x_max])
+            norm=LogNorm(1e-4),
+            extent=[-r_max, r_max, -r_max, r_max])
         plt.colorbar(cs)
         plt.xlabel("z-axis (a.u.)")
         plt.ylabel("y-axis (a.u.)")
         plt.tight_layout()
-        plt.savefig("wave_yz_" + str(i).zfill(8) + ".png")
+        plt.savefig("figs/wave_yz_" + str(i).zfill(8) + ".png")
         plt.clf()
 
         cs = plt.imshow(
-            np.angle(plane_data), extent=[-z_max, z_max, -x_max, x_max])
+            np.angle(plane_data), extent=[-r_max, r_max, -r_max, r_max])
         plt.colorbar(cs)
         plt.xlabel("z-axis (a.u.)")
         plt.ylabel("y-axis (a.u.)")
         plt.tight_layout()
-        plt.savefig("wave_yz_phase_" + str(i).zfill(8) + ".png")
+        plt.savefig("figs/wave_yz_phase_" + str(i).zfill(8) + ".png")
         plt.clf()
