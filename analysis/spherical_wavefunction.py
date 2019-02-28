@@ -34,10 +34,10 @@ def get_data(psi, psi_cooridnate_values, r, theta, phi, r_vals, l_values,
     for lm_idx in np.arange(0, psi_cooridnate_values[1].shape[0]):
         l = l_values[lm_idx]
         m = m_values[lm_idx]
-        print "(l,m)", l, m, (np.sqrt(
+        print("(l,m)", l, m, (np.sqrt(
             (psi[0, lm_idx, :] * psi[0, lm_idx, :].conjugate()).sum())
                               / psi_norm).real, sph_harm(
-                                  m, l, phi[0, 0, 0], theta[0, 0, 0])
+                                  m, l, phi[0, 0, 0], theta[0, 0, 0]))
         data += ((
             -1.0)**m) * psi[0, lm_idx, r_vals] * sph_harm(m, l, phi, theta)
     data[r > psi_cooridnate_values[2].max()] = 1e-100
@@ -97,117 +97,133 @@ m_values = f["/Wavefunction/m_values"][:]
 r_max = 15
 # r_max = psi_cooridnate_values[2].max()
 # pre-calculate grid so the plotting can be vectorized
-print "Calculating index set for xy plane"
+print("Calculating index set for xy plane")
 x, y, z, r, theta, phi, r_vals = cacluate_xy_plane(psi_cooridnate_values,
-                                                   r_max, r_max, 1000)
+                                                   r_max, r_max, 500)
 
-fig = plt.figure(figsize=(24, 18), dpi=80)
+cmaps = ['cividis']
+fig = plt.figure(figsize=(12, 9), dpi=80)
 for i, psi in enumerate(psi_value):
     if i > 0:  # the 0th index is garbage
-        print "plotting", i
+        print("plotting", i)
         psi = psi[:, 0] + 1j * psi[:, 1]
         psi.shape = shape
         psi_norm = np.sqrt((psi * psi.conjugate()).sum())
         for l in np.arange(0, psi_cooridnate_values[1].shape[0]):
-            print "Magnitude of (l,m) " + str(l_values[l]) + "," + str(
-                m_values[l]) + ": " + str((np.sqrt(
-                    (psi[0, l, :] * psi[0, l, :].conjugate()).sum()) /
-                                           psi_norm).real)
+            print("Magnitude of (l,m) " + str(l_values[l]) + "," +
+                  str(m_values[l]) + ": " + str((np.sqrt(
+                      (psi[0, l, :] * psi[0, l, :].conjugate()).sum()) /
+                                                 psi_norm).real))
         plane_data = get_data(psi, psi_cooridnate_values, r, theta, phi,
                               r_vals, l_values, m_values)[:, :, 0]
         cs = plt.imshow(
-            np.abs(plane_data)**2,
+            (np.abs(plane_data)**2),
             norm=LogNorm(1e-5),
-            extent=[-r_max, r_max, -r_max, r_max])
+            extent=[-r_max, r_max, -r_max, r_max],
+            cmap=cmaps[int(i / 50) % len(cmaps)])
         plt.colorbar(cs)
-        plt.xlabel("y-axis (a.u.)")
-        plt.ylabel("x-axis (a.u.)")
+        plt.ylabel("y-axis (a.u.)")
+        plt.xlabel("x-axis (a.u.)")
         plt.tight_layout()
         plt.savefig("figs/wave_xy_" + str(i).zfill(8) + ".png")
         plt.clf()
 
         cs = plt.imshow(
-            np.angle(plane_data), extent=[-r_max, r_max, -r_max, r_max])
+            (np.angle(plane_data)),
+            extent=[-r_max, r_max, -r_max, r_max],
+            cmap='twilight',
+            vmin=-np.pi,
+            vmax=np.pi)
         plt.colorbar(cs)
-        plt.xlabel("y-axis (a.u.)")
-        plt.ylabel("x-axis (a.u.)")
+        plt.ylabel("y-axis (a.u.)")
+        plt.xlabel("x-axis (a.u.)")
         plt.tight_layout()
         plt.savefig("figs/wave_xy_phase_" + str(i).zfill(8) + ".png")
         plt.clf()
 
-print "Calculating index set for xz plane"
+print("Calculating index set for xz plane")
 x, y, z, r, theta, phi, r_vals = cacluate_xz_plane(psi_cooridnate_values,
                                                    r_max, r_max, 500)
 
-fig = plt.figure(figsize=(24, 18), dpi=80)
+fig = plt.figure(figsize=(12, 9), dpi=80)
 for i, psi in enumerate(psi_value):
     if i > 0:  # the 0th index is garbage
-        print "plotting", i
+        print("plotting", i)
         psi = psi[:, 0] + 1j * psi[:, 1]
         psi.shape = shape
         psi_norm = np.sqrt((psi * psi.conjugate()).sum())
         for l in np.arange(0, psi_cooridnate_values[1].shape[0]):
-            print "Magnitude of (l,m) " + str(l_values[l]) + "," + str(
-                m_values[l]) + ": " + str((np.sqrt(
-                    (psi[0, l, :] * psi[0, l, :].conjugate()).sum()) /
-                                           psi_norm).real)
+            print("Magnitude of (l,m) " + str(l_values[l]) + "," +
+                  str(m_values[l]) + ": " + str((np.sqrt(
+                      (psi[0, l, :] * psi[0, l, :].conjugate()).sum()) /
+                                                 psi_norm).real))
         plane_data = get_data(psi, psi_cooridnate_values, r, theta, phi,
                               r_vals, l_values, m_values)[0]
         cs = plt.imshow(
-            np.abs(plane_data)**2,
+            np.transpose(np.abs(plane_data)**2),
             norm=LogNorm(1e-5),
-            extent=[-r_max, r_max, -r_max, r_max])
+            extent=[-r_max, r_max, -r_max, r_max],
+            cmap=cmaps[int(i / 50) % len(cmaps)])
         plt.colorbar(cs)
-        plt.xlabel("z-axis (a.u.)")
-        plt.ylabel("x-axis (a.u.)")
+        plt.ylabel("z-axis (a.u.)")
+        plt.xlabel("x-axis (a.u.)")
         plt.tight_layout()
         plt.savefig("figs/wave_xz_" + str(i).zfill(8) + ".png")
         plt.clf()
 
         cs = plt.imshow(
-            np.angle(plane_data), extent=[-r_max, r_max, -r_max, r_max])
+            np.transpose(np.angle(plane_data)),
+            extent=[-r_max, r_max, -r_max, r_max],
+            cmap='twilight',
+            vmin=-np.pi,
+            vmax=np.pi)
         plt.colorbar(cs)
-        plt.xlabel("z-axis (a.u.)")
-        plt.ylabel("x-axis (a.u.)")
+        plt.ylabel("z-axis (a.u.)")
+        plt.xlabel("x-axis (a.u.)")
         plt.tight_layout()
         plt.savefig("figs/wave_xz_phase_" + str(i).zfill(8) + ".png")
         plt.clf()
 
-print "Calculating index set for yz plane"
+print("Calculating index set for yz plane")
 x, y, z, r, theta, phi, r_vals = cacluate_yz_plane(psi_cooridnate_values,
                                                    r_max, r_max, 500)
 
-fig = plt.figure(figsize=(24, 18), dpi=80)
+fig = plt.figure(figsize=(12, 9), dpi=80)
 for i, psi in enumerate(psi_value):
     if i > 0:  # the 0th index is garbage
-        print "plotting", i
+        print("plotting", i)
         psi = psi[:, 0] + 1j * psi[:, 1]
         psi.shape = shape
         psi_norm = np.sqrt((psi * psi.conjugate()).sum())
         for l in np.arange(0, psi_cooridnate_values[1].shape[0]):
-            print "Magnitude of (l,m) " + str(l_values[l]) + "," + str(
-                m_values[l]) + ": " + str((np.sqrt(
-                    (psi[0, l, :] * psi[0, l, :].conjugate()).sum()) /
-                                           psi_norm).real)
+            print("Magnitude of (l,m) " + str(l_values[l]) + "," +
+                  str(m_values[l]) + ": " + str((np.sqrt(
+                      (psi[0, l, :] * psi[0, l, :].conjugate()).sum()) /
+                                                 psi_norm).real))
         plane_data = get_data(psi, psi_cooridnate_values, r, theta, phi,
                               r_vals, l_values, m_values)[:, 0, :]
-        print r.shape
+        print(r.shape)
         cs = plt.imshow(
-            np.abs(plane_data)**2,
-            norm=LogNorm(1e-4),
-            extent=[-r_max, r_max, -r_max, r_max])
+            np.transpose(np.abs(plane_data)**2),
+            norm=LogNorm(1e-5),
+            extent=[-r_max, r_max, -r_max, r_max],
+            cmap=cmaps[int(i / 50) % len(cmaps)])
         plt.colorbar(cs)
-        plt.xlabel("z-axis (a.u.)")
-        plt.ylabel("y-axis (a.u.)")
+        plt.ylabel("z-axis (a.u.)")
+        plt.xlabel("y-axis (a.u.)")
         plt.tight_layout()
         plt.savefig("figs/wave_yz_" + str(i).zfill(8) + ".png")
         plt.clf()
 
         cs = plt.imshow(
-            np.angle(plane_data), extent=[-r_max, r_max, -r_max, r_max])
+            np.transpose(np.angle(plane_data)),
+            extent=[-r_max, r_max, -r_max, r_max],
+            cmap='twilight',
+            vmin=-np.pi,
+            vmax=np.pi)
         plt.colorbar(cs)
-        plt.xlabel("z-axis (a.u.)")
-        plt.ylabel("y-axis (a.u.)")
+        plt.ylabel("z-axis (a.u.)")
+        plt.xlabel("y-axis (a.u.)")
         plt.tight_layout()
         plt.savefig("figs/wave_yz_phase_" + str(i).zfill(8) + ".png")
         plt.clf()

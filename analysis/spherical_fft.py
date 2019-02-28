@@ -89,7 +89,7 @@ def cacluate_xy_plane(psi_cooridnate_values, x_size, y_size, resolution):
     return x, y, z, r, theta, phi, r_vals
 
 
-resolution = 1000
+resolution = 500
 zoom_size = 1.5
 
 f = h5py.File("TDSE.h5", "r")
@@ -115,7 +115,7 @@ kx = x_values * 2.0 * np.pi / (x_values.shape[0] *
 ky = y_values * 2.0 * np.pi / (y_values.shape[0] *
                                (y_values[1] - y_values[0]) *
                                (y_values[1] - y_values[0]))
-fig = plt.figure(figsize=(24, 18), dpi=80)
+fig = plt.figure(figsize=(12, 9), dpi=80)
 for i, psi in enumerate(psi_value):
     if i > 0:  # the 0th index is garbage
         print "plotting", i
@@ -125,23 +125,24 @@ for i, psi in enumerate(psi_value):
         plane_data = get_data(psi, psi_cooridnate_values, r, theta, phi,
                               r_vals, l_values, m_values)[:, :, 0]
         cs = plt.imshow(
-            np.abs(plane_data)**2,
+            np.transpose(np.abs(plane_data)**2),
             norm=LogNorm(1e-10),
             extent=[-r_max, r_max, -r_max, r_max])
         plt.colorbar(cs)
-        plt.xlabel("y-axis (a.u.)")
-        plt.ylabel("x-axis (a.u.)")
+        plt.xlabel("x-axis (a.u.)")
+        plt.ylabel("y-axis (a.u.)")
         plt.tight_layout()
         plt.savefig("figs/wave_cut_xy_" + str(i).zfill(8) + ".png")
         plt.clf()
 
         fft_data = np.abs(np.fft.fftshift(np.fft.fft2(plane_data)))**2
         cs = plt.imshow(
-            fft_data, extent=[ky.min(), ky.max(),
-                              kx.min(), kx.max()])
+            np.transpose(fft_data),
+            extent=[ky.min(), ky.max(), kx.min(),
+                    kx.max()])
         plt.colorbar(cs)
-        plt.xlabel("y-axis (a.u.)")
-        plt.ylabel("x-axis (a.u.)")
+        plt.xlabel("x-axis (a.u.)")
+        plt.ylabel("y-axis (a.u.)")
         plt.tight_layout()
         plt.savefig("figs/momentum_xy_" + str(i).zfill(8) + ".png")
         plb.xlim([-zoom_size, zoom_size])
@@ -149,13 +150,13 @@ for i, psi in enumerate(psi_value):
         plt.savefig("figs/momentum_zoom_xy_" + str(i).zfill(8) + ".png")
         plt.clf()
         cs = plt.imshow(
-            fft_data,
+            np.transpose(fft_data),
             norm=LogNorm(1e-4),
             extent=[ky.min(), ky.max(), kx.min(),
                     kx.max()])
         plt.colorbar(cs)
-        plt.xlabel("y-axis (a.u.)")
-        plt.ylabel("x-axis (a.u.)")
+        plt.xlabel("x-axis (a.u.)")
+        plt.ylabel("y-axis (a.u.)")
         plt.tight_layout()
         plt.savefig("figs/momentum_log_xy_" + str(i).zfill(8) + ".png")
         plb.xlim([-zoom_size, zoom_size])

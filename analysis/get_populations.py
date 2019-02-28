@@ -36,24 +36,27 @@ except:
     p = f
 
 data = f["Wavefunction"]["projections"][:, :, :]
-l_max = max(f["/Wavefunction/l_values"][:])
-m_max = max(f["/Wavefunction/m_values"][:])
+l_max = f["/Parameters/l_max"][:]
+m_max = f["/Parameters/m_max"][:]
 # get square of projections
 data = np.absolute(data[:, :, 0] + 1j * data[:, :, 1])
 data *= data
 
 state_labels = state_name(data.shape[1], l_max, m_max)
-state_number = data.shape[1]
-state_idx = 0
-n_val = 1
-while state_idx < state_number:
-    print
-    print "n:", n_val
-    for l_val in np.arange(0, min(n_val, l_max + 1)):
-        print
-        print "l:", l_val
-        m_range = min(l_val, m_max)
-        for m_val in np.arange(-m_range, m_range + 1):
-            print data[-1, state_idx],
-            state_idx += 1
-    n_val += 1
+
+for label, pop in zip(state_labels, data[-1, :]):
+    print label, pop
+# state_number = data.shape[1]
+# state_idx = 0
+# n_val = 1
+# while state_idx < state_number:
+#     print
+#     print "n:", n_val
+#     for l_val in np.arange(0, min(n_val, l_max + 1)):
+#         print
+#         print "l:", l_val
+#         m_range = min(l_val, m_max)
+#         for m_val in np.arange(-m_range, m_range + 1):
+#             print data[-1, state_idx],
+#             state_idx += 1
+#     n_val += 1
