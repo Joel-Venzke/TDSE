@@ -31,7 +31,7 @@ def get_data(psi,
              r_vals,
              l_values,
              m_values,
-             r_cut=0.,
+             r_cut=100.,
              alpha=0.075):
     l = 0
     m = 0
