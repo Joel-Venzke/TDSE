@@ -301,7 +301,7 @@ for fold_idx, fold in enumerate(folders):
         r_vals,
         l_values,
         m_values,
-        r_cut=220.)[0, :, 1]
+        r_cut=220.)[0, :, :]
 
     cs = plt.imshow(
         np.transpose(np.abs(plane_data)**2),
