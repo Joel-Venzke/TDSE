@@ -200,7 +200,7 @@ for i, psi in enumerate(psi_value):
         plt.xlabel("$k_x$ (a.u.)")
         plt.ylabel("$k_z$ (a.u.)")
         plt.tight_layout()
-        plt.savefig("figs/wave_cut_xy_" + str(i).zfill(8) + ".png")
+        plt.savefig("figs/wave_cut_xz_" + str(i).zfill(8) + ".png")
         plt.clf()
 
         fft_data = np.abs(np.fft.fftshift(np.fft.fft2(plane_data)))**2
@@ -215,10 +215,10 @@ for i, psi in enumerate(psi_value):
         plt.xlabel("$k_x$ (a.u.)")
         plt.ylabel("$k_z$ (a.u.)")
         plt.tight_layout()
-        plt.savefig("figs/momentum_xy_" + str(i).zfill(8) + ".png")
+        plt.savefig("figs/momentum_xz_" + str(i).zfill(8) + ".png")
         plb.xlim([-zoom_size, zoom_size])
         plb.ylim([-zoom_size, zoom_size])
-        plt.savefig("figs/momentum_zoom_xy_" + str(i).zfill(8) + ".png")
+        plt.savefig("figs/momentum_zoom_xz_" + str(i).zfill(8) + ".png")
         plt.clf()
         cs = plt.imshow(
             np.transpose(fft_data),
@@ -229,8 +229,8 @@ for i, psi in enumerate(psi_value):
         plt.xlabel("$k_x$ (a.u.)")
         plt.ylabel("$k_z$ (a.u.)")
         plt.tight_layout()
-        plt.savefig("figs/momentum_log_xy_" + str(i).zfill(8) + ".png")
+        plt.savefig("figs/momentum_log_xz_" + str(i).zfill(8) + ".png")
         plb.xlim([-zoom_size, zoom_size])
         plb.ylim([-zoom_size, zoom_size])
-        plt.savefig("figs/momentum_log_zoom_xy_" + str(i).zfill(8) + ".png")
+        plt.savefig("figs/momentum_log_zoom_xz_" + str(i).zfill(8) + ".png")
         plt.clf()
