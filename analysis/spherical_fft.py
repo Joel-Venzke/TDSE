@@ -31,7 +31,7 @@ def get_data(psi,
              r_vals,
              l_values,
              m_values,
-             r_cut=100.,
+             r_cut=0.,
              alpha=0.075):
     l = 0
     m = 0
@@ -116,6 +116,7 @@ ky = y_values * 2.0 * np.pi / (y_values.shape[0] *
                                (y_values[1] - y_values[0]) *
                                (y_values[1] - y_values[0]))
 fig = plt.figure(figsize=(12, 9), dpi=80)
+old_norm = 0
 for i, psi in enumerate(psi_value):
     if i > 0:  # the 0th index is garbage
         print "plotting", i
@@ -124,9 +125,10 @@ for i, psi in enumerate(psi_value):
         psi_norm = np.sqrt((psi * psi.conjugate()).sum())
         plane_data = get_data(psi, psi_cooridnate_values, r, theta, phi,
                               r_vals, l_values, m_values)[:, :, 0]
+        psi_plane_norm = np.sqrt((plane_data * plane_data.conjugate()).sum())
         cs = plt.imshow(
             np.transpose(np.abs(plane_data)**2),
-            norm=LogNorm(1e-10),
+            norm=LogNorm(1e-15),
             extent=[-r_max, r_max, -r_max, r_max])
         plt.colorbar(cs)
         plt.xlabel("x-axis (a.u.)")
@@ -136,6 +138,9 @@ for i, psi in enumerate(psi_value):
         plt.clf()
 
         fft_data = np.abs(np.fft.fftshift(np.fft.fft2(plane_data)))**2
+        psi_fft_norm = np.sqrt((fft_data).sum())
+        print psi_norm, psi_plane_norm, psi_norm / psi_plane_norm, psi_fft_norm, psi_fft_norm / psi_plane_norm, psi_plane_norm - old_norm
+        old_norm = psi_plane_norm
         cs = plt.imshow(
             np.transpose(fft_data),
             extent=[ky.min(), ky.max(), kx.min(),
@@ -157,6 +162,72 @@ for i, psi in enumerate(psi_value):
         plt.colorbar(cs)
         plt.xlabel("x-axis (a.u.)")
         plt.ylabel("y-axis (a.u.)")
+        plt.tight_layout()
+        plt.savefig("figs/momentum_log_xy_" + str(i).zfill(8) + ".png")
+        plb.xlim([-zoom_size, zoom_size])
+        plb.ylim([-zoom_size, zoom_size])
+        plt.savefig("figs/momentum_log_zoom_xy_" + str(i).zfill(8) + ".png")
+        plt.clf()
+
+# pre-calculate grid so the plotting can be vectorized
+print "Calculating index set for xy plane"
+x, y, z, r, theta, phi, r_vals = cacluate_xz_plane(psi_cooridnate_values,
+                                                   r_max, r_max, resolution)
+x_values = x[0, :, 0]
+z_values = z[0, 0, :]
+kx = x_values * 2.0 * np.pi / (x_values.shape[0] *
+                               (x_values[1] - x_values[0]) *
+                               (x_values[1] - x_values[0]))
+kz = z_values * 2.0 * np.pi / (z_values.shape[0] *
+                               (z_values[1] - z_values[0]) *
+                               (z_values[1] - z_values[0]))
+fig = plt.figure(figsize=(12, 9), dpi=80)
+old_norm = 0
+for i, psi in enumerate(psi_value):
+    if i > 0:  # the 0th index is garbage
+        print "plotting", i
+        psi = psi[:, 0] + 1j * psi[:, 1]
+        psi.shape = shape
+        psi_norm = np.sqrt((psi * psi.conjugate()).sum())
+        plane_data = get_data(psi, psi_cooridnate_values, r, theta, phi,
+                              r_vals, l_values, m_values)[0, :, :]
+        psi_plane_norm = np.sqrt((plane_data * plane_data.conjugate()).sum())
+        cs = plt.imshow(
+            np.transpose(np.abs(plane_data)**2),
+            norm=LogNorm(1e-15),
+            extent=[-r_max, r_max, -r_max, r_max])
+        plt.colorbar(cs)
+        plt.xlabel("x-axis (a.u.)")
+        plt.ylabel("z-axis (a.u.)")
+        plt.tight_layout()
+        plt.savefig("figs/wave_cut_xy_" + str(i).zfill(8) + ".png")
+        plt.clf()
+
+        fft_data = np.abs(np.fft.fftshift(np.fft.fft2(plane_data)))**2
+        psi_fft_norm = np.sqrt((fft_data).sum())
+        print psi_norm, psi_plane_norm, psi_norm / psi_plane_norm, psi_fft_norm, psi_fft_norm / psi_plane_norm, psi_plane_norm - old_norm
+        old_norm = psi_plane_norm
+        cs = plt.imshow(
+            np.transpose(fft_data),
+            extent=[kz.min(), kz.max(), kx.min(),
+                    kx.max()])
+        plt.colorbar(cs)
+        plt.xlabel("x-axis (a.u.)")
+        plt.ylabel("z-axis (a.u.)")
+        plt.tight_layout()
+        plt.savefig("figs/momentum_xy_" + str(i).zfill(8) + ".png")
+        plb.xlim([-zoom_size, zoom_size])
+        plb.ylim([-zoom_size, zoom_size])
+        plt.savefig("figs/momentum_zoom_xy_" + str(i).zfill(8) + ".png")
+        plt.clf()
+        cs = plt.imshow(
+            np.transpose(fft_data),
+            norm=LogNorm(1e-4),
+            extent=[kz.min(), kz.max(), kx.min(),
+                    kx.max()])
+        plt.colorbar(cs)
+        plt.xlabel("x-axis (a.u.)")
+        plt.ylabel("z-axis (a.u.)")
         plt.tight_layout()
         plt.savefig("figs/momentum_log_xy_" + str(i).zfill(8) + ".png")
         plb.xlim([-zoom_size, zoom_size])
