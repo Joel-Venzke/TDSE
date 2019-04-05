@@ -264,13 +264,13 @@ print "Calculating index set for xy plane"
 x, y, z, r, theta, phi, r_vals = cacluate_xz_plane(psi_cooridnate_values,
                                                    r_max, r_max, resolution)
 x_values = x[0, :, 0]
-y_values = y[:, 0, 0]
+z_values = z[0, 0, :]
 kx = x_values * 2.0 * np.pi / (x_values.shape[0] *
                                (x_values[1] - x_values[0]) *
                                (x_values[1] - x_values[0]))
-ky = y_values * 2.0 * np.pi / (y_values.shape[0] *
-                               (y_values[1] - y_values[0]) *
-                               (y_values[1] - y_values[0]))
+kz = z_values * 2.0 * np.pi / (z_values.shape[0] *
+                               (z_values[1] - z_values[0]) *
+                               (z_values[1] - z_values[0]))
 
 w_res = 0.790472
 tau = 2. * np.pi / w_res
@@ -318,7 +318,7 @@ for fold_idx, fold in enumerate(folders):
 
     cs = plt.imshow(
         np.transpose(fft_data),
-        extent=[ky.min(), ky.max(), kx.min(),
+        extent=[kz.min(), kz.max(), kx.min(),
                 kx.max()])
     plt.colorbar(cs)
     plt.xlabel("x-axis (a.u.)")
@@ -329,7 +329,7 @@ for fold_idx, fold in enumerate(folders):
     plt.savefig("momentum_xz_" + fold + ".png")
     plt.clf()
 
-    interp = interp2d(kx, ky, fft_data, kind='cubic')
+    interp = interp2d(kx, kz, fft_data, kind='cubic')
 
     k_max = np.sqrt(2. * (w_las * 2 - 0.917965))
     x_interp = k_max * np.cos(theta_ring)
