@@ -94,8 +94,8 @@ for dim_idx in np.arange(shape.shape[0]):
 l_values = f["/Wavefunction/l_values"][:]
 m_values = f["/Wavefunction/m_values"][:]
 
-r_max = 15
-# r_max = psi_cooridnate_values[2].max()
+# r_max = 15
+r_max = psi_cooridnate_values[2].max()
 # pre-calculate grid so the plotting can be vectorized
 print("Calculating index set for xy plane")
 x, y, z, r, theta, phi, r_vals = cacluate_xy_plane(psi_cooridnate_values,
@@ -118,7 +118,7 @@ for i, psi in enumerate(psi_value):
                               r_vals, l_values, m_values)[:, :, 0]
         cs = plt.imshow(
             (np.abs(plane_data)**2),
-            norm=LogNorm(1e-5),
+            norm=LogNorm(1e-15),
             extent=[-r_max, r_max, -r_max, r_max],
             cmap=cmaps[int(i / 50) % len(cmaps)])
         plt.colorbar(cs)
@@ -161,7 +161,7 @@ for i, psi in enumerate(psi_value):
                               r_vals, l_values, m_values)[0]
         cs = plt.imshow(
             np.transpose(np.abs(plane_data)**2),
-            norm=LogNorm(1e-5),
+            norm=LogNorm(1e-15),
             extent=[-r_max, r_max, -r_max, r_max],
             cmap=cmaps[int(i / 50) % len(cmaps)])
         plt.colorbar(cs)
@@ -205,7 +205,7 @@ for i, psi in enumerate(psi_value):
         print(r.shape)
         cs = plt.imshow(
             np.transpose(np.abs(plane_data)**2),
-            norm=LogNorm(1e-5),
+            norm=LogNorm(1e-15),
             extent=[-r_max, r_max, -r_max, r_max],
             cmap=cmaps[int(i / 50) % len(cmaps)])
         plt.colorbar(cs)
