@@ -17,6 +17,7 @@ class Parameters : protected Utils
 
   PetscInt m_max;
   PetscInt l_max;
+  PetscInt l_min;
 
   PetscInt restart;     ///< simulation behavior restart mode (0 no restart, 1
                         /// restart) from file */
@@ -132,6 +133,7 @@ class Parameters : protected Utils
 
   PetscInt GetMMax();
   PetscInt GetLMax();
+  PetscInt GetLMin();
 
   PetscInt GetRestart();
   std::string GetTarget();

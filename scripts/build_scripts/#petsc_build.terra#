@@ -3,13 +3,11 @@ export PETSC_DIR=`pwd`
 
 module purge 
 module load intel 
-module load openmpi/2.0.1
+module load openmpi
 module load hdf5 
 module load cmake
-module list
 module load lapack
 module load blas
-module load gsl
 module list
 
 ./configure \
@@ -17,9 +15,9 @@ module list
   COPTFLAGS=“-O2” \
   FOPTFLAGS=“-O2” \
   --prefix=/users/becker/yoge8051/local/intel/petsc \
-  --with-shared-libraries=1 \
+  --with-shared-libraries=0 \
   --with-pthread=0 \
-  --with-openmp-dir=/jilasoft/software/intel-2017.1/openmpi/2.0.1 \
+  --with-openmp=0 \
   --with-debugging=0 \
   --with-ssl=0 \
   --with-x=0 \
@@ -27,8 +25,7 @@ module list
   --with-fortran-kernels=1 \
   --with-cxx-dialect=c++11 \
   --with-scalar-type=complex \
-  --download-fblaslapack=1 \
-  --with-hdf5-dir=/jilasoft/software/intel-2017.1/openmpi-2.0/hdf5/1.10.0-patch1 \
+  --with-hdf5-dir=/jilasoft/software/intel-2017.1/openmpi-2.0/hdf5/1.10.0-patch1/ \
   --download-fftw=yes \
   #--download-superlu_dist=yes \
   #--download-superlu=yes \

@@ -32,6 +32,7 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   if (coordinate_system_idx == 3)
   {
     l_max = p.GetLMax();
+    l_min = p.GetLMin();
     m_max = p.GetMMax();
   }
   else

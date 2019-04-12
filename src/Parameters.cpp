@@ -132,6 +132,10 @@ void Parameters::Setup(std::string file_name)
     CheckParameter(data["dimensions"][0]["l_max"].size(), "dimensions - l_max");
     l_max = data["dimensions"][0]["l_max"];
 
+    /* get l_min */
+    CheckParameter(data["dimensions"][0]["l_min"].size(), "dimensions - l_min");
+    l_min = data["dimensions"][0]["l_min"];
+
     /* get m_max */
     CheckParameter(data["dimensions"][0]["m_max"].size(), "dimensions - m_max");
     m_max = data["dimensions"][0]["m_max"];
@@ -1243,6 +1247,8 @@ PetscInt Parameters::GetCoordinateSystemIdx() { return coordinate_system_idx; }
 
 PetscInt Parameters::GetMMax() { return m_max; }
 PetscInt Parameters::GetLMax() { return l_max; }
+PetscInt Parameters::GetLMin() { return l_min; }
+
 PetscInt Parameters::GetRestart() { return restart; }
 
 std::string Parameters::GetTarget() { return target; }

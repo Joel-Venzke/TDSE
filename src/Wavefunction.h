@@ -17,6 +17,7 @@ class Wavefunction : protected Utils
   double *delta_x_max_start; /* step sizes of each dimension in a.u. */
   double delta_t;            /* time step in a.u. */
   PetscInt l_max;
+  PetscInt l_min;
   PetscInt m_max;
   PetscInt coordinate_system_idx;
   std::string target_file_name;
