@@ -42,6 +42,7 @@ Simulation::Simulation(Hamiltonian &hamiltonian_in, Wavefunction &w,
   if (coordinate_system_idx == 3)
   {
     l_max     = p.GetLMax();
+    l_min     = p.GetLMin();
     m_max     = p.GetMMax();
     l_values  = wavefunction->GetLValues();
     m_values  = wavefunction->GetMValues();
@@ -50,6 +51,7 @@ Simulation::Simulation(Hamiltonian &hamiltonian_in, Wavefunction &w,
   else
   {
     l_max     = 0;
+    l_min     = 0;
     m_max     = 0;
     l_values  = NULL;
     m_values  = NULL;

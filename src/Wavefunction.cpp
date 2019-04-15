@@ -1223,6 +1223,7 @@ void Wavefunction::CreatePsi()
     VecSetSizes(psi_proj, PETSC_DECIDE, num_psi);
     VecSetFromOptions(psi_proj);
     ierr = PetscObjectSetName((PetscObject)psi_proj, "psi");
+
     VecCreate(PETSC_COMM_WORLD, &jacobian);
     VecSetSizes(jacobian, PETSC_DECIDE, num_psi);
     VecSetFromOptions(jacobian);
@@ -1232,6 +1233,11 @@ void Wavefunction::CreatePsi()
     VecSetSizes(ECS, PETSC_DECIDE, num_psi);
     VecSetFromOptions(ECS);
     ierr = PetscObjectSetName((PetscObject)ECS, "psi");
+
+    VecCreate(PETSC_COMM_WORLD, &l_mask);
+    VecSetSizes(l_mask, PETSC_DECIDE, num_psi);
+    VecSetFromOptions(l_mask);
+    ierr = PetscObjectSetName((PetscObject)l_mask, "psi");
 
     position_expectation = new Vec[num_dims * num_electrons];
     dipole_acceleration  = new Vec[num_dims * num_electrons];
@@ -1359,6 +1365,16 @@ void Wavefunction::CreateObservables()
     }
     VecAssemblyBegin(ECS);
     VecAssemblyEnd(ECS);
+
+    VecGetOwnershipRange(l_mask, &low, &high);
+    for (PetscInt idx = low; idx < high; idx++)
+    {
+      val = GetLMaskVal(idx);
+      VecSetValues(l_mask, 1, &idx, &val, INSERT_VALUES);
+    }
+    VecAssemblyBegin(l_mask);
+    VecAssemblyEnd(l_mask);
+
   }
 
   /* same for all coordinate systems */
@@ -1588,6 +1604,25 @@ dcomp Wavefunction::GetGobblerVal(PetscInt idx)
   return ret_val;
 }
 
+double Wavefunction::GetLMaskVal(PetscInt idx)
+{
+  double ret_val = 0.0;
+
+  PetscInt l_m_value = GetIntArray(idx)[1];
+  double l_value = GetLValues()[l_m_value];
+
+  if(l_value < l_min)
+  {
+    return 1.0;
+  }
+  else
+  {
+    double factor = (l_max - l_min) * 2.0 / pi;
+    ret_val = pow(cos((l_value - l_min) / factor), 1.0/8.0);
+    return ret_val;
+  }
+  
+}
 /* returns values for global dipole acceleration */
 dcomp Wavefunction::GetDipoleAccerationVal(PetscInt idx, PetscInt elec_idx,
                                            PetscInt dim_idx)
@@ -1907,6 +1942,7 @@ Wavefunction::~Wavefunction()
   CleanUp();
   VecDestroy(&psi);
   VecDestroy(&psi_tmp);
+  VecDestroy(&l_mask);
   if (coordinate_system_idx == 3)
   {
     VecDestroy(&psi_small);

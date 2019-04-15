@@ -1,0 +1,116 @@
+#!/bin/bash
+#
+#------------------Scheduler Options--------------------
+#SBATCH -J TDSE                # Job name
+#SBATCH -N 1                   # Total number of nodes (16 cores/node)
+#SBATCH -n 16                  # Total number of tasks
+#SBATCH -p jila                # Queue name
+#SBATCH -o run_%j.log          # Name of stdout output file (%j expands to jobid)
+#SBATCH -t 4-00:00:00            # Run time (hh:mm:ss)
+#------------------------------------------------------
+
+# To daisy chain jobs, the script must know the name of the job submission script.
+# 1) if the $DAISYCHAIN_SCRIPT environment variable is set, that will be used
+# 2) by default, the script is set to look in the working directory for a *.slurm file
+# The use case is that daisychain jobs will all have their own directory and also 
+# their own unique job name.
+
+#----------------------User Options------------------------
+TDSE_DIR=/users/becker/yoge8051/TDSE
+DAISYCHAIN_SCRIPT=/users/becker/yoge8051/slurm_daisychain
+RUN_FILE=${TDSE_DIR}/bin/TDSE
+RESTART_FILE=${TDSE_DIR}/scripts/run_scripts/restart_on.py
+SCRATCH_DIR=/scratch/becker/yoge8051/$SLURM_JOB_ID
+
+module purge 
+module load intel
+module load openmpi
+module load hdf5
+module load boost
+module load cmake
+module load blas
+module load lapack
+module load gsl
+module list 
+#----------------------------------------------------------
+
+# check if we should already be finished
+baseSlurmJobName=$(echo ${SLURM_JOB_NAME} | sed 's/[0-9]*$//g')
+if [ -f ${SLURM_SUBMIT_DIR}/daisychain/finished ]; then
+  jobDir=${baseSlurmJobName}$(date +%y-%m-%d_%H%M%S)
+  mkdir -p ${SLURM_SUBMIT_DIR}/daisychain/history/${jobDir}
+  mv ${SLURM_SUBMIT_DIR}/daisychain/* ${SLURM_SUBMIT_DIR}/daisychain/history/${jobDir}
+  # and we're done.  We cleaned out the progress files, time to quit
+  echo "Found a "finished" file in ${SLURM_SUBMIT_DIR}/daisychain.  Job series is complete, and progress files have been moved to ${SLURM_SUBMIT_DIR}/daisychain/history/${jobDir}"
+  exit
+fi
+
+# use the filesystem to keep track of our long job
+if [ ! -d ${SLURM_SUBMIT_DIR}/daisychain ]; then # we must be the first job
+  mkdir ${SLURM_SUBMIT_DIR}/daisychain
+  mkdir ${SLURM_SUBMIT_DIR}/daisychain/history
+  thisJobNumber=1
+else
+  lastJobNumber=$(ls ${SLURM_SUBMIT_DIR}/daisychain | egrep "^[0-9]+$" | sort -n | tail -n 1)
+  if [ -z $lastJobNumber ]; then
+    thisJobNumber=1
+  else
+    thisJobNumber=$(( lastJobNumber + 1 ))
+  fi
+fi
+
+# log
+touch ${SLURM_SUBMIT_DIR}/daisychain/$thisJobNumber
+echo "Slurm Job number $SLURM_JOB_ID entitled ${SLURM_JOB_NAME} started on $(date) on node(s) $SLURM_NODELIST." > ${SLURM_SUBMIT_DIR}/daisychain/$thisJobNumber
+
+# submit dependent job
+nextJobNumber=$(( thisJobNumber + 1 ))
+nextSlurmJobName=${baseSlurmJobName}$nextJobNumber
+
+echo "Submitting Dependent Job:"
+sbatch -J $nextSlurmJobName --dependency=afterany:$SLURM_JOB_ID ${DAISYCHAIN_SCRIPT}
+
+
+
+#-------------------Job Goes Here--------------------------
+# Job goes here. This could be done multiple ways.  Assuming we need continued
+# jobs to be different from the first job, I would frame it out this way:
+mkdir -p ${SCRATCH_DIR}
+cd ${SCRATCH_DIR}
+pwd
+if [ "$thisJobNumber" -eq "1" ]; then
+ #first job
+ cp ${SLURM_SUBMIT_DIR}/{*h5,*json} ${SCRATCH_DIR}
+ echo "scp -r ${SLURM_NODELIST}:${SCRATCH_DIR}/* ." > ${SLURM_SUBMIT_DIR}/data.log
+ echo "ssh ${SLURM_NODELIST} \"rm -r ${SCRATCH_DIR}\"" >> ${SLURM_SUBMIT_DIR}/data.log
+ chmod +x ${SLURM_SUBMIT_DIR}/data.log
+ echo "Starting First Job:"
+ sleep 1
+ mpiexec ${RUN_FILE} -eps_monitor
+else
+ #continuation
+ echo "running data.log"
+ ${SLURM_SUBMIT_DIR}/data.log
+ mv ${SLURM_SUBMIT_DIR}/data.log  ${SLURM_SUBMIT_DIR}/data_$SLURM_JOB_ID.log 
+ echo "scp -r ${SLURM_NODELIST}:${SCRATCH_DIR}/* ." > ${SLURM_SUBMIT_DIR}/data.log
+ echo "ssh ${SLURM_NODELIST} \"rm -r ${SCRATCH_DIR}\"" >> ${SLURM_SUBMIT_DIR}/data.log
+ chmod +x ${SLURM_SUBMIT_DIR}/data.log
+ echo "Starting Continuation Job:"
+ python ${RESTART_FILE}
+ sleep 1
+ mpiexec ${RUN_FILE} 
+fi
+cp * ${SLURM_SUBMIT_DIR}
+cd ${SLURM_SUBMIT_DIR}
+rm -r ${SCRATCH_DIR}
+#----------------------------------------------------------
+
+
+
+# if this runs, the job completed:
+echo "Daisy Chain Complete"
+touch ${SLURM_SUBMIT_DIR}/daisychain/finished
+sbatch ~/vis.sh
+
+# help catch runaway scripts
+sleep 30

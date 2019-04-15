@@ -3,7 +3,7 @@
 #include "Parameters.h"
 #include "Utils.h"
 #include "ViewWrapper.h"
-
+#include "math.h"
 class Wavefunction : protected Utils
 {
  private:
@@ -36,6 +36,7 @@ class Wavefunction : protected Utils
   Vec psi_tmp_cyl;        /* wavefunction for 2 electron system */
   Vec jacobian;
   Vec ECS;
+  Vec l_mask;
   Vec *position_expectation;
   Vec *dipole_acceleration;
   Mat *position_mat;
@@ -74,6 +75,7 @@ class Wavefunction : protected Utils
   dcomp GetGobblerVal(PetscInt idx);
   dcomp GetVolumeElement(PetscInt idx);
 
+  double GetLMaskVal(PetscInt idx);
   double GetDistance(std::vector< PetscInt > idx_array, PetscInt elec_idx);
 
   std::vector< PetscInt > GetIntArray(PetscInt idx);
