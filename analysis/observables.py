@@ -26,11 +26,11 @@ def shifted_energy(tdse_file, pulse_idx=0):
             cycles_plateau) < 1e-10 and cycles_off == cycles_on:
         mu = 4 * 2 * np.log(2.0) / np.pi**2
     else:
-        print "WARNING: using uncorrected energy."
-        print "         The frequency shift is not implemented for this pulse shape."
+        print ("WARNING: using uncorrected energy.")
+        print ("         The frequency shift is not implemented for this pulse shape.")
         return energy
     shift = (1.0 + np.sqrt(1 + mu / (cycles_off + cycles_on)**2)) / 2.0
-    print "SHIFT:", energy, shift * energy
+    print(("SHIFT:", energy, shift * energy))
     return energy * shift
 
 
@@ -53,7 +53,7 @@ num_pulses = f["Parameters"]["num_pulses"][0]
 checkpoint_frequency = f["Parameters"]["write_frequency_observables"][0]
 
 # Norm
-print "Plotting Norm"
+print ("Plotting Norm")
 fig = plt.figure()
 plt.plot(time, observables["norm"][1:])
 plt.xlabel("Time (a.u.)")
@@ -65,7 +65,7 @@ plt.clf()
 plt.close(fig)
 
 # Ionization
-print "Plotting Ionization"
+print("Plotting Ionization")
 fig = plt.figure()
 plt.plot(time, 1.0 - observables["norm"][1:])
 plt.xlabel("Time (a.u.)")
@@ -77,7 +77,7 @@ plt.clf()
 plt.close(fig)
 
 # Ionization
-print "Plotting Ionization Rate"
+print("Plotting Ionization Rate")
 fig = plt.figure()
 plt.plot(time, np.gradient(1.0 - observables["norm"][1:]))
 plt.xlabel("Time (a.u.)")
@@ -89,7 +89,7 @@ plt.clf()
 plt.close(fig)
 
 # Gobbler
-print "Plotting ECS Population"
+print("Plotting ECS Population")
 fig = plt.figure()
 if np.max(observables["gobbler"][1:]) > 1e-19:
     plt.semilogy(time, observables["gobbler"][1:])
@@ -102,16 +102,16 @@ plt.clf()
 plt.close(fig)
 
 # Dipole
-print "Plotting Dipole"
+print("Plotting Dipole")
 fig = plt.figure()
 for elec_idx in range(num_electrons):
     for dim_idx in range(num_dims):
         if (not (dim_idx == 0
                  and f["Parameters"]["coordinate_system_idx"][0] == 1)):
-            print argrelmin(observables["position_expectation_" + str(elec_idx)
-                                        + "_" + str(dim_idx)][1:])[0] * 0.05
-            print argrelmax(observables["position_expectation_" + str(elec_idx)
-                                        + "_" + str(dim_idx)][1:])[0] * 0.05
+            print(argrelmin(observables["position_expectation_" + str(elec_idx)
+                                        + "_" + str(dim_idx)][1:])[0] * 0.05)
+            print(argrelmax(observables["position_expectation_" + str(elec_idx)
+                                        + "_" + str(dim_idx)][1:])[0] * 0.05)
 
             plt.plot(
                 time,
@@ -128,7 +128,7 @@ plt.clf()
 plt.close(fig)
 
 # Dipole
-print "Plotting Dipole"
+print("Plotting Dipole")
 fig = plt.figure()
 ax = plt.subplot(111, projection='polar')
 for elec_idx in range(num_electrons):
@@ -147,7 +147,7 @@ plt.clf()
 plt.close(fig)
 
 # dipole with ionization
-print "Plotting Dipole with ionization"
+print("Plotting Dipole with ionization")
 fig2, ax1 = plt.subplots()
 ax2 = ax1.twinx()
 for elec_idx in range(num_electrons):
@@ -168,7 +168,7 @@ ax2.legend(loc=1)
 fig2.savefig("figs/Dipole_with_ionization.png")
 
 # Dipole with envelope
-print "Plotting Dipole with field Envelope"
+print("Plotting Dipole with field Envelope")
 fig2, ax1 = plt.subplots()
 ax2 = ax1.twinx()
 for elec_idx in range(num_electrons):
@@ -195,7 +195,7 @@ ax2.legend(loc=1)
 fig2.savefig("figs/Dipole_with_field_envelope.png")
 
 # Dipole acceleration
-print "Plotting Dipole Acceleration"
+print("Plotting Dipole Acceleration")
 fig = plt.figure()
 for elec_idx in range(num_electrons):
     for dim_idx in range(num_dims):
@@ -216,7 +216,7 @@ plt.clf()
 plt.close(fig)
 
 # HHG Spectrum
-print "Plotting HHG Spectrum"
+print("Plotting HHG Spectrum")
 fig = plt.figure(figsize=(24, 18), dpi=80)
 energy = shifted_energy(f, 0)
 for elec_idx in range(num_electrons):
@@ -259,7 +259,7 @@ plt.clf()
 plt.close(fig)
 
 # HHG Spectrum from Dipole
-print "Plotting HHG Spectrum from Dipole"
+print("Plotting HHG Spectrum from Dipole")
 fig = plt.figure(figsize=(24, 18), dpi=80)
 energy = shifted_energy(f, 0)
 for elec_idx in range(num_electrons):
@@ -305,7 +305,7 @@ plt.clf()
 plt.close(fig)
 
 # Dipole acceleration with envelope
-print "Plotting Dipole Acceleration with field Envelope"
+print("Plotting Dipole Acceleration with field Envelope")
 fig2, ax1 = plt.subplots()
 ax2 = ax1.twinx()
 for elec_idx in range(num_electrons):
@@ -331,7 +331,7 @@ ax2.legend(loc=1)
 fig2.savefig("figs/Dipole_acceleration_with_field_envelope.png")
 
 # Linearity
-print "Plotting Linearity"
+print("Plotting Linearity")
 fig = plt.figure()
 plt.plot(-1.0 * np.gradient(
     pulses["field_1"][checkpoint_frequency::checkpoint_frequency],
@@ -374,7 +374,7 @@ plt.clf()
 plt.close(fig)
 
 # Projection
-print "Plotting Projection"
+print("Plotting Projection")
 
 
 def state_single_name(state_number, shells):
@@ -479,7 +479,7 @@ for state_number in range(data.shape[1]):
         marker='x',
         label=state_labels[state_number],
         color=colors[state_number % len(colors)],
-        linestyle=linestyles[(state_number / len(colors)) % len(linestyles)])
+        linestyle=linestyles[(state_number // len(colors)) % len(linestyles)])
 
 plt.ylabel("Population")
 plt.xlabel("Time (a.u.)")
@@ -489,34 +489,35 @@ fig.savefig("figs/Projection_vs_time.png")
 plt.clf()
 plt.close(fig)
 
-fig = plt.figure()
-for state_number in range(data.shape[1]):
-    plt.plot(
-        w_time[:],
-        data[:, state_number],
-        marker='o',
-        label=state_labels[state_number],
-        color=colors[state_number % len(colors)],
-        linestyle=linestyles[(state_number / len(colors)) % len(linestyles)])
+# produces way to many plots
+# fig = plt.figure()
+# for state_number in range(data.shape[1]):
+#     plt.plot(
+#         w_time[:],
+#         data[:, state_number],
+#         marker='o',
+#         label=state_labels[state_number],
+#         color=colors[state_number % len(colors)],
+#         linestyle=linestyles[(state_number // len(colors)) % len(linestyles)])
 
-    plt.ylabel("Population")
-    plt.xlabel("Time (a.u.)")
-    plt.legend(loc=2)
-    fig.savefig("figs/Projection_" + str(state_number).zfill(4) + "_" +
-                state_labels[state_number] + ".png")
-    plt.clf()
+#     plt.ylabel("Population")
+#     plt.xlabel("Time (a.u.)")
+#     plt.legend(loc=2)
+#     fig.savefig("figs/Projection_" + str(state_number).zfill(4) + "_" +
+#                 state_labels[state_number] + ".png")
+#     plt.clf()
 
 fig = plt.figure(figsize=(24, 18), dpi=80)
 for idx in get_shells(plot_data.shape[1]):
     plt.axvline(x=idx, color='k')
-plt.semilogy(range(data.shape[1]), data[-1, :], 'o-')
+plt.semilogy(list(range(data.shape[1])), data[-1, :], 'o-')
 
 plt.ylabel("Population")
 plt.xlabel("Bound State")
 plt.title("A max: " + str(f["Parameters"]["field_max"][0]) + " Cycles: " + str(
     f["Parameters"]["cycles_on"][0] + f["Parameters"]["cycles_off"][0]))
 plt.xlim([min(range(plot_data.shape[1])), max(range(plot_data.shape[1]))])
-plt.xticks(range(plot_data.shape[1]), state_labels, rotation='vertical')
+plt.xticks(list(range(plot_data.shape[1])), state_labels, rotation='vertical')
 plt.ylim([1e-17, 10])
 plt.grid()
 fig.savefig("figs/Projection_at_end.png")
@@ -539,13 +540,13 @@ def sum_by_n(data):
 
 fig = plt.figure()
 by_n_value = sum_by_n(plot_data)
-plt.plot(range(len(by_n_value[-1])), by_n_value[-1], 'o-')
+plt.plot(list(range(len(by_n_value[-1]))), by_n_value[-1], 'o-')
 # plt.semilogy(range(len(by_n_value[-1])), by_n_value[-1], 'o-')
 plt.ylabel("Population")
 plt.xlabel("N value")
 plt.ylim([0, 4e-4])
 # plt.ylim([1e-6, 1])
-plt.xticks(range(1, len(by_n_value[-1] - 2), 2))
+plt.xticks(list(range(1, len(by_n_value[-1] - 2), 2)))
 plt.xlim([1, len(by_n_value[-1]) - 2])
 plt.tight_layout()
 fig.savefig("figs/Projection_at_end_by_n.png")
@@ -589,11 +590,11 @@ def sum_by_l(data):
 
 fig = plt.figure()
 by_l_value = sum_by_l(plot_data)
-plt.semilogy(range(len(by_l_value[-1])), by_l_value[-1], 'o-')
+plt.semilogy(list(range(len(by_l_value[-1]))), by_l_value[-1], 'o-')
 plt.ylabel("Population")
 plt.xlabel("l value")
 plt.ylim([1e-20, 10])
-plt.xticks(range(len(by_l_value[-1])))
+plt.xticks(list(range(len(by_l_value[-1]))))
 fig.savefig("figs/Projection_at_end_by_l.png")
 plt.clf()
 plt.close(fig)
@@ -684,14 +685,14 @@ shells = get_shells(plot_data.shape[1])
 n_max = len(shells)
 for n_idx, idx in enumerate(shells):
     fig = plt.figure()
-    plt.semilogy(range(data.shape[1]), data[-1, :], 'o-')
+    plt.semilogy(list(range(data.shape[1])), data[-1, :], 'o-')
 
     plt.ylabel("Population")
     plt.xlabel("Bound State")
     plt.title(" Cycles: " + str(f["Parameters"]["cycles_on"][0] +
                                 f["Parameters"]["cycles_off"][0]))
     plt.xlim([min(range(plot_data.shape[1])), max(range(plot_data.shape[1]))])
-    plt.xticks(range(plot_data.shape[1]), state_labels, rotation='vertical')
+    plt.xticks(list(range(plot_data.shape[1])), state_labels, rotation='vertical')
     plt.ylim([1e-9, 1e-3])
     if n_idx == n_max - 1:
         plt.xlim([shells[n_idx], plot_data.shape[1] - 1])
@@ -705,7 +706,7 @@ for n_idx, idx in enumerate(shells):
 
 for n_idx, idx in enumerate(shells):
     fig = plt.figure()
-    plt.semilogy(range(data.shape[1]), data[-1, :], 'o-')
+    plt.semilogy(list(range(data.shape[1])), data[-1, :], 'o-')
 
     plt.ylabel("Population")
     plt.xlabel("Bound State")
@@ -718,7 +719,7 @@ for n_idx, idx in enumerate(shells):
     else:
         plt.title("14 Photons")
     plt.xlim([min(range(plot_data.shape[1])), max(range(plot_data.shape[1]))])
-    plt.xticks(range(plot_data.shape[1]), state_labels, rotation='vertical')
+    plt.xticks(list(range(plot_data.shape[1])), state_labels, rotation='vertical')
     if n_idx < 10:
         plt.ylim([1e-9, 1e-3])
     else:
