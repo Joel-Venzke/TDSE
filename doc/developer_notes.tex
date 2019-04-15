@@ -51,6 +51,249 @@ If you need to update the main code, you will need knowledge of C++. Most update
 % subsection recommended_programing_background (end)
 % section introduction (end)
 
+\section{Installation} % (fold)
+\label{sec:installation}
+Compiling the TDSE library itself is easy. However, some of the dependencies are tricky to get installed. Here is a short overview with some tips and tricks to help you out. Please read the  If you run into issues, shoot me an email.
+
+The steps required to install this code are as follows. More detailed directions are in the following subsections.
+\begin{enumerate}
+  \item Choose the compiler you plan on using
+  \item Check module system/package manager for dependencies
+  \item Install HDF5 (special version required, C++ and MPI)
+  \item Install PETSC (link HDF5)
+  \item Install SLEPC
+  \item Install TDSE library
+  \item Update your bashrc file
+\end{enumerate}
+
+% subsection overview (end)
+
+\subsection{Compilers} % (fold)
+\label{sub:compilers}
+This code has been installed with gcc and intel compilers with c++11 or better support. Portland group compilers have not been tested, but should work. If you are using a Mac, install gcc with the homebrew package manager (https://brew.sh) instead of using clang as you will need a fortran compiler for PETSC.
+% subsection compilers (end)
+
+\subsection{Dependencies} % (fold)
+\label{sub:dependencies}
+Before beginning the install process, make sure the following software is installed on your computer. Make sure they are compiled with the compiler you intend on using to compile the TDSE library. You should find them on the module system at most HPC centers and many local clusters. Here is the list of packages to look for:
+\begin{itemize}
+  \item boost  
+  \item boost-mpi 
+  \item cmake
+  \item gsl   
+  \item open-mpi (or equivalent)
+  \item zlib (can be installed by HDF5)
+\end{itemize}
+If one or more of these packages are not installed, you will need to do so manually. For Mac users, I recommend using homebrew (https://brew.sh) as your package manager and start by installing gcc followed by the rest of the packages. I have not had to install these packages on any other system, so if you need to, talk to a system admin or try your hand at installing them off their website.
+% subsection dependencies (end)
+
+\subsection{HDF5} % (fold)
+\label{sub:hdf5}
+\begin{enumerate}
+  \item Download and untar HDF5 source (https://www.hdfgroup.org)
+  \item Make the directory you wish to install HDF5 in
+  \item cd to the directory you just make
+  \item load any modules for the dependencies (if needed)
+  \item Run the script at end of this section after these changes
+  \begin{itemize}
+    \item Update \$\{PATH\_TO\_HDF5\_SOURCE\} to where the hdf5 source you downloaded is located
+    \item Update \$\{PATH\_TO\_HDF5\_INSTALL\} to where you want your compiled version of HDF5 to live
+  \end{itemize}
+  \item If the test pass, HDF5 is good to go
+\end{enumerate}
+
+---------- BEGIN FILE ---------
+\begin{verbatim}
+#!/bin/bash
+
+# run any module loads you need (from dependencies)
+
+# configure HDF5
+${PATH_TO_HDF5_SOURCE}/configure \
+  CC=mpicc \
+  FC=mpif90 \
+  CXX=mpic++ \
+  --prefix=${PATH_TO_HDF5_INSTALL} \
+  --enable-build-mode=production \
+  --disable-dependency-tracking \
+  --enable-static=yes \
+  --enable-shared=yes \
+  --enable-unsupported \
+  --enable-cxx \
+  --enable-fortran \
+  --enable-parallel
+
+# run the following make commands
+make 
+make check 
+make install
+\end{verbatim}
+---------- End FILE ---------
+% subsection hdf5 (end)
+
+\subsection{PETSC} % (fold)
+\label{sub:petsc}
+\begin{enumerate}
+  \item Download and untar PETSC source (https://www.mcs.anl.gov/petsc/)
+  \item cd to the directory with the petsc source
+  \item load any modules for the dependencies (if needed)
+  \item Run the script at end of this section after these changes
+  \begin{itemize}
+    \item update the script to load any modules (if needed)
+    \item remove anaconda from your path
+    \item Update \$\{PATH\_TO\_PETSC\_INSTALL\} to where you want your compiled version of PETSC to live
+    \item Update \$\{PATH\_TO\_HDF5\_INSTALL\} to where you want your compiled version of HDF5 to live
+  \end{itemize}
+  \item Run the make commands that are produced by the petsc build script output.
+  \item If the test pass, PETSC is good to go
+\end{enumerate}
+
+
+---------- BEGIN FILE ---------
+\begin{verbatim}
+#!/bin/bash
+export PETSC_DIR=`pwd`
+
+# run any module loads you need (from dependencies)
+
+# remove anaconda from your path if installed (it can cause issues with the PETSC build)
+# example code to remove anaconda3 from path
+# export PATH=$(echo "$PATH" | sed -e 's/:\/Users\/username\/anaconda3\/bin//')
+# export PATH=$(echo "$PATH" | sed -e 's/\/Users\/username\/anaconda3\/bin://')
+
+# configure PETSC
+./configure \
+  CXXOPTFLAGS=“-O2” \
+  COPTFLAGS=“-O2” \
+  FOPTFLAGS=“-O2” \
+  --prefix=${PATH_TO_PETSC_INSTALL} \
+  --with-shared-libraries=1 \
+  --with-pthread=0 \
+  --with-openmp=0 \
+  --with-debugging=0 \
+  --with-ssl=0 \
+  --with-x=0 \
+  --with-valgrind=1 \
+  --with-fortran-kernels=1 \
+  --with-cxx-dialect=c++11 \
+  --with-scalar-type=complex \
+  --with-hdf5-dir=${PATH_TO_HDF5_INSTALL} \
+  --download-fftw=yes \
+  --download-superlu_dist=yes \
+  --download-superlu=yes \
+  --download-suitesparse=yes \
+  --download-metis=yes \
+  --download-parmetis=yes \
+  --download-scalapack=yes \
+  --download-mumps=yes
+
+# run the make commands that print at the end of the configure script if successful
+# dont forget to load modules 
+\end{verbatim}
+---------- End FILE ---------
+% subsection petsc (end) 
+
+\subsection{SLEPC} % (fold)
+\label{sub:slepc}
+
+\begin{enumerate}
+  \item Download and untar SLEPC source (http://slepc.upv.es)
+  \item cd to the directory with the slepc source
+  \item ensure \$\{PETSC\_DIR\} is set to \$\{PATH\_TO\_PETSC\_INSTALL\} by running \\``export PETSC\_DIR=\$\{PATH\_TO\_PETSC\_INSTALL\}'' \\(without the quotes and replacing \$\{PATH\_TO\_PETSC\_INSTALL\} as done before)
+  \item load any modules for the dependencies (if needed)
+  \item Run the script at end of this section after these changes
+  \begin{itemize}
+    \item update the script to load any modules (if needed)
+    \item Update \$\{PATH\_TO\_SLEPC\_INSTALL\} to where you want your compiled version of SLEPC to live
+  \end{itemize}
+  \item Run the make commands that are produced by the petsc build script output.
+  \item If the test pass, SLEPC is good to go
+\end{enumerate}
+
+---------- BEGIN FILE ---------
+\begin{verbatim}
+#!/bin/bash
+export SLEPC_DIR=`pwd`
+
+# run any module loads you need (from dependencies)
+
+# configure SLEPC
+./configure \
+  --prefix=${PATH_TO_SLEPC_INSTALL}
+
+# run the make commands that print at the end of the configure script if successful
+\end{verbatim}
+---------- End FILE ---------
+% subsection slepc (end)
+
+\subsection{TDSE} % (fold)
+\label{sub:tdse}
+\begin{enumerate}
+  \item Clone the TDSE directory (https://github.com/Joel-Venzke/TDSE)
+  \item Make a ``bin'' directory inside the TDSE repo
+  \item Make a ``build'' file inside the TDSE repo (see file near end of subsection as example)
+  \item Create a ``Makefile'' in the ``TDSE/src'' directory (see example near end of subsection)
+  \begin{itemize}
+    \item You may need to update the 
+  \end{itemize}
+  \item Ensure \$\{PETSC\_DIR\} is set to \$\{PATH\_TO\_PETSC\_INSTALL\} by running \\``export PETSC\_DIR=\$\{PATH\_TO\_PETSC\_INSTALL\}'' \\(without the quotes and replacing \$\{PATH\_TO\_PETSC\_INSTALL\} as done before)
+  \item Ensure \$\{SLEPC\_DIR\} is set to \$\{PATH\_TO\_SLEPC\_INSTALL\} by running \\``export SLEPC\_DIR=\$\{PATH\_TO\_SLEPC\_INSTALL\}'' \\(without the quotes and replacing \$\{PATH\_TO\_SLEPC\_INSTALL\} as done before)
+  \item cd to the TDSE repo's root directory
+  \item run ./build
+  \item If the code compiles correctly, the binary should appear as ``TDSE/bin/TDSE'' and you are done
+\end{enumerate}
+
+---------- BEGIN build ---------
+\begin{verbatim}
+#!/bin/bash
+
+# run any module loads you need (from dependencies)
+
+# remove anaconda from your path if installed (it can cause issues with the PETSC build)
+# example code to remove anaconda3 from path
+# export PATH=$(echo "$PATH" | sed -e 's/:\/Users\/username\/anaconda3\/bin//')
+# export PATH=$(echo "$PATH" | sed -e 's/\/Users\/username\/anaconda3\/bin://')
+
+cd src
+make -j8
+\end{verbatim}
+---------- End build ---------
+
+---------- BEGIN Makefile ---------
+\begin{verbatim}
+ALL: TDSE
+
+include ${SLEPC_DIR}/lib/slepc/conf/slepc_rules
+include ${SLEPC_DIR}/lib/slepc/conf/slepc_variables
+
+CFLAGS = ${PETSC_CC_INCLUDES}
+CXXFLAGS= ${PETSC_CXX_INCLUDES} -std=c++14 -Wall 
+FFLAGS = ${PETSC_FC_INCLUDES}
+INCLUDES = -lhdf5_hl_cpp -lhdf5_cpp -lgsl -lgslcblas -lboost_mpi ${SLEPC_EPS_LIB} -I/usr/local/include/ -I/jilasoft/software/gsl/2.2/include/ -L/jilasoft/software/gsl/2.2/lib
+CXX = mpicxx
+
+# put this on one line (the return is to allow it to fit on the page)
+OBJECTS = TDSE.o Parameters.o ViewWrapper.o HDF5Wrapper.o Pulse.o PETSCWrapper.o Wavefunction.o 
+Hamiltonian.o Simulation.o Utils.o
+
+TDSE: ${OBJECTS}
+  ${CXX} -o TDSE ${OBJECTS} ${PETSC_LIB} ${INCLUDES}
+  cp TDSE ../bin
+\end{verbatim}
+---------- End Makefile ---------
+% subsection tdse (end)
+
+\subsection{bashrc} % (fold)
+\label{sub:bashrc}
+To remove the need to set environmental variables every time you log in, I recommend setting them in your \$\{HOME\}/.bashrc (or \$\{HOME\}/.zshrc if using the ZSH shell). Here are the following lines of code to add: 
+\\``export PETSC\_DIR=\$\{PATH\_TO\_PETSC\_INSTALL\}''
+\\``export SLEPC\_DIR=\$\{PATH\_TO\_SLEPC\_INSTALL\}''
+\\(without the quotes and replacing \$\{PATH\_TO\_PETSC\_INSTALL\} and \$\{PATH\_TO\_SLEPC\_INSTALL\} as done before)
+
+% subsection bashrc (end)
+
+% section installation (end)
+
 \section{Theory} % (fold)
 \label{sec:theory}
 
@@ -395,27 +638,6 @@ TODO
 % subsection lasers (end)
 
 % subsection potentials (end)
-
-\section{Build System} % (fold)
-\label{sec:build_system}
-The build system changes from time to time. For the most up to date version, see the README in the root directory of this repository.
-
-TODO
-
-install HDF5
-
-install PETSc
-
-install SLEPc
-
-make bin directory
-
-new build file
-
-new Makefile
-
-run build
-% section build_system (end)
 
 \section{Running Calculations} % (fold)
 \label{sec:running_tdse_and_best_practices}
