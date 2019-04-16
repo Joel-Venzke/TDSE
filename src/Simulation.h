@@ -35,6 +35,7 @@ class Simulation : protected Utils
   Vec *psi;
   Vec *psi_small;
   Vec psi_right;
+  Vec *l_mask;
   double *time;
   PetscInt time_length;
   Mat *h;
@@ -49,6 +50,7 @@ class Simulation : protected Utils
   PetscInt coordinate_system_idx;
   PetscInt *num_x;
   PetscInt l_max;
+  PetscInt l_min;
   PetscInt m_max;
   PetscInt *l_values; /* l_values for the spherical code */
   PetscInt *m_values; /* m_values for the spherical code */

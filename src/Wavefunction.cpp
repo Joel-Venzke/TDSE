@@ -1914,6 +1914,8 @@ Vec* Wavefunction::GetPsi() { return &psi; }
 
 Vec* Wavefunction::GetPsiSmall() { return &psi_small; }
 
+Vec* Wavefunction::GetLMask() { return &l_mask; }
+
 double** Wavefunction::GetXValue() { return x_value; }
 
 PetscInt* Wavefunction::GetLValues() { return l_values; }

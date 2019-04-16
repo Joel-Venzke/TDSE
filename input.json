@@ -1,16 +1,16 @@
 {
  "alpha": 0.0,
  "coordinate_system": "Spherical",
- "delta_t": 0.01,
+ "delta_t": 0.05,
  "dimensions": [
   {
-   "delta_x_max": 1.0,
+   "delta_x_max": 0.3,
    "delta_x_max_start": 4.0,
-   "delta_x_min": 1.0,
+   "delta_x_min": 0.3,
    "delta_x_min_end": 4.0,
-   "dim_size": 100.0,
-   "l_max": 10,
-   "l_min":4,
+   "dim_size": 400.0,
+   "l_max": 30,
+   "l_min":30,
    "m_max": 0
   }
  ],
@@ -25,11 +25,11 @@
    {
     "cep": 0.0,
     "cycles_delay": 0.0,
-    "cycles_off": 5.0,
-    "cycles_on": 5.0,
+    "cycles_off": 2.0,
+    "cycles_on": 2.0,
     "cycles_plateau": 0.0,
     "ellipticity": 1.0,
-    "energy": 0.159694,
+    "energy": 0.057,
     "gaussian_length": 5.0,
     "helicity": "left",
     "intensity": 10e13,
@@ -51,7 +51,7 @@
  },
  "num_electrons": 1,
  "order": 4,
- "propagate": 0,
+ "propagate": 1,
  "restart": 0,
  "sigma": 3.0,
  "start_state": {

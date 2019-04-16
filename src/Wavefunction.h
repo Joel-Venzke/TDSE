@@ -132,6 +132,7 @@ class Wavefunction : protected Utils
   PetscInt GetNumPsiBuild();
   Vec *GetPsi();
   Vec *GetPsiSmall();
+  Vec *GetLMask();
   double **GetXValue();
   PetscInt *GetLValues();
   PetscInt *GetMValues();
