@@ -1610,7 +1610,10 @@ double Wavefunction::GetLMaskVal(PetscInt idx)
 
   PetscInt l_m_value = GetIntArray(idx)[1];
   double l_value = GetLValues()[l_m_value];
-
+  if(l_max == l_min)
+  {
+    return 1.0;
+  }
   if(l_value < l_min)
   {
     return 1.0;
@@ -1619,9 +1622,16 @@ double Wavefunction::GetLMaskVal(PetscInt idx)
   {
     double factor = (l_max - l_min) * 2.0 / pi;
     ret_val = pow(cos((l_value - l_min) / factor), 1.0/8.0);
+    std::cout << ret_val << "\t " ;
     return ret_val;
   }
   
+}
+
+void Wavefunction::ApplyLMask()
+{
+  l_mask = GetLMask();
+  VecPointwiseMult(psi, l_mask, psi);
 }
 /* returns values for global dipole acceleration */
 dcomp Wavefunction::GetDipoleAccerationVal(PetscInt idx, PetscInt elec_idx,
@@ -1914,7 +1924,7 @@ Vec* Wavefunction::GetPsi() { return &psi; }
 
 Vec* Wavefunction::GetPsiSmall() { return &psi_small; }
 
-Vec* Wavefunction::GetLMask() { return &l_mask; }
+Vec Wavefunction::GetLMask() { return l_mask; }
 
 double** Wavefunction::GetXValue() { return x_value; }
 

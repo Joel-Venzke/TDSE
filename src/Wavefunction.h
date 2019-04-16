@@ -80,6 +80,7 @@ class Wavefunction : protected Utils
 
   std::vector< PetscInt > GetIntArray(PetscInt idx);
 
+  
   void LoadRestart(HDF5Wrapper &h5_file, ViewWrapper &viewer_file,
                    PetscInt write_frequency_checkpoint,
                    PetscInt write_frequency_observables);
@@ -126,13 +127,14 @@ class Wavefunction : protected Utils
   void ZeroPhasePsiSmall();
   void RadialHGroundPsiSmall();
   void SetPositionMat(Mat *input_mat);
+  void ApplyLMask();
 
   PetscInt *GetNumX();
   PetscInt GetNumPsi();
   PetscInt GetNumPsiBuild();
   Vec *GetPsi();
   Vec *GetPsiSmall();
-  Vec *GetLMask();
+  Vec GetLMask();
   double **GetXValue();
   PetscInt *GetLValues();
   PetscInt *GetMValues();

@@ -500,15 +500,17 @@ void Simulation::CrankNicolson(double dt, PetscInt time_idx, PetscInt dim_idx)
     old_time_idx = time_idx;
     PetscLogEventEnd(create_matrix, 0, 0, 0, 0);
   }
-  /* get the array for the l_value mask */
-  l_mask = wavefunction->GetLMask();
-  VecPointwiseMult(*psi, *l_mask, *psi);
+  
   /* Get psi_right side */
   MatMult(right, *psi, psi_right);
 
   /* Solve Ax=b */
   KSPSolve(ksp, psi_right, *psi);
 
+  if(coordinate_system_idx == 3)
+  {
+    wavefunction->ApplyLMask();
+  }
   /* Check for Divergence*/
   KSPGetConvergedReason(ksp, &reason);
   if (reason < 0)
