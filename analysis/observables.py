@@ -659,8 +659,8 @@ plt.imshow(
     cmap='viridis',
     origin='lower',
     interpolation='none',
-    norm=LogNorm(vmax=2e-4, vmin=1e-7))
-# norm=LogNorm(vmax=grid_data[2:].max(), vmin=grid_data[2:].max() / 1e3))
+    # norm=LogNorm(vmax=2e-4, vmin=1e-7))
+    norm=LogNorm(vmax=grid_data[2:].max(), vmin=grid_data[2:].max() / 1e3))
 for val in np.arange(-0.5, grid_data.shape[1], 1):
     plt.axvline(val, c='w')
 for val in np.arange(-0.5, grid_data.shape[0] - 1, 1):
