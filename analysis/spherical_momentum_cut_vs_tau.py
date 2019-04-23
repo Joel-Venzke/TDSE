@@ -97,7 +97,7 @@ folders = [
     'cycles_delay_0.90', 'cycles_delay_1.00'
 ]
 folders.sort()
-print folders
+print(folders)
 factor = 2
 resolution = 512 * factor
 zoom_size = 1.5
@@ -114,7 +114,7 @@ m_values = f["/Wavefunction/m_values"][:]
 
 r_max = psi_cooridnate_values[2].max() * factor
 # pre-calculate grid so the plotting can be vectorized
-print "Calculating index set for xy plane"
+print("Calculating index set for xy plane")
 x, y, z, r, theta, phi, r_vals = cacluate_xy_plane(psi_cooridnate_values,
                                                    r_max, r_max, resolution)
 x_values = x[0, :, 0]
@@ -142,7 +142,7 @@ for fold_idx, fold in enumerate(folders):
     f = h5py.File(fold + "/TDSE.h5", "r")
     psi_value = f["Wavefunction"]["psi"]
     i = len(psi_value) - 1
-    print "plotting", fold, i
+    print("plotting", fold, i)
     psi = psi_value[i]
     psi = psi[:, 0] + 1j * psi[:, 1]
     psi.shape = shape
@@ -156,7 +156,19 @@ for fold_idx, fold in enumerate(folders):
         r_vals,
         l_values,
         m_values,
+        r_cut=0.)[:, :, 0]
+    print(np.sqrt((plane_data * plane_data.conjugate()).sum()))
+    plane_data = get_data(
+        psi,
+        psi_cooridnate_values,
+        r,
+        theta,
+        phi,
+        r_vals,
+        l_values,
+        m_values,
         r_cut=220.)[:, :, 0]
+    print(np.sqrt((plane_data * plane_data.conjugate()).sum()))
 
     cs = plt.imshow(
         np.transpose(np.abs(plane_data)**2),
@@ -291,7 +303,7 @@ plt.savefig("ring_norm_las_res_xy.png")
 plt.clf()
 
 # pre-calculate grid so the plotting can be vectorized
-print "Calculating index set for xz plane"
+print("Calculating index set for xz plane")
 x, y, z, r, theta, phi, r_vals = cacluate_xz_plane(psi_cooridnate_values,
                                                    r_max, r_max, resolution)
 x_values = x[0, :, 0]
@@ -318,7 +330,7 @@ for fold_idx, fold in enumerate(folders):
     f = h5py.File(fold + "/TDSE.h5", "r")
     psi_value = f["Wavefunction"]["psi"]
     i = len(psi_value) - 1
-    print "plotting", fold, i
+    print("plotting", fold, i)
     psi = psi_value[i]
     psi = psi[:, 0] + 1j * psi[:, 1]
     psi.shape = shape

@@ -44,8 +44,9 @@ data *= data
 
 state_labels = state_name(data.shape[1], l_max, m_max)
 
+print("Ionization:", 1-data[-1, :].sum())
 for label, pop in zip(state_labels, data[-1, :]):
-    print label, pop
+    print(label, pop)
 # state_number = data.shape[1]
 # state_idx = 0
 # n_val = 1
