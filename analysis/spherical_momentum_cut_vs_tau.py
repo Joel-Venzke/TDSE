@@ -99,7 +99,7 @@ folders = [
 folders.sort()
 print(folders)
 factor = 2
-resolution = 512 * factor
+resolution = 1024 * factor
 zoom_size = 1.5
 
 f = h5py.File(folders[0] + "/TDSE.h5", "r")
@@ -218,6 +218,11 @@ for fold_idx, fold in enumerate(folders):
     for theta_idx in range(x_interp.shape[0]):
         ring_data_las_res[theta_idx, fold_idx] = interp(
             x_interp[theta_idx], y_interp[theta_idx])[0]
+
+np.savetxt("xy_data_las.txt",ring_data_las)
+np.savetxt("xy_data_res.txt",ring_data_res)
+np.savetxt("xy_data_las_res.txt",ring_data_las_res)
+np.savetxt("theta.txt", theta_ring)
 
 fig = plt.figure(figsize=(12, 9), dpi=80)
 plt.title("$2*\\omega_{las}$ - xy plane")
@@ -394,6 +399,10 @@ for fold_idx, fold in enumerate(folders):
     for theta_idx in range(x_interp.shape[0]):
         ring_data_las_res[theta_idx, fold_idx] = interp(
             x_interp[theta_idx], y_interp[theta_idx])[0]
+
+np.savetxt("xz_data_las.txt",ring_data_las)
+np.savetxt("xz_data_res.txt",ring_data_res)
+np.savetxt("xz_data_las_res.txt",ring_data_las_res)
 
 fig = plt.figure(figsize=(12, 9), dpi=80)
 plt.title("$2*\\omega_{las}$ - xz plane")
