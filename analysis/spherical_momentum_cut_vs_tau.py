@@ -324,10 +324,6 @@ w_res = 0.790472
 tau = 2. * np.pi / w_res
 w_las = 0.8 * w_res
 
-delta_theta = 0.1
-theta_max = 180
-theta_ring = np.arange(-theta_max * np.pi / 180.,
-                       theta_max * np.pi / 180 + delta_theta, delta_theta)
 ring_data_las = np.zeros((theta_ring.shape[0], len(folders)))
 ring_data_res = np.zeros((theta_ring.shape[0], len(folders)))
 ring_data_las_res = np.zeros((theta_ring.shape[0], len(folders)))
