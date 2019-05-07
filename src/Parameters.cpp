@@ -967,7 +967,7 @@ void Parameters::Validate()
       {
         error_found = true;
         err_str +=
-            "\nCylindrical coordinate systems only supports nuclei on the z "
+            "\nSpherical coordinate systems only supports nuclei on the z "
             "axis (i.e. [0.0, 0.0, 0.0])\nNuclei " +
             std::to_string(nuclei_idx) + " has a non zero radial coordinate\n";
       }

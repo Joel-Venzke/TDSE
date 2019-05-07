@@ -29,6 +29,31 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   write_counter_projections = 0;
   order                     = p.GetOrder();
 
+  /* SAE stuff */
+  z                      = p.z.get();
+  location               = p.GetLocation();
+  exponential_r_0        = p.GetExponentialR0();
+  exponential_amplitude  = p.GetExponentialAmplitude();
+  exponential_decay_rate = p.GetExponentialDecayRate();
+  exponential_size       = p.exponential_size.get();
+  gaussian_r_0           = p.GetGaussianR0();
+  gaussian_amplitude     = p.GetGaussianAmplitude();
+  gaussian_decay_rate    = p.GetGaussianDecayRate();
+  gaussian_size          = p.gaussian_size.get();
+  square_well_r_0        = p.GetSquareWellR0();
+  square_well_amplitude  = p.GetSquareWellAmplitude();
+  square_well_width      = p.GetSquareWellWidth();
+  square_well_size       = p.square_well_size.get();
+  yukawa_r_0             = p.GetYukawaR0();
+  yukawa_amplitude       = p.GetYukawaAmplitude();
+  yukawa_decay_rate      = p.GetYukawaDecayRate();
+  yukawa_size            = p.yukawa_size.get();
+  alpha                  = p.GetAlpha();
+  alpha_2                = alpha * alpha;
+  ee_soft_core           = p.GetEESoftCore();
+  ee_soft_core_2         = ee_soft_core * ee_soft_core;
+  num_nuclei             = p.GetNumNuclei();
+
   if (coordinate_system_idx == 3)
   {
     l_max = p.GetLMax();
@@ -1594,26 +1619,98 @@ dcomp Wavefunction::GetDipoleAccerationVal(PetscInt idx, PetscInt elec_idx,
   /* Value to be returned */
   dcomp ret_val(0.0, 0.0);
   double r;
+  double r_soft;
+  double x;
+  double tmp, tmp_soft;
+  std::vector< PetscInt > idx_array = GetIndexArray(idx);
   if (coordinate_system_idx == 2) /* RBF */
   {
     r = sqrt(x_value[0][idx] * x_value[0][idx] +
              x_value[1][idx] * x_value[1][idx] +
              x_value[2][idx] * x_value[2][idx]);
-    ret_val += x_value[dim_idx][idx] / (r * r * r);
-  }
-  else if (coordinate_system_idx == 3) /* spherical */
-  {
-    std::vector< PetscInt > idx_array = GetIntArray(idx);
-    r = x_value[2][idx_array[elec_idx * num_dims + 2]];
-    ret_val += 1.0 / (r * r * r);
+    for (PetscInt nuclei_idx = 0; nuclei_idx < num_nuclei; ++nuclei_idx)
+    {
+      ret_val -= z[nuclei_idx] * x_value[dim_idx][idx] / (r * r * r);
+    }
+    if (world.rank() == 0)
+    {
+      std::cout << "WARNING: RBF grids dipole acceleration only calculates the "
+                   "Coulomb potential.\n";
+    }
   }
   else
   {
-    /* idx for return */
-    std::vector< PetscInt > idx_array = GetIntArray(idx);
-    r                                 = GetDistance(idx_array, elec_idx);
-    ret_val += x_value[dim_idx][idx_array[elec_idx * num_dims + dim_idx]] /
-               (r * r * r);
+    /* loop over each nuclei */
+    for (PetscInt nuclei_idx = 0; nuclei_idx < num_nuclei; ++nuclei_idx)
+    {
+      if (coordinate_system_idx == 3)
+      {
+        /* It is non trivial to account for nuclei not at the origin.
+         * There are many other portions of the code that need to be
+         * updated to account for this.
+         * A future iteration of the code will account for this.
+         */
+        r      = x_value[2][idx_array[2 * (2 + elec_idx * num_dims)]];
+        r_soft = sqrt(r * r + alpha_2);
+        /* x is a matrix, so it is applied in ``GetDipoleAcceration'' */
+        x = 1.0;
+      }
+      else
+      {
+        r_soft = SoftCoreDistance(location[nuclei_idx], idx_array, elec_idx);
+        r      = EuclideanDistance(location[nuclei_idx], idx_array, elec_idx);
+        x      = x_value[dim_idx][idx_array[elec_idx * num_dims + dim_idx]];
+      }
+
+      /* Coulomb term */
+      ret_val -= dcomp(x * z[nuclei_idx] / (r_soft * r_soft * r_soft), 0.0);
+
+      /* Gaussian Donuts */
+      for (PetscInt i = 0; i < gaussian_size[nuclei_idx]; ++i)
+      {
+        tmp = gaussian_decay_rate[nuclei_idx][i] *
+              (r - gaussian_r_0[nuclei_idx][i]);
+        ret_val -= dcomp(x * gaussian_decay_rate[nuclei_idx][i] * tmp *
+                             gaussian_amplitude[nuclei_idx][i] *
+                             exp(-0.5 * (tmp * tmp)) / r,
+                         0.0);
+      }
+
+      /* Exponential Donuts */
+      for (PetscInt i = 0; i < exponential_size[nuclei_idx]; ++i)
+      {
+        tmp = exponential_decay_rate[nuclei_idx][i] *
+              std::abs(r - exponential_r_0[nuclei_idx][i]);
+        ret_val -=
+            dcomp(x * exponential_amplitude[nuclei_idx][i] *
+                      exponential_decay_rate[nuclei_idx][i] * exp(-tmp) / r,
+                  0.0);
+      }
+
+      /* Square Well Donuts */
+      for (PetscInt i = 0; i < square_well_size[nuclei_idx]; ++i)
+      {
+        if (world.rank() == 0)
+        {
+          std::cout << "WARNING: square well potential don't work with dipole "
+                       "acceleration.\n";
+        }
+      }
+
+      /* Yukawa Donuts */
+      for (PetscInt i = 0; i < yukawa_size[nuclei_idx]; ++i)
+      {
+        tmp = yukawa_decay_rate[nuclei_idx][i] *
+              std::abs(r - yukawa_r_0[nuclei_idx][i]);
+        tmp_soft = std::abs(r_soft - yukawa_r_0[nuclei_idx][i]);
+        ret_val -= dcomp(x * yukawa_amplitude[nuclei_idx][i] * exp(-tmp) /
+                                 (tmp_soft * tmp_soft * r) +
+                             x * yukawa_decay_rate[nuclei_idx][i] *
+                                 yukawa_amplitude[nuclei_idx][i] * exp(-tmp) /
+                                 (tmp_soft * r),
+                         0.0);
+      }
+    }
   }
 
   return ret_val;
@@ -1866,6 +1963,125 @@ void Wavefunction::SetPositionMat(Mat* input_mat)
             DIFFERENT_NONZERO_PATTERN);
   }
   position_mat_alloc = true;
+}
+
+double Wavefunction::SoftCoreDistance(double* location, PetscInt idx)
+{
+  double distance = alpha_2; /* Make sure we include the soft core */
+  double diff     = 0.0;
+  /* loop over all dims */
+  for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+  {
+    diff = location[dim_idx] - x_value[dim_idx][idx];
+    distance += diff * diff;
+  }
+  return sqrt(distance);
+}
+
+double Wavefunction::SoftCoreDistance(double* location,
+                                      std::vector< PetscInt >& idx_array,
+                                      PetscInt elec_idx)
+{
+  double distance = alpha_2; /* Make sure we include the soft core */
+  double diff     = 0.0;
+  /* loop over all dims */
+  for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+  {
+    diff = location[dim_idx] -
+           x_value[dim_idx][idx_array[2 * (dim_idx + elec_idx * num_dims)]];
+    distance += diff * diff;
+  }
+  return sqrt(distance);
+}
+
+double Wavefunction::SoftCoreDistance(std::vector< PetscInt >& idx_array,
+                                      PetscInt elec_idx_1, PetscInt elec_idx_2)
+{
+  double distance = ee_soft_core_2; /* Make sure we include the soft core */
+  double diff     = 0.0;
+  /* loop over all dims */
+  for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+  {
+    diff = x_value[dim_idx][idx_array[2 * (dim_idx + elec_idx_1 * num_dims)]] -
+           x_value[dim_idx][idx_array[2 * (dim_idx + elec_idx_2 * num_dims)]];
+    distance += diff * diff;
+  }
+  return sqrt(distance);
+}
+
+double Wavefunction::EuclideanDistance(double* location, PetscInt idx)
+{
+  double distance = 0.0;
+  double diff     = 0.0;
+  /* loop over all dims */
+  for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+  {
+    diff = location[dim_idx] - x_value[dim_idx][idx];
+    distance += diff * diff;
+  }
+  return sqrt(distance);
+}
+
+double Wavefunction::EuclideanDistance(double* location,
+                                       std::vector< PetscInt >& idx_array,
+                                       PetscInt elec_idx)
+{
+  double distance = 0.0;
+  double diff     = 0.0;
+  /* loop over all dims */
+  for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+  {
+    diff = location[dim_idx] -
+           x_value[dim_idx][idx_array[2 * (dim_idx + elec_idx * num_dims)]];
+    distance += diff * diff;
+  }
+  return sqrt(distance);
+}
+
+double Wavefunction::EuclideanDistance(std::vector< PetscInt >& idx_array,
+                                       PetscInt elec_idx_1, PetscInt elec_idx_2)
+{
+  double distance = 0.0;
+  double diff     = 0.0;
+  /* loop over all dims */
+  for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+  {
+    diff = x_value[dim_idx][idx_array[2 * (dim_idx + elec_idx_1 * num_dims)]] -
+           x_value[dim_idx][idx_array[2 * (dim_idx + elec_idx_2 * num_dims)]];
+    distance += diff * diff;
+  }
+  return sqrt(distance);
+}
+
+/* Returns the an array of alternating i,j components of the local matrix */
+std::vector< PetscInt > Wavefunction::GetIndexArray(PetscInt idx_i)
+{
+  PetscInt idx_j      = idx_i;
+  PetscInt total_dims = num_electrons * num_dims;
+  /* size of each dim */
+  std::vector< PetscInt > num(total_dims);
+  /* idx for return */
+  std::vector< PetscInt > idx_array(total_dims * 2);
+  /* used for convenience. Could/should be optimized */
+  for (PetscInt elec_idx = 0; elec_idx < num_electrons; elec_idx++)
+  {
+    for (PetscInt dim_idx = 0; dim_idx < num_dims; dim_idx++)
+    {
+      num[elec_idx * num_dims + dim_idx] = num_x[dim_idx];
+    }
+  }
+  /* loop over dimensions backwards so psi becomes
+   * psi[x_1,y_1,z_1,x_2,y_2,z_2,...]
+   * where x_1 is the first dimension of the first electron and x_2 is the
+   * first dimension of the second electron and so on */
+  for (PetscInt i = total_dims - 1; i >= 0; --i)
+  {
+    idx_array[2 * i] = idx_i % num[i];
+    idx_i /= num[i];
+    idx_array[2 * i + 1] = idx_j % num[i];
+    idx_j /= num[i];
+  }
+  return idx_array;
 }
 
 PetscInt* Wavefunction::GetNumX() { return num_x; }

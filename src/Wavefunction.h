@@ -59,6 +59,31 @@ class Wavefunction : protected Utils
   PetscLogEvent time_projections;
   PetscLogEvent time_insert_radial_psi;
 
+  /* SAE stuff */
+  double *z;                        ///< atomic number of each nuclei
+  double **location;                ///< location of each nuclei
+  double **exponential_r_0;         ///< exponential radial center
+  double **exponential_amplitude;   ///< exponential  amplitude
+  double **exponential_decay_rate;  ///< exponential  decay rate
+  PetscInt *exponential_size;       ///< number of elements in exponential
+  double **gaussian_r_0;            ///< Gaussian radial center
+  double **gaussian_amplitude;      ///< Gaussian amplitude
+  double **gaussian_decay_rate;     ///< Gaussian decay rate
+  PetscInt *gaussian_size;          ///< number of elements in Gaussian
+  double **square_well_r_0;         ///< square well radial center
+  double **square_well_amplitude;   ///< square well  amplitude
+  double **square_well_width;       ///< square well width
+  PetscInt *square_well_size;       ///< number of elements in Gaussian
+  double **yukawa_r_0;              ///< yukawa radial center
+  double **yukawa_amplitude;        ///< yukawa amplitude
+  double **yukawa_decay_rate;       ///< yukawa decay rate
+  PetscInt *yukawa_size;            ///< number of elements in Gaussian
+  double alpha;          /* soft core atomic */
+  double alpha_2;        /* square of soft core atomic */
+  double ee_soft_core;   /* soft core atomic */
+  double ee_soft_core_2; /* square of soft core atomic */
+  PetscInt num_nuclei; /* number of nuclei in potential */
+
   /* hidden from user for safety */
   void CreateGrid();
   void CreatePsi();
@@ -123,6 +148,18 @@ class Wavefunction : protected Utils
   void ZeroPhasePsiSmall();
   void RadialHGroundPsiSmall();
   void SetPositionMat(Mat *input_mat);
+
+  double SoftCoreDistance(double *location, PetscInt idx);
+  double SoftCoreDistance(double *location, std::vector< PetscInt > &idx_array,
+                          PetscInt elec_idx);
+  double SoftCoreDistance(std::vector< PetscInt > &idx_array,
+                          PetscInt elec_idx_1, PetscInt elec_idx_2);
+  double EuclideanDistance(double *location, PetscInt idx);
+  double EuclideanDistance(double *location, std::vector< PetscInt > &idx_array,
+                           PetscInt elec_idx);
+  double EuclideanDistance(std::vector< PetscInt > &idx_array,
+                           PetscInt elec_idx_1, PetscInt elec_idx_2);
+  std::vector< PetscInt > GetIndexArray(PetscInt idx_i);
 
   PetscInt *GetNumX();
   PetscInt GetNumPsi();
