@@ -1690,7 +1690,7 @@ dcomp Wavefunction::GetDipoleAccerationVal(PetscInt idx, PetscInt elec_idx,
       /* Square Well Donuts */
       for (PetscInt i = 0; i < square_well_size[nuclei_idx]; ++i)
       {
-        if (world.rank() == 0)
+        if (std::abs(square_well_amplitude[nuclei_idx][i]) > 1e-14 and world.rank() == 0)
         {
           std::cout << "WARNING: square well potential don't work with dipole "
                        "acceleration.\n";
