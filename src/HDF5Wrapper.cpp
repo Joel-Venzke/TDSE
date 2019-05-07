@@ -983,6 +983,9 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
                 "Index of solver: Velocity:0, Length:1");
     WriteObject(num_pulses, "/Parameters/num_pulses",
                 "The number of pulses from the input file");
+    WriteObject(p.GetFrequencyShift(), "/Parameters/frequency_shift",
+                "If the pulses are frequency shifted. 0: set A field "
+                "frequency. 1: set E field frequency");
     for (int pulse_idx = 0; pulse_idx < p.GetNumPulses(); ++pulse_idx)
     {
       WriteObject(

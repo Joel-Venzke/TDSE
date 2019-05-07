@@ -70,6 +70,7 @@ class Parameters : protected Utils
 
   /* pulse data */
   PetscInt num_pulses;           ///< number of pulses
+  PetscInt frequency_shift;
   double** polarization_vector;  ///< polarization vector for each pulse
   double** poynting_vector;      ///< poynting vector of the field
   double* gaussian_length;
@@ -176,6 +177,7 @@ class Parameters : protected Utils
   PetscInt GetFieldMaxStates();
 
   PetscInt GetNumPulses();
+  PetscInt GetFrequencyShift();
   double** GetPolarizationVector();
   double** GetPoyntingVector();
   double* GetGaussianLength();

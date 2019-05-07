@@ -538,6 +538,10 @@ void Parameters::Setup(std::string file_name)
                  "laser - experiment_type");
   experiment_type = data["laser"]["experiment_type"];
 
+  CheckParameter(data["laser"]["frequency_shift"].size(),
+                 "laser - frequency_shift");
+  frequency_shift = data["laser"]["frequency_shift"];
+
   /* allocate memory */
   pulse_shape         = std::make_unique< std::string[] >(num_pulses);
   pulse_shape_idx     = std::make_unique< PetscInt[] >(num_pulses);
@@ -846,6 +850,92 @@ void Parameters::Setup(std::string file_name)
       }
     }
   }
+
+  /* implement frequency shift */
+  if (frequency_shift == 1)
+  {
+    if (experiment_type == "streaking" or experiment_type == "transient")
+    {
+      /* could be fixed at end of next for loop
+       * This will require re-calculating cycles_delay from tau_delay since the
+       * time of the peak of each laser pulse is subject to change with the
+       * frequency shift */
+      EndRun(
+          "\nFrequency shift is not supported for streaking or transient type "
+          "experiments. "
+          "\nAll of the cycles_delay value needs to be corrected. "
+          "\nParameters.cpp file for notes on how to make this fix\n");
+    }
+
+    /* loop over all pulses */
+    for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
+    {
+      /* set default to no shift */
+      double shift = 1.0;
+      if (pulse_shape_idx[pulse_idx] == 0)
+      {
+        /* make sure the pulse is a purely sin^2 envelop */
+        if (cycles_on[pulse_idx] == cycles_off[pulse_idx] and
+            cycles_plateau[pulse_idx] == 0 and power_on[pulse_idx] == 2 and
+            power_off[pulse_idx] == 2)
+        {
+          /* calculate shift */
+          double mu_sin = 4.0 * asin(exp(-1.0 / 4.0)) * asin(exp(-1.0 / 4.0));
+          shift =
+              (1.0 +
+               sqrt(1 + mu_sin /
+                            ((cycles_on[pulse_idx] + cycles_off[pulse_idx]) *
+                             (cycles_on[pulse_idx] + cycles_off[pulse_idx])))) /
+              2.0;
+        }
+        else
+        {
+          EndRun(
+              "\nFrequency shift only supports true sin^2 or Gaussian like "
+              "pulse.\ncycles_on = cycles_off, power_on = power_off = 2, and "
+              "cycles_plateau=0\n");
+        }
+      }
+      else if (pulse_shape_idx[pulse_idx] == 1)
+      {
+        /* make sure the pulse is a purely gauss envelop */
+        if (cycles_on[pulse_idx] == cycles_off[pulse_idx] and
+            cycles_plateau[pulse_idx] == 0)
+        {
+          /* calculate shift */
+          double mu_gaus = 4 * 2 * log(2.0) / (pi * pi);
+          shift =
+              (1.0 +
+               sqrt(1 + mu_gaus /
+                            ((cycles_on[pulse_idx] + cycles_off[pulse_idx]) *
+                             (cycles_on[pulse_idx] + cycles_off[pulse_idx])))) /
+              2.0;
+        }
+        else
+        {
+          EndRun(
+              "\nFrequency shift only supports true sin^2 or Gaussian like "
+              "pulse.\ncycles_on = cycles_off, and "
+              "cycles_plateau=0\n");
+        }
+      }
+      else /* non gauss or sin pulse shapes */
+      {
+        EndRun(
+            "\nFrequency shift only supports true sin^2 or Gaussian like "
+            "pulse.\n");
+      }
+
+      /* shift the energy */
+      energy[pulse_idx] /= shift;
+      /* updated cycles_delay by using calculating tau_delay and converting
+       * between shifted and unshifted energies */
+      cycles_delay[pulse_idx] /= shift;
+      /* The peak of the A field is central frequency dependent*/
+      field_max[pulse_idx] *= shift;
+    }
+  }
+
   /* ensure input is good */
   Validate();
 
@@ -1332,6 +1422,8 @@ PetscInt Parameters::GetFreePropagate() { return free_propagate; }
 PetscInt Parameters::GetFieldMaxStates() { return field_max_states; }
 
 PetscInt Parameters::GetNumPulses() { return num_pulses; }
+
+PetscInt Parameters::GetFrequencyShift() { return frequency_shift; }
 
 double** Parameters::GetPolarizationVector() { return polarization_vector; }
 
