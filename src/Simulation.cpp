@@ -509,7 +509,6 @@ void Simulation::CrankNicolson(double dt, PetscInt time_idx, PetscInt dim_idx)
   }
   else
   {
-    std::cout<<"Test\n";
     /* Get psi_right side */
     MatMult(right, *psi, psi_right);
 
