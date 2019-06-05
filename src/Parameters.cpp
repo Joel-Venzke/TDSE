@@ -1048,6 +1048,13 @@ Parameters::~Parameters()
   {
     delete start_state_l_idx;
     delete start_state_m_idx;
+    
+    if(num_block_state != 0)
+    {
+      delete block_state_idx;
+      delete block_state_l_idx;
+      delete block_state_m_idx;
+    }
   }                              ///< index of states in super position
   delete start_state_amplitude;  ///< amplitude of states in super position
   delete start_state_phase;
