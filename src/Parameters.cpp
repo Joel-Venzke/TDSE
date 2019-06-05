@@ -389,6 +389,20 @@ void Parameters::Setup(std::string file_name)
     }
   }
 
+  if (num_block_state != 0 and coordinate_system_idx == 3)
+  {
+    for (PetscInt i = 0; i < num_start_state; i++)
+    {
+
+      block_state_idx[i] = data["block_state"]["n_index"][i];
+
+      block_state_l_idx[i] = data["block_state"]["l_index"][i];
+
+      block_state_m_idx[i] = data["block_state"]["m_index"][i];
+    }
+
+  }
+
   z                      = std::make_unique< double[] >(num_nuclei);
   exponential_size       = std::make_unique< PetscInt[] >(num_nuclei);
   exponential_r_0        = new double*[num_nuclei];
@@ -1432,6 +1446,14 @@ PetscInt* Parameters::GetStartStateMIdx() { return start_state_m_idx; }
 double* Parameters::GetStartStateAmplitude() { return start_state_amplitude; }
 
 double* Parameters::GetStartStatePhase() { return start_state_phase; }
+
+PetscInt Parameters::GetNumBlockState() { return num_block_state; }
+
+PetscInt* Parameters::GetBlockStateIdx() { return block_state_idx; }
+
+PetscInt* Parameters::GetBlockStateLIdx() { return block_state_l_idx; }
+
+PetscInt* Parameters::GetBlockStateMIdx() { return block_state_m_idx; }
 
 double Parameters::GetTol() { return tol; }
 
