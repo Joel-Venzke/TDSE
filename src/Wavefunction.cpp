@@ -525,6 +525,88 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
  * @param file_name name of the file containing the eigen states
  * @return A vector of projections corresponding to that state
  */
+std::vector< dcomp > Wavefunction::BlockPathways(std::string file_name)
+{
+  PetscLogEventBegin(time_projections, 0, 0, 0, 0);
+  HDF5Wrapper h5_file(file_name);
+  ViewWrapper viewer_file(file_name);
+  std::vector< dcomp > ret_vec;
+
+  if (coordinate_system_idx == 3)
+  {
+    Vec psi_small_local;
+    VecCreateSeq(PETSC_COMM_SELF, num_x[2], &psi_small_local);
+    VecSetFromOptions(psi_small_local);
+    ierr = PetscObjectSetName((PetscObject)psi_small_local, "psi");
+
+    PetscInt file_states = h5_file.GetTimeIdx("/psi_l_0/psi/") + 1;
+    if (file_states < num_states)
+    {
+      EndRun("Not enough states in the target file");
+    }
+    dcomp projection_val;
+
+    viewer_file.Open("r");
+    for (int n_index = 1; n_index <= num_states; ++n_index)
+    {
+      for (int l_idx = 0; l_idx < fmin(n_index, l_max + 1); ++l_idx)
+      {
+        /* Set time idx */
+        viewer_file.SetTime(n_index - l_idx - 1);
+        viewer_file.PushGroup("psi_l_" + std::to_string(l_idx));
+        for (int m_idx = -1. * std::min(m_max, l_idx);
+             m_idx < std::min(m_max, l_idx) + 1; ++m_idx)
+        {
+          viewer_file.ReadObject(psi_small_local);
+          InsertRadialPsi(psi_small_local, psi_proj, l_idx, m_idx);
+          Normalize(psi_proj, 0.0);
+          VecPointwiseMult(psi_tmp, jacobian, psi_proj);
+          VecDot(psi, psi_tmp, &projection_val);
+          ret_vec.push_back(projection_val);
+        }
+        viewer_file.PopGroup();
+      }
+    }
+    /* Close file */
+    viewer_file.Close();
+
+    VecDestroy(&psi_small_local);
+  }
+  else
+  {
+    PetscInt file_states = h5_file.GetTimeIdx("/psi/") + 1;
+    if (file_states < num_states)
+    {
+      EndRun("Not enough states in the target file");
+    }
+    std::vector< dcomp > ret_vec;
+    dcomp projection_val;
+
+    viewer_file.Open("r");
+    for (int state_idx = 0; state_idx < num_states; ++state_idx)
+    {
+      /* Set time idx */
+      viewer_file.SetTime(state_idx);
+      viewer_file.ReadObject(psi_proj);
+      Normalize(psi_proj, 0.0);
+      VecPointwiseMult(psi_tmp, jacobian, psi_proj);
+      VecDot(psi, psi_tmp, &projection_val);
+      ret_vec.push_back(projection_val);
+    }
+    /* Close file */
+    viewer_file.Close();
+  }
+
+  PetscLogEventEnd(time_projections, 0, 0, 0, 0);
+  return ret_vec;
+}
+
+/**
+ * @brief Returns a vector of projections based on the states the given file
+ *
+ * @param file_name name of the file containing the eigen states
+ * @return A vector of projections corresponding to that state
+ */
 void Wavefunction::ProjectOut(std::string file_name, HDF5Wrapper& h5_file_in,
                               ViewWrapper& viewer_file_in, double time)
 {
