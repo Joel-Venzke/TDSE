@@ -34,6 +34,7 @@
  "write_frequency_eigin_state": 100,
  "laser": {
   "experiment_type": "default",
+  "frequency_shift":1,
   "pulses": [
    {
     "power_on": 2.0,
@@ -61,6 +62,17 @@
     "ellipticity": 0.0
    }
   ]
+ },
+ "block_state": {
+   "m_index": [
+     0
+   ],
+    "l_index": [
+     0
+   ],
+    "n_index": [
+     2
+   ]
  },
  "target": {
   "nuclei": [

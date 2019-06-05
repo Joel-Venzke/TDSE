@@ -271,6 +271,12 @@ void Parameters::Setup(std::string file_name)
     num_start_state   = data["start_state"]["n_index"].size();
     start_state_l_idx = new PetscInt[num_start_state];
     start_state_m_idx = new PetscInt[num_start_state];
+
+    num_block_state   = data["block_state"]["n_index"].size();
+    block_state_idx   = new PetscInt[num_block_state];
+    block_state_l_idx = new PetscInt[num_block_state];
+    block_state_m_idx = new PetscInt[num_block_state];
+
     if (data["start_state"]["amplitude"].size() != num_start_state)
     {
       EndRun(
@@ -295,6 +301,18 @@ void Parameters::Setup(std::string file_name)
           "'start_state - m_index' and 'start_state - n_index' sizes do not "
           "match. Double check input file.");
     }
+    if (data["block_state"]["l_index"].size() != num_block_state)
+    {
+      EndRun(
+          "'block_state - l_index' and 'block_state - n_index' sizes do not "
+          "match. Double check input file.");
+    }
+    if (data["block_state"]["m_index"].size() != num_block_state)
+    {
+      EndRun(
+          "'block_state - m_index' and 'block_state - n_index' sizes do not "
+          "match. Double check input file.");
+    }
   }
   else
   {
@@ -311,6 +329,14 @@ void Parameters::Setup(std::string file_name)
     {
       EndRun(
           "'start_state - phase' and 'start_state - index' sizes do not match. "
+          "Double check input file.");
+    }
+    if (data["block_state"]["n_index"].size() != 0 or 
+        data["block_state"]["l_index"].size() != 0 or
+        data["block_state"]["m_index"].size() != 0)
+    {
+      EndRun(
+          "'block state' is only suupported for 'coordinate_system': 'Spherical' "
           "Double check input file.");
     }
   }

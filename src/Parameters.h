@@ -55,6 +55,12 @@ class Parameters : protected Utils
   PetscInt* start_state_m_idx;    ///< index of states in super position
   double* start_state_amplitude;  ///< amplitude of states in super position
   double* start_state_phase;      ///< phase of states in super position
+
+  PetscInt num_block_state;       ///< number of states to remove from basis
+  PetscInt* block_state_idx;      ///< index of states to remove
+  PetscInt* block_state_l_idx;    ///< index of states to remove 
+  PetscInt* block_state_m_idx;    ///< index of states to remove
+
   double tol;                     ///< tolerance in error
   std::string state_solver;       ///< name of the solver used to get states
   PetscInt state_solver_idx;      ///< index of state solver
@@ -166,6 +172,10 @@ class Parameters : protected Utils
   PetscInt* GetStartStateMIdx();
   double* GetStartStateAmplitude();
   double* GetStartStatePhase();
+  PetscInt GetNumBlockState();
+  PetscInt* GetBlockStateIdx();
+  PetscInt* GetBlockStateLIdx();
+  PetscInt* GetBlockStateMIdx();
   double GetTol();
   PetscInt GetStateSolverIdx();
   std::string GetStateSolver();
