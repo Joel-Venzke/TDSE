@@ -499,11 +499,23 @@ void Simulation::CrankNicolson(double dt, PetscInt time_idx, PetscInt dim_idx)
     PetscLogEventEnd(create_matrix, 0, 0, 0, 0);
   }
 
-  /* Get psi_right side */
-  MatMult(right, *psi, psi_right);
+  if (parameters->GetNumBlockState() == 0)
+  {
+    /* Get psi_right side */
+    MatMult(right, *psi, psi_right);
 
-  /* Solve Ax=b */
-  KSPSolve(ksp, psi_right, *psi);
+    /* Solve Ax=b */
+    KSPSolve(ksp, psi_right, *psi); 
+  }
+  else
+  {
+    std::cout<<"Test\n";
+    /* Get psi_right side */
+    MatMult(right, *psi, psi_right);
+
+    /* Solve Ax=b */
+    KSPSolve(ksp, psi_right, *psi); 
+  }
 
   /* Check for Divergence*/
   KSPGetConvergedReason(ksp, &reason);
