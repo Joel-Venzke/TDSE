@@ -391,14 +391,36 @@ void Parameters::Setup(std::string file_name)
 
   if (num_block_state != 0 and coordinate_system_idx == 3)
   {
-    for (PetscInt i = 0; i < num_start_state; i++)
+    for (PetscInt i = 0; i < num_block_state; i++)
     {
 
       block_state_idx[i] = data["block_state"]["n_index"][i];
 
+      if (block_state_idx[i] > num_states)
+      {
+        EndRun(
+          "'block_state - n_index' must not exceed 'num_states'. "
+          "Double check input file.");
+      }
+
       block_state_l_idx[i] = data["block_state"]["l_index"][i];
 
+      if (block_state_l_idx[i] >= block_state_idx[i])
+      {
+        EndRun(
+          "'block_state - l_index' must be less than its corresponding n_index. "
+          "Double check input file.");
+      }
+
       block_state_m_idx[i] = data["block_state"]["m_index"][i];
+
+      if (std::abs(block_state_m_idx[i]) > block_state_l_idx[i])
+      {
+        EndRun(
+          "'block_state - m_index' must not exceed its corresponding l_index. "
+          "Double check input file.");
+      }
+
     }
 
   }
