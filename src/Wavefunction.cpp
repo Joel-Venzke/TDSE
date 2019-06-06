@@ -72,6 +72,7 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
                         &time_dipole_acceration);
   PetscLogEventRegister("WaveECS", PETSC_VIEWER_CLASSID, &time_gobbler);
   PetscLogEventRegister("WaveProj", PETSC_VIEWER_CLASSID, &time_projections);
+  PetscLogEventRegister("WaveBlockPath", PETSC_VIEWER_CLASSID, &time_block_pathways);
   PetscLogEventRegister("WaveRadialPsi", PETSC_VIEWER_CLASSID,
                         &time_insert_radial_psi);
 
@@ -527,7 +528,7 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
  */
 std::vector< dcomp > Wavefunction::BlockPathways(std::string file_name)
 {
-  PetscLogEventBegin(time_projections, 0, 0, 0, 0);
+  PetscLogEventBegin(time_block_pathways, 0, 0, 0, 0);
   HDF5Wrapper h5_file(file_name);
   ViewWrapper viewer_file(file_name);
   std::vector< dcomp > ret_vec;
@@ -597,7 +598,7 @@ std::vector< dcomp > Wavefunction::BlockPathways(std::string file_name)
     viewer_file.Close();
   }
 
-  PetscLogEventEnd(time_projections, 0, 0, 0, 0);
+  PetscLogEventEnd(time_block_pathways, 0, 0, 0, 0);
   return ret_vec;
 }
 

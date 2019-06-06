@@ -57,6 +57,7 @@ class Wavefunction : protected Utils
   PetscLogEvent time_dipole_acceration;
   PetscLogEvent time_gobbler;
   PetscLogEvent time_projections;
+  PetscLogEvent time_block_pathways;
   PetscLogEvent time_insert_radial_psi;
 
   /* SAE stuff */
