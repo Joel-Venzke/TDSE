@@ -51,7 +51,7 @@
   },
   "num_electrons": 1,
   "order": 4,
-  "propagate": 0,
+  "propagate": 1,
   "restart": 0,
   "sigma": 3.0,
   "start_state": {

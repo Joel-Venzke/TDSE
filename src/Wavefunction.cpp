@@ -575,7 +575,8 @@ void Wavefunction::BlockPathways(std::string file_name)
   }
   else
   {
-    
+    EndRun("BlockPathways is only supported for spherical coordinates. "
+           "Double check input file.");
   }
   PetscLogEventEnd(time_block_pathways, 0, 0, 0, 0);
 }
