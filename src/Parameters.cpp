@@ -414,10 +414,10 @@ void Parameters::Setup(std::string file_name)
 
       block_state_m_idx[i] = data["block_state"]["m_index"][i];
 
-      if (std::abs(block_state_m_idx[i]) > block_state_l_idx[i])
+      if (std::abs(block_state_m_idx[i]) > std::min(block_state_l_idx[i],m_max))
       {
         EndRun(
-          "'block_state - m_index' must not exceed its corresponding l_index. "
+          "'block_state - m_index' neither can exceed its 'l_index' nor 'm_max'. "
           "Double check input file.");
       }
 
