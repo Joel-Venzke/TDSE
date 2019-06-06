@@ -60,6 +60,10 @@ class Wavefunction : protected Utils
   PetscLogEvent time_block_pathways;
   PetscLogEvent time_insert_radial_psi;
 
+  /* Block Pathways Stuff*/
+  Vec *psi_to_block; /*Array of petsc vectors to project out at every timestep*/
+                    /*Reading in from VecLoad causes major slowdown*/
+
   /* SAE stuff */
   double *z;                        ///< atomic number of each nuclei
   double **location;                ///< location of each nuclei

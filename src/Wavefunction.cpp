@@ -29,6 +29,17 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   write_counter_projections = 0;
   order                     = p.GetOrder();
 
+  /* Block Pathways Stuff*/
+  
+  if (p.GetNumBlockState()>0)
+  {
+  for (int i=0; i<p.GetNumBlockState(); ++i)
+    {
+      std::cout<<"TESTTTTTTTTTTTTTTT "<<p.GetNumBlockState()<<" TEEEEESSSTTT\n";
+    }
+  }
+
+
   /* SAE stuff */
   z                      = p.z.get();
   location               = p.GetLocation();
@@ -521,17 +532,17 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
 }
 
 /**
- * @brief Returns a vector of projections based on the states the given file
+ * @brief Modifies the wavefunction such that selected states are 
+ * projected out.
  *
  * @param file_name name of the file containing the eigen states
- * @return A vector of projections corresponding to that state
+ * @return nothing 
  */
 void Wavefunction::BlockPathways(std::string file_name)
 {
   PetscLogEventBegin(time_block_pathways, 0, 0, 0, 0);
   HDF5Wrapper h5_file(file_name);
   ViewWrapper viewer_file(file_name);
-  std::vector< dcomp > ret_vec;
 
   if (coordinate_system_idx == 3)
   {
@@ -563,7 +574,6 @@ void Wavefunction::BlockPathways(std::string file_name)
           Normalize(psi_proj, 0.0);
           VecPointwiseMult(psi_tmp, jacobian, psi_proj);
           VecDot(psi, psi_tmp, &projection_val);
-          ret_vec.push_back(projection_val);
         }
         viewer_file.PopGroup();
       }
@@ -575,7 +585,7 @@ void Wavefunction::BlockPathways(std::string file_name)
   }
   else
   {
-    EndRun("BlockPathways is only supported for spherical coordinates. "
+    EndRun("'BlockPathways' is only supported for spherical coordinates. "
            "Double check input file.");
   }
   PetscLogEventEnd(time_block_pathways, 0, 0, 0, 0);
