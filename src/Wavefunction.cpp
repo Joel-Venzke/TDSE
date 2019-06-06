@@ -526,7 +526,7 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
  * @param file_name name of the file containing the eigen states
  * @return A vector of projections corresponding to that state
  */
-std::vector< dcomp > Wavefunction::BlockPathways(std::string file_name)
+void Wavefunction::BlockPathways(std::string file_name)
 {
   PetscLogEventBegin(time_block_pathways, 0, 0, 0, 0);
   HDF5Wrapper h5_file(file_name);
@@ -575,31 +575,9 @@ std::vector< dcomp > Wavefunction::BlockPathways(std::string file_name)
   }
   else
   {
-    PetscInt file_states = h5_file.GetTimeIdx("/psi/") + 1;
-    if (file_states < num_states)
-    {
-      EndRun("Not enough states in the target file");
-    }
-    std::vector< dcomp > ret_vec;
-    dcomp projection_val;
-
-    viewer_file.Open("r");
-    for (int state_idx = 0; state_idx < num_states; ++state_idx)
-    {
-      /* Set time idx */
-      viewer_file.SetTime(state_idx);
-      viewer_file.ReadObject(psi_proj);
-      Normalize(psi_proj, 0.0);
-      VecPointwiseMult(psi_tmp, jacobian, psi_proj);
-      VecDot(psi, psi_tmp, &projection_val);
-      ret_vec.push_back(projection_val);
-    }
-    /* Close file */
-    viewer_file.Close();
+    
   }
-
   PetscLogEventEnd(time_block_pathways, 0, 0, 0, 0);
-  return ret_vec;
 }
 
 /**
