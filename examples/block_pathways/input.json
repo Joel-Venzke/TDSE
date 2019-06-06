@@ -1,0 +1,140 @@
+{
+  "alpha": 0.0,
+  "coordinate_system": "Spherical",
+  "delta_t": 0.01,
+  "dimensions": [
+    {
+      "delta_x_max": 0.3,
+      "delta_x_max_start": 4.0,
+      "delta_x_min": 0.3,
+      "delta_x_min_end": 4.0,
+      "dim_size": 150.0,
+      "l_max": 30,
+      "m_max": 0
+    }
+  ],
+  "ee_soft_core": 0.0,
+  "field_max_states": 0,
+  "free_propagate": 0,
+  "gauge": "Length",
+  "gobbler": 0.9,
+  "laser": {
+    "experiment_type": "default",
+    "frequency_shift": 1,
+    "pulses": [
+      {
+        "cep": 0.0,
+        "cycles_delay": 0.0,
+        "cycles_off": 1.0,
+        "cycles_on": 1.0,
+        "cycles_plateau": 0.0,
+        "ellipticity": 0.0,
+        "energy": 0.06,
+        "gaussian_length": 5.0,
+        "helicity": "left",
+        "intensity": 2E+14,
+        "polarization_vector": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "power_off": 2.0,
+        "power_on": 2.0,
+        "poynting_vector": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "pulse_shape": "sin"
+      }
+    ]
+  },
+  "num_electrons": 1,
+  "order": 4,
+  "propagate": 0,
+  "restart": 0,
+  "sigma": 3.0,
+  "start_state": {
+    "amplitude": [
+      1.0
+    ],
+    "m_index": [
+      0
+    ],
+    "l_index": [
+      0
+    ],
+    "n_index": [
+      1
+    ],
+    "phase": [
+      0.0
+    ]
+  },
+  "block_state": {
+    "m_index": [
+      0
+    ],
+    "l_index": [
+      1
+    ],
+    "n_index": [
+      2
+    ]
+  },
+  "state_solver": "SLEPC",
+  "states": 2,
+  "target": {
+    "name": "H",
+    "nuclei": [
+      {
+        "exponential_amplitude": [
+          0.0
+        ],
+        "exponential_decay_rate": [
+          0.0
+        ],
+        "exponential_r_0": [
+          0.0
+        ],
+        "gaussian_amplitude": [
+          0.0
+        ],
+        "gaussian_decay_rate": [
+          0.0
+        ],
+        "gaussian_r_0": [
+          0.0
+        ],
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "square_well_amplitude": [
+          0.0
+        ],
+        "square_well_r_0": [
+          0.0
+        ],
+        "square_well_width": [
+          0.0
+        ],
+        "yukawa_amplitude": [
+          0.0
+        ],
+        "yukawa_decay_rate": [
+          0.0
+        ],
+        "yukawa_r_0": [
+          0.0
+        ],
+        "z": 1.0
+      }
+    ]
+  },
+  "tol": 1E-10,
+  "write_frequency_checkpoint": 500,
+  "write_frequency_eigin_state": 100,
+  "write_frequency_observables": 1
+}
