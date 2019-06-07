@@ -2165,8 +2165,7 @@ Vec* Wavefunction::GetPsiSmall() { return &psi_small; }
 void Wavefunction::SetPsiBlock()
 {
   HDF5Wrapper h5_file(target_file_name);
-  Vec *ret_vec = NULL;
-  ret_vec = new Vec[num_block_state];
+  psi_block = new Vec[num_block_state];
   ViewWrapper viewer_file(target_file_name);
 
   if (coordinate_system_idx == 3)
@@ -2201,7 +2200,7 @@ void Wavefunction::SetPsiBlock()
                 block_state_l_idx[i] == l_idx and 
                 block_state_m_idx[i] == m_idx  )
             {
-              ret_vec[i] = psi_small_local;
+              psi_block[i] = psi_small_local;
             }
           }
         }
