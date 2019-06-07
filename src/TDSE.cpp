@@ -68,6 +68,11 @@ int main(int argc, char** argv)
     p_wrap.PopStage(); /* Eigen State */
   }
 
+  if (parameters.GetNumBlockState() !=0)
+  {
+    wavefunction.SetPsiBlock();
+  }
+
   p_wrap.PushStage("Propagation");
   if (parameters.GetPropagate() == 1)
   {

@@ -509,11 +509,10 @@ void Simulation::CrankNicolson(double dt, PetscInt time_idx, PetscInt dim_idx)
     KSPSolve(ksp, psi_right, *psi); 
   }
   else
-  {
-    wavefunction->GetPsiBlock();
+  {    
     /* Get psi_right side */
     MatMult(right, *psi, psi_right);
-    wavefunction->GetPsiBlock();
+
     /* Solve Ax=b */
     KSPSolve(ksp, psi_right, *psi); 
   }

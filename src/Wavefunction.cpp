@@ -34,7 +34,6 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   block_state_idx = p.GetBlockStateIdx();
   block_state_l_idx = p.GetBlockStateLIdx();
   block_state_m_idx = p.GetBlockStateMIdx();
-  psi_block = GetPsiBlock();
 
 
   /* SAE stuff */
@@ -2163,15 +2162,62 @@ Vec* Wavefunction::GetPsi() { return &psi; }
 
 Vec* Wavefunction::GetPsiSmall() { return &psi_small; }
 
-Vec* Wavefunction::GetPsiBlock()
+void Wavefunction::SetPsiBlock()
 {
   HDF5Wrapper h5_file(target_file_name);
   Vec *ret_vec = NULL;
-
   ret_vec = new Vec[num_block_state];
+  ViewWrapper viewer_file(target_file_name);
 
+  if (coordinate_system_idx == 3)
+  {
+    Vec psi_small_local;
+    VecCreateSeq(PETSC_COMM_SELF, num_x[2], &psi_small_local);
+    VecSetFromOptions(psi_small_local);
+    ierr = PetscObjectSetName((PetscObject)psi_small_local, "psi");
 
-  return ret_vec;
+    PetscInt file_states = h5_file.GetTimeIdx("/psi_l_0/psi/") + 1;
+    if (file_states < num_states)
+    {
+      EndRun("Not enough states in the target file");
+    }
+    dcomp projection_val;
+
+    viewer_file.Open("r");
+    for (int n_index = 1; n_index <= num_states; ++n_index)
+    {
+      for (int l_idx = 0; l_idx < fmin(n_index, l_max + 1); ++l_idx)
+      {
+        /* Set time idx */
+        viewer_file.SetTime(n_index - l_idx - 1);
+        viewer_file.PushGroup("psi_l_" + std::to_string(l_idx));
+        for (int m_idx = -1. * std::min(m_max, l_idx);
+             m_idx < std::min(m_max, l_idx) + 1; ++m_idx)
+        {
+          viewer_file.ReadObject(psi_small_local);
+          for (int i = 0; i<num_block_state; ++i)
+          {
+            if (block_state_idx[i]   == n_index and 
+                block_state_l_idx[i] == l_idx and 
+                block_state_m_idx[i] == m_idx  )
+            {
+              ret_vec[i] = psi_small_local;
+            }
+          }
+        }
+        viewer_file.PopGroup();
+      }
+    }
+    /* Close file */
+    viewer_file.Close();
+
+    VecDestroy(&psi_small_local);
+  }
+  else
+  {
+    EndRun("'BlockPathways' is only supported for spherical coordinates. "
+           "Double check input file.");
+  }
 }
 
 double** Wavefunction::GetXValue() { return x_value; }
