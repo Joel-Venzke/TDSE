@@ -534,50 +534,23 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
  * @param file_name name of the file containing the eigen states
  * @return nothing 
  */
-void Wavefunction::BlockPathways(std::string file_name)
+void Wavefunction::BlockPathways()
 {
   PetscLogEventBegin(time_block_pathways, 0, 0, 0, 0);
-  HDF5Wrapper h5_file(file_name);
-  ViewWrapper viewer_file(file_name);
+  HDF5Wrapper h5_file(target_file_name);
+  ViewWrapper viewer_file(target_file_name);
 
   if (coordinate_system_idx == 3)
   {
-    Vec psi_small_local;
-    VecCreateSeq(PETSC_COMM_SELF, num_x[2], &psi_small_local);
-    VecSetFromOptions(psi_small_local);
-    ierr = PetscObjectSetName((PetscObject)psi_small_local, "psi");
-
-    PetscInt file_states = h5_file.GetTimeIdx("/psi_l_0/psi/") + 1;
-    if (file_states < num_states)
-    {
-      EndRun("Not enough states in the target file");
-    }
     dcomp projection_val;
-
-    viewer_file.Open("r");
-    for (int n_index = 1; n_index <= num_states; ++n_index)
+    PetscReal norm;
+    for (int i = 0; i<num_block_state; ++i)
     {
-      for (int l_idx = 0; l_idx < fmin(n_index, l_max + 1); ++l_idx)
-      {
-        /* Set time idx */
-        viewer_file.SetTime(n_index - l_idx - 1);
-        viewer_file.PushGroup("psi_l_" + std::to_string(l_idx));
-        for (int m_idx = -1. * std::min(m_max, l_idx);
-             m_idx < std::min(m_max, l_idx) + 1; ++m_idx)
-        {
-          viewer_file.ReadObject(psi_small_local);
-          InsertRadialPsi(psi_small_local, psi_proj, l_idx, m_idx);
-          Normalize(psi_proj, 0.0);
-          VecPointwiseMult(psi_tmp, jacobian, psi_proj);
-          VecDot(psi, psi_tmp, &projection_val);
-        }
-        viewer_file.PopGroup();
-      }
-    }
-    /* Close file */
-    viewer_file.Close();
 
-    VecDestroy(&psi_small_local);
+      InsertRadialPsi(psi_block[i], psi_proj, block_state_l_idx[i],
+                      block_state_m_idx[i]);
+      VecDot(psi, psi_tmp, &projection_val);
+    }
   }
   else
   {
@@ -2181,7 +2154,6 @@ void Wavefunction::SetPsiBlock()
       EndRun("Not enough states in the target file");
     }
     dcomp projection_val;
-
     viewer_file.Open("r");
     for (int n_index = 1; n_index <= num_states; ++n_index)
     {
@@ -2209,8 +2181,6 @@ void Wavefunction::SetPsiBlock()
     }
     /* Close file */
     viewer_file.Close();
-
-    VecDestroy(&psi_small_local);
   }
   else
   {
@@ -2258,6 +2228,13 @@ Wavefunction::~Wavefunction()
     for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
     {
       MatDestroy(&position_mat[dim_idx]);
+    }
+  }
+  if (num_block_state != 0)
+  {
+    for (int i =0; i<num_block_state;++i)
+    {
+      VecDestroy(&psi_block[i]);
     }
   }
 }

@@ -144,7 +144,7 @@ class Wavefunction : protected Utils
   double GetGobbler();
   PetscInt GetProjectionSize();
   std::vector< dcomp > Projections(std::string file_name);
-  void BlockPathways(std::string file_name);
+  void BlockPathways();
   void ProjectOut(std::string file_name, HDF5Wrapper &h5_file,
                   ViewWrapper &viewer_file, double time);
   void LoadPsi(std::string file_name, PetscInt num_states,
