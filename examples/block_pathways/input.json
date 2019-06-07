@@ -8,8 +8,8 @@
       "delta_x_max_start": 4.0,
       "delta_x_min": 0.3,
       "delta_x_min_end": 4.0,
-      "dim_size": 150.0,
-      "l_max": 30,
+      "dim_size": 60.0,
+      "l_max": 10,
       "m_max": 0
     }
   ],
@@ -32,7 +32,7 @@
         "energy": 0.06,
         "gaussian_length": 5.0,
         "helicity": "left",
-        "intensity": 2E+14,
+        "intensity": 2E+11,
         "polarization_vector": [
           0.0,
           0.0,
@@ -50,7 +50,7 @@
     ]
   },
   "num_electrons": 1,
-  "order": 4,
+  "order": 2,
   "propagate": 1,
   "restart": 0,
   "sigma": 3.0,
@@ -76,10 +76,10 @@
       0
     ],
     "l_index": [
-      1
+      0
     ],
     "n_index": [
-      2
+      1
     ]
   },
   "state_solver": "SLEPC",

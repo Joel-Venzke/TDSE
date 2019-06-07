@@ -549,7 +549,8 @@ void Wavefunction::BlockPathways()
 
       InsertRadialPsi(psi_block[i], psi_proj, block_state_l_idx[i],
                       block_state_m_idx[i]);
-      VecDot(psi, psi_tmp, &projection_val);
+      VecDot(psi, psi_proj, &projection_val);
+      VecAXPY(psi,-projection_val,psi_proj);
     }
   }
   else
