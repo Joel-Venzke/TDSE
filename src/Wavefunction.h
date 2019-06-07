@@ -61,7 +61,11 @@ class Wavefunction : protected Utils
   PetscLogEvent time_insert_radial_psi;
 
   /* Block Pathways Stuff*/
-  Vec *psi_to_block; /*Array of petsc vectors to project out at every timestep*/
+  PetscInt num_block_state;
+  PetscInt *block_state_idx;
+  PetscInt *block_state_l_idx;
+  PetscInt *block_state_m_idx;
+  Vec *psi_block; /*Array of petsc vectors to project out at every timestep*/
                     /*Reading in from VecLoad causes major slowdown*/
 
   /* SAE stuff */
@@ -172,6 +176,7 @@ class Wavefunction : protected Utils
   PetscInt GetNumPsiBuild();
   Vec *GetPsi();
   Vec *GetPsiSmall();
+  Vec *GetPsiBlock();
   double **GetXValue();
   PetscInt *GetLValues();
   PetscInt *GetMValues();

@@ -466,6 +466,7 @@ void Simulation::EigenSolve(PetscInt num_states)
  */
 void Simulation::CrankNicolson(double dt, PetscInt time_idx, PetscInt dim_idx)
 {
+  Vec *test;
   static PetscInt old_time_idx = -2;
   static PetscInt old_dim_idx  = -2;
   if (time_idx != old_time_idx or dim_idx != old_dim_idx)
@@ -509,10 +510,10 @@ void Simulation::CrankNicolson(double dt, PetscInt time_idx, PetscInt dim_idx)
   }
   else
   {
-    wavefunction->BlockPathways(parameters->GetTarget() + ".h5");
+    wavefunction->GetPsiBlock();
     /* Get psi_right side */
     MatMult(right, *psi, psi_right);
-    wavefunction->BlockPathways(parameters->GetTarget() + ".h5");
+    wavefunction->GetPsiBlock();
     /* Solve Ax=b */
     KSPSolve(ksp, psi_right, *psi); 
   }

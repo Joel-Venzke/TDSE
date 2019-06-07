@@ -29,15 +29,12 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
   write_counter_projections = 0;
   order                     = p.GetOrder();
 
-  /* Block Pathways Stuff*/
-  
-  if (p.GetNumBlockState()>0)
-  {
-  for (int i=0; i<p.GetNumBlockState(); ++i)
-    {
-      std::cout<<"TESTTTTTTTTTTTTTTT "<<p.GetNumBlockState()<<" TEEEEESSSTTT\n";
-    }
-  }
+  /* block pathways stuff */
+  num_block_state = p.GetNumBlockState();
+  block_state_idx = p.GetBlockStateIdx();
+  block_state_l_idx = p.GetBlockStateLIdx();
+  block_state_m_idx = p.GetBlockStateMIdx();
+  psi_block = GetPsiBlock();
 
 
   /* SAE stuff */
@@ -2165,6 +2162,17 @@ PetscInt Wavefunction::GetNumPsiBuild() { return num_psi_build; }
 Vec* Wavefunction::GetPsi() { return &psi; }
 
 Vec* Wavefunction::GetPsiSmall() { return &psi_small; }
+
+Vec* Wavefunction::GetPsiBlock()
+{
+  HDF5Wrapper h5_file(target_file_name);
+  Vec *ret_vec = NULL;
+
+  ret_vec = new Vec[num_block_state];
+
+
+  return ret_vec;
+}
 
 double** Wavefunction::GetXValue() { return x_value; }
 
