@@ -534,7 +534,7 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
  * @param file_name name of the file containing the eigen states
  * @return nothing 
  */
-void Wavefunction::BlockPathways()
+void Wavefunction::BlockPathways(Vec *psi_new)
 {
   PetscLogEventBegin(time_block_pathways, 0, 0, 0, 0);
   HDF5Wrapper h5_file(target_file_name);
@@ -549,8 +549,8 @@ void Wavefunction::BlockPathways()
 
       InsertRadialPsi(psi_block[i], psi_proj, block_state_l_idx[i],
                       block_state_m_idx[i]);
-      VecDot(psi, psi_proj, &projection_val);
-      VecAXPY(psi,-projection_val,psi_proj);
+      VecDot(*psi_new, psi_proj, &projection_val);
+      VecAXPY(*psi_new,-projection_val,psi_proj);
     }
   }
   else
@@ -2140,6 +2140,7 @@ void Wavefunction::SetPsiBlock()
 {
   HDF5Wrapper h5_file(target_file_name);
   psi_block = new Vec[num_block_state];
+  Vec blahhhhh;
   ViewWrapper viewer_file(target_file_name);
 
   if (coordinate_system_idx == 3)
@@ -2173,7 +2174,8 @@ void Wavefunction::SetPsiBlock()
                 block_state_l_idx[i] == l_idx and 
                 block_state_m_idx[i] == m_idx  )
             {
-              psi_block[i] = psi_small_local;
+              VecDuplicate(psi_small_local,&psi_block[i]);
+              VecCopy(psi_small_local,psi_block[i]);
             }
           }
         }
@@ -2182,6 +2184,7 @@ void Wavefunction::SetPsiBlock()
     }
     /* Close file */
     viewer_file.Close();
+    VecDestroy(&psi_small_local);
   }
   else
   {

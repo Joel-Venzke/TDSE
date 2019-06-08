@@ -1,7 +1,7 @@
 {
   "alpha": 0.0,
   "coordinate_system": "Spherical",
-  "delta_t": 0.01,
+  "delta_t": 0.1,
   "dimensions": [
     {
       "delta_x_max": 0.3,
@@ -56,30 +56,38 @@
   "sigma": 3.0,
   "start_state": {
     "amplitude": [
-      1.0
+      0.70710678118,
+      0.70710678118
     ],
     "m_index": [
+      0,
       0
     ],
     "l_index": [
+      0,
       0
     ],
     "n_index": [
-      1
+      1,
+      2
     ],
     "phase": [
+      0.0,
       0.0
     ]
   },
   "block_state": {
     "m_index": [
+      0,
       0
     ],
     "l_index": [
+      0,
       0
     ],
     "n_index": [
-      1
+      1,
+      2
     ]
   },
   "state_solver": "SLEPC",
