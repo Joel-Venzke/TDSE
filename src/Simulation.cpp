@@ -511,7 +511,6 @@ void Simulation::CrankNicolson(double dt, PetscInt time_idx, PetscInt dim_idx)
   else
   {    
     /* Get psi_right side */
-    wavefunction->BlockPathways(psi);
     MatMult(right, *psi, psi_right);
     wavefunction->BlockPathways(&psi_right);
     /* Solve Ax=b */

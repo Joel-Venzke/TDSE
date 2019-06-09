@@ -393,7 +393,6 @@ void Parameters::Setup(std::string file_name)
   {
     for (PetscInt i = 0; i < num_block_state; i++)
     {
-
       block_state_idx[i] = data["block_state"]["n_index"][i];
 
       if (block_state_idx[i] > num_states)
@@ -420,7 +419,17 @@ void Parameters::Setup(std::string file_name)
           "'block_state - m_index' neither can exceed its 'l_index' nor 'm_max'. "
           "Double check input file.");
       }
-
+      for (PetscInt j = 0; j<num_start_state;++j)
+      {
+        if(block_state_idx[i]   == start_state_idx[j]   and 
+           block_state_l_idx[i] == start_state_l_idx[j] and 
+           block_state_m_idx[i] == start_state_m_idx[j])
+        {
+          EndRun(
+            "'block_state' cannot block a state in start_state. "
+            "Double check input file.");
+        }
+      }
     }
 
   }
