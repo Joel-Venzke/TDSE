@@ -4,12 +4,12 @@
   "delta_t": 0.1,
   "dimensions": [
     {
-      "delta_x_max": 0.3,
+      "delta_x_max": 0.1,
       "delta_x_max_start": 4.0,
-      "delta_x_min": 0.3,
+      "delta_x_min": 0.1,
       "delta_x_min_end": 4.0,
-      "dim_size": 60.0,
-      "l_max": 10,
+      "dim_size": 100.0,
+      "l_max": 50,
       "m_max": 0
     }
   ],
@@ -51,47 +51,39 @@
   },
   "num_electrons": 1,
   "order": 2,
-  "propagate": 1,
+  "propagate": 0,
   "restart": 0,
   "sigma": 3.0,
   "start_state": {
     "amplitude": [
-      0.70710678118,
-      0.70710678118
+      1.0
     ],
     "m_index": [
-      0,
       0
     ],
     "l_index": [
-      0,
       0
     ],
     "n_index": [
-      1,
-      2
+      1
     ],
     "phase": [
-      0.0,
       0.0
     ]
   },
   "block_state": {
     "m_index": [
-      0,
       0
     ],
     "l_index": [
-      0,
       0
     ],
     "n_index": [
-      1,
       2
     ]
   },
   "state_solver": "SLEPC",
-  "states": 2,
+  "states": 3,
   "target": {
     "name": "H",
     "nuclei": [
