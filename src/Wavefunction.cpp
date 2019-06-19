@@ -1622,7 +1622,6 @@ double Wavefunction::GetLMaskVal(PetscInt idx)
   {
     double factor = (l_max - l_min) * 2.0 / pi;
     ret_val = pow(cos((l_value - l_min) / factor), 1.0/8.0);
-    std::cout << ret_val << "\t " ;
     return ret_val;
   }
   
