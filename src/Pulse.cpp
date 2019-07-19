@@ -188,6 +188,7 @@ void Pulse::ReadPulseFromFile()
 {
   PetscInt file_time_size  = 0;
   PetscInt file_pulse_size = 0;
+  double time_0 = 0.0;
 
   json data  = FileToJson("pulses.json");
   file_time  = new double*[num_pulses];
@@ -204,10 +205,13 @@ void Pulse::ReadPulseFromFile()
     }
     file_time[pulse_idx]  = new double[file_time_size];
     file_pulse[pulse_idx] = new double[file_time_size];
+    time_0 = data["pulses"][pulse_idx]["time"][0];
     for (int time_idx = 0; time_idx < file_time_size; ++time_idx)
     {
       file_time[pulse_idx][time_idx] =
           data["pulses"][pulse_idx]["time"][time_idx];
+      // set initial time to zero
+      file_time[pulse_idx][time_idx] -= time_0;
       file_pulse[pulse_idx][time_idx] =
           data["pulses"][pulse_idx]["field"][time_idx];
     }
@@ -241,7 +245,7 @@ void Pulse::InitializeTime()
  */
 double Pulse::Interpolate(PetscInt pulse_idx, double time)
 {
-  if (time > file_time[pulse_idx][file_size[pulse_idx] - 1]) return 0.0;
+  if (time >= file_time[pulse_idx][file_size[pulse_idx] - 1]) return 0.0;
   PetscInt time_idx = 1;
   double slope;
   while (time >= file_time[pulse_idx][time_idx]) time_idx++;
