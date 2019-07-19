@@ -582,17 +582,14 @@ void Parameters::Setup(std::string file_name)
       helicity_idx[pulse_idx]    = 0;
       gaussian_length[pulse_idx] = 5.0;
 
-      if (num_dims == 3)
-      {
-        poynting_vector[pulse_idx]    = new double[num_dims];
-        poynting_vector[pulse_idx][0] = 0.0;
-        poynting_vector[pulse_idx][1] = 0.0;
-        poynting_vector[pulse_idx][2] = 1.0;
-      }
-
       /* Get polarization */
       polarization_vector[pulse_idx] = new double[num_dims];
       polar_norm                     = 0.0;
+      if (num_dims == 3)
+      {
+        poynting_vector[pulse_idx] = new double[num_dims];
+        poynting_norm              = 0.0;
+      }
       for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
       {
         CheckParameter(
@@ -603,6 +600,18 @@ void Parameters::Setup(std::string file_name)
             data["laser"]["pulses"][pulse_idx]["polarization_vector"][dim_idx];
         polar_norm += polarization_vector[pulse_idx][dim_idx] *
                       polarization_vector[pulse_idx][dim_idx];
+
+        if (num_dims == 3)
+        {
+          CheckParameter(
+              data["laser"]["pulses"][pulse_idx]["poynting_vector"][dim_idx]
+                  .size(),
+              "laser - pulses - poynting_vector");
+          poynting_vector[pulse_idx][dim_idx] =
+              data["laser"]["pulses"][pulse_idx]["poynting_vector"][dim_idx];
+          poynting_norm += poynting_vector[pulse_idx][dim_idx] *
+                           poynting_vector[pulse_idx][dim_idx];
+        }
       }
       /* normalize the polarization vector*/
       if (polar_norm < 1e-10)
@@ -610,9 +619,21 @@ void Parameters::Setup(std::string file_name)
         EndRun("Polarization Vector has Norm of Zero");
       }
       polar_norm = sqrt(polar_norm);
+      if (num_dims == 3)
+      {
+        if (poynting_norm < 1e-10)
+        {
+          EndRun("Poynting Vector has Norm of Zero");
+        }
+        poynting_norm = sqrt(poynting_norm);
+      }
       for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
       {
         polarization_vector[pulse_idx][dim_idx] /= polar_norm;
+        if (num_dims == 3 and poynting_norm > 1e-10)
+        {
+          poynting_vector[pulse_idx][dim_idx] /= poynting_norm;
+        }
       }
     }
   }

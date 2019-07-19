@@ -561,7 +561,7 @@ for n_value in range(1, by_n_value.shape[1]):
         marker='o',
         label="n=" + str(n_value),
         color=colors[n_value % len(colors)],
-        linestyle=linestyles[(n_value / len(colors)) % len(linestyles)])
+        linestyle=linestyles[(n_value // len(colors)) % len(linestyles)])
 
 plt.ylabel("Population")
 plt.xlabel("Time (a.u.)")
@@ -622,7 +622,7 @@ for l_value in range(by_l_value.shape[1]):
         marker='o',
         label=label,
         color=colors[l_value % len(colors)],
-        linestyle=linestyles[(l_value / len(colors)) % len(linestyles)])
+        linestyle=linestyles[(l_value // len(colors)) % len(linestyles)])
 
 plt.ylabel("Population")
 plt.xlabel("Time (a.u.)")

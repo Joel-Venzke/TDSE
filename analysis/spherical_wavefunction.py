@@ -99,47 +99,47 @@ r_max = psi_cooridnate_values[2].max()
 cmaps = ['cividis']
 # pre-calculate grid so the plotting can be vectorized
 print("Calculating index set for xy plane")
-# x, y, z, r, theta, phi, r_vals = cacluate_xy_plane(psi_cooridnate_values,
-#                                                    r_max, r_max, 1000)
+x, y, z, r, theta, phi, r_vals = cacluate_xy_plane(psi_cooridnate_values,
+                                                   r_max, r_max, 1000)
 
-# fig = plt.figure(figsize=(12, 9), dpi=80)
-# for i, psi in enumerate(psi_value):
-#     if i > 0:  # the 0th index is garbage
-#         print("plotting", i)
-#         psi = psi[:, 0] + 1j * psi[:, 1]
-#         psi.shape = shape
-#         psi_norm = np.sqrt((psi * psi.conjugate()).sum())
-#         for l in np.arange(0, psi_cooridnate_values[1].shape[0]):
-#             print("Magnitude of (l,m) " + str(l_values[l]) + "," +
-#                   str(m_values[l]) + ": " + str((np.sqrt(
-#                       (psi[0, l, :] * psi[0, l, :].conjugate()).sum()) /
-#                                                  psi_norm).real))
-#         plane_data = get_data(psi, psi_cooridnate_values, r, theta, phi,
-#                               r_vals, l_values, m_values)[:, :, 0]
-#         cs = plt.imshow(
-#             (np.abs(plane_data)**2),
-#             norm=LogNorm(1e-5),
-#             extent=[-r_max, r_max, -r_max, r_max],
-#             cmap=cmaps[int(i / 50) % len(cmaps)])
-#         plt.colorbar(cs)
-#         plt.ylabel("y-axis (a.u.)")
-#         plt.xlabel("x-axis (a.u.)")
-#         plt.tight_layout()
-#         plt.savefig("figs/wave_xy_" + str(i).zfill(8) + ".png")
-#         plt.clf()
+fig = plt.figure(figsize=(12, 9), dpi=80)
+for i, psi in enumerate(psi_value):
+    if i > 0:  # the 0th index is garbage
+        print("plotting", i)
+        psi = psi[:, 0] + 1j * psi[:, 1]
+        psi.shape = shape
+        psi_norm = np.sqrt((psi * psi.conjugate()).sum())
+        for l in np.arange(0, psi_cooridnate_values[1].shape[0]):
+            print("Magnitude of (l,m) " + str(l_values[l]) + "," +
+                  str(m_values[l]) + ": " + str((np.sqrt(
+                      (psi[0, l, :] * psi[0, l, :].conjugate()).sum()) /
+                                                 psi_norm).real))
+        plane_data = get_data(psi, psi_cooridnate_values, r, theta, phi,
+                              r_vals, l_values, m_values)[:, :, 0]
+        cs = plt.imshow(
+            (np.abs(plane_data)**2),
+            norm=LogNorm(1e-5),
+            extent=[-r_max, r_max, -r_max, r_max],
+            cmap=cmaps[int(i / 50) % len(cmaps)])
+        plt.colorbar(cs)
+        plt.ylabel("y-axis (a.u.)")
+        plt.xlabel("x-axis (a.u.)")
+        plt.tight_layout()
+        plt.savefig("figs/wave_xy_" + str(i).zfill(8) + ".png")
+        plt.clf()
 
-#         cs = plt.imshow(
-#             (np.angle(plane_data)),
-#             extent=[-r_max, r_max, -r_max, r_max],
-#             cmap='twilight',
-#             vmin=-np.pi,
-#             vmax=np.pi)
-#         plt.colorbar(cs)
-#         plt.ylabel("y-axis (a.u.)")
-#         plt.xlabel("x-axis (a.u.)")
-#         plt.tight_layout()
-#         plt.savefig("figs/wave_xy_phase_" + str(i).zfill(8) + ".png")
-#         plt.clf()
+        cs = plt.imshow(
+            (np.angle(plane_data)),
+            extent=[-r_max, r_max, -r_max, r_max],
+            cmap='twilight',
+            vmin=-np.pi,
+            vmax=np.pi)
+        plt.colorbar(cs)
+        plt.ylabel("y-axis (a.u.)")
+        plt.xlabel("x-axis (a.u.)")
+        plt.tight_layout()
+        plt.savefig("figs/wave_xy_phase_" + str(i).zfill(8) + ".png")
+        plt.clf()
 
 print("Calculating index set for xz plane")
 x, y, z, r, theta, phi, r_vals = cacluate_xz_plane(psi_cooridnate_values,
