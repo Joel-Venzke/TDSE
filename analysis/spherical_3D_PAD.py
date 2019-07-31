@@ -63,23 +63,25 @@ def get_k_sphere(energy, psi, r, l_max, m_max, potential, target, d_angle = 0.01
     return_psi = np.zeros(phi.shape,dtype=complex)
     r_length = r.shape[0]
     lm_idx = 0
-    for l_val in np.arange(0, l_max + 1):
-        phase_shift, k_vec = get_state(r, energy, l_val, potential)
-        m_range = min(l_val, m_max)
-        for m_val in np.arange(-m_range, m_range + 1):
-            lower_idx = lm_idx*r_length
-            upper_idx = (lm_idx+1)*r_length
-            # project out bound states
-            try:
-                for psi_bound in target["/psi_l_"+str(l_val)+"/psi"]:
-                    psi_bound = psi_bound[:,0] + 1.j*psi_bound[:,1]
-                    psi[lower_idx:upper_idx] -= np.sum(psi_bound.conj()*psi[lower_idx:upper_idx])*psi_bound
-            except:
-                pass
-            coef = np.exp(-1.j*phase_shift)*1.j**l_val* np.sum(k_vec.conj()*psi[lower_idx:upper_idx])
-
-            return_psi += coef*sph_harm(m_val, l_val, phi, theta)
-            lm_idx += 1 
+    with open("spherical_harm_TDSE_"+fold+".txt","w") as f:
+        f.write("# l, m, |Y_lm|\n")
+        for l_val in np.arange(0, l_max + 1):
+            phase_shift, k_vec = get_state(r, energy, l_val, potential)
+            m_range = min(l_val, m_max)
+            for m_val in np.arange(-m_range, m_range + 1):
+                lower_idx = lm_idx*r_length
+                upper_idx = (lm_idx+1)*r_length
+                # project out bound states
+                try:
+                    for psi_bound in target["/psi_l_"+str(l_val)+"/psi"]:
+                        psi_bound = psi_bound[:,0] + 1.j*psi_bound[:,1]
+                        psi[lower_idx:upper_idx] -= np.sum(psi_bound.conj()*psi[lower_idx:upper_idx])*psi_bound
+                except:
+                    pass
+                coef = np.exp(-1.j*phase_shift)*1.j**l_val* np.sum(k_vec.conj()*psi[lower_idx:upper_idx])
+                f.write(str(l_val)+", "+str(m_val)+", "+str(np.abs(coef))+"\n")
+                return_psi += coef*sph_harm(m_val, l_val, phi, theta)
+                lm_idx += 1 
     max_angles = [np.argmax(np.abs(return_psi)**2)]
     return phi, theta, return_psi
 

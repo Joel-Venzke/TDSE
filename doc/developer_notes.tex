@@ -857,31 +857,27 @@ The following is an input file for simulating an 8 cycle, 800nm, sine squared pu
 \begin{verbatim}
 {
   "alpha": 0.0,
-  "coordinate_system": "Cylindrical",
-  "delta_t": 0.1,
+  "coordinate_system": "Spherical",
+  "delta_t": 0.05,
   "dimensions": [
   {
       "delta_x_max": 0.1,
       "delta_x_max_start": 4.0,
       "delta_x_min": 0.1,
       "delta_x_min_end": 4.0,
-      "dim_size": 100.0
-    },
-    {
-      "delta_x_max": 0.1,
-      "delta_x_max_start": 4.0,
-      "delta_x_min": 0.1,
-      "delta_x_min_end": 4.0,
-      "dim_size": 200.0
+      "dim_size": 100.0,
+      "l_max": 30, 
+      "m_max": 0
     }
   ],
   "ee_soft_core": 0.01,
   "field_max_states": 0,
   "free_propagate": 0,
-  "gauge": "Velocity",
+  "gauge": "Length",
   "gobbler": 0.9,
   "laser": {
     "experiment_type": "default",
+    "frequency_shift": 1,
     "pulses": [
       {
         "cep": 0.0,
@@ -903,14 +899,16 @@ The following is an input file for simulating an 8 cycle, 800nm, sine squared pu
     ]
   },
   "num_electrons": 1,
-  "order": 2,
+  "order": 4,
   "propagate": 1,
   "restart": 0,
   "sigma": 3.0,
   "start_state": {
-    "amplitude": [1.0],
-    "index": [0],
-    "phase": [0.0]
+    "amplitude": [0.5, 0.5], 
+    "l_index": [0, 1], 
+    "m_index": [0, 0], 
+    "n_index": [1, 2], 
+    "phase": [0.0, 0.0]
   },
   "state_solver": "SLEPC",
   "states": 5,
@@ -943,6 +941,60 @@ The following is an input file for simulating an 8 cycle, 800nm, sine squared pu
 \end{verbatim}
 % subsection example_file (end)
 
+\subsection{Coordinate Systems} % (fold)
+\label{sub:coordinate_systems}
+How long the calculation will take is largely dependent on the coordinate system you choose. If possible, I recommend utilizing the spherical coordinate system when possible. It is the most limited as far as targets (currently only supports spherically symmetric), but its runtime is orders of magnitude faster. Cylindrical is the second fastest and supports cylindrically symmetric potentials with 
+\subsubsection{Spherical} % (fold)
+\label{ssub:spherical}
+\begin{verbatim}
+"dimensions": [{
+      "delta_x_max": 0.1,
+      "delta_x_max_start": 4.0,
+      "delta_x_min": 0.1,
+      "delta_x_min_end": 4.0,
+      "dim_size": 100.0,
+      "l_max": 10, 
+      "m_max": 0
+}],
+
+"start_state": {
+    "amplitude": [0.5, 0.5], 
+    "l_index": [0, 1], 
+    "m_index": [0, 1], 
+    "n_index": [1, 2], 
+    "phase": [0.0, 0.0]
+},
+\end{verbatim}
+% subsubsection spherical (end)
+
+\subsubsection{Cartesian and Cylindrical} % (fold)
+\label{ssub:cartesian_and_cylindrical}
+\begin{verbatim}
+"dimensions": [{
+      "delta_x_max": 0.1,
+      "delta_x_max_start": 4.0,
+      "delta_x_min": 0.1,
+      "delta_x_min_end": 4.0,
+      "dim_size": 100.0
+},
+{
+      "delta_x_max": 0.1,
+      "delta_x_max_start": 4.0,
+      "delta_x_min": 0.1,
+      "delta_x_min_end": 4.0,
+      "dim_size": 100.0
+}],
+
+"start_state": {
+    "amplitude": [0.5, 0.5], 
+    "index": [0, 1],  
+    "phase": [0.0, 0.0]
+}
+\end{verbatim}
+% subsubsection cartesian_and_cylindrical (end)
+
+% subsection coordinate_system_quirks (end)
+
 \subsection{Parameters} % (fold)
 \label{sub:parameters_input}
 The following is my attempt as describing what each parameter does. Each parameter is a subsubsection and they should come in the order of the example input file in Sec~\ref{sub:example_file}. Sub section names for nested parameters include a ``-'' to show that the parameter is either part of a list or dictionary of a different parameter. This is shown in Sec~\ref{ssub:dimensions-dim_size} as ``dim\_size'' is a sub parameter of the ``dimensions'' parameter.  Some of the parameters have extra descriptions that are critical to reproduce results from other codes. This may lead to some lengthy discussion that may not be useful for all users. If you have questions on particular parameters or more general questions, let me know.
@@ -959,6 +1011,7 @@ where $r$ is the standard Euclidean distance.
 \subsubsection{coordinate\_system}
 This describes the available coordinate systems available. Current list of available coordinate systems is (make sure to use ASCII quotes, don't just copy and paste)
 \begin{itemize}
+  \item ``Spherical'' (Recommended)
   \item ``Cartesian''
   \item ``Cylindrical''
   \item ``RBF'' (beta)
@@ -989,6 +1042,14 @@ delta\_x\_min\_end is the distance from the origin that the sine squared ramp up
 \subsubsection{dimensions - dim\_size}
 \label{ssub:dimensions-dim_size}
 dim\_size is the total size of the dimension in atomic units. For all Cartesian and the $z$ axis in Cylindrical, the grid will go from -dim\_size/2 to dim\_size/2. For the $\rho$ dimension in Cylindrical, the grid will go from 0 to dim\_size.
+
+\subsubsection{dimensions - l\_max}
+\label{ssub:dimensions-l_max}
+l\_max is the maximum angular momentum quantum number used by the spherical harmonic expansion. For few photon ionizations at reasonable intensities, values of 5-20 are typical. For HHG spectra from 30 to 100+ are used depending on the desired accuracy.
+
+\subsubsection{dimensions - m\_max}
+\label{ssub:dimensions-m_max}
+m\_max is the maximum angular momentum projection quantum number used by the spherical harmonic expansion. For linear polarized lasers along the z axis (assuming the ground state is m=0) you can set m\_max=0 due to selection rules ($l\rightarrow l\pm1$ and $m\rightarrow m$). For any other laser polarization or initial conditions with m$\ne$0 you will need to set m\_max$>$0 and typically equal to l\_max. 
 
 \subsubsection{field\_max\_states}
 field\_max\_states allows for the peak of the electric field or vector potential to be used for eigenstate calculations. Utilizing this parameter is still in beta. Testing is required if this parameter is not set to 0. The following values can be set
@@ -1025,6 +1086,14 @@ The experiment\_type is how the laser is being used. The options are
   \item ``streaking''
 \end{itemize}
 Below is documentation for ``default''. Details on the others can be found in Sec~\ref{ssub:experiment_type}.
+
+\subsubsection{laser - frequency\_shift}
+\label{ssub:laser_parameter-frequency_shift}
+The frequency\_shift parameter corrects for the error when setting the central frequency of the A field rather than the E field (see Sec.~\ref{sub:lasers}). It only supports some lasers, but this could be fixed using numeric integrals. Let me know if you want to code this up. Otherwise it can be done manually.
+\begin{itemize}
+  \item frequency\_shift = 1. accounts for the shift (setting E field central frequency, preferred)
+  \item frequency\_shift = 0. central frequency is unchanged (setting A field central frequency for manual entry)
+\end{itemize}
 
 \subsubsection{laser - pulses}
 pulses is a list of dictionaries used to describe a pulse. Each component inside a single pulse is in the units of that pulse such as the length of a single cycle is based on the frequency of that particular pulse.
@@ -1119,7 +1188,16 @@ $a_n$ is the amplitude, $psi_n$ is the bound state, $\phi_n$ is the phase, $n$ i
 amplitude defines the $a_n$ in Eq.~\ref{eq:start_state} where $n$ is the index into this array. The initial wavefunction is normalized to one after being read in, so the amplitude array's values are only relative amounts.
 
 \subsubsection{start\_state - index}
-index is the $idx$ wavefunction in the bound state file being used. It takes the value of $idx$ in Eq.~\ref{eq:start_state} where $n$ is the index into this array. Note that the bound state file wavefunctions may have a random phase.
+index is the $idx$ wavefunction in the bound state file being used. It takes the value of $idx$ in Eq.~\ref{eq:start_state} where $n$ is the index into this array. Note that the bound state file wavefunctions may have a random phase. \textbf{This is not used in spherical code.}
+
+\subsubsection{start\_state - l\_index}
+The l quantum number for the initial state \textbf{used in the spherical code}. It is a list in the same order as the amplitude.
+
+\subsubsection{start\_state - m\_index}
+The m quantum number for the initial state \textbf{used in the spherical code}. It is a list in the same order as the amplitude.
+
+\subsubsection{start\_state - n\_index}
+The n quantum number for the initial state \textbf{used in the spherical code}. It is a list in the same order as the amplitude. (note if the grid is to small to support that n quantum number you may get a ``continuum state'')
 
 \subsubsection{start\_state - phase}
 phase is the value of $\phi_n$ in Eq.~\ref{eq:start_state} where $n$ is the index into this array. Note that the bound state file wavefunctions may have a random phase. If relative phase is important to your system take extra care when setting this.
