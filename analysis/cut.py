@@ -296,16 +296,42 @@ elif len(shape) == 2:
                 p_l = np.sum(ft_left) * dkx * dky
                 p_r = np.sum(ft_right) * dkx * dky
                 asymmetry = (p_l - p_r) / (p_l + p_r)
-                i_vector = np.unravel_index(
+                i_vector_total = np.unravel_index(
                     np.argmax(ft_full), (ft_full.shape[0], ft_full.shape[1]))
+                i_vector_right = np.unravel_index(
+                    np.argmax(ft_right), (ft_right.shape[0],
+                                          ft_right.shape[1]))
+                i_vector_left = np.unravel_index(
+                    np.argmax(ft_left), (ft_left.shape[0], ft_left.shape[1]))
                 #NOTE: for i_vector 0 is y, and 1 is x
                 # print "max location is y = " + str(kyc[i_vector[1]]) \
                 #     + "a.u., " + "x = " + str(kxc[i_vector[0]]) + "\n"
-                angle = np.arctan2(kyc[i_vector[1]], kxc[i_vector[0]])
-                k_max = np.sqrt(kyc[i_vector[1]]**2 + kxc[i_vector[0]]**2)
+                angle = np.arctan2(kyc[i_vector_total[1]],
+                                   kxc[i_vector_total[0]])
+                k_max = np.sqrt(kyc[i_vector_total[1]]**2 +
+                                kxc[i_vector_total[0]]**2)
                 print "asymmetry: " + str(asymmetry)
-                print "Angle: " + str(angle * 180 / np.pi)
-                print "Angle mod 180: " + str((angle * 180 / np.pi) % 180)
+                print "k_max total"
+                print "Angle total: " + str(angle * 180 / np.pi)
+                print "Angle total mod 180: " + str(
+                    (angle * 180 / np.pi) % 180)
+
+                angle = np.arctan2(kycr[i_vector_right[1]],
+                                   kxc[i_vector_right[0]])
+                k_max = np.sqrt(kycr[i_vector_right[1]]**2 +
+                                kxc[i_vector_right[0]]**2)
+                print "k_max right"
+                print "Angle right: " + str(angle * 180 / np.pi)
+                print "Angle right mod 180: " + str(
+                    (angle * 180 / np.pi) % 180)
+
+                angle = np.arctan2(kycl[i_vector_left[1]],
+                                   kxc[i_vector_left[0]])
+                k_max = np.sqrt(kycl[i_vector_left[1]]**2 +
+                                kxc[i_vector_left[0]]**2)
+                print "k_max left"
+                print "Angle left: " + str(angle * 180 / np.pi)
+                print "Angle left mod 180: " + str((angle * 180 / np.pi) % 180)
 
                 #testing whether rotation or not
                 # print "o.g. value is " + str(psi_fft[half][half])

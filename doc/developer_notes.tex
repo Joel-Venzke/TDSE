@@ -2,6 +2,7 @@
 \usepackage[margin=1in]{geometry}
 
 \usepackage{amsmath,graphicx}
+\usepackage{physics}
 
 \title{TDSE Code - User Guide, Best Practices, and Developers Notes}
 \author{J. Venzke}
@@ -16,26 +17,26 @@
 \label{sec:introduction}
 \subsection{Code Overview} % (fold)
 \label{sub:code_overview}
-The TDSE code discussed here was mainly developed by Joel Venzke while working on his Ph.D. in the Ultrafast Theory Group in JILA. Cory Goldsmith and other group members have also contributed to this code in various forms. It solves the Time Dependent Sch\"{o}dinger Equation (TDSE) for various targets in a laser field with for single active electrons. It has support for two or more active electrons, but the computational power of modern super computers limits the calculation that are possible to 2 electrons in 2 spacial dimensions. For single active electrons, I have developed a cylindrical 2D code for linear polarized light. All other calculations requirer use of the Cartesian grid code. Future work will look to push towards a 2 electron full 6D code, and extending the code to different coordinate systems/basis methods.
+The TDSE code discussed here was mainly developed by Joel Venzke while working on his Ph.D. in the Ultrafast Theory Group in JILA. Cory Goldsmith and other group members have also contributed to this code in various forms. It solves the Time Dependent Sch\"{o}dinger Equation (TDSE) for various targets in a laser field for a single active electron. It has support for two or more active electrons, but the computational power of modern super computers limits the calculation that are possible to 2 electrons in 2 spacial dimensions. For single active electrons, I have developed a cylindrical 2D code for linear polarized light. All other calculations requirer use of the Cartesian grid code. Future work will look to push towards a 2 electron full 6D code, and extending the code to different coordinate systems/basis methods.
 
-This code has support for real space propagation of the TDSE using finite differences for spacial derivatives and Crank-Nicolson for time propagation. The codes has been shown to scale out to 6,000+ processors (we ran out of computer). It can also simulate interesting physics on a laptop if you have a few hours of free time. The main drive for developing this code is to push simulations passed the current limit.
+This code has support for real space propagation of the TDSE using finite differences for spacial derivatives and Crank-Nicolson for time propagation. The codes has been shown to scale out to 3,000+ processors. It can also simulate interesting physics on a laptop if you have a few hours of free time. The main drive for developing this code is to allow for many types of laser interactions to be studies in a single code base.
 % subsection code_overview (end)
 
 \subsection{Problems of interest} % (fold)
 \label{sub:problems_of_interest}
-At the attosecond ($10^{-18} seconds$) time scale, molecular motion is frozen, and electron dynamics dominate all processes. In order to study how electrons interact with attosecond laser pulses, we solve the Time-Dependent Sch\"{o}dinger Equation (TDSE). This can be done relatively easily for 1 electron with linear polarized light, however, circular polarization and multi-electron effects make the calculations more computationally interesting. Gaining a deeper understanding the behavior of electrons induced by intense ultrashort laser pulses is the reason this code was developed.
+At the attosecond ($10^{-18} seconds$) time scale, molecular motion is frozen, and electron dynamics dominate all processes. In order to study how electrons interact with attosecond laser pulses, we solve the Time-Dependent Sch\"{o}dinger Equation (TDSE). This can be done relatively easily for 1 electron with linear polarized light, however, circular polarization and multi-electron effects make the calculations more computationally interesting. Gaining a deeper understanding the behavior of electrons induced by intense ultrashort laser pulses is the reason this code is being developed.
 % subsection problems_of_interest (end)
 
 
 \subsection{Development Goals} % (fold)
 \label{sub:development_goals}
-This code is being designed with large scale numeric simulation in mind. We want to be limited by the largest computer we can get our hands on, not the fastest desktop on the market. That being said, for small scale simulation, there are better more efficient codes. However, those codes will reach limitations due to hardware which is where a large scale code like this starts to shine. For that reason, MPI is used for parallelization so that we can utilize HPC systems.
+This code is being designed with large scale numeric simulation in mind. By limiting the code by the size of a supercomputer rather than the clock speed of a fast desktop, physics that would be otherwise out of reach can be studies provided one obtains the required computing resources. That being said, for small scale simulation, there are more efficient codes that take advantage of the shared memory architectures. However, those codes will reach limitations due to hardware which is where a large scale code like this starts to shine. For that reason, MPI is used for parallelization so that we can utilize HPC systems with distributed memory.
 
 Since this code is for physics, we want the users to be able to focus on physics rather than the computer science back end. As a result, the pipe dream is to have all simulations only require an input file with no need to write code. It maybe necessary to learn python for custom data visualizations, but many of the visualizations needed to analysis the results are included with the repo. You may also need to implement small c++ changes if you wish to simulate targets that do not fit the current layout or various other unsupported tasks, though I hope to make this code relatively general.
 
-It would also be nice that when the simulation is complete, the code produces enough plots to make sure that the simulation worked and a basic overview of the interesting physics the simulation contains. For this reason, all visualization is done in a batch mode and images are saved in a ``figs'' directory.
+It would also be nice that when the simulation is complete, the code produces enough plots to make sure that the simulation worked and a basic overview of the interesting physics the simulation contains. For this reason, all visualization is done in a batch mode and images are saved in a ``figs'' directory. You can use the Observables.h5 (Sec.~\ref{sub:observables_h5}) file to copy small datasets back to your local machine to further analyze the data.
 
-Finally, we want this code be useful in future iterations. Therefor we used GitHub for version control. We are also working on in source documentation to ease development efforts.
+Finally, I want this code be useful in future iterations. Therefor I used GitHub for version control. I have also been working on providing documentation to make the code more transparent and easier to use.
 % subsection development_goals (end)
 
 \subsection{Key Features} % (fold)
@@ -45,9 +46,9 @@ TODO
 
 \subsection{Recommended Programing Background} % (fold)
 \label{sub:recommended_programing_background}
-It is recommended you are familiar with python including the numpy, matplotlib, and h5py modules. This will allow you to make changes to the analysis software and analyze the results of the code beyond what already exists. It is also recommended you are familiar with the command prompt (terminal). Useful knowledge includes general bash commands such as cd, mkdir, sed, grep, chmod, and how to execute a binary file. There are other commands such as mpiexec, h5ls, and h5dump that are useful to know, but will be talked about when needed in this documentation. You should also become familiar with any schedulers you may need to use on the various clusters and super computers you plan to use.
+It is recommended you are familiar with python including the numpy, matplotlib, and h5py modules. This will allow you to make changes to the analysis software and analyze the results of the code beyond what already exists. It is also recommended you are familiar with the command prompt (terminal). Useful knowledge includes general bash commands such as cd, mkdir, sed, grep, chmod, and how to execute a binary file. There are other commands such as mpiexec, h5ls, and h5dump that are useful to know, but will be talked about when needed in this documentation. You should also become familiar with any schedulers you may need to use on the various clusters and super computers you plan to use. Most of the script associated with this package have been designed for SLURM with some being designed for Torque (PBS).
 
-If you need to update the main code, you will need knowledge of C++. Most updates at this point are standard C++ code, however, the PETSc and SLEPc libraries are used for any matrix vector operations, and the IO is preformed through the HDF5 library.
+If you need to update the main code, you will need knowledge of C++. Most updates at this point are standard C++ code, however, the PETSc and SLEPc libraries are used for any matrix vector operations, the IO is preformed through the HDF5 library, MPI calls are often done with Boost MPI, and GSL has been used for some special functions.
 % subsection recommended_programing_background (end)
 % section introduction (end)
 
@@ -333,13 +334,13 @@ The third term is the Coulomb potential for each nuclei.
 \begin{equation}
   - \sum_{n} \frac{Z_n}{r_{e,n}}
 \end{equation}
-This is often implemented with a soft core (Section~\ref{ssub:soft_core_like}) to avoid the singularity at $r_{n,e}=0$ though this is not required for full 3D simulations. Some reviewers are not a fan of soft cores, so be careful when deciding to use them. The code allows for any locations for atomic targets. This allows any molecule to be implemented in the code without the need to recompile. You can also add frozen electrons to a nuclei using single active electron potentials found in Section~\ref{ssub:single_active_electron}.
+This is often implemented with a soft core (Section~\ref{ssub:soft_core_like}) to avoid the singularity at $r_{n,e}=0$ though this is not required for full 3D simulations. Soft cores can increase the ground state energy for a particular target. This is often done to match the experimental values, though the impact of a soft core on the potential should be considered carefully before using one. The code allows for any locations for atomic targets. This allows any molecule to be implemented in the code without the need to recompile. You can also add frozen electrons to a nuclei using single active electron potentials found in Section~\ref{ssub:single_active_electron}.
 
 The last term is the electron electron coloration term.
 \begin{equation}
   \sum_{e_1 < e_2}\frac{1}{r_{e_1, e_2}}
 \end{equation}
-It gives the repulsion of the electron with all other electrons. This is the term that couples every electron in the system and leads to an N electron calculation becoming a 3N dimensional Hilbert space leading to 2 electron simulations being the biggest we can hope to simulate with current computing technologies. If you neglect this term and put it into some effective potential, you can use a single (many) active electron (SAE) potential. In that case, your Hamiltonian becomes
+It gives the repulsion of the electron with all other electrons. This is the term that couples every electron in the system and leads to an N electron calculation becoming a 3N dimensional Hilbert space leading to 2 electron simulations being some of the largest simulations preformed with current computing technologies. If you neglect this term and put it into some effective potential, you can use a single (many) active electron (SAE) potential. In that case, your Hamiltonian becomes
 \begin{equation}
     \label{eq:H_SAE}
     \hat{H} = \frac{\hat{\mathbf{p}}^2}{2} - \frac{\mathbf{A}(t) \cdot \hat{\mathbf{p}}}{c} + V(r)
@@ -353,7 +354,7 @@ for more than one electron where $V(r)$ is the single (many) active electron pot
 
 \subsection{Spacial Derivatives} % (fold)
 \label{sub:spacial_derivatives}
-For spacial derivatives, this code utilized finite differences (though other methods are being implemented). When using finite differences, derivatives can represented by a set of coefficients called a stencil. The stencil provides the non-zero $c_i$ weights for various sample points of the function. You can then write the second derivative of $\psi$ known at various evenly spaced grid points labeled by $n$ as
+For spacial derivatives, this code utilized finite differences (though other methods are under development). When using finite differences, derivatives can represented by a set of coefficients called a stencil. The stencil provides the non-zero $c_i$ weights for various sample points of the function. You can then write the second derivative of $\psi$ known at various evenly spaced grid points labeled by $n$ as
 \begin{equation}
     \frac{d^2}{dx^2}\psi_n = \frac{1}{\Delta x^2}\sum_i c_i \psi_i
     \label{eq:finite_diff}
@@ -364,12 +365,12 @@ The non zero $c_i$ coefficients are given in the table below for various orders 
 \hline
 Order & $c_{n-3}$ & $c_{n-2}$ & $c_{n-1}$ & $c_{n}$ & $c_{n+1}$ & $c_{n+2}$ & $c_{n+3}$ \\ \hline
 2nd   &      &      & -1   & 2  & -1   &      &      \\ \hline
-4th   &      & $-\frac{1}{12}$ & $\frac{4}{3}$   & $-\frac{5}{2}$  & $\frac{4}{3}$   &  $-\frac{1}{12}$    &      \\ \hline
-6th   &   $\frac{1}{90}$   &  $-\frac{3}{20}$    & $\frac{3}{2}$   & $-\frac{49}{18}$  & $\frac{3}{2}$   &   $-\frac{3}{20}$    &   $\frac{1}{90}$  \\ \hline
+4th   &      & $-1/12$ & $4/3$   & $-5/2$  & $4/3$   &  $-1/12$    &      \\ \hline
+6th   &   $1/90$   &  $-3/20$    & $3/2$   & $-49/18$  & $3/2$   &   $-3/20$    &   $1/90$  \\ \hline
 \end{tabular}
 \end{center}
 
-For the remainder of this discussion, we will assume we are using second order derivatives. However, this will be expendable to higher order derivatives by adding more off diagonal elements in matrices we will discuss in this section.
+For the remainder of this discussion, we will assume we are using second order derivatives. However, this will be expendable to higher order derivatives by adding more off diagonal elements in matrices discussed in this section.
 
 For the start of this discussion, we will consider a 1D wavefunction. We will later extend this to ND wavefunctions. We start with $\psi(x)$ known at various points along the $x$ axis spaced by a grid step of $dx$. We will label the points by $n$ such that $\psi_n = \psi(x_0 + dx*n)$ with $x_0$ being the lowest $x$ value. Plugging this into Equation~\ref{eq:finite_diff} we get
 \begin{equation}
@@ -381,7 +382,7 @@ Now we can write this for the point $\psi_{n+1}$ giving us
     \frac{d^2}{dx^2}\psi_{n+1} = \frac{1}{\Delta x^2}\left(-\psi_{n}+2\psi_{n+1}-\psi_{n+2} \right)
     \label{eq:finite_diff_second_order_n+1}
 \end{equation}
-This can be done until we hit the other end of the grid. If we take the boundary condition that $\psi(x_0-dx)=0$ and likewise on the other end, we can write our operator as a system of linear equations in the form of a matrix. Our matrix becomes
+This can be done until we hit the other end of the grid. If we take the boundary condition that $\psi(x_0-dx)=\psi(x_N+dx)=0$ and likewise on the other end, we can write our operator as a system of linear equations in the form of a matrix. Our matrix becomes
 \begin{equation}
 \frac{d^2\psi}{dx^2} =
 \frac{1}{\Delta x^2}
@@ -436,7 +437,7 @@ To absorb any outgoing wave packets, we utilize an exterior complex scaling (ECS
 
 \subsection{Atoms and Molecules} % (fold)
 \label{sub:atoms_and_molecules}
-The code allows for nuclei to be placed at any location assuming the coordinate system supports it. This allows for molecular targets to be build by hand with each nuclei having a unique potential. The potentials available are laid out below. If you need to add your own potential please follow the step by step procedure in Sec~\ref{ssub:adding_new_potentials}. \textbf{Please don't hard code potentials!}
+The code allows for nuclei to be placed at any location assuming the coordinate system supports it. This allows for molecular targets to be build by hand with each nuclei having a unique potential. The potentials available are laid out below. If you need to add your own potential please follow the step by step procedure in Sec~\ref{ssub:adding_new_potentials}. \textbf{Please don't hard code potentials.}
 
 \subsubsection{Molecular Targets} % (fold)
 \label{ssub:molecular_targets}
@@ -445,7 +446,7 @@ To model molecular targets, you can place the center of each nuclei at various l
 
 \subsubsection{Soft Core} % (fold)
 \label{ssub:soft_core_like}
-A soft core can be used to calculate distances. This removes the singularity of the coulomb potential, however, reviewers are often not a fan of such a method. Use a soft core only when required. The soft core is calculated using
+A soft core can be used to calculate distances. This removes the singularity of the coulomb potential increases the ground state energy for a particular target. This is often done to match the experimental values, though the impact of a soft core on the potential should be considered carefully before using one. The soft core is calculated using
 \begin{equation}
   r_{soft} = \sqrt{r^2 + \alpha^2}
   \label{eq:soft_core}
@@ -531,9 +532,9 @@ This code is slowly gaining support for two active electron simulations. We have
 
 \subsubsection{Adding New Potentials} % (fold)
 \label{ssub:adding_new_potentials}
-\textbf{Please don't hard code potentials!}
+\textbf{Please don't hard code potentials.}
 
-Adding potentials that are not currently available only takes a 10ish minutes. Providing access from the input file allows all users of the code to easily use various potentials. Hard coding potentials is a poor practice and leads to unmaintainable and difficult to use code. \textbf{Please don't hard code potentials!}
+Adding potentials that are not currently available only takes a 10ish minutes. Providing access from the input file allows all users of the code to easily use various potentials. Hard coding potentials is a poor practice and leads to unmaintainable and difficult to use code. \textbf{Please don't hard code potentials.}
 
 To add a new potential follow these steps and make a pull request.
 \begin{itemize}
@@ -613,7 +614,7 @@ and
 \begin{equation}
   \mu_{gauss} = \frac{8 \ln(2.0) }{ \pi^2}.
 \end{equation}
-\textbf{These values are only valid if the cycles\_on and cycles\_off parameters are the same and cycles\_plateau = 0.0.}
+\textbf{These values are only valid if the cycles\_on = cycles\_off and cycles\_plateau = 0.0.}
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.7\textwidth]{Pulse.png}
@@ -621,9 +622,9 @@ and
 \label{fig:pulse}
 \end{figure}
 
-The code itself supports slightly more general pulse shapes than the standard sine squared or Gaussian pulse. The code allows for the pulse to be delayed before starting using the cycles\_delay parameter, ramped on for a period of time using the cycles\_on parameter, then held at its max intensity for using cycles\_plateau, and ramped off using the cycles\_off parameter. See Fig.~\ref{fig:pulse} for a graphical representation of the parameters. This allows for the creation of most pulses. The code also supports multiple pulses that can be controlled independently of each other. The on and off ramps can either be a sin$^n$ or Gaussian shape. You can mixed powers of sine (\textbf{must be even}) in a single pulse, however, if Gaussian is chosen both ramps are Gaussian though they can half different widths. For the Gaussian pulses, the code propagates for 5 times the full width half max (FWHM) on the ramp on and off. This brings the Gaussian close to zero since a Gaussian is never truly zero. This may want to be tested further at some point, though it will have a minimal impact on the physics and a significant impact on runtime if increased/decreased.
+The code itself supports slightly more general pulse shapes than the standard sine squared or Gaussian pulse. The code allows for the pulse to be delayed before starting using the cycles\_delay parameter, ramped on for a period of time using the cycles\_on parameter, then held at its max intensity for using cycles\_plateau, and ramped off using the cycles\_off parameter. See Fig.~\ref{fig:pulse} for a graphical representation of the parameters. This allows for the creation of most pulses. The code also supports multiple pulses that can be controlled independently of each other. The on and off ramps can either be a sin$^n$ or Gaussian shape. You can mixed powers of sine (\textbf{must be even}) in a single pulse, however, if Gaussian is chosen both ramps are Gaussian though they can have different widths. For the Gaussian pulses, the code propagates for 5 times the full width half max (FWHM) on the ramp on and off. This brings the Gaussian close to zero since a Gaussian is never truly zero. The amount of runtime for a Guassian pulse should be tested.
 
-Using flat top pulses (cycles\_plateau $>$ 0) can clean up many results, however, they are extremely difficult to produce experimentally for pulses less than a picosecond. Due to this, reviewers may have issues with these pulses. Just something to be aware of.
+Using flat top pulses (cycles\_plateau $>$ 0) can clean up many results, however, they are extremely difficult to produce experimentally for pulses less than a picosecond and they should be used with care.
 
 \subsubsection{Experiment type} % (fold)
 \label{ssub:experiment_type}
@@ -645,7 +646,7 @@ TODO
 \label{sub:running_the_code}
 \subsubsection{Basic usage} % (fold)
 \label{ssub:basic_usage}
-Once the code has been properly built, a binary file ``\$\{TDSE\_ROOT\}/bin/TDSE'' should exist with \$\{TDSE\_ROOT\} as the path to the TDSE repository. You will need to define this variable yourself, or type the path out. To run the code, change directory (cd) to a directory with ``input.json'' file that contains the parameters for the simulation you wish to run. (see Sec.~\ref{sec:input} for details on the ``input.json'' file) Then execute the binary file. This can be done by just typing 
+Once the code has been properly built, a binary file ``\$\{TDSE\_ROOT\}/bin/TDSE'' should exist with \$\{TDSE\_ROOT\} as the path to the TDSE repository. You will need to define this variable yourself, or type the path out. To run the code, change directory (cd) to a directory with ``input.json'' file that contains the parameters for the simulation you wish to run. (see Sec.~\ref{sec:input} for details on the ``input.json'' file) Then execute the binary file. This can be done by just typing
 \begin{verbatim}
 ${TDSE_ROOT}/bin/TDSE
 \end{verbatim}
@@ -655,7 +656,7 @@ An example output is on the following page (Sec~\ref{ssub:example_output}).
 \newpage
 \subsubsection{Example output}
 \label{ssub:example_output}
-Not all parts of the output will exist depending on the options you have chosen in the input file. The output file is generally easy to understand. If you have questions let me know.
+Not all parts of the output will exist depending on the options you have chosen in the input file. If you have questions on what a particular line of the output means, please let me know.
 \begin{verbatim}
 
 ******************* Setting up Simulation *******************
@@ -734,7 +735,7 @@ If you wish to change to propagation solver (default is GMRES) use
 \begin{verbatim}
 -prop_ksp_type ${KSP_TYPE}
 \end{verbatim}
-See PETSc's documentation for the available options. Use ``-log\_view'' to compare them.
+See PETSc's documentation for the available options. Use ``-log\_view'' to compare their runtime.
 
 If you want to change the solver for the eigen state method (only for Power method) use
 \begin{verbatim}
@@ -748,7 +749,7 @@ A recommended setup if you keep getting divergence issues is
 
 \subsubsection{Parallel Execution} % (fold)
 \label{ssub:parallel_execution}
-This code scales well on modern HPC systems. To utilize this, you can run the code in parrallel utilizing ``mpiexec'' or a similar command. The bash command to run the code will look like
+This code scales well on modern HPC systems. You can run the code in parallel utilizing ``mpiexec'' or a similar command. The bash command to run the code will look like
 \begin{verbatim}
 mpiexec -n ${number_of_processors} {TDSE_ROOT}/bin/TDSE -command_line_options
 \end{verbatim}
@@ -762,7 +763,7 @@ If you wish to produce only ground states that can be read in to other calculati
 
 \subsubsection{Time Propagation} % (fold)
 \label{ssub:time_propagation}
-To propagate in the laser field, set ``propagation'' to 1 (Sec~\ref{ssub:propagate}) and ensure your laser (Sec~\ref{ssub:laser_parameter}) is set up correctly. It is also useful to set ``state\_solver'' to ``File'' (Sec.~\ref{ssub:state_solver}) if you have already calculated a set of ground states.
+To propagate in the laser field, set ``propagation'' to 1 (Sec~\ref{ssub:propagate}) and ensure your laser (Sec~\ref{ssub:laser_parameter}) is set up correctly. It is also useful to set ``state\_solver'' to ``File'' (Sec.~\ref{ssub:state_solver}) if you have already calculated a set of ground states to avoid recalculating them.
 % subsubsection time_propagation (end)
 
 \subsubsection{Restart mode} % (fold)
@@ -782,7 +783,7 @@ TODO
 
 \subsubsection{Create Observables file} % (fold)
 \label{ssub:create_observables_file}
-The output from this code is stored in very few HDF5 files. This keeps the run directory clean and avoids running into file count limits imposed at some super computing facilities. However, large files are hard to transfer, and often the wavefunctions are not needed to analyze the physics. To produce a smaller data file with many useful obserables, go to the directory your simulation was run in. The execute the ``make\_obs.sh'' which can be found at ``\$\{TDSE\_ROOT\}/scripts/make\_obs.sh''. If the base script doesn't satisfy your needs, feel free to edit away as it is a relatively easy to understand script.
+The output from this code is stored in very few HDF5 files. This keeps the run directory clean and avoids running into file count limits imposed at some super computing facilities. However, large files are hard to transfer, and often the wavefunctions are not needed to analyze the physics. To produce a smaller data file with many useful observables, go to the directory your simulation was run in. The execute the ``make\_obs.sh'' which can be found at ``\$\{TDSE\_ROOT\}/scripts/make\_obs.sh''. If the base script doesn't satisfy your needs, feel free to edit away.
 % subsubsection create_observables_file (end)
 
 % subsection running_the_code (end)
@@ -812,12 +813,12 @@ TODO
 
 \subsubsection{Flat Top Pulse} % (fold)
 \label{ssub:flat_top_pulse}
-Utilizing flat top pulses (cycles\_plateau > 0) can make various observables cleaner. However, flat top pulses with durations less than a picosecond are difficult to create in experiment. As a result, there uses should be limited to understanding and highlighting physical phenomena that can be observed without the need for a flat top pulse.
+Utilizing flat top pulses (cycles\_plateau > 0) can make various observables cleaner. However, flat top pulses with durations less than a picosecond are difficult to create in experiment. As a result, there uses should be limited to understanding and highlighting physical phenomena.
 % subsubsection flat_top_pulse (end)
 
 \subsubsection{Soft Core Potentials} % (fold)
 \label{ssub:soft_core_potentials}
-Soft cores are a common way of adjusting ground state energies to match experimental or theoretical values. They also remove the issues with the coulomb singularity. However, some reviewers have been known to have issues with them. If it is possible to avoid, it is best not to use them.
+Soft cores are a common way of adjusting ground state energies to match experimental or theoretical values. They also remove the issues with the coulomb singularity. The impact of a soft core on the potential should be carefully considered before utilizing one.
 % subsubsection soft_core_potentials (end)
 
 \subsubsection{Extracting Photoelectron Spectra} % (fold)
@@ -843,15 +844,15 @@ TODO
 
 For the code, the only thing that needs to be in the directory is the ``input.json'' file. This will describe the laser, atomic/molecular target, and various other things required for the code to run. This section will go through what each parameter means and a list of options for each parameter when applicable.
 
-The input files are in the json format. This formate is standardized, however, missing or extra commas, brackets, braces, ect.\ can be tricky to track down if you are not familiar with the json format. \textbf{Please take the time to learn json now. You will thank yourself later.}
+The input files are in the json format. This formate is standardized, however, missing or extra commas, brackets, braces, ect.\ can be tricky to track down if you are not familiar with the json format. Please take the time to learn json now. You will thank yourself later.
 
-\textbf{Make sure to use ASCII characters, copy and paste could cause issues!}
+\textbf{Make sure to use ASCII characters, copy and paste could cause issues.}
 
 \subsection{Example File} % (fold)
 \label{sub:example_file}
 The following is an input file for simulating an 8 cycle, 800nm, sine squared pulse incident on atomic Hydrogen. This will produce a well converged High Harmonic Spectrum, though it may take a few hours to run. For a faster simulation that will be close to right, you can increase ``delta\_x\_max'' and ``delta\_x\_min'' to a larger number (say 0.5). You will need to do this for both dimensions.
 
-\textbf{Make sure to use ASCII characters, copy and paste could cause issues!}
+\textbf{Make sure to use ASCII characters, copy and paste could cause issues.}
 
 (current versions of example files can be found in the ``example'' directory)
 \begin{verbatim}
@@ -999,7 +1000,7 @@ How long the calculation will take is largely dependent on the coordinate system
 \label{sub:parameters_input}
 The following is my attempt as describing what each parameter does. Each parameter is a subsubsection and they should come in the order of the example input file in Sec~\ref{sub:example_file}. Sub section names for nested parameters include a ``-'' to show that the parameter is either part of a list or dictionary of a different parameter. This is shown in Sec~\ref{ssub:dimensions-dim_size} as ``dim\_size'' is a sub parameter of the ``dimensions'' parameter.  Some of the parameters have extra descriptions that are critical to reproduce results from other codes. This may lead to some lengthy discussion that may not be useful for all users. If you have questions on particular parameters or more general questions, let me know.
 
-\textbf{Make sure to use ASCII characters, copy and paste could cause issues!}
+\textbf{Make sure to use ASCII characters, copy and paste could cause issues.}
 
 \subsubsection{alpha}
 alpha is the soft core parameter described in Sec~\ref{ssub:soft_core_like} used in nuclear interactions. A floating point number can be input, and a value of 0.0 leads to the standard Euclidean distance $r=\sqrt{x^2+y^2+\cdots}$. It is used in the Coulomb (Hydrogen like) potentials. It is also used for any $r$ that comes in the denominator of the Single Active Electron (SAE) Potentials in Sec~\ref{ssub:single_active_electron}. Any $r$ that comes in the numerator is the standard Euclidean distance. The soft core takes the mathematical form of
@@ -1025,7 +1026,7 @@ delta\_t is the time step used in the simulation in atomic units (floating point
 \label{ssub:dimensions}
 dimensions is a list of json objects (also known as dictionaries). Each dictionary provides the size of a new dimension. In the Cartesian coordinate system, the dimensions are added in the order x, y, z. If only 2 dictionaries are included, a 2D simulation is preformed. For Cylindrical coordinates the dimensions are added in the order $\rho$ and $z$.
 
-\textbf{Note}: Each dimension can have a minimum grid spacing and a maximum grid spacing with a sine squared ramp connecting them. This appears to work for ground state calculations, however, time propagation can have issues. Take extra care if you wish to use this feature. If ``delta\_x\_min'' $=$ ``delta\_x\_max'' are the same value, the code has been well tested and will produce good results (you just have to get past the error checks by moving ``delta\_x\_max\_start'' and ``delta\_x\_min\_end'' away from the boundaries of your grid).
+\textbf{Note}: Each dimension can have a minimum grid spacing and a maximum grid spacing with a sine squared ramp connecting them. This appears to work for ground state calculations, however, time propagation can have issues. Take extra care if you wish to use this feature. If ``delta\_x\_min'' $=$ ``delta\_x\_max'', the code has been well tested and will produce good results (you just have to get past the error checks by moving ``delta\_x\_max\_start'' and ``delta\_x\_min\_end'' away from the boundaries of your grid).
 
 \subsubsection{dimensions - delta\_x\_max}
 delta\_x\_max is the max grid spacing in atomic units (outside edge of the grid). This is useful to describe highly excited states and outgoing wave packets, though it is not 100\% stable. Set equal to delta\_x\_min to use the well tested code. Typical values for converged calculations on a uniform grid are less than or equal to 0.1. See the note in Sec~\ref{ssub:dimensions} for more details on nonuniform grid.
@@ -1052,6 +1053,7 @@ l\_max is the maximum angular momentum quantum number used by the spherical harm
 m\_max is the maximum angular momentum projection quantum number used by the spherical harmonic expansion. For linear polarized lasers along the z axis (assuming the ground state is m=0) you can set m\_max=0 due to selection rules ($l\rightarrow l\pm1$ and $m\rightarrow m$). For any other laser polarization or initial conditions with m$\ne$0 you will need to set m\_max$>$0 and typically equal to l\_max. 
 
 \subsubsection{field\_max\_states}
+\label{ssub:field_max_states}
 field\_max\_states allows for the peak of the electric field or vector potential to be used for eigenstate calculations. Utilizing this parameter is still in beta. Testing is required if this parameter is not set to 0. The following values can be set
 \begin{itemize}
   \item ``0'' Field free (standard use case)
@@ -1289,26 +1291,113 @@ write\_frequency\_observables is the number of time steps between writing calcul
 
 \section{Output} % (fold)
 \label{sec:output}
-TODO
+The output of the code is done using the HDF5 library. To look at a file, you can use the command line option ``h5dump'' and ``h5ls''. Here are a few examples. Each data file contains a set a variables and a description of what each variable does. To see the datasets in a particular file use the `h5ls' command in the terminal. Replace H2.h5 with the file you which to look at.
+\begin{verbatim}
+$ h5ls -r H2.h5
+/                        Group
+/Energy                  Dataset {1/Inf}
+/psi                     Dataset {1/Inf, 45000, 2}
+\end{verbatim}
+
+You can view what a description of what each data file has using ``-A'' with the ``h5dump'' command. The result result can be very long, so using it in conjunction with ``-d dataset'' will provide the description for a particular dataset. Here is an example for looking at the energy part of last set.
+\begin{verbatim}
+$ h5dump -A -d Energy H2.h5
+HDF5 "H2.h5" {
+DATASET "Energy" {
+   DATATYPE  H5T_IEEE_F64LE
+   DATASPACE  SIMPLE { ( 1 ) / ( H5S_UNLIMITED ) }
+   ATTRIBUTE "Attribute" {
+      DATATYPE  H5T_STRING {
+         STRSIZE H5T_VARIABLE;
+         STRPAD H5T_STR_NULLTERM;
+         CSET H5T_CSET_ASCII;
+         CTYPE H5T_C_S1;
+      }
+      DATASPACE  SCALAR
+      DATA {
+      (0): "Energy of the corresponding state"
+      }
+   }
+}
+}
+\end{verbatim}
+
+To view the contents of the datafile in your command line remove the -A option. The output can become long for large objects like psi, however it is useful for getting small datasets like the Energy of a bound state.
+\begin{verbatim}
+$ h5dump -d Energy H2.h5
+HDF5 "H2.h5" {
+DATASET "Energy" {
+   DATATYPE  H5T_IEEE_F64LE
+   DATASPACE  SIMPLE { ( 1 ) / ( H5S_UNLIMITED ) }
+   DATA {
+   (0): -0.9477
+   }
+   ATTRIBUTE "Attribute" {
+      DATATYPE  H5T_STRING {
+         STRSIZE H5T_VARIABLE;
+         STRPAD H5T_STR_NULLTERM;
+         CSET H5T_CSET_ASCII;
+         CTYPE H5T_C_S1;
+      }
+      DATASPACE  SCALAR
+      DATA {
+      (0): "Energy of the corresponding state"
+      }
+   }
+}
+}
+\end{verbatim}
+
+\subsection{Complex numbers} % (fold)
+\label{sub:complex_numbers}
+For any dataset that is a complex number, the last dimension of the HDF5 data set is size 2. The first value (0th index) is the real part and the second value (1st index) is the imaginary part.
+% subsection complex_numbers (end)
 
 \subsection{TDSE.h5} % (fold)
 \label{sub:tdse_h5}
-TODO
+The TDSE.h5 file contains most of the data from a simulation. This file can get large, so see Sec.~\ref{sub:observables_h5} on how to produce smaller data files to scp your data. The /Observables/ group contains time depended expectation values that are taken during the pulse. The /Parameters/ group contains the parameters used in the simulation. The /Projections/ group contains the wavefunction with bound states remove. The /Wavefunction/ group contains the wavefunction printed at various points in time.
+
+\subsubsection{Observables} % (fold)
+\label{ssub:observables}
+The dipole acceleration is $\expval{\frac{x_i}{r^3}}{\Psi_i}$. This needs to be updated for targets that are not hydrogen. The end of the dipole acceleration has two indices and will look like ``/Observables/dipole\_acceleration\_(index i)\_(index j)''. Index i is the index of the electron starting from 0 and index j is the index of the dimension giving index 0,1,2 corresponding to coordinates x,y,z respectively ($\rho$,z for cylindrical).
+
+The position expectation value is $\expval{x_i}{\Psi_i}$ with the same indexing as the dipole acceleration.
+
+The norm is $\bra{\Psi}\ket{\Psi}$.
+
+The gobbler is population in the ECS.
+
+The time is the time at which each expectation value is taken.
+% subsubsection observables (end)
+
+\subsubsection{Parameters} % (fold)
+\label{ssub:parameters}
+The parameters are described in the input file section. Use ``h5ls -r TDSE.h5'' to get the list of simulations parameters.
+% subsubsection parameters (end)
+
+\subsubsection{Projections} % (fold)
+\label{ssub:projections}
+This is the wavefunction with the bound states projected out. It can be used to create a photo electron spectrum when few bound states are populated during the simulation. This method is still under development and should be used with care.
+% subsubsection projections (end)
 % subsection tdse_h5 (end)
 
 \subsection{Pulse.h5} % (fold)
 \label{sub:pulse_h5}
-TODO
+The pulses file contains the the pulse used in the simulation. The pulsed take the shape $f(t)sin(wt+phi)$. The supported pulse shapes can be found in Sec.~\ref{sub:lasers} and the parameters used to define various pulses are in Sec.~\ref{sec:input}.
+
+The pulse\_envelope\_0 is the value of $f(t)$ in the pulse shape definition. The index 0 corresponds to the order the pulse was defined in the `input.json' file starting at 0.
+
+The Pulse\_value\_0\_1 is the value of $f(t)sin(wt+phi)$ in a particular dimension. The index 0 corresponds to the order the pulse was defined in the `input.json' file starting at 0, and the index 1 corresponds to the dimension of the pulse with 0, 1, 2 relating to x, y, z respectively. For cylindrical coordinates the dimension order is $\rho$, z instead.
 % subsection pulse_h5 (end)
 
 \subsection{Target.h5} % (fold)
 \label{sub:target_h5}
-TODO
+The target.h5 file (the name is read from the input file, so it maybe H.h5, He.h5, or something else) contains the field free or field max (Sec.~\ref{ssub:field_max_states}) states and associated eigen values. The ``Energy'' dataset contains the energy of the field free or field max states found is the ``psi'' dataset. The ``psi'' dataset contains the wave function of the bound states. The first index is which state you wish to use typically starting from the 1s state. The second index is the grid point on the wavefunction. Note that this is a 1D version of the full array. You will need to reshape the array to the correct dimension using the num\_x array found in the TDSE.h5 file under ``/Wavefunction/num\_x''. The last dimension is handles the complex numbers with the 0th element as the real part and the 1st element as the imaginary part.
 % subsection target_h5 (end)
 
 \subsection{Observables.h5} % (fold)
 \label{sub:observables_h5}
-TODO
+The Observables.h5 file provides a file that contains most of the small datasets from the TDSE.h5 and Pulse.h5 files. It leaves out the wavefunctions to allow for data to be easily copied from remote machines with minimal download times. Since it is just a duplicate of various other files, the main code does not produce it. To make the Observables.h5 file execute the \$\{TDSE\_ROOT\}/scripts/make\_obs.sh file in the directory the simulation was run in. The script uses h5copy to move data around and can be edited to include exactly the data you need for a particular project.
 % subsection observables_h5 (end)
 
 % section output (end)
@@ -1375,12 +1464,12 @@ Which leads to a Hamiltonian of
 \begin{equation}
     \hat{H} = \sum_{e}\left(\frac{\hat{\mathbf{p}}^2_e}{2} - \frac{\mathbf{A}(t) \cdot \hat{\mathbf{p}}_e}{c} - \sum_{n} \frac{Z_n}{r_{e,n}}\right) + \sum_{e_1 < e_2}\frac{1}{r_{e_1, e_2}}
 \end{equation}
-The full problem is pretty much impossible to solve for 3 or more electrons. For a two electron atom (He like), we have the following Hamiltonian.
+The full problem is currently limited to 1 or 2 electrons. For a two electron atom (He like), we have the following Hamiltonian.
 \begin{equation}
   \hat H = \frac{\hat{p_1}^2}{2} + \frac{\hat{p_2}^2}{2} - \frac{\vec{A} \cdot (\hat{p_1}+\hat{p_2})}{c} - \frac{Z}{x_1} - \frac{Z}{x_2} + \frac{1}{r_{12}}
 \end{equation}
 
-The Hamiltonian class takes the input file and defines the appropriate matrix to operate on our wave function. There is tons of index gymnastics going on in this class. Creation of the Hamiltonian is currently around 30\% of the total run time of a simulation. This code has some low hanging optimizations like storing the time independent Hamiltonian. This should be the next priority in optimizations. For a full explanation the numeric methods we use and justification for various tools, see Section~\ref{sec:theory}.
+The Hamiltonian class takes the input file and defines the appropriate matrix to operate on our wave function.
 
 % subsection hamiltonian (end)
 
@@ -1400,10 +1489,10 @@ There is very little testing used in this code. If you would like to work on thi
 \section{Wish list} % (fold)
 \label{sec:wish_list}
 \begin{itemize}
-    \item Faster algorithm (radial code, numerical basis, non uniform grid, RBF, ect.)
+    \item Faster algorithm (radial code, numerical basis, non uniform grid, ect.)
     \item Free propagation support (Density Matrix for bound states)
-    \item New features (fast two electron code)
-    \item Moving nuclei (classical and quantum mechanical)
+    \item New features (two electron code)
+    \item Moving nuclei (classical and/or quantum mechanical)
 \end{itemize}
 % section wish_list (end)
 
@@ -1423,12 +1512,13 @@ TODO
 TODO
 % subsection papers (end)
 % section supporting_works (end)
+
 \section{Contributors} % (fold)
 \label{sec:contributors}
-The following people have contributed to this code. No particular order is used.
+The following people have contributed to this code.
 \begin{itemize}
-  \item Joel Venzke
-  \item Cory Goldsmith
+  \item Goldsmith, Cory
+  \item Venzke, Joel
 \end{itemize}
 % section contributors (end)
 \end{document}
