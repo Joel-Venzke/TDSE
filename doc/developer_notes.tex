@@ -17,7 +17,7 @@
 \label{sec:introduction}
 \subsection{Code Overview} % (fold)
 \label{sub:code_overview}
-The TDSE code discussed here was mainly developed by Joel Venzke while working on his Ph.D. in the Ultrafast Theory Group in JILA. Cory Goldsmith and other group members have also contributed to this code in various forms. It solves the Time Dependent Sch\"{o}dinger Equation (TDSE) for various targets in a laser field for a single active electron. It has support for two or more active electrons, but the computational power of modern super computers limits the calculation that are possible to 2 electrons in 2 spacial dimensions. For single active electrons, I have developed a cylindrical 2D code for linear polarized light. All other calculations requirer use of the Cartesian grid code. Future work will look to push towards a 2 electron full 6D code, and extending the code to different coordinate systems/basis methods.
+The TDSE code discussed here was initially developed by Joel Venzke while working on his Ph.D. in the Ultrafast Theory Group in JILA. Cory Goldsmith and other group members have also contributed to this code in various forms. It solves the Time Dependent Sch\"{o}dinger Equation (TDSE) for various targets in a laser field for a single active electron. It has support for two or more active electrons, but the computational power of modern super computers limits the calculation that are possible to 2 electrons in 2 spacial dimensions. For single active electrons, I have developed a cylindrical 2D code for linear polarized light. The cylindrical code can support aligned molecular targets for SAE potentials. For atomic targets, utilize the spherical code which is orders of magnitude more efficient and supports arbitrary laser polarizations. All other calculations requirer use of the Cartesian grid code. There is an RBF implementation, but due to issues with the eigenvalues behaving poorly time propagation is not currently working. Future work will look to push towards a 2 electron full 6D code, and extending the code to different coordinate systems/basis methods.
 
 This code has support for real space propagation of the TDSE using finite differences for spacial derivatives and Crank-Nicolson for time propagation. The codes has been shown to scale out to 3,000+ processors. It can also simulate interesting physics on a laptop if you have a few hours of free time. The main drive for developing this code is to allow for many types of laser interactions to be studies in a single code base.
 % subsection code_overview (end)
@@ -334,7 +334,7 @@ The third term is the Coulomb potential for each nuclei.
 \begin{equation}
   - \sum_{n} \frac{Z_n}{r_{e,n}}
 \end{equation}
-This is often implemented with a soft core (Section~\ref{ssub:soft_core_like}) to avoid the singularity at $r_{n,e}=0$ though this is not required for full 3D simulations. Soft cores can increase the ground state energy for a particular target. This is often done to match the experimental values, though the impact of a soft core on the potential should be considered carefully before using one. The code allows for any locations for atomic targets. This allows any molecule to be implemented in the code without the need to recompile. You can also add frozen electrons to a nuclei using single active electron potentials found in Section~\ref{ssub:single_active_electron}.
+This is often implemented with a soft core (Section~\ref{ssub:soft_core_like}) to avoid the singularity at $r_{n,e}=0$ though this is not required for full 3D simulations. Soft cores can increase the ground state energy for a particular target. This is often done to match the experimental values, though the impact of a soft core on the potential should be considered carefully before using one as reviewer are not a fan of them and it can impact the physics in a simulation. The code allows for any locations for atomic targets. This allows any molecule to be implemented in the code without the need to recompile. You can also add frozen electrons to a nuclei using single active electron potentials found in Section~\ref{ssub:single_active_electron}.
 
 The last term is the electron electron coloration term.
 \begin{equation}
@@ -370,7 +370,7 @@ Order & $c_{n-3}$ & $c_{n-2}$ & $c_{n-1}$ & $c_{n}$ & $c_{n+1}$ & $c_{n+2}$ & $c
 \end{tabular}
 \end{center}
 
-For the remainder of this discussion, we will assume we are using second order derivatives. However, this will be expendable to higher order derivatives by adding more off diagonal elements in matrices discussed in this section.
+For the remainder of this discussion, we will assume we are using second order derivatives. However, this will be expendable to higher order derivatives by adding more off diagonal elements in matrices discussed in this section. See Sec.~\ref{sub:boundary_conditions} for notes on a few quirks with higher order FD.
 
 For the start of this discussion, we will consider a 1D wavefunction. We will later extend this to ND wavefunctions. We start with $\psi(x)$ known at various points along the $x$ axis spaced by a grid step of $dx$. We will label the points by $n$ such that $\psi_n = \psi(x_0 + dx*n)$ with $x_0$ being the lowest $x$ value. Plugging this into Equation~\ref{eq:finite_diff} we get
 \begin{equation}
@@ -402,7 +402,23 @@ This can be done until we hit the other end of the grid. If we take the boundary
 \end{bmatrix}
 \end{equation}
 One then uses a tensor product to produce the 2 and 3 dimensional versions.
+
+\textbf{TODO tensor products, first derivatives} 
 % subsection spacial_derivatives (end)
+
+\subsection{Boundary Conditions} % (fold)
+\label{sub:boundary_conditions}
+
+\textbf{TODO accounting for offset FD near edges to only have one ``ghost'' node}
+
+\subsection{Spherical code} % (fold)
+\label{sub:spherical_code}
+\textbf{TODO}
+
+spherical harmonics
+
+radial schordinger equation
+% subsection spherical_code (end)
 
 \subsection{Time Propagation} % (fold)
 \label{sub:time_propagation}
@@ -944,9 +960,11 @@ The following is an input file for simulating an 8 cycle, 800nm, sine squared pu
 
 \subsection{Coordinate Systems} % (fold)
 \label{sub:coordinate_systems}
-How long the calculation will take is largely dependent on the coordinate system you choose. If possible, I recommend utilizing the spherical coordinate system when possible. It is the most limited as far as targets (currently only supports spherically symmetric), but its runtime is orders of magnitude faster. Cylindrical is the second fastest and supports cylindrically symmetric potentials with 
+How long the calculation will take is largely dependent on the coordinate system you choose. If possible, I recommend utilizing the spherical coordinate system when possible. It is the most limited as far as targets (currently only supports spherically symmetric), but its runtime is orders of magnitude faster. Cylindrical is the second fastest and supports cylindrically symmetric potentials with lasers aligned along the z axis. The Cartesian code is more general, but much slower.
+
 \subsubsection{Spherical} % (fold)
 \label{ssub:spherical}
+\textbf{TODO}
 \begin{verbatim}
 "dimensions": [{
       "delta_x_max": 0.1,
@@ -970,6 +988,7 @@ How long the calculation will take is largely dependent on the coordinate system
 
 \subsubsection{Cartesian and Cylindrical} % (fold)
 \label{ssub:cartesian_and_cylindrical}
+\textbf{TODO}
 \begin{verbatim}
 "dimensions": [{
       "delta_x_max": 0.1,
@@ -1483,16 +1502,17 @@ The simulation class implements various propagation and eigen state calculations
 
 \section{Testing} % (fold)
 \label{sec:testing}
-There is very little testing used in this code. If you would like to work on this or notices something is wrong. Please let me know.
+There is very little testing continued used in this code. The code is well tested when development occurs. If you would like to work on a unit test system or notices something is wrong. Please let me know.
 % section testing (end)
 
 \section{Wish list} % (fold)
 \label{sec:wish_list}
 \begin{itemize}
-    \item Faster algorithm (radial code, numerical basis, non uniform grid, ect.)
+    \item Faster algorithm (radial code (done), non uniform grid, hyper-spherical harmonics, ect.)
     \item Free propagation support (Density Matrix for bound states)
     \item New features (two electron code)
     \item Moving nuclei (classical and/or quantum mechanical)
+    \item Molecular expansions for spherical code
 \end{itemize}
 % section wish_list (end)
 
@@ -1501,15 +1521,23 @@ There is very little testing used in this code. If you would like to work on thi
 
 \subsection{Posters} % (fold)
 \label{sub:posters}
-TODO
+DAMOP (18,19)
+Gordan (18)
+JILA ultrafast (18)
 % subsection posters (end)
 \subsection{Talks} % (fold)
 \label{sub:talks}
-TODO
+DAMOP (18,19)
+ISMS (19)
 % subsection talks (end)
 \subsection{Papers} % (fold)
 \label{sub:papers}
-TODO
+J. Venzke, R. Reiff, Z. Xue, A. Jaroń-Becker, and A. Becker
+PRA \textbf{98}, 043434 (2018).
+
+\noindent
+J. Venzke, T. Joyce, Z. Xue, A. Becker, and A. Jaron-Becker, 
+PRA \textbf{98}, 063409 (2018). 
 % subsection papers (end)
 % section supporting_works (end)
 
