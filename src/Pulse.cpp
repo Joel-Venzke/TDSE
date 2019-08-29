@@ -307,6 +307,7 @@ void Pulse::InitializePulse(PetscInt n)
     double sn;  // sin to the nth power
     double current_cep;
     double fwhm_factor = 2.0 * log(2.0);
+    double ramp_off_time_step_error; // used to remove the fraction of a time step that could be rounded off.
 
     /* index that turns pulse on */
     on_start = ceil(period * cycles_delay[n] / (delta_t));
@@ -328,6 +329,9 @@ void Pulse::InitializePulse(PetscInt n)
           period *
           (cycles_off[n] + cycles_plateau[n] + cycles_on[n] + cycles_delay[n]) /
           (delta_t));
+
+      ramp_off_time_step_error = off_start - period * (cycles_plateau[n] + cycles_on[n] + cycles_delay[n]) /
+               (delta_t);
     }
     else if (pulse_shape_idx[n] == 1) /* Gaussian needs sigma tails */
     {
@@ -348,6 +352,10 @@ void Pulse::InitializePulse(PetscInt n)
                      (gaussian_length[n] * cycles_off[n] + cycles_plateau[n] +
                       gaussian_length[n] * cycles_on[n] + cycles_delay[n]) /
                      (delta_t));
+      ramp_off_time_step_error = off_start - period *
+                       (cycles_plateau[n] + gaussian_length[n] * cycles_on[n] +
+                        cycles_delay[n]) /
+                       (delta_t);
     }
 
     if (!pulse_alloc)
@@ -376,7 +384,7 @@ void Pulse::InitializePulse(PetscInt n)
         }
         else if (pulse_shape_idx[n] == 1)
         {
-          s1 = (delta_t * (plateau_start - time_idx)) / (period * cycles_on[n]);
+          s1 = (delta_t * (plateau_start - time_idx )) / (period * cycles_on[n]);
           pulse_envelope[n][time_idx] =
               field_max[n] * exp(-1.0 * (fwhm_factor / 2.0) * s1 * s1);
           // pulse_envelope[n][time_idx] = -1.0 * s1 * s1;
@@ -390,9 +398,8 @@ void Pulse::InitializePulse(PetscInt n)
       { /* pulse ramping off */
         if (pulse_shape_idx[n] == 0)
         {
-          s1 = sin(energy[n] * delta_t * (time_idx - off_start) /
-                       (4.0 * cycles_off[n]) +
-                   pi / 2.0);
+          s1 = sin(energy[n] * delta_t * (time_idx - off_start + ramp_off_time_step_error) /
+                       (4.0 * cycles_off[n]) + pi / 2.0);
           sn = 1.0;
           for (int power = 0; power < power_off[n]; ++power)
           {
@@ -402,7 +409,7 @@ void Pulse::InitializePulse(PetscInt n)
         }
         else if (pulse_shape_idx[n] == 1)
         {
-          s1 = (delta_t * (time_idx - off_start)) / (period * cycles_off[n]);
+          s1 = (delta_t * (time_idx - off_start + ramp_off_time_step_error)) / (period * cycles_off[n]);
           pulse_envelope[n][time_idx] =
               field_max[n] * exp(-1.0 * (fwhm_factor / 2.0) * s1 * s1);
           // pulse_envelope[n][time_idx] = -1.0 * s1 * s1;
