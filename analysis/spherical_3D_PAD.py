@@ -191,10 +191,10 @@ for idx, fold in enumerate(folders):
     cur_data = pad_yield[idx]/max_val
     with open("Beta_"+fold+".txt", "w") as f:
         f.write("#")
-        for l in np.arange(1,beta_max+1):
+        for l in np.arange(0,beta_max+1):
             f.write(" beta_%2d" % l)
         f.write("\n")
-        for l in np.arange(1,beta_max+1):
+        for l in np.arange(0,beta_max+1):
             beta_val = np.sum((l+0.5)*legendre(l)(np.cos(theta))*cur_data*d_angle*d_angle*np.sin(theta))
             f.write(str(beta_val)+" ")
         f.write("\n")
