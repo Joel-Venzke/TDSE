@@ -198,3 +198,52 @@ for idx, fold in enumerate(folders):
             beta_val = np.sum((l+0.5)*legendre(l)(np.cos(theta))*cur_data*d_angle*d_angle*np.sin(theta))
             f.write(str(beta_val)+" ")
         f.write("\n")
+
+X, Y, Z = cur_data*np.sin(theta)*np.cos(phi), cur_data * \
+            np.sin(theta)*np.sin(phi), cur_data*np.cos(theta)
+
+plm_r, plm_phi, plm_theta = np.sqrt(X**2+Y**2+Z**2), np.arctan2(Z,Y), np.arccos(X,np.sqrt(X**2+Y**2+Z**2))
+
+for idx, fold in enumerate(folders):
+    cur_data = pad_yield[idx]/max_val
+    with open("Rot_Beta_"+fold+".txt", "w") as f:
+        f.write("#")
+        for l in np.arange(0,beta_max+1):
+            f.write(" beta_%2d" % l)
+        f.write("\n")
+        for l in np.arange(0,beta_max+1):
+            beta_val = np.sum((l+0.5)*legendre(l)(np.cos(plm_theta))*cur_data*d_angle*d_angle*np.sin(theta))
+            f.write(str(beta_val)+" ")
+        f.write("\n")
+
+for idx, fold in enumerate(folders):
+    cur_data = pad_yield[idx]/max_val
+    with open("3D_Beta_"+fold+".txt", "w") as f:
+        f.write("#")
+        for l in np.arange(0,beta_max+1):
+            f.write(" l_%2d" % l)
+        f.write("\n")
+        for l in np.arange(0,beta_max+1):
+            for m in np.arange(-beta_max,beta_max+1):
+                if np.abs(m)>l:
+                    f.write("(0.0+0.0j) ")
+                else:
+                    beta_val = np.sum(sph_harm(m, l, phi, theta)*cur_data*d_angle*d_angle*np.sin(theta))
+                    f.write(str(beta_val)+" ")
+            f.write("\n")
+
+for idx, fold in enumerate(folders):
+    cur_data = pad_yield[idx]/max_val
+    with open("Rot_3D_Beta_"+fold+".txt", "w") as f:
+        f.write("#")
+        for l in np.arange(0,beta_max+1):
+            f.write(" l_%2d" % l)
+        f.write("\n")
+        for l in np.arange(0,beta_max+1):
+            for m in np.arange(-beta_max,beta_max+1):
+                if np.abs(m)>l:
+                    f.write("(0.0+0.0j) ")
+                else:
+                    beta_val = np.sum(sph_harm(m, l, plm_phi, plm_theta)*cur_data*d_angle*d_angle*np.sin(theta))
+                    f.write(str(beta_val)+" ")
+            f.write("\n")
