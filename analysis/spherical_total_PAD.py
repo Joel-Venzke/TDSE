@@ -140,7 +140,7 @@ with open("Beta.txt", "w") as f:
         f.write(" beta_%02d" % l)
     f.write("\n")
     for idx, e_final in enumerate(e_final_list):
-        cur_data = pad_yield[idx]/max_val
+        cur_data = pad_yield[idx]
         f.write(str(e_final)+" ")
         beta_list = np.zeros([beta_max+1])
         for l in np.arange(0,beta_max+1):
