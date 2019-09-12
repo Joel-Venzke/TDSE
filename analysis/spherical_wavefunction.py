@@ -128,18 +128,18 @@ for i, psi in enumerate(psi_value):
         plt.savefig("figs/wave_xy_" + str(i).zfill(8) + ".png")
         plt.clf()
 
-        cs = plt.imshow(
-            (np.angle(plane_data)),
-            extent=[-r_max, r_max, -r_max, r_max],
-            cmap='twilight',
-            vmin=-np.pi,
-            vmax=np.pi)
-        plt.colorbar(cs)
-        plt.ylabel("y-axis (a.u.)")
-        plt.xlabel("x-axis (a.u.)")
-        plt.tight_layout()
-        plt.savefig("figs/wave_xy_phase_" + str(i).zfill(8) + ".png")
-        plt.clf()
+        #cs = plt.imshow(
+        #    (np.angle(plane_data)),
+        #    extent=[-r_max, r_max, -r_max, r_max],
+        #    cmap='twilight',
+        #    vmin=-np.pi,
+        #    vmax=np.pi)
+        #plt.colorbar(cs)
+        #plt.ylabel("y-axis (a.u.)")
+        #plt.xlabel("x-axis (a.u.)")
+        #plt.tight_layout()
+        #plt.savefig("figs/wave_xy_phase_" + str(i).zfill(8) + ".png")
+        #plt.clf()
 
 print("Calculating index set for xz plane")
 x, y, z, r, theta, phi, r_vals = cacluate_xz_plane(psi_cooridnate_values,
@@ -171,18 +171,18 @@ for i, psi in enumerate(psi_value):
         plt.savefig("figs/wave_xz_" + str(i).zfill(8) + ".png")
         plt.clf()
 
-        cs = plt.imshow(
-            np.transpose(np.angle(plane_data)),
-            extent=[-r_max, r_max, -r_max, r_max],
-            cmap='twilight',
-            vmin=-np.pi,
-            vmax=np.pi)
-        plt.colorbar(cs)
-        plt.ylabel("z-axis (a.u.)")
-        plt.xlabel("x-axis (a.u.)")
-        plt.tight_layout()
-        plt.savefig("figs/wave_xz_phase_" + str(i).zfill(8) + ".png")
-        plt.clf()
+        #cs = plt.imshow(
+        #    np.transpose(np.angle(plane_data)),
+        #    extent=[-r_max, r_max, -r_max, r_max],
+        #    cmap='twilight',
+        #    vmin=-np.pi,
+        #    vmax=np.pi)
+        #plt.colorbar(cs)
+        #plt.ylabel("z-axis (a.u.)")
+        #plt.xlabel("x-axis (a.u.)")
+        #plt.tight_layout()
+        #plt.savefig("figs/wave_xz_phase_" + str(i).zfill(8) + ".png")
+        #plt.clf()
 
 print("Calculating index set for yz plane")
 x, y, z, r, theta, phi, r_vals = cacluate_yz_plane(psi_cooridnate_values,
@@ -215,15 +215,15 @@ for i, psi in enumerate(psi_value):
         plt.savefig("figs/wave_yz_" + str(i).zfill(8) + ".png")
         plt.clf()
 
-        cs = plt.imshow(
-            np.transpose(np.angle(plane_data)),
-            extent=[-r_max, r_max, -r_max, r_max],
-            cmap='twilight',
-            vmin=-np.pi,
-            vmax=np.pi)
-        plt.colorbar(cs)
-        plt.ylabel("z-axis (a.u.)")
-        plt.xlabel("y-axis (a.u.)")
-        plt.tight_layout()
-        plt.savefig("figs/wave_yz_phase_" + str(i).zfill(8) + ".png")
-        plt.clf()
+        #cs = plt.imshow(
+        #    np.transpose(np.angle(plane_data)),
+        #    extent=[-r_max, r_max, -r_max, r_max],
+        #    cmap='twilight',
+        #    vmin=-np.pi,
+        #    vmax=np.pi)
+        #plt.colorbar(cs)
+        #plt.ylabel("z-axis (a.u.)")
+        #plt.xlabel("y-axis (a.u.)")
+        #plt.tight_layout()
+        #plt.savefig("figs/wave_yz_phase_" + str(i).zfill(8) + ".png")
+        #plt.clf()
