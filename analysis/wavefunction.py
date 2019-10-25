@@ -47,7 +47,7 @@ if num_electrons == 2:
     for i, psi in enumerate(psi_value):
         if i > 0:
             psi_save = np.array(psi)
-            print "plotting", i
+            print( "plotting", i)
             # set up initial figure with color bar
             psi = psi[:, 0] + 1j * psi[:, 1]
             psi = (psi * np.conjugate(psi)).real
@@ -94,6 +94,7 @@ if num_electrons == 2:
                         plt.axvline(0.0, color='k')
                     plt.xlabel("Dim:" + str(dim_idx) + "   Electron:" +
                                str(electron_idx))
+                    plt.xlim([-5, 5])
                     plt.tight_layout()
                     plt.savefig(plot_name)
                     plt.close(fig)
@@ -248,7 +249,7 @@ else:
             size=(1000, 1000))
         for i, psi in enumerate(psi_value):
             if i > 0:  # the zeroth wave function is the guess and not relevant
-                print "plotting", i
+                print( "plotting", i)
                 psi = psi[:, 0] + 1j * psi[:, 1]
                 psi.shape = tuple(shape)
                 psi = psi[lower_idx[0]:upper_idx[0], lower_idx[1]:upper_idx[1],
@@ -309,7 +310,7 @@ else:
         matplotlib.rc('font', **font)
         for i, psi in enumerate(psi_value):
             if i > 0:  # the zeroth wave function is the guess and not relevant
-                print "plotting", i
+                print( "plotting", i)
                 psi_save = np.array(psi)
                 # set up initial figure with color bar
                 psi = psi[:, 0] + 1j * psi[:, 1]
@@ -450,7 +451,7 @@ else:
         matplotlib.rc('font', **font)
         for i, psi in enumerate(psi_value):
             if i > 0:  # the zeroth wave function is the guess and not relevant
-                print "plotting", i
+                print( "plotting", i)
                 # set up initial figure with color bar
                 psi = psi[:, 0] + 1j * psi[:, 1]
                 psi.shape = tuple(shape)

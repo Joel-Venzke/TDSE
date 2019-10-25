@@ -17,7 +17,7 @@
 \label{sec:introduction}
 \subsection{Code Overview} % (fold)
 \label{sub:code_overview}
-The TDSE code discussed here was mainly developed by Joel Venzke while working on his Ph.D. in the Ultrafast Theory Group in JILA. Cory Goldsmith and other group members have also contributed to this code in various forms. It solves the Time Dependent Sch\"{o}dinger Equation (TDSE) for various targets in a laser field for a single active electron. It has support for two or more active electrons, but the computational power of modern super computers limits the calculation that are possible to 2 electrons in 2 spacial dimensions. For single active electrons, I have developed a cylindrical 2D code for linear polarized light. All other calculations requirer use of the Cartesian grid code. Future work will look to push towards a 2 electron full 6D code, and extending the code to different coordinate systems/basis methods.
+The TDSE code discussed here was initially developed by Joel Venzke while working on his Ph.D. in the Ultrafast Theory Group in JILA. Cory Goldsmith and other group members have also contributed to this code in various forms. It solves the Time Dependent Sch\"{o}dinger Equation (TDSE) for various targets in a laser field for a single active electron. It has support for two or more active electrons, but the computational power of modern super computers limits the calculation that are possible to 2 electrons in 2 spacial dimensions. For single active electrons, I have developed a cylindrical 2D code for linear polarized light. The cylindrical code can support aligned molecular targets for SAE potentials. For atomic targets, utilize the spherical code which is orders of magnitude more efficient and supports arbitrary laser polarizations. All other calculations requirer use of the Cartesian grid code. There is an RBF implementation, but due to issues with the eigenvalues behaving poorly time propagation is not currently working. Future work will look to push towards a 2 electron full 6D code, and extending the code to different coordinate systems/basis methods.
 
 This code has support for real space propagation of the TDSE using finite differences for spacial derivatives and Crank-Nicolson for time propagation. The codes has been shown to scale out to 3,000+ processors. It can also simulate interesting physics on a laptop if you have a few hours of free time. The main drive for developing this code is to allow for many types of laser interactions to be studies in a single code base.
 % subsection code_overview (end)
@@ -51,6 +51,249 @@ It is recommended you are familiar with python including the numpy, matplotlib, 
 If you need to update the main code, you will need knowledge of C++. Most updates at this point are standard C++ code, however, the PETSc and SLEPc libraries are used for any matrix vector operations, the IO is preformed through the HDF5 library, MPI calls are often done with Boost MPI, and GSL has been used for some special functions.
 % subsection recommended_programing_background (end)
 % section introduction (end)
+
+\section{Installation} % (fold)
+\label{sec:installation}
+Compiling the TDSE library itself is easy. However, some of the dependencies are tricky to get installed. Here is a short overview with some tips and tricks to help you out. Please read the  If you run into issues, shoot me an email.
+
+The steps required to install this code are as follows. More detailed directions are in the following subsections.
+\begin{enumerate}
+  \item Choose the compiler you plan on using
+  \item Check module system/package manager for dependencies
+  \item Install HDF5 (special version required, C++ and MPI)
+  \item Install PETSC (link HDF5)
+  \item Install SLEPC
+  \item Install TDSE library
+  \item Update your bashrc file
+\end{enumerate}
+
+% subsection overview (end)
+
+\subsection{Compilers} % (fold)
+\label{sub:compilers}
+This code has been installed with gcc and intel compilers with c++11 or better support. Portland group compilers have not been tested, but should work. If you are using a Mac, install gcc with the homebrew package manager (https://brew.sh) instead of using clang as you will need a fortran compiler for PETSC.
+% subsection compilers (end)
+
+\subsection{Dependencies} % (fold)
+\label{sub:dependencies}
+Before beginning the install process, make sure the following software is installed on your computer. Make sure they are compiled with the compiler you intend on using to compile the TDSE library. You should find them on the module system at most HPC centers and many local clusters. Here is the list of packages to look for:
+\begin{itemize}
+  \item boost  
+  \item boost-mpi 
+  \item cmake
+  \item gsl   
+  \item open-mpi (or equivalent)
+  \item zlib (can be installed by HDF5)
+\end{itemize}
+If one or more of these packages are not installed, you will need to do so manually. For Mac users, I recommend using homebrew (https://brew.sh) as your package manager and start by installing gcc followed by the rest of the packages. I have not had to install these packages on any other system, so if you need to, talk to a system admin or try your hand at installing them off their website.
+% subsection dependencies (end)
+
+\subsection{HDF5} % (fold)
+\label{sub:hdf5}
+\begin{enumerate}
+  \item Download and untar HDF5 source (https://www.hdfgroup.org)
+  \item Make the directory you wish to install HDF5 in
+  \item cd to the directory you just make
+  \item load any modules for the dependencies (if needed)
+  \item Run the script at end of this section after these changes
+  \begin{itemize}
+    \item Update \$\{PATH\_TO\_HDF5\_SOURCE\} to where the hdf5 source you downloaded is located
+    \item Update \$\{PATH\_TO\_HDF5\_INSTALL\} to where you want your compiled version of HDF5 to live
+  \end{itemize}
+  \item If the test pass, HDF5 is good to go
+\end{enumerate}
+
+---------- BEGIN FILE ---------
+\begin{verbatim}
+#!/bin/bash
+
+# run any module loads you need (from dependencies)
+
+# configure HDF5
+${PATH_TO_HDF5_SOURCE}/configure \
+  CC=mpicc \
+  FC=mpif90 \
+  CXX=mpic++ \
+  --prefix=${PATH_TO_HDF5_INSTALL} \
+  --enable-build-mode=production \
+  --disable-dependency-tracking \
+  --enable-static=yes \
+  --enable-shared=yes \
+  --enable-unsupported \
+  --enable-cxx \
+  --enable-fortran \
+  --enable-parallel
+
+# run the following make commands
+make 
+make check 
+make install
+\end{verbatim}
+---------- End FILE ---------
+% subsection hdf5 (end)
+
+\subsection{PETSC} % (fold)
+\label{sub:petsc}
+\begin{enumerate}
+  \item Download and untar PETSC source (https://www.mcs.anl.gov/petsc/)
+  \item cd to the directory with the petsc source
+  \item load any modules for the dependencies (if needed)
+  \item Run the script at end of this section after these changes
+  \begin{itemize}
+    \item update the script to load any modules (if needed)
+    \item remove anaconda from your path
+    \item Update \$\{PATH\_TO\_PETSC\_INSTALL\} to where you want your compiled version of PETSC to live
+    \item Update \$\{PATH\_TO\_HDF5\_INSTALL\} to where you want your compiled version of HDF5 to live
+  \end{itemize}
+  \item Run the make commands that are produced by the petsc build script output.
+  \item If the test pass, PETSC is good to go
+\end{enumerate}
+
+
+---------- BEGIN FILE ---------
+\begin{verbatim}
+#!/bin/bash
+export PETSC_DIR=`pwd`
+
+# run any module loads you need (from dependencies)
+
+# remove anaconda from your path if installed (it can cause issues with the PETSC build)
+# example code to remove anaconda3 from path
+# export PATH=$(echo "$PATH" | sed -e 's/:\/Users\/username\/anaconda3\/bin//')
+# export PATH=$(echo "$PATH" | sed -e 's/\/Users\/username\/anaconda3\/bin://')
+
+# configure PETSC
+./configure \
+  CXXOPTFLAGS="-O2" \
+  COPTFLAGS="-O2" \
+  FOPTFLAGS="-O2" \
+  --prefix=${PATH_TO_PETSC_INSTALL} \
+  --with-shared-libraries=1 \
+  --with-pthread=0 \
+  --with-openmp=0 \
+  --with-debugging=0 \
+  --with-ssl=0 \
+  --with-x=0 \
+  --with-valgrind=1 \
+  --with-fortran-kernels=1 \
+  --with-cxx-dialect=c++11 \
+  --with-scalar-type=complex \
+  --with-hdf5-dir=${PATH_TO_HDF5_INSTALL} \
+  --download-fftw=yes \
+  --download-superlu_dist=yes \
+  --download-superlu=yes \
+  --download-suitesparse=yes \
+  --download-metis=yes \
+  --download-parmetis=yes \
+  --download-scalapack=yes \
+  --download-mumps=yes
+
+# run the make commands that print at the end of the configure script if successful
+# dont forget to load modules 
+\end{verbatim}
+---------- End FILE ---------
+% subsection petsc (end) 
+
+\subsection{SLEPC} % (fold)
+\label{sub:slepc}
+
+\begin{enumerate}
+  \item Download and untar SLEPC source (http://slepc.upv.es)
+  \item cd to the directory with the slepc source
+  \item ensure \$\{PETSC\_DIR\} is set to \$\{PATH\_TO\_PETSC\_INSTALL\} by running \\``export PETSC\_DIR=\$\{PATH\_TO\_PETSC\_INSTALL\}'' \\(without the quotes and replacing \$\{PATH\_TO\_PETSC\_INSTALL\} as done before)
+  \item load any modules for the dependencies (if needed)
+  \item Run the script at end of this section after these changes
+  \begin{itemize}
+    \item update the script to load any modules (if needed)
+    \item Update \$\{PATH\_TO\_SLEPC\_INSTALL\} to where you want your compiled version of SLEPC to live
+  \end{itemize}
+  \item Run the make commands that are produced by the petsc build script output.
+  \item If the test pass, SLEPC is good to go
+\end{enumerate}
+
+---------- BEGIN FILE ---------
+\begin{verbatim}
+#!/bin/bash
+export SLEPC_DIR=`pwd`
+
+# run any module loads you need (from dependencies)
+
+# configure SLEPC
+./configure \
+  --prefix=${PATH_TO_SLEPC_INSTALL}
+
+# run the make commands that print at the end of the configure script if successful
+\end{verbatim}
+---------- End FILE ---------
+% subsection slepc (end)
+
+\subsection{TDSE} % (fold)
+\label{sub:tdse}
+\begin{enumerate}
+  \item Clone the TDSE directory (https://github.com/Joel-Venzke/TDSE)
+  \item Make a ``bin'' directory inside the TDSE repo
+  \item Make a ``build'' file inside the TDSE repo (see file near end of subsection as example)
+  \item Create a ``Makefile'' in the ``TDSE/src'' directory (see example near end of subsection)
+  \begin{itemize}
+    \item You may need to update the 
+  \end{itemize}
+  \item Ensure \$\{PETSC\_DIR\} is set to \$\{PATH\_TO\_PETSC\_INSTALL\} by running \\``export PETSC\_DIR=\$\{PATH\_TO\_PETSC\_INSTALL\}'' \\(without the quotes and replacing \$\{PATH\_TO\_PETSC\_INSTALL\} as done before)
+  \item Ensure \$\{SLEPC\_DIR\} is set to \$\{PATH\_TO\_SLEPC\_INSTALL\} by running \\``export SLEPC\_DIR=\$\{PATH\_TO\_SLEPC\_INSTALL\}'' \\(without the quotes and replacing \$\{PATH\_TO\_SLEPC\_INSTALL\} as done before)
+  \item cd to the TDSE repo's root directory
+  \item run ./build
+  \item If the code compiles correctly, the binary should appear as ``TDSE/bin/TDSE'' and you are done
+\end{enumerate}
+
+---------- BEGIN build ---------
+\begin{verbatim}
+#!/bin/bash
+
+# run any module loads you need (from dependencies)
+
+# remove anaconda from your path if installed (it can cause issues with the PETSC build)
+# example code to remove anaconda3 from path
+# export PATH=$(echo "$PATH" | sed -e 's/:\/Users\/username\/anaconda3\/bin//')
+# export PATH=$(echo "$PATH" | sed -e 's/\/Users\/username\/anaconda3\/bin://')
+
+cd src
+make -j8
+\end{verbatim}
+---------- End build ---------
+
+---------- BEGIN Makefile ---------
+\begin{verbatim}
+ALL: TDSE
+
+include ${SLEPC_DIR}/lib/slepc/conf/slepc_rules
+include ${SLEPC_DIR}/lib/slepc/conf/slepc_variables
+
+CFLAGS = ${PETSC_CC_INCLUDES}
+CXXFLAGS= ${PETSC_CXX_INCLUDES} -std=c++14 -Wall 
+FFLAGS = ${PETSC_FC_INCLUDES}
+INCLUDES = -lhdf5_hl_cpp -lhdf5_cpp -lgsl -lgslcblas -lboost_mpi ${SLEPC_EPS_LIB} -I/usr/local/include/ -I/jilasoft/software/gsl/2.2/include/ -L/jilasoft/software/gsl/2.2/lib
+CXX = mpicxx
+
+# put this on one line (the return is to allow it to fit on the page)
+OBJECTS = TDSE.o Parameters.o ViewWrapper.o HDF5Wrapper.o Pulse.o PETSCWrapper.o Wavefunction.o 
+Hamiltonian.o Simulation.o Utils.o
+
+TDSE: ${OBJECTS}
+  ${CXX} -o TDSE ${OBJECTS} ${PETSC_LIB} ${INCLUDES}
+  cp TDSE ../bin
+\end{verbatim}
+---------- End Makefile ---------
+% subsection tdse (end)
+
+\subsection{bashrc} % (fold)
+\label{sub:bashrc}
+To remove the need to set environmental variables every time you log in, I recommend setting them in your \$\{HOME\}/.bashrc (or \$\{HOME\}/.zshrc if using the ZSH shell). Here are the following lines of code to add: 
+\\``export PETSC\_DIR=\$\{PATH\_TO\_PETSC\_INSTALL\}''
+\\``export SLEPC\_DIR=\$\{PATH\_TO\_SLEPC\_INSTALL\}''
+\\(without the quotes and replacing \$\{PATH\_TO\_PETSC\_INSTALL\} and \$\{PATH\_TO\_SLEPC\_INSTALL\} as done before)
+
+% subsection bashrc (end)
+
+% section installation (end)
 
 \section{Theory} % (fold)
 \label{sec:theory}
@@ -91,7 +334,7 @@ The third term is the Coulomb potential for each nuclei.
 \begin{equation}
   - \sum_{n} \frac{Z_n}{r_{e,n}}
 \end{equation}
-This is often implemented with a soft core (Section~\ref{ssub:soft_core_like}) to avoid the singularity at $r_{n,e}=0$ though this is not required for full 3D simulations. Soft cores can increase the ground state energy for a particular target. This is often done to match the experimental values, though the impact of a soft core on the potential should be considered carefully before using one. The code allows for any locations for atomic targets. This allows any molecule to be implemented in the code without the need to recompile. You can also add frozen electrons to a nuclei using single active electron potentials found in Section~\ref{ssub:single_active_electron}.
+This is often implemented with a soft core (Section~\ref{ssub:soft_core_like}) to avoid the singularity at $r_{n,e}=0$ though this is not required for full 3D simulations. Soft cores can increase the ground state energy for a particular target. This is often done to match the experimental values, though the impact of a soft core on the potential should be considered carefully before using one as reviewer are not a fan of them and it can impact the physics in a simulation. The code allows for any locations for atomic targets. This allows any molecule to be implemented in the code without the need to recompile. You can also add frozen electrons to a nuclei using single active electron potentials found in Section~\ref{ssub:single_active_electron}.
 
 The last term is the electron electron coloration term.
 \begin{equation}
@@ -127,7 +370,7 @@ Order & $c_{n-3}$ & $c_{n-2}$ & $c_{n-1}$ & $c_{n}$ & $c_{n+1}$ & $c_{n+2}$ & $c
 \end{tabular}
 \end{center}
 
-For the remainder of this discussion, we will assume we are using second order derivatives. However, this will be expendable to higher order derivatives by adding more off diagonal elements in matrices discussed in this section.
+For the remainder of this discussion, we will assume we are using second order derivatives. However, this will be expendable to higher order derivatives by adding more off diagonal elements in matrices discussed in this section. See Sec.~\ref{sub:boundary_conditions} for notes on a few quirks with higher order FD.
 
 For the start of this discussion, we will consider a 1D wavefunction. We will later extend this to ND wavefunctions. We start with $\psi(x)$ known at various points along the $x$ axis spaced by a grid step of $dx$. We will label the points by $n$ such that $\psi_n = \psi(x_0 + dx*n)$ with $x_0$ being the lowest $x$ value. Plugging this into Equation~\ref{eq:finite_diff} we get
 \begin{equation}
@@ -159,7 +402,23 @@ This can be done until we hit the other end of the grid. If we take the boundary
 \end{bmatrix}
 \end{equation}
 One then uses a tensor product to produce the 2 and 3 dimensional versions.
+
+\textbf{TODO tensor products, first derivatives} 
 % subsection spacial_derivatives (end)
+
+\subsection{Boundary Conditions} % (fold)
+\label{sub:boundary_conditions}
+
+\textbf{TODO accounting for offset FD near edges to only have one ``ghost'' node}
+
+\subsection{Spherical code} % (fold)
+\label{sub:spherical_code}
+\textbf{TODO}
+
+spherical harmonics
+
+radial schordinger equation
+% subsection spherical_code (end)
 
 \subsection{Time Propagation} % (fold)
 \label{sub:time_propagation}
@@ -343,7 +602,7 @@ E(t) =& -\frac{1}{c}\frac{\partial}{\partial t}A(t)
 =&-E_0f(t) \cos(\omega_A (t-\tau_0) +\phi_A)
 \\
 &
-+\frac{E_0}{\omega_A}\frac{\partial f(t)}{\partial t}
+-\frac{E_0}{\omega_A}\frac{\partial f(t)}{\partial t}
 \sin(\omega_A (t-\tau_0) +\phi_A).
 \end{split}
 \end{equation}
@@ -396,27 +655,6 @@ TODO
 % subsection lasers (end)
 
 % subsection potentials (end)
-
-\section{Build System} % (fold)
-\label{sec:build_system}
-The build system changes from time to time. For the most up to date version, see the README in the root directory of this repository.
-
-TODO
-
-install HDF5
-
-install PETSc
-
-install SLEPc
-
-make bin directory
-
-new build file
-
-new Makefile
-
-run build
-% section build_system (end)
 
 \section{Running Calculations} % (fold)
 \label{sec:running_tdse_and_best_practices}
@@ -636,31 +874,27 @@ The following is an input file for simulating an 8 cycle, 800nm, sine squared pu
 \begin{verbatim}
 {
   "alpha": 0.0,
-  "coordinate_system": "Cylindrical",
-  "delta_t": 0.1,
+  "coordinate_system": "Spherical",
+  "delta_t": 0.05,
   "dimensions": [
   {
       "delta_x_max": 0.1,
       "delta_x_max_start": 4.0,
       "delta_x_min": 0.1,
       "delta_x_min_end": 4.0,
-      "dim_size": 100.0
-    },
-    {
-      "delta_x_max": 0.1,
-      "delta_x_max_start": 4.0,
-      "delta_x_min": 0.1,
-      "delta_x_min_end": 4.0,
-      "dim_size": 200.0
+      "dim_size": 100.0,
+      "l_max": 30, 
+      "m_max": 0
     }
   ],
   "ee_soft_core": 0.01,
   "field_max_states": 0,
   "free_propagate": 0,
-  "gauge": "Velocity",
+  "gauge": "Length",
   "gobbler": 0.9,
   "laser": {
     "experiment_type": "default",
+    "frequency_shift": 1,
     "pulses": [
       {
         "cep": 0.0,
@@ -682,14 +916,16 @@ The following is an input file for simulating an 8 cycle, 800nm, sine squared pu
     ]
   },
   "num_electrons": 1,
-  "order": 2,
+  "order": 4,
   "propagate": 1,
   "restart": 0,
   "sigma": 3.0,
   "start_state": {
-    "amplitude": [1.0],
-    "index": [0],
-    "phase": [0.0]
+    "amplitude": [0.5, 0.5], 
+    "l_index": [0, 1], 
+    "m_index": [0, 0], 
+    "n_index": [1, 2], 
+    "phase": [0.0, 0.0]
   },
   "state_solver": "SLEPC",
   "states": 5,
@@ -722,6 +958,63 @@ The following is an input file for simulating an 8 cycle, 800nm, sine squared pu
 \end{verbatim}
 % subsection example_file (end)
 
+\subsection{Coordinate Systems} % (fold)
+\label{sub:coordinate_systems}
+How long the calculation will take is largely dependent on the coordinate system you choose. If possible, I recommend utilizing the spherical coordinate system when possible. It is the most limited as far as targets (currently only supports spherically symmetric), but its runtime is orders of magnitude faster. Cylindrical is the second fastest and supports cylindrically symmetric potentials with lasers aligned along the z axis. The Cartesian code is more general, but much slower.
+
+\subsubsection{Spherical} % (fold)
+\label{ssub:spherical}
+\textbf{TODO}
+\begin{verbatim}
+"dimensions": [{
+      "delta_x_max": 0.1,
+      "delta_x_max_start": 4.0,
+      "delta_x_min": 0.1,
+      "delta_x_min_end": 4.0,
+      "dim_size": 100.0,
+      "l_max": 10, 
+      "m_max": 0
+}],
+
+"start_state": {
+    "amplitude": [0.5, 0.5], 
+    "l_index": [0, 1], 
+    "m_index": [0, 1], 
+    "n_index": [1, 2], 
+    "phase": [0.0, 0.0]
+},
+\end{verbatim}
+% subsubsection spherical (end)
+
+\subsubsection{Cartesian and Cylindrical} % (fold)
+\label{ssub:cartesian_and_cylindrical}
+\textbf{TODO}
+\begin{verbatim}
+"dimensions": [{
+      "delta_x_max": 0.1,
+      "delta_x_max_start": 4.0,
+      "delta_x_min": 0.1,
+      "delta_x_min_end": 4.0,
+      "dim_size": 100.0
+},
+{
+      "delta_x_max": 0.1,
+      "delta_x_max_start": 4.0,
+      "delta_x_min": 0.1,
+      "delta_x_min_end": 4.0,
+      "dim_size": 100.0
+}],
+
+"start_state": {
+    "amplitude": [0.5, 0.5], 
+    "index": [0, 1],  
+    "phase": [0.0, 0.0]
+}
+\end{verbatim}
+% subsubsection cartesian_and_cylindrical (end)
+
+% subsection coordinate_system_quirks (end)
+
 \subsection{Parameters} % (fold)
 \label{sub:parameters_input}
 The following is my attempt as describing what each parameter does. Each parameter is a subsubsection and they should come in the order of the example input file in Sec~\ref{sub:example_file}. Sub section names for nested parameters include a ``-'' to show that the parameter is either part of a list or dictionary of a different parameter. This is shown in Sec~\ref{ssub:dimensions-dim_size} as ``dim\_size'' is a sub parameter of the ``dimensions'' parameter.  Some of the parameters have extra descriptions that are critical to reproduce results from other codes. This may lead to some lengthy discussion that may not be useful for all users. If you have questions on particular parameters or more general questions, let me know.
@@ -738,6 +1031,7 @@ where $r$ is the standard Euclidean distance.
 \subsubsection{coordinate\_system}
 This describes the available coordinate systems available. Current list of available coordinate systems is (make sure to use ASCII quotes, don't just copy and paste)
 \begin{itemize}
+  \item ``Spherical'' (Recommended)
   \item ``Cartesian''
   \item ``Cylindrical''
   \item ``RBF'' (beta)
@@ -768,6 +1062,14 @@ delta\_x\_min\_end is the distance from the origin that the sine squared ramp up
 \subsubsection{dimensions - dim\_size}
 \label{ssub:dimensions-dim_size}
 dim\_size is the total size of the dimension in atomic units. For all Cartesian and the $z$ axis in Cylindrical, the grid will go from -dim\_size/2 to dim\_size/2. For the $\rho$ dimension in Cylindrical, the grid will go from 0 to dim\_size.
+
+\subsubsection{dimensions - l\_max}
+\label{ssub:dimensions-l_max}
+l\_max is the maximum angular momentum quantum number used by the spherical harmonic expansion. For few photon ionizations at reasonable intensities, values of 5-20 are typical. For HHG spectra from 30 to 100+ are used depending on the desired accuracy.
+
+\subsubsection{dimensions - m\_max}
+\label{ssub:dimensions-m_max}
+m\_max is the maximum angular momentum projection quantum number used by the spherical harmonic expansion. For linear polarized lasers along the z axis (assuming the ground state is m=0) you can set m\_max=0 due to selection rules ($l\rightarrow l\pm1$ and $m\rightarrow m$). For any other laser polarization or initial conditions with m$\ne$0 you will need to set m\_max$>$0 and typically equal to l\_max. 
 
 \subsubsection{field\_max\_states}
 \label{ssub:field_max_states}
@@ -805,6 +1107,14 @@ The experiment\_type is how the laser is being used. The options are
   \item ``streaking''
 \end{itemize}
 Below is documentation for ``default''. Details on the others can be found in Sec~\ref{ssub:experiment_type}.
+
+\subsubsection{laser - frequency\_shift}
+\label{ssub:laser_parameter-frequency_shift}
+The frequency\_shift parameter corrects for the error when setting the central frequency of the A field rather than the E field (see Sec.~\ref{sub:lasers}). It only supports some lasers, but this could be fixed using numeric integrals. Let me know if you want to code this up. Otherwise it can be done manually.
+\begin{itemize}
+  \item frequency\_shift = 1. accounts for the shift (setting E field central frequency, preferred)
+  \item frequency\_shift = 0. central frequency is unchanged (setting A field central frequency for manual entry)
+\end{itemize}
 
 \subsubsection{laser - pulses}
 pulses is a list of dictionaries used to describe a pulse. Each component inside a single pulse is in the units of that pulse such as the length of a single cycle is based on the frequency of that particular pulse.
@@ -899,7 +1209,16 @@ $a_n$ is the amplitude, $psi_n$ is the bound state, $\phi_n$ is the phase, $n$ i
 amplitude defines the $a_n$ in Eq.~\ref{eq:start_state} where $n$ is the index into this array. The initial wavefunction is normalized to one after being read in, so the amplitude array's values are only relative amounts.
 
 \subsubsection{start\_state - index}
-index is the $idx$ wavefunction in the bound state file being used. It takes the value of $idx$ in Eq.~\ref{eq:start_state} where $n$ is the index into this array. Note that the bound state file wavefunctions may have a random phase.
+index is the $idx$ wavefunction in the bound state file being used. It takes the value of $idx$ in Eq.~\ref{eq:start_state} where $n$ is the index into this array. Note that the bound state file wavefunctions may have a random phase. \textbf{This is not used in spherical code.}
+
+\subsubsection{start\_state - l\_index}
+The l quantum number for the initial state \textbf{used in the spherical code}. It is a list in the same order as the amplitude.
+
+\subsubsection{start\_state - m\_index}
+The m quantum number for the initial state \textbf{used in the spherical code}. It is a list in the same order as the amplitude.
+
+\subsubsection{start\_state - n\_index}
+The n quantum number for the initial state \textbf{used in the spherical code}. It is a list in the same order as the amplitude. (note if the grid is to small to support that n quantum number you may get a ``continuum state'')
 
 \subsubsection{start\_state - phase}
 phase is the value of $\phi_n$ in Eq.~\ref{eq:start_state} where $n$ is the index into this array. Note that the bound state file wavefunctions may have a random phase. If relative phase is important to your system take extra care when setting this.
@@ -1183,16 +1502,17 @@ The simulation class implements various propagation and eigen state calculations
 
 \section{Testing} % (fold)
 \label{sec:testing}
-There is very little testing used in this code. If you would like to work on this or notices something is wrong. Please let me know.
+There is very little testing continued used in this code. The code is well tested when development occurs. If you would like to work on a unit test system or notices something is wrong. Please let me know.
 % section testing (end)
 
 \section{Wish list} % (fold)
 \label{sec:wish_list}
 \begin{itemize}
-    \item Faster algorithm (radial code, numerical basis, non uniform grid, ect.)
+    \item Faster algorithm (radial code (done), non uniform grid, hyper-spherical harmonics, ect.)
     \item Free propagation support (Density Matrix for bound states)
     \item New features (two electron code)
     \item Moving nuclei (classical and/or quantum mechanical)
+    \item Molecular expansions for spherical code
 \end{itemize}
 % section wish_list (end)
 
@@ -1201,15 +1521,23 @@ There is very little testing used in this code. If you would like to work on thi
 
 \subsection{Posters} % (fold)
 \label{sub:posters}
-TODO
+DAMOP (18,19)
+Gordan (18)
+JILA ultrafast (18)
 % subsection posters (end)
 \subsection{Talks} % (fold)
 \label{sub:talks}
-TODO
+DAMOP (18,19)
+ISMS (19)
 % subsection talks (end)
 \subsection{Papers} % (fold)
 \label{sub:papers}
-TODO
+J. Venzke, R. Reiff, Z. Xue, A. Jaroń-Becker, and A. Becker
+PRA \textbf{98}, 043434 (2018).
+
+\noindent
+J. Venzke, T. Joyce, Z. Xue, A. Becker, and A. Jaron-Becker, 
+PRA \textbf{98}, 063409 (2018). 
 % subsection papers (end)
 % section supporting_works (end)
 

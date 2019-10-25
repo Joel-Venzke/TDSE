@@ -33,6 +33,7 @@ class Simulation : protected Utils
   HDF5Wrapper *h5_file;
   ViewWrapper *viewer_file;
   Vec *psi;
+  Vec *psi_small;
   Vec psi_right;
   double *time;
   PetscInt time_length;
@@ -45,6 +46,12 @@ class Simulation : protected Utils
   PetscLogEvent create_matrix;
   PetscLogEvent create_observables;
   PetscLogEvent create_checkpoint;
+  PetscInt coordinate_system_idx;
+  PetscInt *num_x;
+  PetscInt l_max;
+  PetscInt m_max;
+  PetscInt *l_values; /* l_values for the spherical code */
+  PetscInt *m_values; /* m_values for the spherical code */
 
   /* destroys psi_old*/
   bool CheckConvergence(Vec &psi_1, Vec &psi_2, double tol);
@@ -65,4 +72,6 @@ class Simulation : protected Utils
 
   void CheckpointState(HDF5Wrapper &h_file, ViewWrapper &v_file,
                        PetscInt write_idx, Mat *cur_hamiltonian);
+  void CheckpointSmallState(HDF5Wrapper &h_file, ViewWrapper &v_file,
+                            PetscInt write_idx, dcomp energy, PetscInt l_val);
 };

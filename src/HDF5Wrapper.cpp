@@ -841,10 +841,11 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
 {
   if (world.rank() == 0)
   {
-    PetscInt num_dims        = p.GetNumDims();
-    PetscInt num_pulses      = p.GetNumPulses();
-    PetscInt num_start_state = p.GetNumStartState();
-    header                   = true;
+    PetscInt num_dims              = p.GetNumDims();
+    PetscInt num_pulses            = p.GetNumPulses();
+    PetscInt num_start_state       = p.GetNumStartState();
+    PetscInt coordinate_system_idx = p.GetCoordinateSystemIdx();
+    header                         = true;
 
     CreateGroup("/Parameters/");
 
@@ -859,6 +860,8 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
                 "The minimum step sizes in that dimension in atomic units.");
     WriteObject(p.delta_x_max.get(), num_dims, "/Parameters/delta_x_max",
                 "The maximum step sizes in that dimension in atomic units.");
+    WriteObject(p.GetNumStates(), "/Parameters/num_states",
+                "The number of states used in projections.");
     WriteObject(p.GetStartStateIdx(), num_start_state,
                 "/Parameters/start_state_idx",
                 "The index of states in super position.");
@@ -868,6 +871,20 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
     WriteObject(p.GetStartStatePhase(), num_start_state,
                 "/Parameters/start_state_phase",
                 "The phase of states in super position.");
+    if (coordinate_system_idx == 3)
+    {
+      WriteObject(p.GetStartStateLIdx(), num_start_state,
+                  "/Parameters/start_state_l_idx",
+                  "The l value of each state in the starting super position.");
+      WriteObject(p.GetStartStateMIdx(), num_start_state,
+                  "/Parameters/start_state_m_idx",
+                  "The m value of each state in the starting super position.");
+
+      WriteObject(p.GetLMax(), "/Parameters/l_max",
+                  "The maximum l value used in the simulation.");
+      WriteObject(p.GetMMax(), "/Parameters/m_max",
+                  "The maximum m value used in the simulation.");
+    }
     WriteObject(
         p.delta_x_min_end.get(), num_dims, "/Parameters/delta_x_min_end",
         "The minimum step sizes ends in that dimension in atomic units.");
@@ -966,6 +983,9 @@ void HDF5Wrapper::WriteHeader(Parameters &p)
                 "Index of solver: Velocity:0, Length:1");
     WriteObject(num_pulses, "/Parameters/num_pulses",
                 "The number of pulses from the input file");
+    WriteObject(p.GetFrequencyShift(), "/Parameters/frequency_shift",
+                "If the pulses are frequency shifted. 0: set A field "
+                "frequency. 1: set E field frequency");
     for (int pulse_idx = 0; pulse_idx < p.GetNumPulses(); ++pulse_idx)
     {
       WriteObject(
@@ -1064,6 +1084,13 @@ template void HDF5Wrapper::WriteObject< double >(double data,
                                                  H5std_string var_path,
                                                  H5std_string attribute,
                                                  int write_idx);
+template void HDF5Wrapper::WriteObject< dcomp >(dcomp data,
+                                                H5std_string var_path,
+                                                int write_idx);
+template void HDF5Wrapper::WriteObject< dcomp >(dcomp data,
+                                                H5std_string var_path,
+                                                H5std_string attribute,
+                                                int write_idx);
 template void HDF5Wrapper::WriteObject< int * >(int *, int, std::string,
                                                 std::string);
 template void HDF5Wrapper::WriteObject< double * >(double *, int, std::string,

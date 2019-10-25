@@ -12,6 +12,8 @@ Boost MPI
 
 Compiler with GCC 4.9 or greater (C++11 support)
 
+GNU Scientific Library (GSL)
+
 # INSTALL DEPENDENCIES
 
 You will need hdf5 with c++ and mpi support (see system specifics below). 

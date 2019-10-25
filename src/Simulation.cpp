@@ -22,14 +22,16 @@ Simulation::Simulation(Hamiltonian &hamiltonian_in, Wavefunction &w,
                        ViewWrapper &v_file, Parameters &p)
 {
   if (world.rank() == 0) std::cout << "Creating Simulation\n";
-  hamiltonian  = &hamiltonian_in;
-  wavefunction = &w;
-  pulse        = &pulse_in;
-  h5_file      = &h_file;
-  viewer_file  = &v_file;
-  parameters   = &p;
-  time         = pulse_in.GetTime();
-  time_length  = pulse_in.GetMaxPulseLength();
+  hamiltonian           = &hamiltonian_in;
+  wavefunction          = &w;
+  pulse                 = &pulse_in;
+  h5_file               = &h_file;
+  viewer_file           = &v_file;
+  parameters            = &p;
+  time                  = pulse_in.GetTime();
+  time_length           = pulse_in.GetMaxPulseLength();
+  coordinate_system_idx = p.GetCoordinateSystemIdx();
+  num_x                 = w.GetNumX();
 
   /* allocated left and right */
   h = hamiltonian->GetTimeIndependent();
@@ -37,6 +39,22 @@ Simulation::Simulation(Hamiltonian &hamiltonian_in, Wavefunction &w,
                &left);
   MatDuplicate(left, MAT_DO_NOT_COPY_VALUES, &right);
   psi = wavefunction->GetPsi();
+  if (coordinate_system_idx == 3)
+  {
+    l_max     = p.GetLMax();
+    m_max     = p.GetMMax();
+    l_values  = wavefunction->GetLValues();
+    m_values  = wavefunction->GetMValues();
+    psi_small = wavefunction->GetPsiSmall();
+  }
+  else
+  {
+    l_max     = 0;
+    m_max     = 0;
+    l_values  = NULL;
+    m_values  = NULL;
+    psi_small = NULL;
+  }
   VecDuplicate(*psi, &psi_right);
 
   /* Create the solver */
@@ -59,6 +77,13 @@ void Simulation::Propagate()
 {
   if (world.rank() == 0) std::cout << "\nPropagating in time\n";
   clock_t t;
+  clock_t step_time;
+  std::ofstream timing_file;
+  if (world.rank() == 0)
+  {
+    timing_file.open("timing.log");
+    timing_file << "Iteration (time)\n";
+  }
   /* if we are converged */
   bool converged = false;
   /* If we need end of pulse checkpoint */
@@ -103,9 +128,9 @@ void Simulation::Propagate()
 
   if (world.rank() == 0)
     std::cout << "Total writes: "
-              << time_length / write_frequency_checkpoint + 1
-              << "\nStarting propagation\n"
-              << std::flush;
+              << (time_length + free_propagate) / write_frequency_checkpoint + 1
+              << "\nTotal time steps: " << time_length + free_propagate
+              << std::endl;
 
   /* Checkpoint file before propagation starts */
   if (parameters->GetRestart() != 1)
@@ -113,7 +138,12 @@ void Simulation::Propagate()
     wavefunction->Checkpoint(*h5_file, *viewer_file, 0.0);
   }
 
-  t = clock();
+  if (world.rank() == 0)
+  {
+    std::cout << "Starting propagation\n\n" << std::flush;
+    t         = clock();
+    step_time = clock();
+  }
   for (; i < time_length; i++)
   {
     PetscLogEventBegin(time_step, 0, 0, 0, 0);
@@ -135,22 +165,24 @@ void Simulation::Propagate()
       PetscLogEventBegin(create_checkpoint, 0, 0, 0, 0);
 
       if (world.rank() == 0)
-        std::cout << "\nIteration: " << i << "\nPulse ends: " << time_length
+        std::cout << "\nIteration:  " << i << "\nPulse ends: " << time_length
                   << "\n"
                   << "Average time for time-step: "
-                  << ((float)clock() - t) /
-                         (CLOCKS_PER_SEC * write_frequency_checkpoint)
+                  << ((float)clock() - t) / CLOCKS_PER_SEC /
+                         write_frequency_checkpoint
                   << "\n"
                   << std::flush;
-      t = clock();
       /* write a checkpoint */
       wavefunction->Checkpoint(*h5_file, *viewer_file, time[i]);
-      if (world.rank() == 0)
-        std::cout << "Checkpoint time: "
-                  << ((float)clock() - t) / (CLOCKS_PER_SEC) << "\n"
-                  << std::flush;
-      t = clock();
+      if (world.rank() == 0) t = clock();
       PetscLogEventEnd(create_checkpoint, 0, 0, 0, 0);
+    }
+
+    if (world.rank() == 0)
+    {
+      timing_file << "Iteration: " << i << "\t("
+                  << ((float)clock() - step_time) / CLOCKS_PER_SEC << "s)\n";
+      step_time = clock();
     }
     PetscLogEventEnd(time_step, 0, 0, 0, 0);
   }
@@ -159,8 +191,6 @@ void Simulation::Propagate()
   {
     /* Save frame after pulse ends*/
     wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
-    wavefunction->ProjectOut(parameters->GetTarget() + ".h5", *h5_file,
-                             *viewer_file, delta_t * (i - 1));
   }
 
   if (free_propagate == -1) /* until norm stops changing */
@@ -206,9 +236,14 @@ void Simulation::Propagate()
         }
         /* write a checkpoint */
         wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
-        wavefunction->ProjectOut(parameters->GetTarget() + ".h5", *h5_file,
-                                 *viewer_file, delta_t * (i - 1));
-        t = clock();
+        if (world.rank() == 0) t = clock();
+      }
+      if (world.rank() == 0)
+      {
+        timing_file << "Iteration: " << i << "\t("
+                    << ((float)clock() - step_time) / CLOCKS_PER_SEC << "s)\n"
+                    << std::flush;
+        step_time = clock();
       }
       i++;
     }
@@ -243,16 +278,27 @@ void Simulation::Propagate()
                     << std::flush;
         /* write a checkpoint */
         wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
-        wavefunction->ProjectOut(parameters->GetTarget() + ".h5", *h5_file,
-                                 *viewer_file, delta_t * (i - 1));
-        t = clock();
+        if (world.rank() == 0) t = clock();
+      }
+      if (world.rank() == 0)
+      {
+        timing_file << "Iteration: " << i << "\t("
+                    << ((float)clock() - step_time) / CLOCKS_PER_SEC << "s)\n"
+                    << std::flush;
+        step_time = clock();
       }
       i++;
     }
     /* Save last Wavefunction since it might not end on a write frequency*/
-    wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
-    wavefunction->ProjectOut(parameters->GetTarget() + ".h5", *h5_file,
-                             *viewer_file, delta_t * (i - 1));
+    if (free_propagate > 0)
+    {
+      wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
+    }
+  }
+
+  if (world.rank() == 0)
+  {
+    timing_file.close();
   }
 
   VecDestroy(&psi_old);
@@ -269,10 +315,21 @@ void Simulation::Propagate()
  */
 void Simulation::FromFile(PetscInt num_states)
 {
-  wavefunction->LoadPsi(
-      parameters->GetTarget() + ".h5", num_states,
-      parameters->GetNumStartState(), parameters->GetStartStateIdx(),
-      parameters->GetStartStateAmplitude(), parameters->GetStartStatePhase());
+  if (coordinate_system_idx == 3)
+  {
+    wavefunction->LoadPsi(
+        parameters->GetTarget() + ".h5", num_states,
+        parameters->GetNumStartState(), parameters->GetStartStateIdx(),
+        parameters->GetStartStateLIdx(), parameters->GetStartStateMIdx(),
+        parameters->GetStartStateAmplitude(), parameters->GetStartStatePhase());
+  }
+  else
+  {
+    wavefunction->LoadPsi(
+        parameters->GetTarget() + ".h5", num_states,
+        parameters->GetNumStartState(), parameters->GetStartStateIdx(),
+        parameters->GetStartStateAmplitude(), parameters->GetStartStatePhase());
+  }
 }
 
 /**
@@ -291,7 +348,6 @@ void Simulation::EigenSolve(PetscInt num_states)
               << std::flush;
   double tol = parameters->GetTol();
   dcomp eigen_real;
-  dcomp eigen_imag;
   int nconv;
 
   /* Files for */
@@ -301,39 +357,103 @@ void Simulation::EigenSolve(PetscInt num_states)
   v_states_file.Close();
   HDF5Wrapper h_states_file(parameters->GetTarget() + ".h5"); /* HDF5 viewer */
 
-  psi = wavefunction->GetPsi();
-
-  EPS eps; /* eigen solver */
-  EPSCreate(PETSC_COMM_WORLD, &eps);
-
-  if (parameters->GetFieldMaxStates())
+  if (coordinate_system_idx == 3)
   {
-    h = hamiltonian->GetTotalHamiltonian(pulse->GetFieldMaxIdx(), false);
+    /* only the radial part is needed for the states */
+    psi = wavefunction->GetPsiSmall();
+    for (int l_val = 0; l_val < l_max + 1; ++l_val)
+    {
+      /* make sure we still have states to calculate */
+      /* for every increase in l, there is one less state in n */
+      if (num_states > l_val)
+      {
+        if (parameters->GetFieldMaxStates())
+        {
+          EndRun("Field max states not supported in spherical coordinates");
+        }
+        else
+        {
+          h = hamiltonian->GetTimeIndependent(false, l_val);
+        }
+        EPS eps; /* eigen solver */
+        EPSCreate(PETSC_COMM_WORLD, &eps);
+        EPSSetOperators(eps, *(h), NULL);
+        EPSSetProblemType(eps, EPS_NHEP);
+        EPSSetTolerances(eps, tol, PETSC_DECIDE);
+        EPSSetWhichEigenpairs(eps, EPS_SMALLEST_REAL);
+        /* EPS doesn't converge unless we increase the subspace */
+        if (coordinate_system_idx == 3 and num_states > 10)
+        {
+          EPSSetDimensions(eps, num_states - l_val, PETSC_DECIDE,
+                           num_x[2] * 0.1);
+        }
+        else /* make it faster for small calculations */
+        {
+          EPSSetDimensions(eps, num_states - l_val, 300, PETSC_DECIDE);
+        }
+        /* set up initial space */
+        if (l_val == 0)
+        {
+          wavefunction->RadialHGroundPsiSmall();
+          EPSSetInitialSpace(eps, 1, psi);
+        }
+        EPSSetFromOptions(eps);
+        EPSSolve(eps);
+        EPSGetConverged(eps, &nconv);
+        if (world.rank() == 0)
+        {
+          std::cout << "\n";
+        }
+        for (int j = 0; j < num_states - l_val; j++)
+        {
+          EPSGetEigenpair(eps, j, &eigen_real, NULL, *psi, NULL);
+          if (world.rank() == 0)
+          {
+            std::cout << "Eigen (n,l):  " << j + 1 + l_val << "," << l_val
+                      << "\t" << eigen_real.real() << "\t" << eigen_real.imag()
+                      << "\n";
+          }
+          CheckpointSmallState(h_states_file, v_states_file, j, eigen_real,
+                               l_val);
+        }
+        EPSDestroy(&eps);
+      }
+    }
   }
   else
   {
-    h = hamiltonian->GetTimeIndependent(false);
-  }
-  EPSSetOperators(eps, *(h), NULL);
-  EPSSetProblemType(eps, EPS_NHEP);
-  EPSSetTolerances(eps, tol, PETSC_DECIDE);
-  EPSSetWhichEigenpairs(eps, EPS_SMALLEST_REAL);
-  EPSSetDimensions(eps, num_states, PETSC_DECIDE, PETSC_DECIDE);
-  EPSSetFromOptions(eps);
-  EPSSolve(eps);
-  EPSGetConverged(eps, &nconv);
+    psi = wavefunction->GetPsi();
+    EPS eps; /* eigen solver */
+    EPSCreate(PETSC_COMM_WORLD, &eps);
+    if (parameters->GetFieldMaxStates())
+    {
+      h = hamiltonian->GetTotalHamiltonian(pulse->GetFieldMaxIdx(), false);
+    }
+    else
+    {
+      h = hamiltonian->GetTimeIndependent(false);
+    }
+    EPSSetOperators(eps, *(h), NULL);
+    EPSSetProblemType(eps, EPS_NHEP);
+    EPSSetTolerances(eps, tol, PETSC_DECIDE);
+    EPSSetWhichEigenpairs(eps, EPS_SMALLEST_REAL);
+    EPSSetDimensions(eps, num_states, PETSC_DECIDE, PETSC_DECIDE);
+    EPSSetFromOptions(eps);
+    EPSSolve(eps);
+    EPSGetConverged(eps, &nconv);
 
-  for (int j = 0; j < nconv; j++)
-  {
-    EPSGetEigenpair(eps, j, &eigen_real, NULL, *psi, NULL);
-    if (world.rank() == 0)
-      std::cout << "Eigen " << eigen_real << " " << eigen_imag << " " << j
-                << "\n";
-    wavefunction->Normalize();
-    CheckpointState(h_states_file, v_states_file, j, h);
+    for (int j = 0; j < nconv; j++)
+    {
+      EPSGetEigenpair(eps, j, &eigen_real, NULL, *psi, NULL);
+      if (world.rank() == 0)
+        std::cout << "Eigen: " << j << "\t" << eigen_real << "\n";
+      wavefunction->Normalize();
+      CheckpointState(h_states_file, v_states_file, j, h);
+    }
+
+    EPSDestroy(&eps);
   }
   FromFile(num_states);
-  EPSDestroy(&eps);
 }
 
 /**
@@ -389,6 +509,8 @@ void Simulation::CrankNicolson(double dt, PetscInt time_idx, PetscInt dim_idx)
   KSPGetConvergedReason(ksp, &reason);
   if (reason < 0)
   {
+    std::cout << "Time step: " << time_idx << "\n";
+    std::cout << "Divergence Reason: " << KSPConvergedReason(reason);
     EndRun("Divergence!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
   }
 }
@@ -467,7 +589,6 @@ void Simulation::PowerMethod(PetscInt num_states)
     KSPSetOperators(ksp, left, left);
     KSPSetTolerances(ksp, 1.e-15, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
     /* Allow command line options */
-    KSPSetTolerances(ksp, 1.e-15, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
     KSPSetFromOptions(ksp);
 
     /* Do we need to use gram schmidt */
@@ -482,7 +603,7 @@ void Simulation::PowerMethod(PetscInt num_states)
        * extremely quickly */
       ModifiedGramSchmidt(states);
     }
-    t = clock();
+    if (world.rank() == 0) t = clock();
     /* loop until error is small enough */
     while (!converged)
     {
@@ -521,7 +642,7 @@ void Simulation::PowerMethod(PetscInt num_states)
                     << ((float)clock() - t) / (CLOCKS_PER_SEC * write_frequency)
                     << "\n"
                     << std::flush;
-        t = clock();
+        if (world.rank() == 0) t = clock();
       }
       /* increment counter */
       i++;
@@ -630,6 +751,27 @@ void Simulation::ModifiedGramSchmidt(std::vector< Vec > &states)
  * @param h_file HDF5Wapper file
  * @param v_file ViewWapper file
  * @param write_idx Index of the eigen state
+ * @param energy the Energy of the state
+ * @param l_val the l_value of the state
+ */
+void Simulation::CheckpointSmallState(HDF5Wrapper &h_file, ViewWrapper &v_file,
+                                      PetscInt write_idx, dcomp energy,
+                                      PetscInt l_val)
+{
+  // wavefunction->ZeroPhasePsiSmall();
+  wavefunction->CheckpointPsiSmall(v_file, write_idx, l_val);
+  h_file.WriteObject(&energy, 1, "/Energy_l_" + std::to_string(l_val),
+                     "Energy of the corresponding state", write_idx);
+}
+
+/**
+ * @brief Writes psi to a eigen state file
+ * @details Used to save eigen states to a file
+ *
+ * @param h_file HDF5Wapper file
+ * @param v_file ViewWapper file
+ * @param write_idx Index of the eigen state
+ * @param cur_hamiltonian The Hamiltonian used to get the energy
  */
 void Simulation::CheckpointState(HDF5Wrapper &h_file, ViewWrapper &v_file,
                                  PetscInt write_idx, Mat *cur_hamiltonian)

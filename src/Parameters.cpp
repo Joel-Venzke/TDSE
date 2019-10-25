@@ -36,6 +36,10 @@ void Parameters::Setup(std::string file_name)
   {
     coordinate_system_idx = 2;
   }
+  else if (coordinate_system == "Spherical")
+  {
+    coordinate_system_idx = 3;
+  }
   else
   {
     coordinate_system_idx = -1;
@@ -67,6 +71,79 @@ void Parameters::Setup(std::string file_name)
 
     gobbler = 0.0;
     order   = 0;
+  }
+  else if (coordinate_system_idx == 3)
+  {
+    CheckParameter(data["dimensions"].size(), "dimensions");
+    if (data["dimensions"].size() != 1)
+    {
+      EndRun(
+          "The Spherical code take 1 dimension parameter with 'l_max' and "
+          "'m_max' as additional parameter");
+    }
+    num_dims          = 3;
+    dim_size          = std::make_unique< double[] >(num_dims);
+    delta_x_min       = std::make_unique< double[] >(num_dims);
+    delta_x_min_end   = std::make_unique< double[] >(num_dims);
+    delta_x_max       = std::make_unique< double[] >(num_dims);
+    delta_x_max_start = std::make_unique< double[] >(num_dims);
+
+    /* The last dimension (diagonal of matrix) is r and we use Finite
+     * difference for this */
+    int dim_input_idx = 0;
+    int dim_idx       = 2;
+    CheckParameter(data["dimensions"][dim_input_idx]["dim_size"].size(),
+                   "dimensions - dim_size");
+    dim_size[dim_idx] = data["dimensions"][dim_input_idx]["dim_size"];
+
+    CheckParameter(data["dimensions"][dim_input_idx]["delta_x_min"].size(),
+                   "dimensions - delta_x_min");
+    delta_x_min[dim_idx] = data["dimensions"][dim_input_idx]["delta_x_min"];
+
+    CheckParameter(data["dimensions"][dim_input_idx]["delta_x_min_end"].size(),
+                   "dimensions - delta_x_min_end");
+    delta_x_min_end[dim_idx] =
+        data["dimensions"][dim_input_idx]["delta_x_min_end"];
+
+    CheckParameter(data["dimensions"][dim_input_idx]["delta_x_max"].size(),
+                   "dimensions - delta_x_max");
+    delta_x_max[dim_idx] = data["dimensions"][dim_input_idx]["delta_x_max"];
+
+    CheckParameter(
+        data["dimensions"][dim_input_idx]["delta_x_max_start"].size(),
+        "dimensions - delta_x_max_start");
+    delta_x_max_start[dim_idx] =
+        data["dimensions"][dim_input_idx]["delta_x_max_start"];
+
+    /* The next two dimensions are expanded in spherical harmonics with indexes
+     * l and m */
+    for (dim_idx = 0; dim_idx < 2; ++dim_idx)
+    {
+      delta_x_min[dim_idx]     = 1.0;
+      delta_x_min_end[dim_idx] = 0.0;
+      delta_x_max[dim_idx]     = 1.0;
+    }
+
+    /* get m_max note m goes from -m to m so 2m+1 terms*/
+
+    dim_size[0] = 1;
+
+    /* get l_max */
+    CheckParameter(data["dimensions"][0]["l_max"].size(), "dimensions - l_max");
+    l_max = data["dimensions"][0]["l_max"];
+
+    /* get m_max */
+    CheckParameter(data["dimensions"][0]["m_max"].size(), "dimensions - m_max");
+    m_max = data["dimensions"][0]["m_max"];
+
+    /* this dimension combines l and m to avoid tensor grid issues */
+    dim_size[1] = GetIdxFromLM(l_max, m_max, m_max) + 1;
+
+    CheckParameter(data["gobbler"].size(), "gobbler");
+    gobbler = data["gobbler"];
+
+    CheckParameter(data["order"].size(), "order");
+    order = data["order"];
   }
   else
   {
@@ -187,30 +264,80 @@ void Parameters::Setup(std::string file_name)
     gauge_idx = -1;
   }
 
-  CheckParameter(data["start_state"]["index"].size(), "start_state - index");
-  num_start_state = data["start_state"]["index"].size();
-  if (data["start_state"]["amplitude"].size() != num_start_state)
+  if (coordinate_system_idx == 3)
   {
-    EndRun(
-        "'start_state - amplitude' and 'start_state - index' sizes do not "
-        "match. Double check input file.");
+    CheckParameter(data["start_state"]["n_index"].size(),
+                   "start_state - n_index");
+    num_start_state   = data["start_state"]["n_index"].size();
+    start_state_l_idx = new PetscInt[num_start_state];
+    start_state_m_idx = new PetscInt[num_start_state];
+    if (data["start_state"]["amplitude"].size() != num_start_state)
+    {
+      EndRun(
+          "'start_state - amplitude' and 'start_state - n_index' sizes do not "
+          "match. Double check input file.");
+    }
+    if (data["start_state"]["phase"].size() != num_start_state)
+    {
+      EndRun(
+          "'start_state - phase' and 'start_state - n_index' sizes do not "
+          "match. Double check input file.");
+    }
+    if (data["start_state"]["l_index"].size() != num_start_state)
+    {
+      EndRun(
+          "'start_state - l_index' and 'start_state - n_index' sizes do not "
+          "match. Double check input file.");
+    }
+    if (data["start_state"]["m_index"].size() != num_start_state)
+    {
+      EndRun(
+          "'start_state - m_index' and 'start_state - n_index' sizes do not "
+          "match. Double check input file.");
+    }
   }
-  if (data["start_state"]["phase"].size() != num_start_state)
+  else
   {
-    EndRun(
-        "'start_state - phase' and 'start_state - index' sizes do not match. "
-        "Double check input file.");
+    CheckParameter(data["start_state"]["index"].size(), "start_state - index");
+    num_start_state = data["start_state"]["index"].size();
+
+    if (data["start_state"]["amplitude"].size() != num_start_state)
+    {
+      EndRun(
+          "'start_state - amplitude' and 'start_state - index' sizes do not "
+          "match. Double check input file.");
+    }
+    if (data["start_state"]["phase"].size() != num_start_state)
+    {
+      EndRun(
+          "'start_state - phase' and 'start_state - index' sizes do not match. "
+          "Double check input file.");
+    }
   }
   start_state_idx       = new PetscInt[num_start_state];
   start_state_amplitude = new double[num_start_state];
   start_state_phase     = new double[num_start_state];
   for (PetscInt i = 0; i < num_start_state; i++)
   {
-    CheckParameter(data["start_state"]["index"][i].size(),
-                   "start_state - index");
-    start_state_idx[i] = data["start_state"]["index"][i];
-    CheckParameter(data["start_state"]["amplitude"][i].size(),
-                   "start_state - amplitude");
+    /* You need an n and l index for spherical */
+    if (coordinate_system_idx == 3)
+    {
+      CheckParameter(data["start_state"]["n_index"][i].size(),
+                     "start_state - n_index");
+      start_state_idx[i] = data["start_state"]["n_index"][i];
+      CheckParameter(data["start_state"]["l_index"][i].size(),
+                     "start_state - l_index");
+      start_state_l_idx[i] = data["start_state"]["l_index"][i];
+      CheckParameter(data["start_state"]["m_index"][i].size(),
+                     "start_state - m_index");
+      start_state_m_idx[i] = data["start_state"]["m_index"][i];
+    }
+    else
+    {
+      CheckParameter(data["start_state"]["index"][i].size(),
+                     "start_state - index");
+      start_state_idx[i] = data["start_state"]["index"][i];
+    }
     start_state_amplitude[i] = data["start_state"]["amplitude"][i];
     CheckParameter(data["start_state"]["phase"][i].size(),
                    "start_state - phase");
@@ -411,6 +538,10 @@ void Parameters::Setup(std::string file_name)
                  "laser - experiment_type");
   experiment_type = data["laser"]["experiment_type"];
 
+  CheckParameter(data["laser"]["frequency_shift"].size(),
+                 "laser - frequency_shift");
+  frequency_shift = data["laser"]["frequency_shift"];
+
   /* allocate memory */
   pulse_shape         = std::make_unique< std::string[] >(num_pulses);
   pulse_shape_idx     = std::make_unique< PetscInt[] >(num_pulses);
@@ -451,17 +582,14 @@ void Parameters::Setup(std::string file_name)
       helicity_idx[pulse_idx]    = 0;
       gaussian_length[pulse_idx] = 5.0;
 
-      if (num_dims == 3)
-      {
-        poynting_vector[pulse_idx]    = new double[num_dims];
-        poynting_vector[pulse_idx][0] = 0.0;
-        poynting_vector[pulse_idx][1] = 0.0;
-        poynting_vector[pulse_idx][2] = 1.0;
-      }
-
       /* Get polarization */
       polarization_vector[pulse_idx] = new double[num_dims];
       polar_norm                     = 0.0;
+      if (num_dims == 3)
+      {
+        poynting_vector[pulse_idx] = new double[num_dims];
+        poynting_norm              = 0.0;
+      }
       for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
       {
         CheckParameter(
@@ -472,6 +600,18 @@ void Parameters::Setup(std::string file_name)
             data["laser"]["pulses"][pulse_idx]["polarization_vector"][dim_idx];
         polar_norm += polarization_vector[pulse_idx][dim_idx] *
                       polarization_vector[pulse_idx][dim_idx];
+
+        if (num_dims == 3)
+        {
+          CheckParameter(
+              data["laser"]["pulses"][pulse_idx]["poynting_vector"][dim_idx]
+                  .size(),
+              "laser - pulses - poynting_vector");
+          poynting_vector[pulse_idx][dim_idx] =
+              data["laser"]["pulses"][pulse_idx]["poynting_vector"][dim_idx];
+          poynting_norm += poynting_vector[pulse_idx][dim_idx] *
+                           poynting_vector[pulse_idx][dim_idx];
+        }
       }
       /* normalize the polarization vector*/
       if (polar_norm < 1e-10)
@@ -479,9 +619,21 @@ void Parameters::Setup(std::string file_name)
         EndRun("Polarization Vector has Norm of Zero");
       }
       polar_norm = sqrt(polar_norm);
+      if (num_dims == 3)
+      {
+        if (poynting_norm < 1e-10)
+        {
+          EndRun("Poynting Vector has Norm of Zero");
+        }
+        poynting_norm = sqrt(poynting_norm);
+      }
       for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
       {
         polarization_vector[pulse_idx][dim_idx] /= polar_norm;
+        if (num_dims == 3 and poynting_norm > 1e-10)
+        {
+          poynting_vector[pulse_idx][dim_idx] /= poynting_norm;
+        }
       }
     }
   }
@@ -719,6 +871,92 @@ void Parameters::Setup(std::string file_name)
       }
     }
   }
+
+  /* implement frequency shift */
+  if (frequency_shift == 1)
+  {
+    if (experiment_type == "streaking" or experiment_type == "transient")
+    {
+      /* could be fixed at end of next for loop
+       * This will require re-calculating cycles_delay from tau_delay since the
+       * time of the peak of each laser pulse is subject to change with the
+       * frequency shift */
+      EndRun(
+          "\nFrequency shift is not supported for streaking or transient type "
+          "experiments. "
+          "\nAll of the cycles_delay value needs to be corrected. "
+          "\nParameters.cpp file for notes on how to make this fix\n");
+    }
+
+    /* loop over all pulses */
+    for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
+    {
+      /* set default to no shift */
+      double shift = 1.0;
+      if (pulse_shape_idx[pulse_idx] == 0)
+      {
+        /* make sure the pulse is a purely sin^2 envelop */
+        if (cycles_on[pulse_idx] == cycles_off[pulse_idx] and
+            cycles_plateau[pulse_idx] == 0 and power_on[pulse_idx] == 2 and
+            power_off[pulse_idx] == 2)
+        {
+          /* calculate shift */
+          double mu_sin = 4.0 * asin(exp(-1.0 / 4.0)) * asin(exp(-1.0 / 4.0));
+          shift =
+              (1.0 +
+               sqrt(1 + mu_sin /
+                            ((cycles_on[pulse_idx] + cycles_off[pulse_idx]) *
+                             (cycles_on[pulse_idx] + cycles_off[pulse_idx])))) /
+              2.0;
+        }
+        else
+        {
+          EndRun(
+              "\nFrequency shift only supports true sin^2 or Gaussian like "
+              "pulse.\ncycles_on = cycles_off, power_on = power_off = 2, and "
+              "cycles_plateau=0\n");
+        }
+      }
+      else if (pulse_shape_idx[pulse_idx] == 1)
+      {
+        /* make sure the pulse is a purely gauss envelop */
+        if (cycles_on[pulse_idx] == cycles_off[pulse_idx] and
+            cycles_plateau[pulse_idx] == 0)
+        {
+          /* calculate shift */
+          double mu_gaus = 4 * 2 * log(2.0) / (pi * pi);
+          shift =
+              (1.0 +
+               sqrt(1 + mu_gaus /
+                            ((cycles_on[pulse_idx] + cycles_off[pulse_idx]) *
+                             (cycles_on[pulse_idx] + cycles_off[pulse_idx])))) /
+              2.0;
+        }
+        else
+        {
+          EndRun(
+              "\nFrequency shift only supports true sin^2 or Gaussian like "
+              "pulse.\ncycles_on = cycles_off, and "
+              "cycles_plateau=0\n");
+        }
+      }
+      else /* non gauss or sin pulse shapes */
+      {
+        EndRun(
+            "\nFrequency shift only supports true sin^2 or Gaussian like "
+            "pulse.\n");
+      }
+
+      /* shift the energy */
+      energy[pulse_idx] /= shift;
+      /* updated cycles_delay by using calculating tau_delay and converting
+       * between shifted and unshifted energies */
+      cycles_delay[pulse_idx] /= shift;
+      /* The peak of the A field is central frequency dependent*/
+      field_max[pulse_idx] *= shift;
+    }
+  }
+
   /* ensure input is good */
   Validate();
 
@@ -786,7 +1024,12 @@ Parameters::~Parameters()
   delete[] polarization_vector;
   if (num_dims == 3) delete[] poynting_vector;
   delete gaussian_length;
-  delete start_state_idx;        ///< index of states in super position
+  delete start_state_idx;  ///< index of states in super position
+  if (coordinate_system_idx == 3)
+  {
+    delete start_state_l_idx;
+    delete start_state_m_idx;
+  }                              ///< index of states in super position
   delete start_state_amplitude;  ///< amplitude of states in super position
   delete start_state_phase;
 }
@@ -815,6 +1058,31 @@ void Parameters::Validate()
   {
     error_found = true;
     err_str += "\nRBF only supports 1 electron\n";
+  }
+  if (coordinate_system_idx == 3) /* Spherical code */
+  {
+    if (num_electrons != 1)
+    {
+      error_found = true;
+      err_str += "\nSpherical only supports 1 electron currently\n";
+    }
+    if (gauge_idx != 1)
+    {
+      error_found = true;
+      err_str += "\nSpherical only supports \"Length\" gauge currently\n";
+    }
+    for (PetscInt nuclei_idx = 0; nuclei_idx < num_nuclei; ++nuclei_idx)
+    {
+      if (location[nuclei_idx][0] > 1e-14 or location[nuclei_idx][1] > 1e-14 or
+          location[nuclei_idx][2] > 1e-14)
+      {
+        error_found = true;
+        err_str +=
+            "\nSpherical coordinate systems only supports nuclei on the z "
+            "axis (i.e. [0.0, 0.0, 0.0])\nNuclei " +
+            std::to_string(nuclei_idx) + " has a non zero radial coordinate\n";
+      }
+    }
   }
   if (coordinate_system_idx == 1)
   {
@@ -1018,12 +1286,46 @@ void Parameters::Validate()
 
   for (int idx = 0; idx < num_start_state; ++idx)
   {
-    if (start_state_idx[idx] >= num_states)
+    if (coordinate_system_idx == 3)
+    {
+      if (start_state_idx[idx] - 1 >= num_states)
+      {
+        error_found = true;
+        err_str +=
+            "\nThe start_state - n_index must be less than the total number of "
+            "states you wish to calculate\n";
+      }
+      if (start_state_l_idx[idx] >= start_state_idx[idx])
+      {
+        error_found = true;
+        err_str +=
+            "\nThe start_state - l_index must be less than start_state - "
+            "n_index\n";
+      }
+      if (start_state_l_idx[idx] > l_max)
+      {
+        error_found = true;
+        err_str += "\nThe start_state - l_index must be less than l_max\n";
+      }
+      if (std::abs(start_state_m_idx[idx]) > start_state_l_idx[idx])
+      {
+        error_found = true;
+        err_str +=
+            "\nThe magnitude of start_state - m_index must be less than or "
+            "equal to start_state - l_index\n";
+      }
+      if (std::abs(start_state_m_idx[idx]) > m_max)
+      {
+        error_found = true;
+        err_str += "\nThe start_state - m_index must be less than m_max\n";
+      }
+    }
+    else if (start_state_idx[idx] >= num_states)
     {
       error_found = true;
       err_str +=
-          "\nThe start_state must be less than the total number of states you "
-          "wish to calculate\n";
+          "\nThe start_state must be less than the total number of states "
+          "you wish to calculate\n";
     }
   }
 
@@ -1050,6 +1352,8 @@ PetscInt Parameters::GetNumElectrons() { return num_electrons; }
 
 PetscInt Parameters::GetCoordinateSystemIdx() { return coordinate_system_idx; }
 
+PetscInt Parameters::GetMMax() { return m_max; }
+PetscInt Parameters::GetLMax() { return l_max; }
 PetscInt Parameters::GetRestart() { return restart; }
 
 std::string Parameters::GetTarget() { return target; }
@@ -1116,6 +1420,10 @@ PetscInt Parameters::GetNumStartState() { return num_start_state; }
 
 PetscInt* Parameters::GetStartStateIdx() { return start_state_idx; }
 
+PetscInt* Parameters::GetStartStateLIdx() { return start_state_l_idx; }
+
+PetscInt* Parameters::GetStartStateMIdx() { return start_state_m_idx; }
+
 double* Parameters::GetStartStateAmplitude() { return start_state_amplitude; }
 
 double* Parameters::GetStartStatePhase() { return start_state_phase; }
@@ -1135,6 +1443,8 @@ PetscInt Parameters::GetFreePropagate() { return free_propagate; }
 PetscInt Parameters::GetFieldMaxStates() { return field_max_states; }
 
 PetscInt Parameters::GetNumPulses() { return num_pulses; }
+
+PetscInt Parameters::GetFrequencyShift() { return frequency_shift; }
 
 double** Parameters::GetPolarizationVector() { return polarization_vector; }
 

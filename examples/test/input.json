@@ -2,32 +2,32 @@
  "start_state": {"index":     [0],
                   "amplitude": [1.0],
                   "phase":     [0.0]},
- "states": 3,
+ "states": 1,
  "write_frequency_checkpoint": 100,
  "gauge": "Velocity",
  "write_frequency_observables": 1,
  "dimensions": [
   {
-   "delta_x_max_start": 4.0,
-   "delta_x_min": 0.2,
-   "delta_x_max": 0.2,
-   "dim_size": 50.0,
-   "delta_x_min_end": 4.0
+   "delta_x_max_start": 3.0,
+   "delta_x_min": 0.1,
+   "delta_x_max": 0.1,
+   "dim_size": 15.0,
+   "delta_x_min_end": 3.0
   },
   {
-   "delta_x_max_start": 4.0,
-   "delta_x_min": 0.2,
-   "delta_x_max": 0.2,
-   "dim_size": 50.0,
-   "delta_x_min_end": 4.0
+   "delta_x_max_start": 1.0,
+   "delta_x_min": 0.1,
+   "delta_x_max": 0.1,
+   "dim_size": 30.0,
+   "delta_x_min_end": 1.0
   }
  ],
- "gobbler": 0.95,
+ "gobbler": 1.0,
  "tol": 1e-10,
  "num_electrons": 1,
  "delta_t": 0.1,
  "propagate": 0,
- "alpha": 0.8,
+ "alpha": 0.0,
  "ee_soft_core": 0.01,
  "restart": 0,
  "state_solver": "SLEPC",
@@ -43,13 +43,13 @@
     "cycles_delay": 0.0,
     "gaussian_length": 5.0,
     "polarization_vector": [
-     1.0,
      0.0,
+     1.0,
      0.0
     ],
     "energy": 1.0,
     "power_off": 2.0,
-    "intensity": 1e14,
+    "intensity": 1e12,
     "cycles_plateau": 0.0,
     "helicity": "left",
     "cep": 0.0,
@@ -83,7 +83,7 @@
   ],
   "name": "H"
  },
- "coordinate_system": "Cartesian",
+ "coordinate_system": "Cylindrical",
  "field_max_states": 0,
  "free_propagate": 0,
  "sigma": 3.0,

@@ -76,7 +76,7 @@ if num_electrons == 2:
     num_axis = num_dims * num_electrons
     for i, psi in enumerate(psi_value):
         psi_save = np.array(psi)
-        print "plotting", i
+        print( "plotting", i)
         # set up initial figure with color bar
         psi = psi[:, 0] + 1j * psi[:, 1]
         psi = (psi * np.conjugate(psi)).real
@@ -94,11 +94,28 @@ if num_electrons == 2:
                     if this_dim != current_dim:
                         axis_sum_list.append(this_dim)
                 axis_sum_list = tuple(axis_sum_list)
-                fig = plt.figure()
                 data = np.sum(psi, axis=axis_sum_list)
+                phase = np.angle(data)
                 data = (data * np.conjugate(data)).real
                 axis = f["Wavefunction"]["x_value_" + str(dim_idx)][:]
+                fig = plt.figure()
                 plt.plot(axis, data / data.max())
+                if dim_idx == 0:
+                    plt.axvline(-0.7, color='k')
+                    plt.axvline(0.7, color='k')
+                else:
+                    plt.axvline(0.0, color='k')
+                plt.xlabel("Dim:" + str(dim_idx) + "   Electron:" +
+                           str(electron_idx))
+                plt.tight_layout()
+                plt.savefig(plot_name)
+                plt.close(fig)
+
+                plot_name = "figs/" + target_name + "_log_projection_on_dim_" + str(
+                    dim_idx) + "_electron_" + str(
+                        electron_idx) + "_state_" + str(i).zfill(8) + ".png"
+                fig = plt.figure()
+                plt.semilogy(axis, data / data.max())
                 if dim_idx == 0:
                     plt.axvline(-0.7, color='k')
                     plt.axvline(0.7, color='k')
@@ -122,9 +139,22 @@ if num_electrons == 2:
             plt.imshow(
                 data / data.max(),
                 cmap='viridis',
+                extent=[dim_1[-1], dim_1[1], dim_0[-1], dim_0[1]])
+            plt.ylabel("Dim: 0")
+            plt.xlabel("Dim: 1")
+            plt.colorbar()
+            plt.tight_layout()
+            plt.savefig(plot_name)
+            plt.close(fig)
+
+            plot_name = "figs/" + target_name + "_log_2d_electron_0_state_" + str(
+                i).zfill(8) + ".png"
+            fig = plt.figure()
+            plt.imshow(
+                data / data.max(),
+                cmap='viridis',
                 extent=[dim_1[-1], dim_1[1], dim_0[-1], dim_0[1]],
-                # norm=LogNorm(vmin=1e-15)
-            )
+                norm=LogNorm(vmin=1e-15))
             plt.ylabel("Dim: 0")
             plt.xlabel("Dim: 1")
             plt.colorbar()
@@ -142,9 +172,22 @@ if num_electrons == 2:
             plt.imshow(
                 data / data.max(),
                 cmap='viridis',
+                extent=[dim_1[-1], dim_1[1], dim_0[-1], dim_0[1]])
+            plt.ylabel("Dim: 0")
+            plt.xlabel("Dim: 1")
+            plt.colorbar()
+            plt.tight_layout()
+            plt.savefig(plot_name)
+            plt.close(fig)
+
+            plot_name = "figs/" + target_name + "_log_2d_electron_1_state_" + str(
+                i).zfill(8) + ".png"
+            fig = plt.figure()
+            plt.imshow(
+                data / data.max(),
+                cmap='viridis',
                 extent=[dim_1[-1], dim_1[1], dim_0[-1], dim_0[1]],
-                # norm=LogNorm(vmin=1e-15)
-            )
+                norm=LogNorm(vmin=1e-15))
             plt.ylabel("Dim: 0")
             plt.xlabel("Dim: 1")
             plt.colorbar()
@@ -162,9 +205,22 @@ if num_electrons == 2:
             plt.imshow(
                 data / data.max(),
                 cmap='viridis',
+                extent=[dim_0[-1], dim_0[1], dim_0[-1], dim_0[1]])
+            plt.ylabel("Dim: 0    Electron: 0")
+            plt.xlabel("Dim: 0    Electron: 1")
+            plt.colorbar()
+            plt.tight_layout()
+            plt.savefig(plot_name)
+            plt.close(fig)
+
+            plot_name = "figs/" + target_name + "_log_2d_dim_0_state_" + str(
+                i).zfill(8) + ".png"
+            fig = plt.figure()
+            plt.imshow(
+                data / data.max(),
+                cmap='viridis',
                 extent=[dim_0[-1], dim_0[1], dim_0[-1], dim_0[1]],
-                # norm=LogNorm(vmin=1e-15)
-            )
+                norm=LogNorm(vmin=1e-15))
             plt.ylabel("Dim: 0    Electron: 0")
             plt.xlabel("Dim: 0    Electron: 1")
             plt.colorbar()
@@ -182,9 +238,22 @@ if num_electrons == 2:
             plt.imshow(
                 data / data.max(),
                 cmap='viridis',
+                extent=[dim_0[-1], dim_0[1], dim_0[-1], dim_0[1]])
+            plt.ylabel("Dim: 1    Electron: 0")
+            plt.xlabel("Dim: 1    Electron: 1")
+            plt.colorbar()
+            plt.tight_layout()
+            plt.savefig(plot_name)
+            plt.close(fig)
+
+            plot_name = "figs/" + target_name + "_log_2d_dim_1_state_" + str(
+                i).zfill(8) + ".png"
+            fig = plt.figure()
+            plt.imshow(
+                data / data.max(),
+                cmap='viridis',
                 extent=[dim_0[-1], dim_0[1], dim_0[-1], dim_0[1]],
-                # norm=LogNorm(vmin=1e-15)
-            )
+                norm=LogNorm(vmin=1e-15))
             plt.ylabel("Dim: 1    Electron: 0")
             plt.xlabel("Dim: 1    Electron: 1")
             plt.colorbar()
@@ -193,7 +262,7 @@ if num_electrons == 2:
             plt.close(fig)
 
 elif num_electrons == 1:
-    print shape
+    print( shape)
     x = f["Wavefunction"]["x_value_0"][:]
 
     if num_dims > 1:
@@ -214,7 +283,7 @@ elif num_electrons == 1:
             # print np.log10(np.abs(psi))
             mlab.pipeline.iso_surface(
                 mlab.pipeline.scalar_field(np.log10(np.abs(psi))),
-                vmin=-05,
+                vmin=-0.5,
                 opacity=0.3,
                 colormap="viridis",
                 contours=[-3, -2, -1])
@@ -240,7 +309,7 @@ elif num_electrons == 1:
         fig = plt.figure()
         for i, psi in enumerate(psi_value):
             psi_save = np.array(psi)
-            print "plotting", i
+            print( "plotting", i)
             # set up initial figure with color bar
             psi = psi[:, 0] + 1j * psi[:, 1]
             psi.shape = tuple(shape)
@@ -295,9 +364,9 @@ elif num_electrons == 1:
             psi.shape = tuple(shape)
             psi = psi[x_min_idx:x_max_idx, y_min_idx:y_max_idx]
             if f["Parameters"]["coordinate_system_idx"][0] == 1:
-                print psi.shape
-                print np.angle(psi)[np.unravel_index(
-                    np.abs(psi).argmax(), psi.shape)]
+                print( psi.shape)
+                print( np.angle(psi)[np.unravel_index(
+                                    np.abs(psi).argmax(), psi.shape)])
                 psi = psi * np.exp(-1.0j * np.angle(
                     np.angle(psi)[
                         np.unravel_index(np.abs(psi).argmax(), psi.shape)]))
@@ -309,12 +378,12 @@ elif num_electrons == 1:
                         y[y_min_idx], y[y_max_idx], x[x_min_idx], x[x_max_idx]
                     ])
             else:
-                print np.angle(psi)[np.unravel_index(
-                    np.abs(psi).argmax(), psi.shape)]
+                print( np.angle(psi)[np.unravel_index(
+                                    np.abs(psi).argmax(), psi.shape)])
                 # psi = psi * np.exp(-1.0j * np.angle(psi)[
                 #     np.unravel_index(np.abs(psi).argmax(), psi.shape)])
-                print np.angle(psi)[psi.shape[0] / 2 - 15:
-                                    psi.shape[0] / 2 + 15, psi.shape[1] / 2]
+                print( np.angle(psi)[psi.shape[0] // 2 - 15:
+                                                    psi.shape[0] // 2 + 15, psi.shape[1] // 2])
                 plt.imshow(
                     np.angle(psi),
                     cmap='hsv',
@@ -353,7 +422,7 @@ elif num_electrons == 1:
         from matplotlib.colors import LogNorm
         #    fig = plt.figure()
         for i, psi in enumerate(psi_value):
-            print "plotting", i
+            print( "plotting", i)
             # set up initial figure with color bar
             psi = psi[:, 0] + 1j * psi[:, 1]
             psi.shape = tuple(shape)
@@ -368,5 +437,5 @@ elif num_electrons == 1:
                         + ".jpg")
             plt.clf()
 else:
-    print "num_electrons:", num_electrons
-    print "ERROR: number of electrons in this simulation is not supported"
+    print( "num_electrons:", num_electrons)
+    print( "ERROR: number of electrons in this simulation is not supported")

@@ -1,12 +1,18 @@
 import numpy as np
 import h5py
 import matplotlib
-matplotlib.use('Agg')
 from matplotlib.colors import LogNorm
 from scipy.signal import argrelmax
 from scipy.interpolate import interp2d
 import os
 from scipy.special import sph_harm
+
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import pylab as plb
+font = {'size': 22}
+
+matplotlib.rc('font', **font)
 
 
 # projects data onto spherical harmonics
@@ -25,7 +31,7 @@ def project_onto_ylm(theta, data):
 
 print "start"
 
-ground_state_energy = -0.499639
+ground_state_energy = -0.5
 
 # read data
 f = h5py.File("TDSE.h5", "r")
@@ -33,7 +39,7 @@ psi_value = f["Wavefunction"]["psi"]
 psi_time = f["Wavefunction"]["time"][:]
 shape = f["Wavefunction"]["num_x"][:]
 ellipticity = f["Parameters"]["ellipticity_0"][0]
-pulse_energy = f["Parameters"]["energy"][0]
+pulse_energy = f["Parameters"]["energy"][1]
 
 gobbler = f["Parameters"]["gobbler"][0]
 upper_idx = (shape * gobbler - 1).astype(int)
@@ -43,18 +49,18 @@ dx = f["Parameters"]["delta_x_max"][0]
 x = f["Wavefunction"]["x_value_0"][:]
 kx = x * 2.0 * np.pi / (x.shape[0] * (x[1] - x[0]) * (x[1] - x[0]))
 kxc = kx[lower_idx[0]:upper_idx[0]]
+dkx = kxc[1] - kxc[0]
 
 if len(shape) > 1:
     y = f["Wavefunction"]["x_value_1"][:]
     ky = y * 2.0 * np.pi / (y.shape[0] * (y[1] - y[0]) * (y[1] - y[0]))
     kyc = ky[lower_idx[1]:upper_idx[1]]
+    dky = kyc[1] - kyc[0]
 
-dkx = kxc[1] - kxc[0]
-dky = kyc[1] - kyc[0]
 #how much (in a.u.) do you wish to cut off?
 cut_left = 5
 cut_right = 5
-r_critical = 50
+r_critical = 100.0
 
 if len(shape) > 1:
     time_x = np.min(y[lower_idx[1]:upper_idx[1]]) * 0.95
@@ -64,7 +70,62 @@ time_y = np.max(x[lower_idx[0]:upper_idx[0]]) * 0.9
 
 max_val = 0
 
-if len(shape) == 2:
+if len(shape) == 1:
+    cut_filter = np.where(np.abs(x) <= r_critical, 0, 1)
+    k_max = None
+    for i, psi in enumerate(psi_value):
+        print "Plotting", i
+        # define the complex wavefunction and
+        # sort properly
+        psi = psi[:, 0] + 1j * psi[:, 1]
+
+        # apply cut filter
+        psi *= cut_filter
+        plt.plot(x, np.log10(np.abs(psi)))
+        # plt.xlim([-2, 2])
+        plt.ylim([-10, 0])
+        plt.savefig("figs/cut_" + str(i).zfill(8) + ".png")
+        plt.clf()
+        data = None
+        dataft = None
+        dataft = np.abs(np.fft.fftshift(np.fft.fft(psi)))
+        # cross_sec = (kx**2 / 2.0 + 0.50188)**(7.0 / 2.0)
+        # cross_sec[cross_sec > 1e4] = 1.0
+        # dataft *= cross_sec
+        # data = plt.plot(kx, dataft)
+        data = plt.semilogy(kx, dataft)
+        plt.text(
+            time_x, time_y, "Time: " + str(psi_time[i]) + " a.u.", color='k')
+        # color bar doesn't change during the video so only set it here
+        plt.xlabel("$k_x$ (a.u.)")
+        plt.ylabel("Photoelectrons (arb.)")
+        pulse_peak = np.sqrt(2 * (pulse_energy - np.abs(ground_state_energy)))
+        print pulse_peak
+        factor = 1.3
+        plb.xlim([-2.0, 2.0])
+        # plb.xlim([-factor * pulse_peak, factor * pulse_peak])
+
+        #print peaks for last one
+
+        kx_peaks = []
+        peak_values = []
+        thresh = 0.00005
+
+        for element in argrelmax(dataft)[0]:
+            if (dataft[element] > thresh):
+                kx_peaks.append(kx[element])
+                peak_values.append(dataft[element])
+        kx_peaks = np.array(kx_peaks)
+        peak_values = np.array(peak_values)
+
+        for elem in argrelmax(peak_values)[0]:
+            print "k_x:", kx_peaks[elem], peak_values[elem]
+
+        plt.ylim(ymin=1e-4)
+        plt.tight_layout()
+        plt.savefig("figs/1d_fft_" + str(i).zfill(8) + ".png")
+        plt.clf()
+elif len(shape) == 2:
     import matplotlib
     # matplotlib.use('Agg')
     import matplotlib.pyplot as plt
@@ -105,7 +166,7 @@ if len(shape) == 2:
     #             cut_filter[j][k] = (np.exp(-alpha * (r - r_critical)**2))
 
     for i, psi in enumerate(psi_value):
-        if i > 8:
+        if i == 8:
             k_max = None
             print "Plotting", i
             # set up initial figure with color bar

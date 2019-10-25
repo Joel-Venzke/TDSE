@@ -2,22 +2,14 @@ ALL: TDSE
 
 include ${SLEPC_DIR}/lib/slepc/conf/slepc_rules
 include ${SLEPC_DIR}/lib/slepc/conf/slepc_variables
-# include ${PETSC_DIR}/lib/petsc/conf/variables
-# include ${PETSC_DIR}/lib/petsc/conf/rules
 
 CFLAGS = ${PETSC_CC_INCLUDES}
-CXXFLAGS= ${PETSC_CXX_INCLUDES} -std=c++14 -Wall -I/usr/local/include/ 
+CXXFLAGS= ${PETSC_CXX_INCLUDES} -std=c++14 -Wall -I/usr/local/include/
 FFLAGS = ${PETSC_FC_INCLUDES}
-INCLUDES = -lhdf5_hl_cpp -lhdf5_cpp -lboost_mpi ${SLEPC_EPS_LIB}
-CXX = /usr/local/bin/mpicxx
+INCLUDES = -lhdf5_hl_cpp -lhdf5_cpp -lgsl -lboost_mpi ${SLEPC_EPS_LIB}
+CXX = mpicxx
 OBJECTS = TDSE.o Parameters.o ViewWrapper.o HDF5Wrapper.o Pulse.o PETSCWrapper.o Wavefunction.o Hamiltonian.o Simulation.o Utils.o
-
-
 
 TDSE: ${OBJECTS}
 	${CXX} -o TDSE ${OBJECTS} ${PETSC_LIB} ${INCLUDES}
 	cp TDSE ../bin
-
-# clean:
-# 	rm *.o
-# 	rm TDSE ../bin/TDSE

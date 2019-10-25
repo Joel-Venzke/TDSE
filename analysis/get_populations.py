@@ -7,47 +7,20 @@ from scipy.signal import argrelmin, argrelmax
 from matplotlib.colors import LogNorm
 
 
-def get_shells(state_number):
-    shells = [0]
-    while (state_number > shells[-1]):
-        shells.append(shells[-1] + len(shells))
-    return np.array(shells)
-
-
-def state_single_name(state_number, shells):
-    # find the n value for this state
-    n_value = 0
-    for n, shell in enumerate(shells):
-        if state_number > shell:
-            n_value = n + 1
-
-    # calculate quantum number l
-    l_value = state_number - shells[n_value - 1]
-
-    # create label
-    if l_value == 1:
-        ret_val = str(n_value) + "s"
-    elif l_value == 2:
-        ret_val = str(n_value) + "p"
-    elif l_value == 3:
-        ret_val = str(n_value) + "d"
-    elif l_value == 4:
-        ret_val = str(n_value) + "f"
-    else:  # anything greater that f is just a number
-        ret_val = str(n_value) + ",l=" + str(l_value - 1)
-
-    return ret_val
-
-
 # return list of states up to state_number
-def state_name(state_number):
-    # get size of each shell
-    shells = get_shells(state_number)
+def state_name(state_number, l_max, m_max):
 
-    # get list of names
     name_list = []
-    for state in range(1, state_number + 1):
-        name_list.append(state_single_name(state, shells))
+    state_idx = 0
+    n_val = 1
+    while state_idx < state_number:
+        for l_val in np.arange(0, min(n_val, l_max + 1)):
+            m_range = min(l_val, m_max)
+            for m_val in np.arange(-m_range, m_range + 1):
+                name_list.append("(" + str(n_val) + "," + str(l_val) + "," +
+                                 str(m_val) + ")")
+                state_idx += 1
+        n_val += 1
 
     return name_list
 
@@ -63,12 +36,28 @@ except:
     p = f
 
 data = f["Wavefunction"]["projections"][:, :, :]
-
+l_max = f["/Parameters/l_max"][:]
+m_max = f["/Parameters/m_max"][:]
 # get square of projections
 data = np.absolute(data[:, :, 0] + 1j * data[:, :, 1])
 data *= data
 
-state_labels = state_name(data.shape[1])
+state_labels = state_name(data.shape[1], l_max, m_max)
 
-for state_number in range(data.shape[1]):
-    print state_labels[state_number] + "\t" + str(data[-1, state_number])
+print("Ionization:", 1-data[-1, :].sum())
+for label, pop in zip(state_labels, data[-1, :]):
+    print(label, pop)
+# state_number = data.shape[1]
+# state_idx = 0
+# n_val = 1
+# while state_idx < state_number:
+#     print
+#     print "n:", n_val
+#     for l_val in np.arange(0, min(n_val, l_max + 1)):
+#         print
+#         print "l:", l_val
+#         m_range = min(l_val, m_max)
+#         for m_val in np.arange(-m_range, m_range + 1):
+#             print data[-1, state_idx],
+#             state_idx += 1
+#     n_val += 1

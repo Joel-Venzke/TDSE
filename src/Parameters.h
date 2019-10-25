@@ -12,7 +12,11 @@ class Parameters : protected Utils
   PetscInt num_electrons;          ///< number of dimensions
   double delta_t;                  ///< size of time step
   std::string coordinate_system;   ///< Cartesian or Cylindrical
-  PetscInt coordinate_system_idx;  ///< Cartesian:0, Cylindrical:1
+  PetscInt coordinate_system_idx;  ///< Cartesian:0, Cylindrical:1, RBF:2,
+                                   ///< Spherical:3
+
+  PetscInt m_max;
+  PetscInt l_max;
 
   PetscInt restart;     ///< simulation behavior restart mode (0 no restart, 1
                         /// restart) from file */
@@ -47,6 +51,8 @@ class Parameters : protected Utils
   PetscInt num_states;  ///< number of ground states
   PetscInt num_start_state;       ///< number of states in super position
   PetscInt* start_state_idx;      ///< index of states in super position
+  PetscInt* start_state_l_idx;    ///< index of states in super position
+  PetscInt* start_state_m_idx;    ///< index of states in super position
   double* start_state_amplitude;  ///< amplitude of states in super position
   double* start_state_phase;      ///< phase of states in super position
   double tol;                     ///< tolerance in error
@@ -64,6 +70,7 @@ class Parameters : protected Utils
 
   /* pulse data */
   PetscInt num_pulses;           ///< number of pulses
+  PetscInt frequency_shift;
   double** polarization_vector;  ///< polarization vector for each pulse
   double** poynting_vector;      ///< poynting vector of the field
   double* gaussian_length;
@@ -124,6 +131,9 @@ class Parameters : protected Utils
   PetscInt GetCoordinateSystemIdx();
   double GetDeltaT();
 
+  PetscInt GetMMax();
+  PetscInt GetLMax();
+
   PetscInt GetRestart();
   std::string GetTarget();
   PetscInt GetTargetIdx();
@@ -152,6 +162,8 @@ class Parameters : protected Utils
   PetscInt GetNumStates();
   PetscInt GetNumStartState();
   PetscInt* GetStartStateIdx();
+  PetscInt* GetStartStateLIdx();
+  PetscInt* GetStartStateMIdx();
   double* GetStartStateAmplitude();
   double* GetStartStatePhase();
   double GetTol();
@@ -165,6 +177,7 @@ class Parameters : protected Utils
   PetscInt GetFieldMaxStates();
 
   PetscInt GetNumPulses();
+  PetscInt GetFrequencyShift();
   double** GetPolarizationVector();
   double** GetPoyntingVector();
   double* GetGaussianLength();
