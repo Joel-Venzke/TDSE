@@ -76,7 +76,7 @@ if num_electrons == 2:
     num_axis = num_dims * num_electrons
     for i, psi in enumerate(psi_value):
         psi_save = np.array(psi)
-        print "plotting", i
+        print( "plotting", i)
         # set up initial figure with color bar
         psi = psi[:, 0] + 1j * psi[:, 1]
         psi = (psi * np.conjugate(psi)).real
@@ -262,7 +262,7 @@ if num_electrons == 2:
             plt.close(fig)
 
 elif num_electrons == 1:
-    print shape
+    print( shape)
     x = f["Wavefunction"]["x_value_0"][:]
 
     if num_dims > 1:
@@ -283,7 +283,7 @@ elif num_electrons == 1:
             # print np.log10(np.abs(psi))
             mlab.pipeline.iso_surface(
                 mlab.pipeline.scalar_field(np.log10(np.abs(psi))),
-                vmin=-05,
+                vmin=-0.5,
                 opacity=0.3,
                 colormap="viridis",
                 contours=[-3, -2, -1])
@@ -309,7 +309,7 @@ elif num_electrons == 1:
         fig = plt.figure()
         for i, psi in enumerate(psi_value):
             psi_save = np.array(psi)
-            print "plotting", i
+            print( "plotting", i)
             # set up initial figure with color bar
             psi = psi[:, 0] + 1j * psi[:, 1]
             psi.shape = tuple(shape)
@@ -364,9 +364,9 @@ elif num_electrons == 1:
             psi.shape = tuple(shape)
             psi = psi[x_min_idx:x_max_idx, y_min_idx:y_max_idx]
             if f["Parameters"]["coordinate_system_idx"][0] == 1:
-                print psi.shape
-                print np.angle(psi)[np.unravel_index(
-                    np.abs(psi).argmax(), psi.shape)]
+                print( psi.shape)
+                print( np.angle(psi)[np.unravel_index(
+                                    np.abs(psi).argmax(), psi.shape)])
                 psi = psi * np.exp(-1.0j * np.angle(
                     np.angle(psi)[
                         np.unravel_index(np.abs(psi).argmax(), psi.shape)]))
@@ -378,12 +378,12 @@ elif num_electrons == 1:
                         y[y_min_idx], y[y_max_idx], x[x_min_idx], x[x_max_idx]
                     ])
             else:
-                print np.angle(psi)[np.unravel_index(
-                    np.abs(psi).argmax(), psi.shape)]
+                print( np.angle(psi)[np.unravel_index(
+                                    np.abs(psi).argmax(), psi.shape)])
                 # psi = psi * np.exp(-1.0j * np.angle(psi)[
                 #     np.unravel_index(np.abs(psi).argmax(), psi.shape)])
-                print np.angle(psi)[psi.shape[0] / 2 - 15:
-                                    psi.shape[0] / 2 + 15, psi.shape[1] / 2]
+                print( np.angle(psi)[psi.shape[0] // 2 - 15:
+                                                    psi.shape[0] // 2 + 15, psi.shape[1] // 2])
                 plt.imshow(
                     np.angle(psi),
                     cmap='hsv',
@@ -422,7 +422,7 @@ elif num_electrons == 1:
         from matplotlib.colors import LogNorm
         #    fig = plt.figure()
         for i, psi in enumerate(psi_value):
-            print "plotting", i
+            print( "plotting", i)
             # set up initial figure with color bar
             psi = psi[:, 0] + 1j * psi[:, 1]
             psi.shape = tuple(shape)
@@ -437,5 +437,5 @@ elif num_electrons == 1:
                         + ".jpg")
             plt.clf()
 else:
-    print "num_electrons:", num_electrons
-    print "ERROR: number of electrons in this simulation is not supported"
+    print( "num_electrons:", num_electrons)
+    print( "ERROR: number of electrons in this simulation is not supported")

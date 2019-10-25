@@ -98,9 +98,9 @@ def get_k_sphere(energy, psi, r, l_max, m_max, potential, target, d_angle=0.01):
     return phi, theta, return_psi, phi_angles, d_angle
 
 beta_max = 10
-folders = ["cycles_delay_0.00"]
-folders = ["cycles_delay_0.00", "cycles_delay_0.10", "cycles_delay_0.20", "cycles_delay_0.30", "cycles_delay_0.40", "cycles_delay_0.50", "cycles_delay_0.60", "cycles_delay_0.70", "cycles_delay_0.80", "cycles_delay_0.90",
-           "cycles_delay_1.00", "cycles_delay_0.05", "cycles_delay_0.15", "cycles_delay_0.25", "cycles_delay_0.35", "cycles_delay_0.45", "cycles_delay_0.55", "cycles_delay_0.65", "cycles_delay_0.75", "cycles_delay_0.85", "cycles_delay_0.95"]
+folders = ["cep_0.000"]
+# folders = ["cycles_delay_0.00", "cycles_delay_0.10", "cycles_delay_0.20", "cycles_delay_0.30", "cycles_delay_0.40", "cycles_delay_0.50", "cycles_delay_0.60", "cycles_delay_0.70", "cycles_delay_0.80", "cycles_delay_0.90",
+#            "cycles_delay_1.00", "cycles_delay_0.05", "cycles_delay_0.15", "cycles_delay_0.25", "cycles_delay_0.35", "cycles_delay_0.45", "cycles_delay_0.55", "cycles_delay_0.65", "cycles_delay_0.75", "cycles_delay_0.85", "cycles_delay_0.95"]
 folders.sort()
 target = h5py.File(folders[0]+"/H.h5", "r")
 f = h5py.File(folders[0]+"/TDSE.h5", "r")
@@ -118,6 +118,9 @@ r = psi_cooridnate_values[2]
 e_ground = get_energy([1, 0, 0, 1], target)
 e_excited = get_energy([2, 1, 1, 1], target)
 e_final = (2*np.abs(0.815939)) - np.abs(e_ground)
+# e_final = 0.7
+e_final = 0.4
+# e_final = 1.0
 
 pad_yield = []
 phi_angles = None
@@ -148,16 +151,28 @@ for idx, fold in enumerate(folders):
         ax = fig.add_subplot(111, projection='3d')
         cmap = cm.get_cmap("viridis")
         ax.plot_surface(X, Y, Z, facecolors=cmap(cur_data))
-        ax.set_xlim(-1, 1)
-        ax.set_ylim(-1, 1)
-        ax.set_zlim(-1, 1)
-        ax.set_xlabel("x")
-        ax.set_ylabel("y")
-        ax.set_zlabel("z")
-        plt.title("TDSE - Delay: %.2f \n Cycles: %3.0f    Intensity: %.0e" %
-                  (delay, cycles, intensity))
+        ax.set_xlim(-0.6, 0.6)
+        ax.set_ylim(-0.6, 0.6)
+        ax.set_zlim(-0.6, 0.6)
+        # make the panes transparent
+        ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+        ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+        ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+        # make the grid lines transparent
+        ax.xaxis._axinfo["grid"]['color'] =  (1,1,1,0)
+        ax.yaxis._axinfo["grid"]['color'] =  (1,1,1,0)
+        ax.zaxis._axinfo["grid"]['color'] =  (1,1,1,0)
+        ax.axis('off')
+        # ax.set_xlabel("x")
+        # ax.set_ylabel("y")
+        # ax.set_zlabel("z")
+        # plt.title("TDSE - Delay: %.2f \n Cycles: %3.0f    Intensity: %.0e" %
+        #           (delay, cycles, intensity))
         # plt.show()
-        plt.savefig("PAD_%02.0f_%.1e_%.2f.png" % (cycles, intensity, delay))
+        ax.text(1, -1, 0, "(h)")
+        # plt.savefig("PAD_%02.0f_%.1e_%.2f.png" % (cycles, intensity, delay))
+        plt.savefig("PAD_%02.0f_%.1e_%.2f_0p4.png" % (cycles, intensity, delay))
+        # plt.savefig("PAD_%02.0f_%.1e_%.2f_1p0.png" % (cycles, intensity, delay))
         plt.clf()
 
 for idx, fold in enumerate(folders):
