@@ -121,6 +121,9 @@ e_ground = get_energy([1, 0, 0, 1], target)
 e_excited = get_energy([2, 1, 1, 1], target)
 # e_final_list = np.arange(0.01,1.0,0.1)
 e_final_list = [0.01928205187, 0.1346748821, 0.224546544, 0.3399393742]
+de = 0.001
+e_final_list = np.arange(de,0.2,de)
+#e_final_list = [0.09375897933, 0.1836306412, 0.2990234714]
 
 pad_yield = []
 phi_angles = None
