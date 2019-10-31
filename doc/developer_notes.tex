@@ -962,6 +962,26 @@ The following is an input file for simulating an 8 cycle, 800nm, sine squared pu
 \label{sub:coordinate_systems}
 How long the calculation will take is largely dependent on the coordinate system you choose. If possible, I recommend utilizing the spherical coordinate system when possible. It is the most limited as far as targets (currently only supports spherically symmetric), but its runtime is orders of magnitude faster. Cylindrical is the second fastest and supports cylindrically symmetric potentials with lasers aligned along the z axis. The Cartesian code is more general, but much slower.
 
+\subsubsection{Hyperspherical} % (fold)
+\label{ssub:Hyperspherical}
+\textbf{TODO}
+\begin{verbatim}
+"dimensions": [{
+      "delta_x_max": 0.1,
+      "delta_x_max_start": 4.0,
+      "delta_x_min": 0.1,
+      "delta_x_min_end": 4.0,
+      "dim_size": 100.0,
+      "k_max": 10, 
+      "l_max": 10, 
+      "m_max": 0
+}],
+
+"start_state": {
+    TODO
+},
+\end{verbatim}
+
 \subsubsection{Spherical} % (fold)
 \label{ssub:spherical}
 \textbf{TODO}
@@ -1031,6 +1051,7 @@ where $r$ is the standard Euclidean distance.
 \subsubsection{coordinate\_system}
 This describes the available coordinate systems available. Current list of available coordinate systems is (make sure to use ASCII quotes, don't just copy and paste)
 \begin{itemize}
+  \item ``Hyperspherical'' (for 2 electron calculations)
   \item ``Spherical'' (Recommended)
   \item ``Cartesian''
   \item ``Cylindrical''

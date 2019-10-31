@@ -40,6 +40,10 @@ void Parameters::Setup(std::string file_name)
   {
     coordinate_system_idx = 3;
   }
+  else if (coordinate_system == "Hyperspherical")
+  {
+    coordinate_system_idx = 4;
+  }
   else
   {
     coordinate_system_idx = -1;

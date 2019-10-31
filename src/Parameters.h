@@ -17,6 +17,7 @@ class Parameters : protected Utils
 
   PetscInt m_max;
   PetscInt l_max;
+  PetscInt k_max; ///< Max angular momentum value for hyperspehrical
 
   PetscInt restart;     ///< simulation behavior restart mode (0 no restart, 1
                         /// restart) from file */

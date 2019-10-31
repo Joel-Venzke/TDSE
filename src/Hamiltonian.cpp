@@ -190,6 +190,9 @@ void Hamiltonian::GenerateHamlitonian()
   CalculateHamlitonian0();
   CalculateHamlitonian0ECS();
   CalculateHamlitonianLaser();
+  /* prep hamiltonian for copy*/
+  MatAssemblyBegin(hamiltonian, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(hamiltonian, MAT_FINAL_ASSEMBLY);
   MatCopy(hamiltonian_0_ecs, hamiltonian, DIFFERENT_NONZERO_PATTERN);
 }
 
@@ -1103,7 +1106,6 @@ void Hamiltonian::CalculateHamlitonianLaser()
           }
         }
       }
-
       MatAssemblyBegin(hamiltonian_laser[ham_dim_idx], MAT_FINAL_ASSEMBLY);
       MatAssemblyEnd(hamiltonian_laser[ham_dim_idx], MAT_FINAL_ASSEMBLY);
     }

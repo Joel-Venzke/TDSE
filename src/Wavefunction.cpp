@@ -1958,6 +1958,8 @@ void Wavefunction::SetPositionMat(Mat* input_mat)
                    num_psi, num_dims * num_electrons * (order + 3), NULL,
                    num_dims * num_electrons * (order + 3), NULL,
                    &(position_mat[dim_idx]));
+      MatAssemblyBegin(position_mat[dim_idx], MAT_FINAL_ASSEMBLY);
+      MatAssemblyEnd(position_mat[dim_idx], MAT_FINAL_ASSEMBLY);
     }
     MatCopy(input_mat[dim_idx], position_mat[dim_idx],
             DIFFERENT_NONZERO_PATTERN);
