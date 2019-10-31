@@ -20,8 +20,12 @@ class Hamiltonian : protected Utils
 
   PetscInt l_max;
   PetscInt m_max;
-  PetscInt *l_values; /* l_values for the spherical code */
-  PetscInt *m_values; /* m_values for the spherical code */
+  PetscInt k_max;
+  PetscInt *l_values;      /* l_values for the spherical code */
+  PetscInt *m_values;      /* m_values for the spherical code */
+  PetscInt **eigen_values; /* eigen_values for the hyperespherical code */
+  PetscInt *l_block_size;  /* L block for the hyperespherical code */
+  PetscInt max_block_size; /* max L block size for the hyperespherical code */
 
   PetscInt gauge_idx;  ///< index of gauge (0 velocity, 1 length)
   PetscInt current_l_val;
@@ -110,6 +114,7 @@ class Hamiltonian : protected Utils
                        PetscInt only_dim_idx);
   dcomp GetNucleiTerm(std::vector< PetscInt > &idx_array);
   dcomp GetNucleiTerm(PetscInt idx);
+  dcomp GetHyperspherTerm(std::vector< PetscInt > &idx_array);
   dcomp GetElectronElectronTerm(std::vector< PetscInt > &idx_array);
   dcomp GetCentrifugalTerm(std::vector< PetscInt > &idx_array);
   PetscInt GetOffset(PetscInt elec_idx, PetscInt dim_idx);

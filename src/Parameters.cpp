@@ -149,6 +149,88 @@ void Parameters::Setup(std::string file_name)
     CheckParameter(data["order"].size(), "order");
     order = data["order"];
   }
+  else if (coordinate_system_idx == 4)
+  {
+    CheckParameter(data["dimensions"].size(), "dimensions");
+    if (data["dimensions"].size() != 1)
+    {
+      EndRun(
+          "The Hyperspherical code take 1 dimension parameter with 'k_max', "
+          "'l_max' and 'm_max' as additional parameter");
+    }
+    /* The number of electrons is set to one since the 6D space is not
+     *  a tensor product of 2 - 3D spaces. If once codes up the bi-spherical
+     * code then this tensor product will be useful
+     */
+    num_electrons     = 1;
+    num_dims          = 3;
+    dim_size          = std::make_unique< double[] >(num_dims);
+    delta_x_min       = std::make_unique< double[] >(num_dims);
+    delta_x_min_end   = std::make_unique< double[] >(num_dims);
+    delta_x_max       = std::make_unique< double[] >(num_dims);
+    delta_x_max_start = std::make_unique< double[] >(num_dims);
+
+    /* The last dimension (diagonal of matrix) is r and we use Finite
+     * difference for this */
+    int dim_input_idx = 0;
+    int dim_idx       = 2;
+    CheckParameter(data["dimensions"][dim_input_idx]["dim_size"].size(),
+                   "dimensions - dim_size");
+    dim_size[dim_idx] = data["dimensions"][dim_input_idx]["dim_size"];
+
+    CheckParameter(data["dimensions"][dim_input_idx]["delta_x_min"].size(),
+                   "dimensions - delta_x_min");
+    delta_x_min[dim_idx] = data["dimensions"][dim_input_idx]["delta_x_min"];
+
+    CheckParameter(data["dimensions"][dim_input_idx]["delta_x_min_end"].size(),
+                   "dimensions - delta_x_min_end");
+    delta_x_min_end[dim_idx] =
+        data["dimensions"][dim_input_idx]["delta_x_min_end"];
+
+    CheckParameter(data["dimensions"][dim_input_idx]["delta_x_max"].size(),
+                   "dimensions - delta_x_max");
+    delta_x_max[dim_idx] = data["dimensions"][dim_input_idx]["delta_x_max"];
+
+    CheckParameter(
+        data["dimensions"][dim_input_idx]["delta_x_max_start"].size(),
+        "dimensions - delta_x_max_start");
+    delta_x_max_start[dim_idx] =
+        data["dimensions"][dim_input_idx]["delta_x_max_start"];
+
+    /* avoiding issues with lack of tensor product */
+    for (dim_idx = 0; dim_idx < 2; ++dim_idx)
+    {
+      delta_x_min[dim_idx]     = 1.0;
+      delta_x_min_end[dim_idx] = 0.0;
+      delta_x_max[dim_idx]     = 1.0;
+    }
+
+    /* dim 0 is set to 1 since hyperspherical harmonics cannot be written
+     *  as a tensor product
+     */
+    dim_size[0] = 1;
+
+    /* get k_max */
+    CheckParameter(data["dimensions"][0]["k_max"].size(), "dimensions - k_max");
+    k_max = data["dimensions"][0]["k_max"];
+
+    /* get l_max */
+    CheckParameter(data["dimensions"][0]["l_max"].size(), "dimensions - l_max");
+    l_max = data["dimensions"][0]["l_max"];
+
+    /* get m_max */
+    CheckParameter(data["dimensions"][0]["m_max"].size(), "dimensions - m_max");
+    m_max = data["dimensions"][0]["m_max"];
+
+    /* this dimension combines l and m to avoid tensor grid issues */
+    dim_size[1] = GetHypersphereSize(k_max, l_max);
+
+    CheckParameter(data["gobbler"].size(), "gobbler");
+    gobbler = data["gobbler"];
+
+    CheckParameter(data["order"].size(), "order");
+    order = data["order"];
+  }
   else
   {
     CheckParameter(data["dimensions"].size(), "dimensions");
@@ -202,14 +284,14 @@ void Parameters::Setup(std::string file_name)
   CheckParameter(data["alpha"].size(), "alpha");
   alpha = data["alpha"];
 
-  if (num_electrons > 1)
+  if (num_electrons > 1 or coordinate_system_idx == 4)
   {
     CheckParameter(data["ee_soft_core"].size(), "ee_soft_core");
     ee_soft_core = data["ee_soft_core"];
   }
   else
   {
-    ee_soft_core = 0.0;
+    ee_soft_core = 0;
   }
 
   CheckParameter(data["write_frequency_checkpoint"].size(),
@@ -1087,6 +1169,85 @@ void Parameters::Validate()
             std::to_string(nuclei_idx) + " has a non zero radial coordinate\n";
       }
     }
+    if (m_max > 0)
+    {
+      for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; pulse_idx++)
+      {
+        if (polarization_vector[pulse_idx][0] > 1e-14 or
+            polarization_vector[pulse_idx][1] > 1e-14)
+        {
+          error_found = true;
+          err_str +=
+              "\nSpherical coordinate systems requires m_max>0 for laser that "
+              "are not z - polarized\nPulse" +
+              std::to_string(pulse_idx) + " does not meet this requirement\n ";
+        }
+        if (ellipticity[pulse_idx] > 1e-14)
+        {
+          error_found = true;
+          err_str +=
+              "\nSpherical coordinate systems requires m_max>0 for pulses with "
+              "nonzero ellipticity\nPulse " +
+              std::to_string(pulse_idx) + " has a non zero ellipticity\n";
+        }
+      }
+    }
+  }
+  if (coordinate_system_idx == 4) /* Hyperspherical code */
+  {
+    if (gauge_idx != 1)
+    {
+      error_found = true;
+      err_str += "\nSpherical only supports \"Length\" gauge currently\n";
+    }
+    for (PetscInt nuclei_idx = 0; nuclei_idx < num_nuclei; ++nuclei_idx)
+    {
+      if (location[nuclei_idx][0] > 1e-14 or location[nuclei_idx][1] > 1e-14 or
+          location[nuclei_idx][2] > 1e-14)
+      {
+        error_found = true;
+        err_str +=
+            "\nSpherical coordinate systems only supports nuclei on the z axis "
+            "(i.e. [0.0, 0.0, 0.0])\nNuclei " +
+            std::to_string(nuclei_idx) +=
+            " has a non zero radial coordinate\n ";
+      }
+    }
+    if (propagate != 0)
+    {
+      error_found = true;
+      err_str += "\nHyperspherical does not support time propagation\n";
+    }
+    if (m_max > 0)
+    {
+      error_found = true;
+      err_str += "\nHyperspherical only supports m = 0\n";
+    }
+    for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; pulse_idx++)
+    {
+      if (polarization_vector[pulse_idx][0] > 1e-14 or
+          polarization_vector[pulse_idx][1] > 1e-14)
+      {
+        error_found = true;
+        err_str += "\nHyperspherical only supports z-polarized lasers\nPulse" +
+                   std::to_string(pulse_idx) +
+                   " does not meet this requirement\n";
+      }
+      if (ellipticity[pulse_idx] > 1e-14)
+      {
+        error_found = true;
+        err_str +=
+            "\nHyperspherical coordinate systems only supports linear "
+            "polarized light\nPulse " +
+            std::to_string(pulse_idx) + " has a non zero ellipticity\n";
+      }
+    }
+    if (abs(alpha) > 0 or abs(ee_soft_core) > 0)
+    {
+      error_found = true;
+      err_str +=
+          "\nHyperspherical coordinate systems does not support soft cores\n";
+    }
   }
   if (coordinate_system_idx == 1)
   {
@@ -1358,6 +1519,7 @@ PetscInt Parameters::GetCoordinateSystemIdx() { return coordinate_system_idx; }
 
 PetscInt Parameters::GetMMax() { return m_max; }
 PetscInt Parameters::GetLMax() { return l_max; }
+PetscInt Parameters::GetKMax() { return k_max; }
 PetscInt Parameters::GetRestart() { return restart; }
 
 std::string Parameters::GetTarget() { return target; }
