@@ -114,7 +114,9 @@ class Hamiltonian : protected Utils
                        PetscInt only_dim_idx);
   dcomp GetNucleiTerm(std::vector< PetscInt > &idx_array);
   dcomp GetNucleiTerm(PetscInt idx);
-  dcomp GetHyperspherTerm(std::vector< PetscInt > &idx_array);
+  dcomp GetHyperspherPotential(std::vector< PetscInt > &idx_array);
+  double GetHypersphereCoulomb(int *lambda_a, int *lambda_b, double r, double z,
+                               int num_ang = 1e4);
   dcomp GetElectronElectronTerm(std::vector< PetscInt > &idx_array);
   dcomp GetCentrifugalTerm(std::vector< PetscInt > &idx_array);
   PetscInt GetOffset(PetscInt elec_idx, PetscInt dim_idx);

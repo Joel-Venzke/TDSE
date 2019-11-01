@@ -1,5 +1,6 @@
 #pragma once
 #include <gsl/gsl_sf_coupling.h>
+#include <gsl/gsl_sf_gamma.h>
 #include <math.h>
 #include <slepc.h>
 #include <stdlib.h>
@@ -29,6 +30,7 @@ class Utils
   const double c   = 1 / 7.2973525664e-3;
   const dcomp imag = dcomp(0.0, 1.0);
   double C(int a, int b, int c);
+  std::map< std::string, double > rrc_lookup;
 
  public:
   void EndRun(std::string str);
@@ -46,4 +48,8 @@ class Utils
   double Factorial(double n);
   double DoubleFactorial(double n);
   double Sign(double num);
+  double Normilization(int K, int l1, int l2);
+  void SpherHarm(int K, int n, int lx, int ly, int L, int M,
+                 std::vector< double > &angles, std::vector< double > &sphere,
+                 std::vector< double > &x_vals);
 };

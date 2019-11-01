@@ -231,9 +231,9 @@ void Hamiltonian::CreateHamlitonian()
 void Hamiltonian::GenerateHamlitonian()
 {
   CalculateHamlitonian0();
+  std::cout << "H_0\n";
   CalculateHamlitonian0ECS();
   CalculateHamlitonianLaser();
-  /* prep hamiltonian for copy*/
   MatAssemblyBegin(hamiltonian, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(hamiltonian, MAT_FINAL_ASSEMBLY);
   MatCopy(hamiltonian_0_ecs, hamiltonian, DIFFERENT_NONZERO_PATTERN);
@@ -322,7 +322,7 @@ void Hamiltonian::CalculateHamlitonian0(PetscInt l_val)
       {
         dim_idx     = 0;
         base_offset = GetOffset(elec_idx, dim_idx);
-        if (coordinate_system_idx == 3 and dim_idx == 0 and
+        if (dim_idx == 0 and
             idx_array[2 * (2 + elec_idx * num_dims)] < order_middle_idx - 1)
         {
           /* loop over all off diagonals up to the order needed */
@@ -354,7 +354,7 @@ void Hamiltonian::CalculateHamlitonian0(PetscInt l_val)
             }
           }
         }
-        else if (coordinate_system_idx == 3 and dim_idx == 0 and
+        else if (dim_idx == 0 and
                  num_x[2] - 1 - idx_array[2 * (2 + elec_idx * num_dims)] <
                      order_middle_idx - 1)
         {
@@ -466,12 +466,12 @@ void Hamiltonian::CalculateHamlitonian0(PetscInt l_val)
         MatSetValues(hamiltonian_0, 1, &i_val, 1, &j_val, &val, INSERT_VALUES);
       }
 
-      /* Loop over off diagonal elements */
+      /* Loop over off diagonal elements for KE opp */
       for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
       {
         dim_idx     = 0;
         base_offset = GetOffset(elec_idx, dim_idx);
-        if (coordinate_system_idx == 3 and dim_idx == 0 and
+        if (dim_idx == 0 and
             idx_array[2 * (2 + elec_idx * num_dims)] < order_middle_idx - 1)
         {
           /* loop over all off diagonals up to the order needed */
@@ -503,7 +503,7 @@ void Hamiltonian::CalculateHamlitonian0(PetscInt l_val)
             }
           }
         }
-        else if (coordinate_system_idx == 3 and dim_idx == 0 and
+        else if (dim_idx == 0 and
                  num_x[2] - 1 - idx_array[2 * (2 + elec_idx * num_dims)] <
                      order_middle_idx - 1)
         {
@@ -566,6 +566,40 @@ void Hamiltonian::CalculateHamlitonian0(PetscInt l_val)
                              INSERT_VALUES);
               }
             }
+          }
+        }
+      }
+
+      /* put in the <Y_k'|V|Y_k> terms */
+      base_offset = num_x[2];
+      for (int diagonal_idx = 0; diagonal_idx < max_block_size; ++diagonal_idx)
+      {
+        offset = (diagonal_idx + 1) * base_offset;
+
+        j_val = i_val - offset;
+        /* Lower diagonal */
+        if (j_val >= 0 and j_val < num_psi)
+        {
+          idx_array = GetIndexArray(i_val, j_val);
+          val       = GetHyperspherPotential(idx_array);
+          if (abs(val) > 1e-16)
+          {
+            MatSetValues(hamiltonian_0, 1, &i_val, 1, &j_val, &val,
+                         INSERT_VALUES);
+          }
+        }
+
+        /* Upper diagonal */
+        j_val = i_val + offset;
+        if (j_val >= 0 and j_val < num_psi)
+        {
+          idx_array = GetIndexArray(i_val, j_val);
+
+          val = GetHyperspherPotential(idx_array);
+          if (abs(val) > 1e-16)
+          {
+            MatSetValues(hamiltonian_0, 1, &i_val, 1, &j_val, &val,
+                         INSERT_VALUES);
           }
         }
       }
@@ -1655,7 +1689,7 @@ dcomp Hamiltonian::GetVal(PetscInt idx_i, PetscInt idx_j, bool& insert_val,
     {
       return GetOffDiagonal(idx_array, diff_array, ecs);
     }
-    else if (coordinate_system_idx == 3)
+    else if (coordinate_system_idx == 3 or coordinate_system_idx == 4)
     {
       /* TODO update for more than one electron Probably a for loop */
 
@@ -1922,7 +1956,8 @@ dcomp Hamiltonian::GetOffDiagonal(std::vector< PetscInt >& idx_array,
                               [idx_array[2 * (elec_idx * num_dims + dim_idx)]]);
           }
         }
-        else if (coordinate_system_idx == 3 and dim_idx == 2)
+        else if ((coordinate_system_idx == 3 or coordinate_system_idx == 4) and
+                 dim_idx == 2)
         {
           /* r=0  boundary condition */
           /* We use a forward difference like formula until the full stencil
@@ -2205,7 +2240,11 @@ dcomp Hamiltonian::GetDiagonal(std::vector< PetscInt >& idx_array, bool ecs)
     /* kinetic term */
     diagonal += GetKineticTerm(idx_array, ecs);
     diagonal += GetCentrifugalTerm(idx_array);
-    diagonal += GetHyperspherTerm(idx_array);
+    diagonal += GetHyperspherPotential(idx_array);
+    // std::cout << GetKineticTerm(idx_array, ecs) +
+    // GetCentrifugalTerm(idx_array)
+    //           << " " << GetHyperspherPotential(idx_array) << " " << diagonal
+    //           << "\n";
   }
   else
   {
@@ -2472,21 +2511,21 @@ dcomp Hamiltonian::GetNucleiTerm(std::vector< PetscInt >& idx_array)
   return nuclei;
 }
 
-dcomp Hamiltonian::GetHyperspherTerm(std::vector< PetscInt >& idx_array)
+dcomp Hamiltonian::GetHyperspherPotential(std::vector< PetscInt >& idx_array)
 {
   dcomp nuclei(0.0, 0.0);
   double r;
-  double tmp;
-  /* loop over each electron */
-  for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
+  if (eigen_values[idx_array[2]][4] == eigen_values[idx_array[2 + 1]][4])
   {
     /* loop over each nuclei */
     for (PetscInt nuclei_idx = 0; nuclei_idx < num_nuclei; ++nuclei_idx)
     {
-      r = x_value[2][idx_array[2 * (2 + elec_idx * num_dims)]];
-
+      r = x_value[2][idx_array[2 * 2]];
       /* Coulomb term */
-      nuclei -= dcomp(z[nuclei_idx] / r, 0.0);
+      nuclei += GetHypersphereCoulomb(eigen_values[idx_array[2]],
+                                      eigen_values[idx_array[2 + 1]], r,
+                                      z[nuclei_idx]);
+      // std::cout << tmp << "\n";
 
       // /* Gaussian Donuts */
       // for (PetscInt i = 0; i < gaussian_size[nuclei_idx]; ++i)
@@ -2532,6 +2571,84 @@ dcomp Hamiltonian::GetHyperspherTerm(std::vector< PetscInt >& idx_array)
     }
   }
   return nuclei;
+}
+
+double Hamiltonian::GetHypersphereCoulomb(int* lambda_a, int* lambda_b,
+                                          double r, double z, int num_ang)
+{
+  num_ang += num_ang % 2;
+  std::vector< double > angle(num_ang), x_vals(num_ang);
+  std::vector< double > sphere_1(num_ang), sphere_2(num_ang);
+  double d_angle, matrix_element, pre_fac_a, pre_fac_b, result, tmp;
+  int Ka, na, lxa, lya, La, Ma, Kb, nb, lxb, lyb, Lb, Mb;
+  matrix_element = 0.0;
+  Ka             = lambda_a[0];
+  na             = lambda_a[1];
+  lxa            = lambda_a[2];
+  lya            = lambda_a[3];
+  La             = lambda_a[4];
+  Ma             = lambda_a[5];
+  Kb             = lambda_b[0];
+  nb             = lambda_b[1];
+  lxb            = lambda_b[2];
+  lyb            = lambda_b[3];
+  Lb             = lambda_b[4];
+  Mb             = lambda_b[5];
+
+  d_angle = pi / (2 * num_ang);
+  for (int idx = 0; idx < num_ang; ++idx)
+  {
+    angle[idx]  = idx * d_angle + d_angle / 2.;
+    x_vals[idx] = cos(2. * angle[idx]);
+  }
+
+  if (La == Lb)
+  {
+    for (int lx = 0; lx < min(Ka, Kb) + 1; ++lx)
+    {
+      for (int ly = 0; ly < min(Ka, Kb) + 1; ++ly)
+      {
+        if ((Ka - lx - ly) % 2 == 0 and (Kb - lx - ly) % 2 == 0)
+        {
+          pre_fac_a = RRC(Ka, La, lx, ly, lxa, lya, 0) *
+                      RRC(Kb, Lb, lx, ly, lxb, lyb, 0);
+          pre_fac_b = RRC(Ka, La, lx, ly, lxa, lya, 1) *
+                      RRC(Kb, Lb, lx, ly, lxb, lyb, 1);
+          if (abs(pre_fac_a) > 1e-16 or abs(pre_fac_b) > 1e-16)
+          {
+            SpherHarm(Ka, (Ka - lx - ly) / 2, lx, ly, La, Ma, angle, sphere_1,
+                      x_vals);
+            SpherHarm(Kb, (Kb - lx - ly) / 2, lx, ly, Lb, Mb, angle, sphere_2,
+                      x_vals);
+            result = 0.0;
+            for (int idx = 0; idx < num_ang; ++idx)
+            {
+              tmp = sin(angle[idx]);
+              result +=
+                  sphere_1[idx] * sphere_2[idx] * cos(angle[idx]) * tmp * tmp;
+            }
+            result *= z * d_angle;
+
+            matrix_element -= result * pre_fac_a + result * pre_fac_b;
+          }
+        }
+      }
+    }
+    if (lxa == lxb and lya == lyb)
+    {
+      SpherHarm(Ka, na, lxa, lya, La, Ma, angle, sphere_1, x_vals);
+      SpherHarm(Kb, nb, lxb, lyb, Lb, Mb, angle, sphere_2, x_vals);
+      result = 0.0;
+      for (int idx = 0; idx < num_ang; ++idx)
+      {
+        tmp = sin(angle[idx]);
+        result += sphere_1[idx] * sphere_2[idx] * cos(angle[idx]) * tmp * tmp;
+      }
+      result *= d_angle / sqrt(2.);
+      matrix_element += result;
+    }
+  }
+  return matrix_element / r;
 }
 
 /* get nuclear term for rbf grid */

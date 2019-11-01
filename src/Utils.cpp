@@ -167,6 +167,14 @@ double Utils::RRC(int total_angular_momentum, int L, int l_xi, int l_yi,
   int n_i, n_k;                  /* order of jacobi polynomials */
   int n_i2, n_k2;                /* n_i and n_k times 2*/
   dcomp product, mu_nu_sum, lambda_product, lambda_sum;
+  std::string key;
+  key = to_string(total_angular_momentum) + "_" + to_string(L) + "_" +
+        to_string(l_xi) + "_" + to_string(l_yi) + "_" + to_string(l_xk) + "_" +
+        to_string(l_yk) + "_" + to_string(parity);
+  if (rrc_lookup.count(key) == 1)
+  {
+    return rrc_lookup[key];
+  }
 
   /* Making the infinite mass approximation
    *  Full problem is arctan((-1)**p*sqrt((M*m_2/(m_1*m_3)))
@@ -267,5 +275,38 @@ double Utils::RRC(int total_angular_momentum, int L, int l_xi, int l_yi,
   ((n_i + n_k) % 2 == 0) ? lambda_sum *= 1 : lambda_sum *= -1;
   lambda_sum /= sqrt(C(n_i, l_xi, l_yi));
   lambda_sum /= sqrt(C(n_k, l_xk, l_yk));
+
+  rrc_lookup[key] = lambda_sum.real();
   return lambda_sum.real();
+}
+
+double Utils::Normilization(int K, int l1, int l2)
+{
+  double n = (K - l1 - l2) / 2.;
+  return sqrt(2. * Factorial(n) * (K + 2) / gsl_sf_gamma(n + l1 + 3 / 2.) /
+              gsl_sf_gamma(n + l2 + 3 / 2.) * Factorial(n + l1 + l2 + 1));
+}
+
+/* K, n, lx, ly, L, M are spherical harmonic eigen values
+ * angles are the angles you wish to evaluate the spherical harmonic at
+ * sphere is the return variable
+ * x_vals = cos(2. * angle[idx])
+ */
+void Utils::SpherHarm(int K, int n, int lx, int ly, int L, int M,
+                      std::vector< double > &angle,
+                      std::vector< double > &sphere,
+                      std::vector< double > &x_vals)
+{
+  double *j_vals;
+  double norm = Normilization(K, ly, lx);
+
+  j_vals = j_polynomial(angle.size(), n, ly + 0.5, lx + 0.5, &x_vals[0]);
+
+  /* calculate spherical harmonics */
+  for (int idx = 0; idx < angle.size(); ++idx)
+  {
+    sphere[idx] = norm * j_vals[n * angle.size() + idx] *
+                  pow(cos(angle[idx]), lx) * pow(sin(angle[idx]), ly);
+  }
+  delete j_vals;
 }
