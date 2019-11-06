@@ -31,8 +31,12 @@ class Utils
   const dcomp imag = dcomp(0.0, 1.0);
   double C(int a, int b, int c);
   std::map< std::string, double > rrc_lookup;
+  PetscLogEvent sphere_harm;
+  PetscLogEvent jacobi_poly;
+  PetscLogEvent rrc_time;
 
  public:
+  Utils();
   void EndRun(std::string str);
   void EndRun(std::string str, PetscInt exit_val);
 

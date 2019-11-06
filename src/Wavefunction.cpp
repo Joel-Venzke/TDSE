@@ -1098,14 +1098,14 @@ void Wavefunction::CreateGrid()
     /* size of 1d array for psi */
     num_psi_build *= num_x[dim_idx];
     index = 0;
-    for (int L_val = 0; L_val < k_max + 1; ++L_val)
+    for (int L_val = 0; L_val < l_max + 1; ++L_val)
     {
       block_size = 0;
       for (int k_val = 0; k_val < k_max + 1; ++k_val)
       {
-        for (int l_1 = 0; l_1 < min(k_val, l_max) + 1; ++l_1)
+        for (int l_1 = 0; l_1 < k_max + 1; ++l_1)
         {
-          for (int l_2 = 0; l_2 < min(k_val, l_max) + 1; ++l_2)
+          for (int l_2 = 0; l_2 < k_max + 1; ++l_2)
           {
             for (int n = 0; n < k_val / 2 + 1; ++n)
             {

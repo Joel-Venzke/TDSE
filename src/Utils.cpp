@@ -1,5 +1,11 @@
 #include "Utils.h"
 
+Utils::Utils()
+{
+  PetscLogEventRegister("Sphere Harm", PETSC_VIEWER_CLASSID, &sphere_harm);
+  PetscLogEventRegister("jacobi_poly", PETSC_VIEWER_CLASSID, &jacobi_poly);
+  PetscLogEventRegister("RRC", PETSC_VIEWER_CLASSID, &rrc_time);
+}
 /* prints error message, kills code and returns -1 */
 void Utils::EndRun(std::string str)
 {
@@ -101,13 +107,13 @@ PetscInt Utils::GetHypersphereSize(PetscInt k_max, PetscInt l_max)
    *  times and therefore the simple implementation is uses
    */
   PetscInt count = 0;
-  for (int L_val = 0; L_val < k_max + 1; ++L_val)
+  for (int L_val = 0; L_val < l_max + 1; ++L_val)
   {
     for (int k_val = 0; k_val < k_max + 1; ++k_val)
     {
-      for (int l_1 = 0; l_1 < min(k_val, l_max) + 1; ++l_1)
+      for (int l_1 = 0; l_1 < k_val + 1; ++l_1)
       {
-        for (int l_2 = 0; l_2 < min(k_val, l_max) + 1; ++l_2)
+        for (int l_2 = 0; l_2 < k_val + 1; ++l_2)
         {
           for (int n = 0; n < k_val / 2 + 1; ++n)
           {
@@ -168,11 +174,13 @@ double Utils::RRC(int total_angular_momentum, int L, int l_xi, int l_yi,
   int n_i2, n_k2;                /* n_i and n_k times 2*/
   dcomp product, mu_nu_sum, lambda_product, lambda_sum;
   std::string key;
+  PetscLogEventBegin(rrc_time, 0, 0, 0, 0);
   key = to_string(total_angular_momentum) + "_" + to_string(L) + "_" +
         to_string(l_xi) + "_" + to_string(l_yi) + "_" + to_string(l_xk) + "_" +
         to_string(l_yk) + "_" + to_string(parity);
   if (rrc_lookup.count(key) == 1)
   {
+    PetscLogEventEnd(rrc_time, 0, 0, 0, 0);
     return rrc_lookup[key];
   }
 
@@ -198,6 +206,7 @@ double Utils::RRC(int total_angular_momentum, int L, int l_xi, int l_yi,
   n_k2 = (total_angular_momentum - l_xk - l_yk);
   if (n_i2 % 2 == 1 or n_k2 % 2 == 1 or n_i2 < 0 or n_k2 < 0)
   {
+    PetscLogEventEnd(rrc_time, 0, 0, 0, 0);
     return 0.0;
   }
   n_i = n_i2 / 2;
@@ -277,6 +286,7 @@ double Utils::RRC(int total_angular_momentum, int L, int l_xi, int l_yi,
   lambda_sum /= sqrt(C(n_k, l_xk, l_yk));
 
   rrc_lookup[key] = lambda_sum.real();
+  PetscLogEventEnd(rrc_time, 0, 0, 0, 0);
   return lambda_sum.real();
 }
 
@@ -299,8 +309,11 @@ void Utils::SpherHarm(int K, int n, int lx, int ly, int L, int M,
 {
   double *j_vals;
   double norm = Normilization(K, ly, lx);
+  PetscLogEventBegin(sphere_harm, 0, 0, 0, 0);
+  PetscLogEventBegin(jacobi_poly, 0, 0, 0, 0);
 
   j_vals = j_polynomial(angle.size(), n, ly + 0.5, lx + 0.5, &x_vals[0]);
+  PetscLogEventEnd(jacobi_poly, 0, 0, 0, 0);
 
   /* calculate spherical harmonics */
   for (int idx = 0; idx < angle.size(); ++idx)
@@ -308,5 +321,6 @@ void Utils::SpherHarm(int K, int n, int lx, int ly, int L, int M,
     sphere[idx] = norm * j_vals[n * angle.size() + idx] *
                   pow(cos(angle[idx]), lx) * pow(sin(angle[idx]), ly);
   }
+  PetscLogEventEnd(sphere_harm, 0, 0, 0, 0);
   delete j_vals;
 }

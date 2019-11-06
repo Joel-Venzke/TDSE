@@ -37,6 +37,25 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
   ee_soft_core_2         = ee_soft_core * ee_soft_core;
   field                  = pulse.GetField();
 
+  PetscLogEventRegister("H_0", PETSC_VIEWER_CLASSID, &create_h_0);
+  PetscLogEventRegister("H_0Diag", PETSC_VIEWER_CLASSID, &create_h_0_diag);
+  PetscLogEventRegister("H_0FD", PETSC_VIEWER_CLASSID, &create_h_0_fd);
+  PetscLogEventRegister("H_0Hyper", PETSC_VIEWER_CLASSID, &create_h_0_hyper);
+  PetscLogEventRegister("H_0HyperLow", PETSC_VIEWER_CLASSID,
+                        &create_h_0_hyper_low);
+  PetscLogEventRegister("H_0HyperLowVal", PETSC_VIEWER_CLASSID,
+                        &create_h_0_hyper_low_get_val);
+  PetscLogEventRegister("H_0HyperHigh", PETSC_VIEWER_CLASSID,
+                        &create_h_0_hyper_upper);
+  PetscLogEventRegister("H_0_ecs", PETSC_VIEWER_CLASSID, &create_h_0_ecs);
+  PetscLogEventRegister("H_laser", PETSC_VIEWER_CLASSID, &create_h_laser);
+  PetscLogEventRegister("IdxArray", PETSC_VIEWER_CLASSID, &idx_array_time);
+  PetscLogEventRegister("DiffArray", PETSC_VIEWER_CLASSID, &diff_array_time);
+  PetscLogEventRegister("HyperPotential", PETSC_VIEWER_CLASSID,
+                        &hyper_pot_time);
+  PetscLogEventRegister("HyperCoulomb", PETSC_VIEWER_CLASSID,
+                        &hyper_coulomb_time);
+
   if (coordinate_system_idx == 3)
   {
     l_max          = p.GetLMax();
@@ -58,6 +77,13 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
     max_block_size = w.GetMaxBlockSize();
     l_values       = NULL;
     m_values       = NULL;
+    num_ang        = 1e4;
+
+    /* pre allocate arrays for integrals over hyper radius */
+    angle.resize(num_ang);
+    x_vals.resize(num_ang);
+    sphere_1.resize(num_ang);
+    sphere_2.resize(num_ang);
   }
   else
   {
@@ -230,10 +256,15 @@ void Hamiltonian::CreateHamlitonian()
 
 void Hamiltonian::GenerateHamlitonian()
 {
+  PetscLogEventBegin(create_h_0, 0, 0, 0, 0);
   CalculateHamlitonian0();
-  std::cout << "H_0\n";
+  PetscLogEventEnd(create_h_0, 0, 0, 0, 0);
+  PetscLogEventBegin(create_h_0_ecs, 0, 0, 0, 0);
   CalculateHamlitonian0ECS();
+  PetscLogEventEnd(create_h_0_ecs, 0, 0, 0, 0);
+  PetscLogEventBegin(create_h_laser, 0, 0, 0, 0);
   CalculateHamlitonianLaser();
+  PetscLogEventEnd(create_h_laser, 0, 0, 0, 0);
   MatAssemblyBegin(hamiltonian, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(hamiltonian, MAT_FINAL_ASSEMBLY);
   MatCopy(hamiltonian_0_ecs, hamiltonian, DIFFERENT_NONZERO_PATTERN);
@@ -438,6 +469,11 @@ void Hamiltonian::CalculateHamlitonian0(PetscInt l_val)
       j_val     = i_val;
       idx_array = GetIndexArray(i_val, j_val);
       dim_idx   = 0;
+      if (idx_array[4] == 0 and world.rank() == world.size() - 1)
+      {
+        std::cout << "Calculating " << idx_array[2] + 1 << " of " << num_x[1]
+                  << "\n";
+      }
       /* avoid recalculating if the grid is uniform */
       if (delta_x_max[dim_idx] != delta_x_min[dim_idx])
       {
@@ -459,13 +495,16 @@ void Hamiltonian::CalculateHamlitonian0(PetscInt l_val)
         FDWeights(x_vals, 2, real_coef[dim_idx]);
       }
 
+      PetscLogEventBegin(create_h_0_diag, 0, 0, 0, 0);
       /* Diagonal element */
       val = GetVal(i_val, j_val, insert_val, ecs, l_val);
       if (insert_val)
       {
         MatSetValues(hamiltonian_0, 1, &i_val, 1, &j_val, &val, INSERT_VALUES);
       }
+      PetscLogEventEnd(create_h_0_diag, 0, 0, 0, 0);
 
+      PetscLogEventBegin(create_h_0_fd, 0, 0, 0, 0);
       /* Loop over off diagonal elements for KE opp */
       for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
       {
@@ -569,7 +608,9 @@ void Hamiltonian::CalculateHamlitonian0(PetscInt l_val)
           }
         }
       }
+      PetscLogEventEnd(create_h_0_fd, 0, 0, 0, 0);
 
+      PetscLogEventBegin(create_h_0_hyper, 0, 0, 0, 0);
       /* put in the <Y_k'|V|Y_k> terms */
       base_offset = num_x[2];
       for (int diagonal_idx = 0; diagonal_idx < max_block_size; ++diagonal_idx)
@@ -580,19 +621,24 @@ void Hamiltonian::CalculateHamlitonian0(PetscInt l_val)
         /* Lower diagonal */
         if (j_val >= 0 and j_val < num_psi)
         {
+          PetscLogEventBegin(create_h_0_hyper_low, 0, 0, 0, 0);
           idx_array = GetIndexArray(i_val, j_val);
-          val       = GetHyperspherPotential(idx_array);
+          PetscLogEventBegin(create_h_0_hyper_low_get_val, 0, 0, 0, 0);
+          val = GetHyperspherPotential(idx_array);
+          PetscLogEventEnd(create_h_0_hyper_low_get_val, 0, 0, 0, 0);
           if (abs(val) > 1e-16)
           {
             MatSetValues(hamiltonian_0, 1, &i_val, 1, &j_val, &val,
                          INSERT_VALUES);
           }
+          PetscLogEventEnd(create_h_0_hyper_low, 0, 0, 0, 0);
         }
 
         /* Upper diagonal */
         j_val = i_val + offset;
         if (j_val >= 0 and j_val < num_psi)
         {
+          PetscLogEventBegin(create_h_0_hyper_upper, 0, 0, 0, 0);
           idx_array = GetIndexArray(i_val, j_val);
 
           val = GetHyperspherPotential(idx_array);
@@ -601,8 +647,10 @@ void Hamiltonian::CalculateHamlitonian0(PetscInt l_val)
             MatSetValues(hamiltonian_0, 1, &i_val, 1, &j_val, &val,
                          INSERT_VALUES);
           }
+          PetscLogEventEnd(create_h_0_hyper_upper, 0, 0, 0, 0);
         }
       }
+      PetscLogEventEnd(create_h_0_hyper, 0, 0, 0, 0);
     }
   }
   else
@@ -994,6 +1042,195 @@ void Hamiltonian::CalculateHamlitonian0ECS()
           val = 0.0;
           MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
                        INSERT_VALUES);
+        }
+      }
+    }
+  }
+  else if (coordinate_system_idx == 4) /* Hyperpherical */
+  {
+    PetscInt j_val;       /* j index for matrix */
+    PetscInt base_offset; /* offset of diagonal */
+    PetscInt offset;      /* offset of diagonal */
+    bool insert_val, ecs;
+    std::vector< PetscInt > idx_array;
+    std::vector< dcomp > x_vals(order + 1, 0.0);
+    PetscInt dim_idx;
+
+    ecs = false;
+    for (PetscInt i_val = start; i_val < end; i_val++)
+    {
+      j_val     = i_val;
+      idx_array = GetIndexArray(i_val, j_val);
+      dim_idx   = 0;
+      if (idx_array[4] == 0 and world.rank() == world.size() - 1)
+      {
+        std::cout << "Calculating " << idx_array[2] + 1 << " of " << num_x[1]
+                  << "\n";
+      }
+      /* avoid recalculating if the grid is uniform */
+      if (delta_x_max[dim_idx] != delta_x_min[dim_idx])
+      {
+        /* Set up real gird */
+        for (int coef_idx = 0; coef_idx < order + 1; ++coef_idx)
+        {
+          if (idx_array[dim_idx * 2] < (order / 2 + 1) or
+              num_x[dim_idx] - 1 - idx_array[dim_idx * 2] < (order / 2 + 1))
+          {
+            x_vals[coef_idx] = delta_x_max[dim_idx] * coef_idx;
+          }
+          else
+          {
+            x_vals[coef_idx] =
+                x_value[dim_idx][coef_idx - order / 2 + idx_array[dim_idx * 2]];
+          }
+        }
+        /* Get real coefficients for each dimension */
+        FDWeights(x_vals, 2, real_coef[dim_idx]);
+      }
+
+      /* Diagonal element */
+      val = GetVal(i_val, j_val, insert_val, ecs);
+      if (insert_val)
+      {
+        MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
+                     INSERT_VALUES);
+      }
+
+      /* Loop over off diagonal elements for KE opp */
+      for (PetscInt elec_idx = 0; elec_idx < num_electrons; ++elec_idx)
+      {
+        dim_idx     = 0;
+        base_offset = GetOffset(elec_idx, dim_idx);
+        if (dim_idx == 0 and
+            idx_array[2 * (2 + elec_idx * num_dims)] < order_middle_idx - 1)
+        {
+          /* loop over all off diagonals up to the order needed */
+          for (int diagonal_idx = 0; diagonal_idx < order; ++diagonal_idx)
+          {
+            offset = (diagonal_idx + 1) * base_offset;
+            /* Lower diagonal */
+            if (i_val - offset >= 0 and i_val - offset < num_psi)
+            {
+              j_val = i_val - offset;
+              val   = GetVal(i_val, j_val, insert_val, ecs);
+              if (insert_val)
+              {
+                MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
+                             INSERT_VALUES);
+              }
+            }
+
+            /* Upper diagonal */
+            if (i_val + offset >= 0 and i_val + offset < num_psi)
+            {
+              j_val = i_val + offset;
+              val   = GetVal(i_val, j_val, insert_val, ecs);
+              if (insert_val)
+              {
+                MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
+                             INSERT_VALUES);
+              }
+            }
+          }
+        }
+        else if (dim_idx == 0 and
+                 num_x[2] - 1 - idx_array[2 * (2 + elec_idx * num_dims)] <
+                     order_middle_idx - 1)
+        {
+          /* loop over all off diagonals up to the order needed */
+          for (int diagonal_idx = 0; diagonal_idx < order - 1; ++diagonal_idx)
+          {
+            offset = (diagonal_idx + 1) * base_offset;
+            /* Lower diagonal */
+            if (i_val - offset >= 0 and i_val - offset < num_psi)
+            {
+              j_val = i_val - offset;
+              val   = GetVal(i_val, j_val, insert_val, ecs);
+              if (insert_val)
+              {
+                MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
+                             INSERT_VALUES);
+              }
+            }
+
+            /* Upper diagonal */
+            if (i_val + offset >= 0 and i_val + offset < num_psi)
+            {
+              j_val = i_val + offset;
+              val   = GetVal(i_val, j_val, insert_val, ecs);
+              if (insert_val)
+              {
+                MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
+                             INSERT_VALUES);
+              }
+            }
+          }
+        }
+        else
+        {
+          /* loop over all off diagonals up to the order needed */
+          for (int diagonal_idx = 0; diagonal_idx < order_middle_idx;
+               ++diagonal_idx)
+          {
+            offset = (diagonal_idx + 1) * base_offset;
+            /* Lower diagonal */
+            if (i_val - offset >= 0 and i_val - offset < num_psi)
+            {
+              j_val = i_val - offset;
+              val   = GetVal(i_val, j_val, insert_val, ecs);
+              if (insert_val)
+              {
+                MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
+                             INSERT_VALUES);
+              }
+            }
+
+            /* Upper diagonal */
+            if (i_val + offset >= 0 and i_val + offset < num_psi)
+            {
+              j_val = i_val + offset;
+              val   = GetVal(i_val, j_val, insert_val, ecs);
+              if (insert_val)
+              {
+                MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
+                             INSERT_VALUES);
+              }
+            }
+          }
+        }
+      }
+
+      /* put in the <Y_k'|V|Y_k> terms */
+      base_offset = num_x[2];
+      for (int diagonal_idx = 0; diagonal_idx < max_block_size; ++diagonal_idx)
+      {
+        offset = (diagonal_idx + 1) * base_offset;
+
+        j_val = i_val - offset;
+        /* Lower diagonal */
+        if (j_val >= 0 and j_val < num_psi)
+        {
+          idx_array = GetIndexArray(i_val, j_val);
+          val       = GetHyperspherPotential(idx_array);
+          if (abs(val) > 1e-16)
+          {
+            MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
+                         INSERT_VALUES);
+          }
+        }
+
+        /* Upper diagonal */
+        j_val = i_val + offset;
+        if (j_val >= 0 and j_val < num_psi)
+        {
+          idx_array = GetIndexArray(i_val, j_val);
+
+          val = GetHyperspherPotential(idx_array);
+          if (abs(val) > 1e-16)
+          {
+            MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
+                         INSERT_VALUES);
+          }
         }
       }
     }
@@ -2515,6 +2752,7 @@ dcomp Hamiltonian::GetHyperspherPotential(std::vector< PetscInt >& idx_array)
 {
   dcomp nuclei(0.0, 0.0);
   double r;
+  PetscLogEventBegin(hyper_pot_time, 0, 0, 0, 0);
   if (eigen_values[idx_array[2]][4] == eigen_values[idx_array[2 + 1]][4])
   {
     /* loop over each nuclei */
@@ -2570,17 +2808,18 @@ dcomp Hamiltonian::GetHyperspherPotential(std::vector< PetscInt >& idx_array)
       // }
     }
   }
+  PetscLogEventEnd(hyper_pot_time, 0, 0, 0, 0);
   return nuclei;
 }
 
 double Hamiltonian::GetHypersphereCoulomb(int* lambda_a, int* lambda_b,
-                                          double r, double z, int num_ang)
+                                          double r, double z)
 {
+  PetscLogEventBegin(hyper_coulomb_time, 0, 0, 0, 0);
   num_ang += num_ang % 2;
-  std::vector< double > angle(num_ang), x_vals(num_ang);
-  std::vector< double > sphere_1(num_ang), sphere_2(num_ang);
   double d_angle, matrix_element, pre_fac_a, pre_fac_b, result, tmp;
   int Ka, na, lxa, lya, La, Ma, Kb, nb, lxb, lyb, Lb, Mb;
+  std::string key;
   matrix_element = 0.0;
   Ka             = lambda_a[0];
   na             = lambda_a[1];
@@ -2594,6 +2833,17 @@ double Hamiltonian::GetHypersphereCoulomb(int* lambda_a, int* lambda_b,
   lyb            = lambda_b[3];
   Lb             = lambda_b[4];
   Mb             = lambda_b[5];
+  key = to_string(Ka) + "_" + to_string(na) + "_" + to_string(lxa) + "_" +
+        to_string(lya) + "_" + to_string(La) + "_" + to_string(Kb) + "_" +
+        to_string(nb) + "_" + to_string(lxb) + "_" + to_string(lyb) + "_" +
+        to_string(Lb) + "_" + to_string(z) + "_" + to_string(num_ang);
+
+  /* check to see if this has been calculated already */
+  if (hypersphere_coulomb_lookup.count(key) == 1)
+  {
+    PetscLogEventEnd(hyper_coulomb_time, 0, 0, 0, 0);
+    return hypersphere_coulomb_lookup[key] / r;
+  }
 
   d_angle = pi / (2 * num_ang);
   for (int idx = 0; idx < num_ang; ++idx)
@@ -2648,6 +2898,8 @@ double Hamiltonian::GetHypersphereCoulomb(int* lambda_a, int* lambda_b,
       matrix_element += result;
     }
   }
+  hypersphere_coulomb_lookup[key] = matrix_element;
+  PetscLogEventEnd(hyper_coulomb_time, 0, 0, 0, 0);
   return matrix_element / r;
 }
 
@@ -2882,6 +3134,7 @@ std::vector< PetscInt > Hamiltonian::GetIndexArray(PetscInt idx_i,
   std::vector< PetscInt > num(total_dims);
   /* idx for return */
   std::vector< PetscInt > idx_array(total_dims * 2);
+  PetscLogEventBegin(idx_array_time, 0, 0, 0, 0);
   /* used for convenience. Could/should be optimized */
   for (PetscInt elec_idx = 0; elec_idx < num_electrons; elec_idx++)
   {
@@ -2901,6 +3154,7 @@ std::vector< PetscInt > Hamiltonian::GetIndexArray(PetscInt idx_i,
     idx_array[2 * i + 1] = idx_j % num[i];
     idx_j /= num[i];
   }
+  PetscLogEventEnd(idx_array_time, 0, 0, 0, 0);
   return idx_array;
 }
 
@@ -2908,11 +3162,13 @@ std::vector< PetscInt > Hamiltonian::GetDiffArray(
     std::vector< PetscInt >& idx_array)
 {
   std::vector< PetscInt > diff_array;
+  PetscLogEventBegin(diff_array_time, 0, 0, 0, 0);
   /* Calculated difference between i and j indexes */
   for (PetscInt i = 0; i < num_dims * num_electrons; ++i)
   {
     diff_array.push_back(idx_array[2 * i + 1] - idx_array[2 * i]);
   }
+  PetscLogEventEnd(diff_array_time, 0, 0, 0, 0);
   return diff_array;
 }
 
