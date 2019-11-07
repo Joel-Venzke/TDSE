@@ -470,6 +470,13 @@ void Hamiltonian::CalculateHamlitonian0(PetscInt l_val)
       j_val     = i_val;
       idx_array = GetIndexArray(i_val, j_val);
       dim_idx   = 0;
+      if ((i_val == start or idx_array[4] == 0) and
+          world.rank() == world.size() - 1)
+      {
+        std::cout << "Calculating " << idx_array[2] + 1 << " of " << num_x[1]
+                  << "\n";
+      }
+
       /* avoid recalculating if the grid is uniform */
       if (delta_x_max[dim_idx] != delta_x_min[dim_idx])
       {
@@ -1058,6 +1065,12 @@ void Hamiltonian::CalculateHamlitonian0ECS()
       j_val     = i_val;
       idx_array = GetIndexArray(i_val, j_val);
       dim_idx   = 0;
+      if ((i_val == start or idx_array[4] == 0) and
+          world.rank() == world.size() - 1)
+      {
+        std::cout << "Calculating " << idx_array[2] + 1 << " of " << num_x[1]
+                  << "\n";
+      }
 
       /* avoid recalculating if the grid is uniform */
       if (delta_x_max[dim_idx] != delta_x_min[dim_idx])

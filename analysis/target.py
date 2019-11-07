@@ -78,7 +78,8 @@ if f["Parameters"]["coordinate_system_idx"][0]==4:
         psi.shape = [psi.shape[0]//r_vals.shape[0],r_vals.shape[0]]
         psi = np.sum(psi, axis=0)
         plt.semilogy(r_vals,psi)
-        plt.savefig("state_"+str(i)+".png")
+        plt.ylim([1e-10,1])
+        plt.savefig("figs/state_"+str(i).zfill(5)+".png")
         plt.clf()
 
 
