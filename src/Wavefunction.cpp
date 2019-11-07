@@ -519,7 +519,6 @@ std::vector< dcomp > Wavefunction::Projections(std::string file_name)
     {
       EndRun("Not enough states in the target file");
     }
-    std::vector< dcomp > ret_vec;
     dcomp projection_val;
 
     viewer_file.Open("r");
@@ -996,7 +995,7 @@ void Wavefunction::CreateGrid()
     {
       num_x[dim_idx]++;
     }
-    if (num_x[dim_idx] < 2 * order + 1)
+    if (num_x[dim_idx] <= order + 1)
     {
       EndRun(
           "Not enough gird points to support this order of Finite "
@@ -1178,7 +1177,7 @@ void Wavefunction::CreateGrid()
     {
       num_x[dim_idx]++;
     }
-    if (num_x[dim_idx] < 2 * order + 1)
+    if (num_x[dim_idx] <= order + 1)
     {
       EndRun(
           "Not enough gird points to support this order of Finite "
@@ -2003,6 +2002,22 @@ double Wavefunction::GetPosition(PetscInt elec_idx, PetscInt dim_idx)
   PetscLogEventBegin(time_position, 0, 0, 0, 0);
   PetscComplex expectation;
   if (coordinate_system_idx == 3)
+  {
+    if (position_mat_alloc)
+    {
+      /* apply position matrix */
+      MatMult(position_mat[dim_idx], psi, psi_tmp_cyl);
+      /* apply Jacobian after (doesn't commute with matrix) */
+      VecPointwiseMult(psi_tmp, jacobian, psi_tmp_cyl);
+      VecDot(psi, psi_tmp, &expectation);
+    }
+    else /* return zero if the position expectation matrix has not been built
+          */
+    {
+      expectation = 0.0;
+    }
+  }
+  else if (coordinate_system_idx == 4)
   {
     if (position_mat_alloc)
     {

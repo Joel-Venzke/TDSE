@@ -62,7 +62,27 @@ psi_time = f["Wavefunction"]["time"][:]
 shape = f["Wavefunction"]["num_x"][:]
 num_dims = len(shape)
 
-if num_electrons == 2:
+if f["Parameters"]["coordinate_system_idx"][0]==4:
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    import matplotlib.animation as animation
+    from matplotlib.colors import LogNorm
+    import pylab as plb
+    font = {'size': 22}
+    matplotlib.rc('font', **font)
+    for i, psi in enumerate(psi_value):
+        psi = psi[:, 0] + 1j * psi[:, 1]
+        psi = np.abs(psi)
+        r_vals = f["Wavefunction"]["x_value_2"][:]
+        psi.shape = [psi.shape[0]//r_vals.shape[0],r_vals.shape[0]]
+        psi = np.sum(psi, axis=0)
+        plt.semilogy(r_vals,psi)
+        plt.savefig("state_"+str(i)+".png")
+        plt.clf()
+
+
+elif num_electrons == 2:
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt

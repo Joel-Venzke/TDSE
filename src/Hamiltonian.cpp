@@ -55,6 +55,7 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
                         &hyper_pot_time);
   PetscLogEventRegister("HyperCoulomb", PETSC_VIEWER_CLASSID,
                         &hyper_coulomb_time);
+  PetscLogEventRegister("HyperLaser", PETSC_VIEWER_CLASSID, &hyper_laser_time);
 
   if (coordinate_system_idx == 3)
   {
@@ -81,7 +82,7 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
 
     /* pre allocate arrays for integrals over hyper radius */
     angle.resize(num_ang);
-    x_vals.resize(num_ang);
+    arg_vals.resize(num_ang);
     sphere_1.resize(num_ang);
     sphere_2.resize(num_ang);
   }
@@ -469,11 +470,6 @@ void Hamiltonian::CalculateHamlitonian0(PetscInt l_val)
       j_val     = i_val;
       idx_array = GetIndexArray(i_val, j_val);
       dim_idx   = 0;
-      if (idx_array[4] == 0 and world.rank() == world.size() - 1)
-      {
-        std::cout << "Calculating " << idx_array[2] + 1 << " of " << num_x[1]
-                  << "\n";
-      }
       /* avoid recalculating if the grid is uniform */
       if (delta_x_max[dim_idx] != delta_x_min[dim_idx])
       {
@@ -624,7 +620,7 @@ void Hamiltonian::CalculateHamlitonian0(PetscInt l_val)
           PetscLogEventBegin(create_h_0_hyper_low, 0, 0, 0, 0);
           idx_array = GetIndexArray(i_val, j_val);
           PetscLogEventBegin(create_h_0_hyper_low_get_val, 0, 0, 0, 0);
-          val = GetHyperspherPotential(idx_array);
+          val = GetHyperspherePotential(idx_array);
           PetscLogEventEnd(create_h_0_hyper_low_get_val, 0, 0, 0, 0);
           if (abs(val) > 1e-16)
           {
@@ -641,7 +637,7 @@ void Hamiltonian::CalculateHamlitonian0(PetscInt l_val)
           PetscLogEventBegin(create_h_0_hyper_upper, 0, 0, 0, 0);
           idx_array = GetIndexArray(i_val, j_val);
 
-          val = GetHyperspherPotential(idx_array);
+          val = GetHyperspherePotential(idx_array);
           if (abs(val) > 1e-16)
           {
             MatSetValues(hamiltonian_0, 1, &i_val, 1, &j_val, &val,
@@ -1062,11 +1058,7 @@ void Hamiltonian::CalculateHamlitonian0ECS()
       j_val     = i_val;
       idx_array = GetIndexArray(i_val, j_val);
       dim_idx   = 0;
-      if (idx_array[4] == 0 and world.rank() == world.size() - 1)
-      {
-        std::cout << "Calculating " << idx_array[2] + 1 << " of " << num_x[1]
-                  << "\n";
-      }
+
       /* avoid recalculating if the grid is uniform */
       if (delta_x_max[dim_idx] != delta_x_min[dim_idx])
       {
@@ -1211,7 +1203,7 @@ void Hamiltonian::CalculateHamlitonian0ECS()
         if (j_val >= 0 and j_val < num_psi)
         {
           idx_array = GetIndexArray(i_val, j_val);
-          val       = GetHyperspherPotential(idx_array);
+          val       = GetHyperspherePotential(idx_array);
           if (abs(val) > 1e-16)
           {
             MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
@@ -1225,7 +1217,7 @@ void Hamiltonian::CalculateHamlitonian0ECS()
         {
           idx_array = GetIndexArray(i_val, j_val);
 
-          val = GetHyperspherPotential(idx_array);
+          val = GetHyperspherePotential(idx_array);
           if (abs(val) > 1e-16)
           {
             MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
@@ -1574,6 +1566,56 @@ void Hamiltonian::CalculateHamlitonianLaser()
     }
     wavefunction->SetPositionMat(hamiltonian_laser);
   }
+  else if (coordinate_system_idx == 4)
+  {
+    PetscInt j_val, offset;     /* j index for matrix */
+    PetscInt r_size = num_x[2]; /* r dimension size */
+    std::vector< PetscInt > idx_array;
+    PetscInt ham_dim_idx = 2;
+    MatGetOwnershipRange(hamiltonian_laser[ham_dim_idx], &start, &end);
+    for (PetscInt i_val = start; i_val < end; i_val++)
+    {
+      /* put in the <Y_k'|V|Y_k> terms */
+      for (int diagonal_idx = 0; diagonal_idx < num_x[1]; ++diagonal_idx)
+      {
+        offset = (diagonal_idx + 1) * r_size;
+
+        j_val = i_val - offset;
+        /* Lower diagonal */
+        if (j_val >= 0 and j_val < num_psi)
+        {
+          idx_array = GetIndexArray(i_val, j_val);
+          val       = GetHyperspherePotential(idx_array);
+          if (abs(val) > 1e-16)
+          {
+            MatSetValues(hamiltonian_laser[ham_dim_idx], 1, &i_val, 1, &j_val,
+                         &val, INSERT_VALUES);
+          }
+        }
+
+        /* Upper diagonal */
+        j_val = i_val + offset;
+        if (j_val >= 0 and j_val < num_psi)
+        {
+          idx_array = GetIndexArray(i_val, j_val);
+
+          val = GetHyperspherePotential(idx_array);
+          if (abs(val) > 1e-16)
+          {
+            MatSetValues(hamiltonian_laser[ham_dim_idx], 1, &i_val, 1, &j_val,
+                         &val, INSERT_VALUES);
+          }
+        }
+      }
+    }
+    for (PetscInt ham_dim_idx = 0; ham_dim_idx < num_dims; ham_dim_idx++)
+    {
+      MatAssemblyBegin(hamiltonian_laser[ham_dim_idx], MAT_FINAL_ASSEMBLY);
+      MatAssemblyEnd(hamiltonian_laser[ham_dim_idx], MAT_FINAL_ASSEMBLY);
+    }
+
+    wavefunction->SetPositionMat(hamiltonian_laser);
+  }
   else
   {
     PetscInt j_val;       /* j index for matrix */
@@ -1865,7 +1907,12 @@ Mat* Hamiltonian::GetTotalHamiltonian(PetscInt time_idx, bool ecs)
   }
   for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
   {
-    if (field[dim_idx][time_idx] != 0.0)
+    if (field[dim_idx][time_idx] != 0.0 and coordinate_system_idx == 4)
+    {
+      MatAXPY(hamiltonian, -2.0 * field[dim_idx][time_idx],
+              hamiltonian_laser[dim_idx], SUBSET_NONZERO_PATTERN);
+    }
+    else if (field[dim_idx][time_idx] != 0.0)
     {
       MatAXPY(hamiltonian, field[dim_idx][time_idx], hamiltonian_laser[dim_idx],
               SUBSET_NONZERO_PATTERN);
@@ -2477,10 +2524,10 @@ dcomp Hamiltonian::GetDiagonal(std::vector< PetscInt >& idx_array, bool ecs)
     /* kinetic term */
     diagonal += GetKineticTerm(idx_array, ecs);
     diagonal += GetCentrifugalTerm(idx_array);
-    diagonal += GetHyperspherPotential(idx_array);
+    diagonal += GetHyperspherePotential(idx_array);
     // std::cout << GetKineticTerm(idx_array, ecs) +
     // GetCentrifugalTerm(idx_array)
-    //           << " " << GetHyperspherPotential(idx_array) << " " << diagonal
+    //           << " " << GetHyperspherePotential(idx_array) << " " << diagonal
     //           << "\n";
   }
   else
@@ -2748,7 +2795,7 @@ dcomp Hamiltonian::GetNucleiTerm(std::vector< PetscInt >& idx_array)
   return nuclei;
 }
 
-dcomp Hamiltonian::GetHyperspherPotential(std::vector< PetscInt >& idx_array)
+dcomp Hamiltonian::GetHyperspherePotential(std::vector< PetscInt >& idx_array)
 {
   dcomp nuclei(0.0, 0.0);
   double r;
@@ -2845,15 +2892,14 @@ double Hamiltonian::GetHypersphereCoulomb(int* lambda_a, int* lambda_b,
     return hypersphere_coulomb_lookup[key] / r;
   }
 
-  d_angle = pi / (2 * num_ang);
-  for (int idx = 0; idx < num_ang; ++idx)
-  {
-    angle[idx]  = idx * d_angle + d_angle / 2.;
-    x_vals[idx] = cos(2. * angle[idx]);
-  }
-
   if (La == Lb)
   {
+    d_angle = pi / (2 * num_ang);
+    for (int idx = 0; idx < num_ang; ++idx)
+    {
+      angle[idx]    = idx * d_angle + d_angle / 2.;
+      arg_vals[idx] = cos(2. * angle[idx]);
+    }
     for (int lx = 0; lx < min(Ka, Kb) + 1; ++lx)
     {
       for (int ly = 0; ly < min(Ka, Kb) + 1; ++ly)
@@ -2867,9 +2913,9 @@ double Hamiltonian::GetHypersphereCoulomb(int* lambda_a, int* lambda_b,
           if (abs(pre_fac_a) > 1e-16 or abs(pre_fac_b) > 1e-16)
           {
             SpherHarm(Ka, (Ka - lx - ly) / 2, lx, ly, La, Ma, angle, sphere_1,
-                      x_vals);
+                      arg_vals);
             SpherHarm(Kb, (Kb - lx - ly) / 2, lx, ly, Lb, Mb, angle, sphere_2,
-                      x_vals);
+                      arg_vals);
             result = 0.0;
             for (int idx = 0; idx < num_ang; ++idx)
             {
@@ -2886,8 +2932,8 @@ double Hamiltonian::GetHypersphereCoulomb(int* lambda_a, int* lambda_b,
     }
     if (lxa == lxb and lya == lyb)
     {
-      SpherHarm(Ka, na, lxa, lya, La, Ma, angle, sphere_1, x_vals);
-      SpherHarm(Kb, nb, lxb, lyb, Lb, Mb, angle, sphere_2, x_vals);
+      SpherHarm(Ka, na, lxa, lya, La, Ma, angle, sphere_1, arg_vals);
+      SpherHarm(Kb, nb, lxb, lyb, Lb, Mb, angle, sphere_2, arg_vals);
       result = 0.0;
       for (int idx = 0; idx < num_ang; ++idx)
       {
@@ -2901,6 +2947,89 @@ double Hamiltonian::GetHypersphereCoulomb(int* lambda_a, int* lambda_b,
   hypersphere_coulomb_lookup[key] = matrix_element;
   PetscLogEventEnd(hyper_coulomb_time, 0, 0, 0, 0);
   return matrix_element / r;
+}
+
+dcomp Hamiltonian::GetHypersphereLaser(std::vector< PetscInt >& idx_array)
+{
+  dcomp ret_val(0.0, 0.0);
+  double r = x_value[2][idx_array[2 * 2]];
+  /* z axis */
+  ret_val = GetHypersphereLaserVal(eigen_values[idx_array[2]],
+                                   eigen_values[idx_array[2 + 1]], r);
+  return ret_val;
+}
+
+double Hamiltonian::GetHypersphereLaserVal(int* lambda_a, int* lambda_b,
+                                           double r)
+{
+  PetscLogEventBegin(hyper_coulomb_time, 0, 0, 0, 0);
+  num_ang += num_ang % 2;
+  double d_angle, matrix_element, result, tmp_sin, tmp_cos;
+  int Ka, na, lxa, lya, La, Ma, Kb, nb, lxb, lyb, Lb, Mb;
+  std::string key;
+  matrix_element = 0.0;
+  Ka             = lambda_a[0];
+  na             = lambda_a[1];
+  lxa            = lambda_a[2];
+  lya            = lambda_a[3];
+  La             = lambda_a[4];
+  Ma             = lambda_a[5];
+  Kb             = lambda_b[0];
+  nb             = lambda_b[1];
+  lxb            = lambda_b[2];
+  lyb            = lambda_b[3];
+  Lb             = lambda_b[4];
+  Mb             = lambda_b[5];
+  key = to_string(Ka) + "_" + to_string(na) + "_" + to_string(lxa) + "_" +
+        to_string(lya) + "_" + to_string(La) + "_" + to_string(Kb) + "_" +
+        to_string(nb) + "_" + to_string(lxb) + "_" + to_string(lyb) + "_" +
+        to_string(Lb) + "_" + to_string(num_ang);
+
+  /* check to see if this has been calculated already */
+  if (hypersphere_laser_lookup.count(key) == 1)
+  {
+    PetscLogEventEnd(hyper_laser_time, 0, 0, 0, 0);
+    return hypersphere_laser_lookup[key] * r;
+  }
+
+  if (lxa == lxb and Ma == Mb and abs(lya - lya) == 1)
+  {
+    d_angle = pi / (2 * num_ang);
+    for (int idx = 0; idx < num_ang; ++idx)
+    {
+      angle[idx]    = idx * d_angle + d_angle / 2.;
+      arg_vals[idx] = cos(2. * angle[idx]);
+    }
+    SpherHarm(Ka, na, lxa, lya, La, Ma, angle, sphere_1, arg_vals);
+    SpherHarm(Kb, nb, lxb, lyb, Lb, Mb, angle, sphere_2, arg_vals);
+    result = 0.0;
+    for (int idx = 0; idx < num_ang; ++idx)
+    {
+      tmp_sin = sin(angle[idx]);
+      tmp_sin *= tmp_sin * tmp_sin;
+      tmp_cos = cos(angle[idx]);
+      tmp_cos *= tmp_cos;
+      result += sphere_1[idx] * sphere_2[idx] * tmp_cos * tmp_sin;
+    }
+    result *= d_angle;
+    result *= ClebschGordanCoef(lya, 1, lyb, 0, 0, 0);
+    if (Ma != 0 or Mb != 0)
+    {
+      EndRun(
+          "Hyperspherical laser opperator only supports M=0.\n"
+          "A sum over m is needed for M!=0.");
+    }
+    result *= ClebschGordanCoef(lya, 1, lyb, 0, 0, 0);
+    result *= ClebschGordanCoef(lya, 1, lyb, 0, 0, 0);
+
+    result *= ClebschGordanCoef(lxa, lya, La, 0, 0, 0);
+    result *= ClebschGordanCoef(lxb, lyb, Lb, 0, 0, 0);
+
+    matrix_element += result;
+  }
+  hypersphere_laser_lookup[key] = matrix_element;
+  PetscLogEventEnd(hyper_laser_time, 0, 0, 0, 0);
+  return matrix_element * r;
 }
 
 /* get nuclear term for rbf grid */

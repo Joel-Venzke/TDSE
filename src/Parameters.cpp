@@ -1213,11 +1213,6 @@ void Parameters::Validate()
             " has a non zero radial coordinate\n ";
       }
     }
-    if (propagate != 0)
-    {
-      error_found = true;
-      err_str += "\nHyperspherical does not support time propagation\n";
-    }
     if (m_max > 0)
     {
       error_found = true;

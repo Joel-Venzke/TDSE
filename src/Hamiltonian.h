@@ -21,10 +21,12 @@ class Hamiltonian : protected Utils
   PetscLogEvent create_h_laser;
   PetscLogEvent hyper_pot_time;
   PetscLogEvent hyper_coulomb_time;
+  PetscLogEvent hyper_laser_time;
   PetscLogEvent idx_array_time;
   PetscLogEvent diff_array_time;
 
   std::map< std::string, double > hypersphere_coulomb_lookup;
+  std::map< std::string, double > hypersphere_laser_lookup;
 
   PetscInt num_dims;
   PetscInt num_electrons;
@@ -97,7 +99,7 @@ class Hamiltonian : protected Utils
 
   /* for hyper sphere stuff */
   int num_ang;
-  std::vector< double > angle, x_vals;
+  std::vector< double > angle, arg_vals;
   std::vector< double > sphere_1, sphere_2;
 
   void CreateHamlitonian();
@@ -135,9 +137,12 @@ class Hamiltonian : protected Utils
                        PetscInt only_dim_idx);
   dcomp GetNucleiTerm(std::vector< PetscInt > &idx_array);
   dcomp GetNucleiTerm(PetscInt idx);
-  dcomp GetHyperspherPotential(std::vector< PetscInt > &idx_array);
+  dcomp GetHyperspherePotential(std::vector< PetscInt > &idx_array);
   double GetHypersphereCoulomb(int *lambda_a, int *lambda_b, double r,
                                double z);
+  dcomp GetHypersphereLaser(std::vector< PetscInt > &idx_array);
+  double GetHypersphereLaserVal(int *lambda_a, int *lambda_b, double r);
+  double GetHypersphereCoulomb(int *lambda_a, int *lambda_b, double r);
   dcomp GetElectronElectronTerm(std::vector< PetscInt > &idx_array);
   dcomp GetCentrifugalTerm(std::vector< PetscInt > &idx_array);
   PetscInt GetOffset(PetscInt elec_idx, PetscInt dim_idx);
