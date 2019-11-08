@@ -653,6 +653,41 @@ void Hamiltonian::CalculateHamlitonian0(PetscInt l_val)
           PetscLogEventEnd(create_h_0_hyper_upper, 0, 0, 0, 0);
         }
       }
+
+      /* allocate for laser  <Y_k'|V|Y_k> terms */
+      for (int diagonal_idx = 0; diagonal_idx < num_x[1]; ++diagonal_idx)
+      {
+        offset = (diagonal_idx + 1) * base_offset;
+
+        j_val = i_val - offset;
+        /* Lower diagonal */
+        if (j_val >= 0 and j_val < num_psi)
+        {
+          idx_array = GetIndexArray(i_val, j_val);
+          val       = GetHypersphereLaser(idx_array);
+          if (abs(val) > 1e-16)
+          {
+            val = 0.0;
+            MatSetValues(hamiltonian_0, 1, &i_val, 1, &j_val, &val,
+                         INSERT_VALUES);
+          }
+        }
+
+        /* Upper diagonal */
+        j_val = i_val + offset;
+        if (j_val >= 0 and j_val < num_psi)
+        {
+          idx_array = GetIndexArray(i_val, j_val);
+
+          val = GetHypersphereLaser(idx_array);
+          if (abs(val) > 1e-16)
+          {
+            val = 0.0;
+            MatSetValues(hamiltonian_0, 1, &i_val, 1, &j_val, &val,
+                         INSERT_VALUES);
+          }
+        }
+      }
       PetscLogEventEnd(create_h_0_hyper, 0, 0, 0, 0);
     }
   }
@@ -1238,6 +1273,40 @@ void Hamiltonian::CalculateHamlitonian0ECS()
           }
         }
       }
+      /* allocate for laser  <Y_k'|V|Y_k> terms */
+      for (int diagonal_idx = 0; diagonal_idx < num_x[1]; ++diagonal_idx)
+      {
+        offset = (diagonal_idx + 1) * base_offset;
+
+        j_val = i_val - offset;
+        /* Lower diagonal */
+        if (j_val >= 0 and j_val < num_psi)
+        {
+          idx_array = GetIndexArray(i_val, j_val);
+          val       = GetHypersphereLaser(idx_array);
+          if (abs(val) > 1e-16)
+          {
+            val = 0.0;
+            MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
+                         INSERT_VALUES);
+          }
+        }
+
+        /* Upper diagonal */
+        j_val = i_val + offset;
+        if (j_val >= 0 and j_val < num_psi)
+        {
+          idx_array = GetIndexArray(i_val, j_val);
+
+          val = GetHypersphereLaser(idx_array);
+          if (abs(val) > 1e-16)
+          {
+            val = 0.0;
+            MatSetValues(hamiltonian_0_ecs, 1, &i_val, 1, &j_val, &val,
+                         INSERT_VALUES);
+          }
+        }
+      }
     }
   }
   else
@@ -1598,7 +1667,7 @@ void Hamiltonian::CalculateHamlitonianLaser()
         if (j_val >= 0 and j_val < num_psi)
         {
           idx_array = GetIndexArray(i_val, j_val);
-          val       = GetHyperspherePotential(idx_array);
+          val       = GetHypersphereLaser(idx_array);
           if (abs(val) > 1e-16)
           {
             MatSetValues(hamiltonian_laser[ham_dim_idx], 1, &i_val, 1, &j_val,
@@ -1612,7 +1681,7 @@ void Hamiltonian::CalculateHamlitonianLaser()
         {
           idx_array = GetIndexArray(i_val, j_val);
 
-          val = GetHyperspherePotential(idx_array);
+          val = GetHypersphereLaser(idx_array);
           if (abs(val) > 1e-16)
           {
             MatSetValues(hamiltonian_laser[ham_dim_idx], 1, &i_val, 1, &j_val,
@@ -2966,16 +3035,18 @@ dcomp Hamiltonian::GetHypersphereLaser(std::vector< PetscInt >& idx_array)
 {
   dcomp ret_val(0.0, 0.0);
   double r = x_value[2][idx_array[2 * 2]];
+
   /* z axis */
   ret_val = GetHypersphereLaserVal(eigen_values[idx_array[2]],
                                    eigen_values[idx_array[2 + 1]], r);
+
   return ret_val;
 }
 
 double Hamiltonian::GetHypersphereLaserVal(int* lambda_a, int* lambda_b,
                                            double r)
 {
-  PetscLogEventBegin(hyper_coulomb_time, 0, 0, 0, 0);
+  PetscLogEventBegin(hyper_laser_time, 0, 0, 0, 0);
   num_ang += num_ang % 2;
   double d_angle, matrix_element, result, tmp_sin, tmp_cos;
   int Ka, na, lxa, lya, La, Ma, Kb, nb, lxb, lyb, Lb, Mb;
@@ -3005,7 +3076,7 @@ double Hamiltonian::GetHypersphereLaserVal(int* lambda_a, int* lambda_b,
     return hypersphere_laser_lookup[key] * r;
   }
 
-  if (lxa == lxb and Ma == Mb and abs(lya - lya) == 1)
+  if (lxa == lxb and Ma == Mb and abs(lya - lyb) == 1 and abs(La - Lb) == 1)
   {
     d_angle = pi / (2 * num_ang);
     for (int idx = 0; idx < num_ang; ++idx)
@@ -3025,13 +3096,13 @@ double Hamiltonian::GetHypersphereLaserVal(int* lambda_a, int* lambda_b,
       result += sphere_1[idx] * sphere_2[idx] * tmp_cos * tmp_sin;
     }
     result *= d_angle;
-    result *= ClebschGordanCoef(lya, 1, lyb, 0, 0, 0);
     if (Ma != 0 or Mb != 0)
     {
       EndRun(
           "Hyperspherical laser opperator only supports M=0.\n"
           "A sum over m is needed for M!=0.");
     }
+    result *= sqrt(((2. * lya + 1.)) / (2. * (2. * lyb + 1.)));
     result *= ClebschGordanCoef(lya, 1, lyb, 0, 0, 0);
     result *= ClebschGordanCoef(lya, 1, lyb, 0, 0, 0);
 

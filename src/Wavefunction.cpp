@@ -254,8 +254,9 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
       for (int i = 0; i < num_x[1]; ++i)
       {
         cur_vals = eigen_values[i];
-        h5_file.WriteObject(&cur_vals[0], 6, "/Wavefunction/eigen_values",
-                            "Projection onto the various excited states", i);
+        h5_file.WriteObject(
+            &cur_vals[0], 6, "/Wavefunction/eigen_values",
+            "spherical harmonic eigen values k_val, n, l_1, l_2, L, M", i);
       }
       h5_file.WriteObject(l_block_size, k_max + 1, "/Wavefunction/l_block_size",
                           "number of elements in blocks with L eigen value");
