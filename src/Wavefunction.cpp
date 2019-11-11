@@ -2175,15 +2175,8 @@ void Wavefunction::SetPositionMat(Mat* input_mat)
   {
     if (position_mat_alloc == false)
     {
-      MatCreateAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, num_psi,
-                   num_psi, num_dims * num_electrons * (order + 3), NULL,
-                   num_dims * num_electrons * (order + 3), NULL,
-                   &(position_mat[dim_idx]));
-      MatAssemblyBegin(position_mat[dim_idx], MAT_FINAL_ASSEMBLY);
-      MatAssemblyEnd(position_mat[dim_idx], MAT_FINAL_ASSEMBLY);
+      MatConvert(input_mat[dim_idx], MATSAME, MAT_INITIAL_MATRIX, &position_mat[dim_idx]);
     }
-    MatCopy(input_mat[dim_idx], position_mat[dim_idx],
-            DIFFERENT_NONZERO_PATTERN);
   }
   position_mat_alloc = true;
 }
