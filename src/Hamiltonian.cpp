@@ -176,24 +176,25 @@ void Hamiltonian::CreateHamlitonian()
   else if (coordinate_system_idx == 4)
   {
     /* nonzero for any sphere harm in that L block and radial part */
-    MatCreateAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, num_psi, num_psi,
-                 (order + 1) + max_block_size, NULL,
-                 (order + 1) + max_block_size, NULL, &hamiltonian);
+    // MatCreateAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, num_psi,
+    // num_psi,
+    //              (order + 1) + max_block_size + 2, NULL,
+    //              (order + 1) + max_block_size + 2, NULL, &hamiltonian);
 
     MatCreateAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, num_psi, num_psi,
-                 (order + 1) + max_block_size, NULL,
-                 (order + 1) + max_block_size, NULL, &hamiltonian_0);
+                 (order + 1) + max_block_size + 2, NULL,
+                 (order + 1) + max_block_size + 2, NULL, &hamiltonian_0);
 
     MatCreateAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, num_psi, num_psi,
-                 (order + 1) + max_block_size, NULL,
-                 (order + 1) + max_block_size, NULL, &hamiltonian_0_ecs);
+                 (order + 1) + max_block_size + 2, NULL,
+                 (order + 1) + max_block_size + 2, NULL, &hamiltonian_0_ecs);
 
     hamiltonian_laser = new Mat[num_dims];
     for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
     {
       MatCreateAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, num_psi,
-                   num_psi, (order + 1) + max_block_size, NULL,
-                   (order + 1) + max_block_size, NULL,
+                   num_psi, (order + 1) + max_block_size + 2, NULL,
+                   (order + 1) + max_block_size + 2, NULL,
                    &(hamiltonian_laser[dim_idx]));
     }
   }
@@ -266,9 +267,11 @@ void Hamiltonian::GenerateHamlitonian()
   PetscLogEventBegin(create_h_laser, 0, 0, 0, 0);
   CalculateHamlitonianLaser();
   PetscLogEventEnd(create_h_laser, 0, 0, 0, 0);
-  MatAssemblyBegin(hamiltonian, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(hamiltonian, MAT_FINAL_ASSEMBLY);
-  MatCopy(hamiltonian_0_ecs, hamiltonian, DIFFERENT_NONZERO_PATTERN);
+  // MatAssemblyBegin(hamiltonian, MAT_FINAL_ASSEMBLY);
+  // MatAssemblyEnd(hamiltonian, MAT_FINAL_ASSEMBLY);
+  // MatCopy(hamiltonian_0_ecs, hamiltonian, DIFFERENT_NONZERO_PATTERN);
+  // MatCopy(hamiltonian_0_ecs, hamiltonian, DIFFERENT_NONZERO_PATTERN);
+  MatConvert(hamiltonian_0_ecs, MATSAME, MAT_INITIAL_MATRIX, &hamiltonian);
 }
 
 void Hamiltonian::CalculateHamlitonian0(PetscInt l_val)
@@ -1273,6 +1276,7 @@ void Hamiltonian::CalculateHamlitonian0ECS()
           }
         }
       }
+
       /* allocate for laser  <Y_k'|V|Y_k> terms */
       for (int diagonal_idx = 0; diagonal_idx < num_x[1]; ++diagonal_idx)
       {
