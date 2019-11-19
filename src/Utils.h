@@ -12,6 +12,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 #include "jacobi_polynomial.hpp"
 #include "json.hpp"
@@ -30,7 +31,7 @@ class Utils
   const double c   = 1 / 7.2973525664e-3;
   const dcomp imag = dcomp(0.0, 1.0);
   double C(int a, int b, int c);
-  std::map< std::string, double > rrc_lookup;
+  std::unordered_map< std::string, double > rrc_lookup;
   PetscLogEvent sphere_harm;
   PetscLogEvent jacobi_poly;
   PetscLogEvent rrc_time;

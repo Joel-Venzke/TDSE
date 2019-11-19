@@ -25,8 +25,8 @@ class Hamiltonian : protected Utils
   PetscLogEvent idx_array_time;
   PetscLogEvent diff_array_time;
 
-  std::map< std::string, double > hypersphere_coulomb_lookup;
-  std::map< std::string, double > hypersphere_laser_lookup;
+  std::unordered_map< std::string, double > hypersphere_coulomb_lookup;
+  std::unordered_map< std::string, double > hypersphere_laser_lookup;
 
   PetscInt num_dims;
   PetscInt num_electrons;
