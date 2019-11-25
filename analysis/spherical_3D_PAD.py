@@ -2,6 +2,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import h5py
 import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from scipy.special import sph_harm
 from matplotlib.colors import Normalize
@@ -114,13 +115,13 @@ l_values = f["/Wavefunction/l_values"][:]
 m_values = f["/Wavefunction/m_values"][:]
 
 r = psi_cooridnate_values[2]
+laser_energy = 0
+with open(folders[0]+'/input.json', 'w') as input_file:
+    laser_energy = input_file["laser"]["pulses"][0]["energy"]
 
 e_ground = get_energy([1, 0, 0, 1], target)
 e_excited = get_energy([2, 1, 1, 1], target)
-e_final = (2*np.abs(0.815939)) - np.abs(e_ground)
-# e_final = 0.7
-e_final = 0.4
-# e_final = 1.0
+e_final = (2*np.abs(laser_energy)) - np.abs(e_ground)
 
 pad_yield = []
 phi_angles = None
