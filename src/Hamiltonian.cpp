@@ -3052,7 +3052,7 @@ double Hamiltonian::GetHypersphereLaserVal(int* lambda_a, int* lambda_b,
 {
   PetscLogEventBegin(hyper_laser_time, 0, 0, 0, 0);
   num_ang += num_ang % 2;
-  double d_angle, matrix_element, result, tmp_sin, tmp_cos;
+  double d_angle, matrix_element, result, m_sum, tmp_sin, tmp_cos;
   int Ka, na, lxa, lya, La, Ma, Kb, nb, lxb, lyb, Lb, Mb;
   std::string key;
   matrix_element = 0.0;
@@ -3107,11 +3107,16 @@ double Hamiltonian::GetHypersphereLaserVal(int* lambda_a, int* lambda_b,
           "A sum over m is needed for M!=0.");
     }
     result *= sqrt(((2. * lya + 1.)) / (2. * (2. * lyb + 1.)));
-    result *= ClebschGordanCoef(lya, 1, lyb, 0, 0, 0);
-    result *= ClebschGordanCoef(lya, 1, lyb, 0, 0, 0);
-
-    result *= ClebschGordanCoef(lxa, lya, La, 0, 0, 0);
-    result *= ClebschGordanCoef(lxb, lyb, Lb, 0, 0, 0);
+    m_sum = 0;
+    for (int cur_m_val = -1 * min(La, Lb); cur_m_val <= min(La, Lb);
+         ++cur_m_val)
+    {
+      m_sum += ClebschGordanCoef(lya, 1, lyb, 0, 0, 0) *
+               ClebschGordanCoef(lya, 1, lyb, cur_m_val, 0, cur_m_val) *
+               ClebschGordanCoef(lxa, lya, La, -cur_m_val, cur_m_val, Ma) *
+               ClebschGordanCoef(lxb, lyb, Lb, -cur_m_val, cur_m_val, Mb);
+    }
+    result *= m_sum;
 
     matrix_element += result;
   }
