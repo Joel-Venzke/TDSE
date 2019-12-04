@@ -1173,8 +1173,9 @@ void Parameters::Validate()
     {
       for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; pulse_idx++)
       {
-        if (polarization_vector[pulse_idx][0] > 1e-14 or
-            polarization_vector[pulse_idx][1] > 1e-14)
+        if ((polarization_vector[pulse_idx][0] > 1e-14 or
+             polarization_vector[pulse_idx][1] > 1e-14) and
+            m_max < 1)
         {
           error_found = true;
           err_str +=
