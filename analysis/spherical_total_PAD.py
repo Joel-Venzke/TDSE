@@ -121,8 +121,8 @@ e_ground = get_energy([1, 0, 0, 1], target)
 e_excited = get_energy([2, 1, 1, 1], target)
 # e_final_list = np.arange(0.01,1.0,0.1)
 e_final_list = [0.01928205187, 0.1346748821, 0.224546544, 0.3399393742]
-de = 0.001
-e_final_list = np.arange(de,0.2,de)
+de = 0.01
+e_final_list = np.arange(de,1.0+de/2,de)
 #e_final_list = [0.09375897933, 0.1836306412, 0.2990234714]
 
 pad_yield = []
@@ -130,6 +130,7 @@ phi_angles = None
 psi = f["Wavefunction"]["psi"][-1]
 psi = psi[:, 0]+1.j*psi[:, 1]
 for e_final in e_final_list:
+    print(e_final)
     phi, theta, cur_psi, phi_angles, d_angle = get_k_sphere(
         e_final, psi, r, l_values.max(), m_values.max(), helium_sae_soft, target)
     pad_yield.append(np.abs(cur_psi)**2)
