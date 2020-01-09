@@ -2,6 +2,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import h5py
 import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from scipy.special import sph_harm
 from matplotlib.colors import Normalize
@@ -98,9 +99,11 @@ def get_k_sphere(energy, psi, r, l_max, m_max, potential, target, d_angle=0.01):
     return phi, theta, return_psi, phi_angles, d_angle
 
 beta_max = 10
-folders = ["cep_0.000"]
+folders = ["cycles_delay_0.00"]
 # folders = ["cycles_delay_0.00", "cycles_delay_0.10", "cycles_delay_0.20", "cycles_delay_0.30", "cycles_delay_0.40", "cycles_delay_0.50", "cycles_delay_0.60", "cycles_delay_0.70", "cycles_delay_0.80", "cycles_delay_0.90",
 #            "cycles_delay_1.00", "cycles_delay_0.05", "cycles_delay_0.15", "cycles_delay_0.25", "cycles_delay_0.35", "cycles_delay_0.45", "cycles_delay_0.55", "cycles_delay_0.65", "cycles_delay_0.75", "cycles_delay_0.85", "cycles_delay_0.95"]
+folders = ["cycles_delay_0.00", "cycles_delay_0.10", "cycles_delay_0.20", "cycles_delay_0.30", "cycles_delay_0.40", "cycles_delay_0.50", "cycles_delay_0.60", "cycles_delay_0.70", "cycles_delay_0.80", "cycles_delay_0.90",
+            "cycles_delay_1.00"]
 folders.sort()
 target = h5py.File(folders[0]+"/H.h5", "r")
 f = h5py.File(folders[0]+"/TDSE.h5", "r")
@@ -114,13 +117,14 @@ l_values = f["/Wavefunction/l_values"][:]
 m_values = f["/Wavefunction/m_values"][:]
 
 r = psi_cooridnate_values[2]
+laser_energy = 0
+with open(folders[0]+'/input.json') as json_file:
+    input_file = json.load(json_file)
+    laser_energy = input_file["laser"]["pulses"][0]["energy"]
 
 e_ground = get_energy([1, 0, 0, 1], target)
 e_excited = get_energy([2, 1, 1, 1], target)
-e_final = (2*np.abs(0.815939)) - np.abs(e_ground)
-# e_final = 0.7
-e_final = 0.4
-# e_final = 1.0
+e_final = (2*np.abs(laser_energy)) - np.abs(e_ground)
 
 pad_yield = []
 phi_angles = None
