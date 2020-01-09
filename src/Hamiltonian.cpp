@@ -80,7 +80,7 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
     max_block_size = w.GetMaxBlockSize();
     l_values       = NULL;
     m_values       = NULL;
-    num_ang        = 1e4;
+    num_ang        = 1e5;
 
     /* pre allocate arrays for integrals over hyper radius */
     angle.resize(num_ang);
@@ -3145,6 +3145,11 @@ double Hamiltonian::GetHypersphereLaserVal(int* lambda_a, int* lambda_b,
                ClebschGordanCoef(lxb, lyb, Lb, -cur_m_val, cur_m_val, Mb);
     }
     result *= m_sum;
+
+    // result *= ClebschGordanCoef(lya, 1, lyb, 0, 0, 0);
+    // result *= ClebschGordanCoef(lya, 1, lyb, 0, 0, 0);
+    // result *= ClebschGordanCoef(lxa, lya, La, 0, 0, 0);
+    // result *= ClebschGordanCoef(lxb, lyb, Lb, 0, 0, 0);
 
     matrix_element += result;
   }

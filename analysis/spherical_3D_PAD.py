@@ -100,11 +100,11 @@ def get_k_sphere(energy, psi, r, l_max, m_max, potential, target, d_angle=0.01):
 
 beta_max = 10
 folders = ["cycles_delay_0.00"]
-folders = ["cycles_delay_0.45","cycles_delay_0.60"]
+# folders = ["cycles_delay_0.45","cycles_delay_0.60"]
 # folders = ["cycles_delay_0.00", "cycles_delay_0.10", "cycles_delay_0.20", "cycles_delay_0.30", "cycles_delay_0.40", "cycles_delay_0.50", "cycles_delay_0.60", "cycles_delay_0.70", "cycles_delay_0.80", "cycles_delay_0.90",
 #            "cycles_delay_1.00", "cycles_delay_0.05", "cycles_delay_0.15", "cycles_delay_0.25", "cycles_delay_0.35", "cycles_delay_0.45", "cycles_delay_0.55", "cycles_delay_0.65", "cycles_delay_0.75", "cycles_delay_0.85", "cycles_delay_0.95"]
-folders = ["cycles_delay_0.00", "cycles_delay_0.10", "cycles_delay_0.20", "cycles_delay_0.30", "cycles_delay_0.40", "cycles_delay_0.50", "cycles_delay_0.60", "cycles_delay_0.70", "cycles_delay_0.80", "cycles_delay_0.90",
-            "cycles_delay_1.00"]
+# folders = ["cycles_delay_0.00", "cycles_delay_0.10", "cycles_delay_0.20", "cycles_delay_0.30", "cycles_delay_0.40", "cycles_delay_0.50", "cycles_delay_0.60", "cycles_delay_0.70", "cycles_delay_0.80", "cycles_delay_0.90",
+#             "cycles_delay_1.00"]
 folders.sort()
 target = h5py.File(folders[0]+"/H.h5", "r")
 f = h5py.File(folders[0]+"/TDSE.h5", "r")
@@ -138,7 +138,7 @@ for fold in folders:
     f = h5py.File(fold + "/TDSE.h5", "r")
     psi = f["Wavefunction"]["psi"][-1]
     psi = psi[:, 0]+1.j*psi[:, 1]
-    print(e_final)
+    # print(e_final)
     phi, theta, cur_psi, phi_angles, d_angle = get_k_sphere(
         e_final, psi, r, l_values.max(), m_values.max(), helium_sae, target)
     pad_yield.append(np.abs(cur_psi)**2)
@@ -221,7 +221,8 @@ for idx, fold in enumerate(folders):
                                             )+", "+str((left_top_sum+right_bottom_sum-(right_top_sum+left_bottom_sum))/(left_top_sum+left_bottom_sum+right_top_sum+right_bottom_sum))+"\n")
 
 for idx, fold in enumerate(folders):
-    cur_data = pad_yield[idx]/max_val
+    # do not normalize to get good cross section
+    cur_data = pad_yield[idx]
     with open("Beta_"+fold+".txt", "w") as f:
         f.write("#")
         for l in np.arange(0,beta_max+1):
