@@ -1103,7 +1103,7 @@ void Wavefunction::CreateGrid()
       block_size = 0;
       for (int k_val = 0; k_val < k_max + 1; ++k_val)
       {
-        for (int l_1 = 0; l_1 < k_max + 1; ++l_1)
+        for (int l_1 = 0; l_1 < k_max + 1; l_1 += 2)
         {
           for (int l_2 = 0; l_2 < k_max + 1; ++l_2)
           {
@@ -1113,7 +1113,7 @@ void Wavefunction::CreateGrid()
               {
                 for (int L = abs(l_1 - l_2); L < l_1 + l_2 + 1; ++L)
                 {
-                  if (L == L_val)
+                  if (L == L_val and k_val % 2 == L_val % 2)
                   {
                     eigen_values[index]    = new PetscInt[6];
                     eigen_values[index][0] = k_val;
@@ -2175,7 +2175,8 @@ void Wavefunction::SetPositionMat(Mat* input_mat)
   {
     if (position_mat_alloc == false)
     {
-      MatConvert(input_mat[dim_idx], MATSAME, MAT_INITIAL_MATRIX, &position_mat[dim_idx]);
+      MatConvert(input_mat[dim_idx], MATSAME, MAT_INITIAL_MATRIX,
+                 &position_mat[dim_idx]);
     }
   }
   position_mat_alloc = true;

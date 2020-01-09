@@ -20,8 +20,8 @@ lower_idx = shape - upper_idx
 if len(shape) > 1:
     time_x = np.min(y[lower_idx[1]:upper_idx[1]]) * 0.95
 else:
-    time_x = np.min(x[lower_idx[0]:upper_idx[0]]) * 0.95
-time_y = np.max(x[lower_idx[0]:upper_idx[0]]) * 0.9
+    time_y = np.min(x[lower_idx[0]:upper_idx[0]]) * 0.95
+# time_y = np.max(x[lower_idx[0]:upper_idx[0]]) * 0.9
 
 max_val = 0
 # calculate color bounds

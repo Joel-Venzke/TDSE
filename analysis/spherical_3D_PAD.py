@@ -100,6 +100,7 @@ def get_k_sphere(energy, psi, r, l_max, m_max, potential, target, d_angle=0.01):
 
 beta_max = 10
 folders = ["cycles_delay_0.00"]
+folders = ["cycles_delay_0.45","cycles_delay_0.60"]
 # folders = ["cycles_delay_0.00", "cycles_delay_0.10", "cycles_delay_0.20", "cycles_delay_0.30", "cycles_delay_0.40", "cycles_delay_0.50", "cycles_delay_0.60", "cycles_delay_0.70", "cycles_delay_0.80", "cycles_delay_0.90",
 #            "cycles_delay_1.00", "cycles_delay_0.05", "cycles_delay_0.15", "cycles_delay_0.25", "cycles_delay_0.35", "cycles_delay_0.45", "cycles_delay_0.55", "cycles_delay_0.65", "cycles_delay_0.75", "cycles_delay_0.85", "cycles_delay_0.95"]
 folders = ["cycles_delay_0.00", "cycles_delay_0.10", "cycles_delay_0.20", "cycles_delay_0.30", "cycles_delay_0.40", "cycles_delay_0.50", "cycles_delay_0.60", "cycles_delay_0.70", "cycles_delay_0.80", "cycles_delay_0.90",
@@ -122,6 +123,11 @@ with open(folders[0]+'/input.json') as json_file:
     input_file = json.load(json_file)
     laser_energy = input_file["laser"]["pulses"][0]["energy"]
 
+laser_energy = 0
+with open(folders[0]+'/input.json') as input_file:
+    input_json = json.load(input_file)
+    laser_energy = input_json["laser"]["pulses"][0]["energy"]
+
 e_ground = get_energy([1, 0, 0, 1], target)
 e_excited = get_energy([2, 1, 1, 1], target)
 e_final = (2*np.abs(laser_energy)) - np.abs(e_ground)
@@ -132,6 +138,7 @@ for fold in folders:
     f = h5py.File(fold + "/TDSE.h5", "r")
     psi = f["Wavefunction"]["psi"][-1]
     psi = psi[:, 0]+1.j*psi[:, 1]
+    print(e_final)
     phi, theta, cur_psi, phi_angles, d_angle = get_k_sphere(
         e_final, psi, r, l_values.max(), m_values.max(), helium_sae, target)
     pad_yield.append(np.abs(cur_psi)**2)
@@ -173,7 +180,14 @@ for idx, fold in enumerate(folders):
         # plt.title("TDSE - Delay: %.2f \n Cycles: %3.0f    Intensity: %.0e" %
         #           (delay, cycles, intensity))
         # plt.show()
-        ax.text(1, -1, 0, "(h)")
+        if np.abs(cycles - 10) < 1e-5 and np.abs(intensity-1e14)< 1e-5:
+            ax.text(1.15, -0.5, 0, "(b)")
+        if np.abs(cycles - 10) < 1e-5 and np.abs(intensity-1e10)< 1e-5:
+            ax.text(1.15, -0.5, 0, "(d)")
+        if np.abs(cycles - 2) < 1e-5 and np.abs(intensity-1e10)< 1e-5:
+            ax.text(1.15, -0.5, 0, "(c)")
+        if np.abs(cycles - 2) < 1e-5 and np.abs(intensity-1e14)< 1e-5:
+            ax.text(1.15, -0.5, 0, "(a)")
         # plt.savefig("PAD_%02.0f_%.1e_%.2f.png" % (cycles, intensity, delay))
         plt.savefig("PAD_%02.0f_%.1e_%.2f_0p4.png" % (cycles, intensity, delay))
         # plt.savefig("PAD_%02.0f_%.1e_%.2f_1p0.png" % (cycles, intensity, delay))

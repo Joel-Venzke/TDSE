@@ -111,7 +111,8 @@ PetscInt Utils::GetHypersphereSize(PetscInt k_max, PetscInt l_max)
   {
     for (int k_val = 0; k_val < k_max + 1; ++k_val)
     {
-      for (int l_1 = 0; l_1 < k_val + 1; ++l_1)
+      for (int l_1 = 0; l_1 < k_val + 1;
+           l_1 += 2) /* only even values couple to ground state */
       {
         for (int l_2 = 0; l_2 < k_val + 1; ++l_2)
         {
@@ -121,7 +122,7 @@ PetscInt Utils::GetHypersphereSize(PetscInt k_max, PetscInt l_max)
             {
               for (int L = abs(l_1 - l_2); L < l_1 + l_2 + 1; ++L)
               {
-                if (L == L_val)
+                if (L == L_val and k_val % 2 == L_val % 2)
                 {
                   count++;
                 }

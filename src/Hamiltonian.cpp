@@ -56,6 +56,8 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
   PetscLogEventRegister("HyperCoulomb", PETSC_VIEWER_CLASSID,
                         &hyper_coulomb_time);
   PetscLogEventRegister("HyperLaser", PETSC_VIEWER_CLASSID, &hyper_laser_time);
+  PetscLogEventRegister("BarrierH0", PETSC_VIEWER_CLASSID, &build_H_0);
+  PetscLogEventRegister("BarrierH0ECS", PETSC_VIEWER_CLASSID, &build_H_0_ecs);
 
   if (coordinate_system_idx == 3)
   {
@@ -813,6 +815,13 @@ void Hamiltonian::CalculateHamlitonian0(PetscInt l_val)
       }
     }
   }
+
+  /* For profiling code
+   * gives load balancing info vs assembly messages
+   */
+  PetscLogEventBegin(build_H_0, 0, 0, 0, 0);
+  world.barrier();
+  PetscLogEventEnd(build_H_0, 0, 0, 0, 0);
   MatAssemblyBegin(hamiltonian_0, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(hamiltonian_0, MAT_FINAL_ASSEMBLY);
 }
@@ -1097,7 +1106,7 @@ void Hamiltonian::CalculateHamlitonian0ECS()
     std::vector< dcomp > x_vals(order + 1, 0.0);
     PetscInt dim_idx;
 
-    ecs = false;
+    ecs = true;
     for (PetscInt i_val = start; i_val < end; i_val++)
     {
       j_val     = i_val;
@@ -1432,6 +1441,12 @@ void Hamiltonian::CalculateHamlitonian0ECS()
       }
     }
   }
+  /* For profiling code
+   * gives load balancing info vs assembly messages
+   */
+  PetscLogEventBegin(build_H_0_ecs, 0, 0, 0, 0);
+  world.barrier();
+  PetscLogEventEnd(build_H_0_ecs, 0, 0, 0, 0);
   MatAssemblyBegin(hamiltonian_0_ecs, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(hamiltonian_0_ecs, MAT_FINAL_ASSEMBLY);
 }
@@ -2952,7 +2967,7 @@ double Hamiltonian::GetHypersphereCoulomb(int* lambda_a, int* lambda_b,
   num_ang += num_ang % 2;
   double d_angle, matrix_element, pre_fac_a, pre_fac_b, result, tmp;
   int Ka, na, lxa, lya, La, Ma, Kb, nb, lxb, lyb, Lb, Mb;
-  std::string key;
+  std::string key, internal_key;
   matrix_element = 0.0;
   Ka             = lambda_a[0];
   na             = lambda_a[1];
@@ -2998,18 +3013,31 @@ double Hamiltonian::GetHypersphereCoulomb(int* lambda_a, int* lambda_b,
                       RRC(Kb, Lb, lx, ly, lxb, lyb, 1);
           if (abs(pre_fac_a) > 1e-16 or abs(pre_fac_b) > 1e-16)
           {
-            SpherHarm(Ka, (Ka - lx - ly) / 2, lx, ly, La, Ma, angle, sphere_1,
-                      arg_vals);
-            SpherHarm(Kb, (Kb - lx - ly) / 2, lx, ly, Lb, Mb, angle, sphere_2,
-                      arg_vals);
-            result = 0.0;
-            for (int idx = 0; idx < num_ang; ++idx)
+            internal_key = to_string(Ka) + "_" + to_string(lx) + "_" +
+                           to_string(ly) + "_" + to_string(La) + "_" +
+                           to_string(Ma) + "_" + to_string(Kb) + "_" +
+                           to_string(Lb) + "_" + to_string(Mb) + "_" +
+                           to_string(z) + "_" + to_string(num_ang);
+            if (hypersphere_radial_int_lookup.count(internal_key) == 1)
             {
-              tmp = sin(angle[idx]);
-              result +=
-                  sphere_1[idx] * sphere_2[idx] * cos(angle[idx]) * tmp * tmp;
+              result = hypersphere_radial_int_lookup[internal_key];
             }
-            result *= z * d_angle;
+            else
+            {
+              SpherHarm(Ka, (Ka - lx - ly) / 2, lx, ly, La, Ma, angle, sphere_1,
+                        arg_vals);
+              SpherHarm(Kb, (Kb - lx - ly) / 2, lx, ly, Lb, Mb, angle, sphere_2,
+                        arg_vals);
+              result = 0.0;
+              for (int idx = 0; idx < num_ang; ++idx)
+              {
+                tmp = sin(angle[idx]);
+                result +=
+                    sphere_1[idx] * sphere_2[idx] * cos(angle[idx]) * tmp * tmp;
+              }
+              result *= z * d_angle;
+              hypersphere_radial_int_lookup[internal_key] = result;
+            }
 
             matrix_element -= result * pre_fac_a + result * pre_fac_b;
           }
