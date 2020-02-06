@@ -82,7 +82,7 @@ def get_k_slice(energy, psi, r, l_max, m_max, potential, target, plane='xy', d_p
     max_angles = [np.argmax(np.abs(return_psi)**2)]
     return (phi[max_angles[np.abs(phi[max_angles]).argmin()]]+np.pi/3)%np.pi-np.pi/3, return_psi
 
-folders = ["cycles_delay_0.00", "cycles_delay_0.10", "cycles_delay_0.20", "cycles_delay_0.30", "cycles_delay_0.40", "cycles_delay_0.50", "cycles_delay_0.60", "cycles_delay_0.70", "cycles_delay_0.80", "cycles_delay_0.90", "cycles_delay_1.00",
+folders = ["cycles_delay_0.00", "cycles_delay_0.10", "cycles_delay_0.20", "cycles_delay_0.30", "cycles_delay_0.40", "cycles_delay_0.50", "cycles_delay_0.60", "cycles_delay_0.70", "cycles_delay_0.80", "cycles_delay_0.90",
 "cycles_delay_0.05", "cycles_delay_0.15", "cycles_delay_0.25", "cycles_delay_0.35", "cycles_delay_0.45", "cycles_delay_0.55", "cycles_delay_0.65", "cycles_delay_0.75", "cycles_delay_0.85", "cycles_delay_0.95"]
 folders.sort()
 print(folders)
@@ -106,100 +106,7 @@ idx = -1
 
 e_ground = get_energy([1,0,0,1],target)
 e_excited = get_energy([2,1,1,1],target)
-e_final = ((1+0.8666666667)*np.abs(0.815939)) - np.abs(e_ground)
-d_phi = np.pi/5
-angle = []
-data = []
-for fold in folders:
-    print(fold)
-    delay = float(fold.split("_")[-1])
-    f = h5py.File(fold + "/TDSE.h5", "r")
-    psi = f["Wavefunction"]["psi"][idx]
-    psi = psi[:,0]+1.j*psi[:,1]
-    cur_angle, cur_psi = get_k_slice(e_final, psi, r, l_values.max(), m_values.max(), helium_sae, target, plane='xz')
-    data.append(cur_psi)
-    angle.append([delay,cur_angle])
-data = np.array(data)
-angle = np.array(angle)
-print(angle)
-
-np.savetxt("xz_data_las_res.txt",np.abs(data.transpose())**2)
-fig = plt.figure(figsize=(12, 9), dpi=80)
-plt.title("xz_data_las_res")
-d_ang = 0.001
-plt.contourf(angle[:,0], np.arange(-np.pi,np.pi+d_ang,d_ang), np.abs(data.transpose())**2, 20)
-plt.colorbar()
-plt.xlim([0.0, 1.0])
-plt.xlabel("delay")
-plt.ylabel("Angle from x-axis ($\\phi$)")
-plt.savefig("xz_data_las_res.png")
-plt.clf()
-
-e_ground = get_energy([1,0,0,1],target)
-e_excited = get_energy([2,1,1,1],target)
-e_final = (2.*0.8666666667*np.abs(0.815939)) - np.abs(e_ground)
-d_phi = np.pi/5
-angle = []
-data = []
-for fold in folders:
-    print(fold)
-    delay = float(fold.split("_")[-1])
-    f = h5py.File(fold + "/TDSE.h5", "r")
-    psi = f["Wavefunction"]["psi"][idx]
-    psi = psi[:,0]+1.j*psi[:,1]
-    cur_angle, cur_psi = get_k_slice(e_final, psi, r, l_values.max(), m_values.max(), helium_sae, target, plane='xz')
-    data.append(cur_psi)
-    angle.append([delay,cur_angle])
-data = np.array(data)
-angle = np.array(angle)
-print(angle)
-
-np.savetxt("xz_data_las.txt",np.abs(data.transpose())**2)
-fig = plt.figure(figsize=(12, 9), dpi=80)
-plt.title("xz_data_las")
-d_ang = 0.001
-plt.contourf(angle[:,0], np.arange(-np.pi,np.pi+d_ang,d_ang), np.abs(data.transpose())**2, 20)
-plt.colorbar()
-plt.xlim([0.0, 1.0])
-plt.xlabel("delay")
-plt.ylabel("Angle from x-axis ($\\phi$)")
-plt.savefig("xz_data_las.png")
-plt.clf()
-
-e_ground = get_energy([1,0,0,1],target)
-e_excited = get_energy([2,1,1,1],target)
-e_final = (2.*np.abs(0.815939)) - np.abs(e_ground)
-d_phi = np.pi/5
-angle = []
-data = []
-for fold in folders:
-    print(fold)
-    delay = float(fold.split("_")[-1])
-    f = h5py.File(fold + "/TDSE.h5", "r")
-    psi = f["Wavefunction"]["psi"][idx]
-    psi = psi[:,0]+1.j*psi[:,1]
-    cur_angle, cur_psi = get_k_slice(e_final, psi, r, l_values.max(), m_values.max(), helium_sae, target, plane='xz')
-    data.append(cur_psi)
-    angle.append([delay,cur_angle])
-data = np.array(data)
-angle = np.array(angle)
-print(angle)
-
-np.savetxt("xz_data_res.txt",np.abs(data.transpose())**2)
-fig = plt.figure(figsize=(12, 9), dpi=80)
-plt.title("xz_data_res")
-d_ang = 0.001
-plt.contourf(angle[:,0], np.arange(-np.pi,np.pi+d_ang,d_ang), np.abs(data.transpose())**2, 20)
-plt.colorbar()
-plt.xlim([0.0, 1.0])
-plt.xlabel("delay")
-plt.ylabel("Angle from x-axis ($\\phi$)")
-plt.savefig("xz_data_res.png")
-plt.clf()
-
-e_ground = get_energy([1,0,0,1],target)
-e_excited = get_energy([2,1,1,1],target)
-e_final = ((1+0.8666666667)*np.abs(0.815939)) - np.abs(e_ground)
+e_final = 0.7233645
 d_phi = np.pi/5
 angle = []
 data = []
@@ -216,21 +123,21 @@ data = np.array(data)
 angle = np.array(angle)
 print(angle)
 
-np.savetxt("xy_data_las_res.txt",np.abs(data.transpose())**2)
+np.savetxt("xy_data_2p_signal.txt",np.abs(data.transpose())**2)
 fig = plt.figure(figsize=(12, 9), dpi=80)
-plt.title("xy_data_las_res")
+plt.title("xy_data_2p_signal")
 d_ang = 0.001
 plt.contourf(angle[:,0], np.arange(-np.pi,np.pi+d_ang,d_ang), np.abs(data.transpose())**2, 20)
 plt.colorbar()
 plt.xlim([0.0, 1.0])
 plt.xlabel("delay")
 plt.ylabel("Angle from x-axis ($\\phi$)")
-plt.savefig("xy_data_las_res.png")
+plt.savefig("xy_data_2p_signal.png")
 plt.clf()
 
 e_ground = get_energy([1,0,0,1],target)
 e_excited = get_energy([2,1,1,1],target)
-e_final = (2.*0.8666666667*np.abs(0.815939)) - np.abs(e_ground)
+e_final = 0.7951555
 d_phi = np.pi/5
 angle = []
 data = []
@@ -247,45 +154,169 @@ data = np.array(data)
 angle = np.array(angle)
 print(angle)
 
-np.savetxt("xy_data_las.txt",np.abs(data.transpose())**2)
+np.savetxt("xy_data_3p_signal.txt",np.abs(data.transpose())**2)
 fig = plt.figure(figsize=(12, 9), dpi=80)
-plt.title("xy_data_las")
+plt.title("xy_data_3p_signal")
 d_ang = 0.001
 plt.contourf(angle[:,0], np.arange(-np.pi,np.pi+d_ang,d_ang), np.abs(data.transpose())**2, 20)
 plt.colorbar()
 plt.xlim([0.0, 1.0])
 plt.xlabel("delay")
 plt.ylabel("Angle from x-axis ($\\phi$)")
-plt.savefig("xy_data_las.png")
+plt.savefig("xy_data_3p_signal.png")
 plt.clf()
 
-e_ground = get_energy([1,0,0,1],target)
-e_excited = get_energy([2,1,1,1],target)
-e_final = (2.*np.abs(0.815939)) - np.abs(e_ground)
-d_phi = np.pi/5
-angle = []
-data = []
-for fold in folders:
-    print(fold)
-    delay = float(fold.split("_")[-1])
-    f = h5py.File(fold + "/TDSE.h5", "r")
-    psi = f["Wavefunction"]["psi"][idx]
-    psi = psi[:,0]+1.j*psi[:,1]
-    cur_angle, cur_psi = get_k_slice(e_final, psi, r, l_values.max(), m_values.max(), helium_sae, target, plane='xy')
-    data.append(cur_psi)
-    angle.append([delay,cur_angle])
-data = np.array(data)
-angle = np.array(angle)
-print(angle)
+# e_ground = get_energy([1,0,0,1],target)
+# e_excited = get_energy([2,1,1,1],target)
+# e_final = (2.*0.8666666667*np.abs(0.815939)) - np.abs(e_ground)
+# d_phi = np.pi/5
+# angle = []
+# data = []
+# for fold in folders:
+#     print(fold)
+#     delay = float(fold.split("_")[-1])
+#     f = h5py.File(fold + "/TDSE.h5", "r")
+#     psi = f["Wavefunction"]["psi"][idx]
+#     psi = psi[:,0]+1.j*psi[:,1]
+#     cur_angle, cur_psi = get_k_slice(e_final, psi, r, l_values.max(), m_values.max(), helium_sae, target, plane='xz')
+#     data.append(cur_psi)
+#     angle.append([delay,cur_angle])
+# data = np.array(data)
+# angle = np.array(angle)
+# print(angle)
 
-np.savetxt("xy_data_res.txt",np.abs(data.transpose())**2)
-fig = plt.figure(figsize=(12, 9), dpi=80)
-plt.title("xy_data_res")
-d_ang = 0.001
-plt.contourf(angle[:,0], np.arange(-np.pi,np.pi+d_ang,d_ang), np.abs(data.transpose())**2, 20)
-plt.colorbar()
-plt.xlim([0.0, 1.0])
-plt.xlabel("delay")
-plt.ylabel("Angle from x-axis ($\\phi$)")
-plt.savefig("xy_data_res.png")
-plt.clf()
+# np.savetxt("xz_data_las.txt",np.abs(data.transpose())**2)
+# fig = plt.figure(figsize=(12, 9), dpi=80)
+# plt.title("xz_data_las")
+# d_ang = 0.001
+# plt.contourf(angle[:,0], np.arange(-np.pi,np.pi+d_ang,d_ang), np.abs(data.transpose())**2, 20)
+# plt.colorbar()
+# plt.xlim([0.0, 1.0])
+# plt.xlabel("delay")
+# plt.ylabel("Angle from x-axis ($\\phi$)")
+# plt.savefig("xz_data_las.png")
+# plt.clf()
+
+# e_ground = get_energy([1,0,0,1],target)
+# e_excited = get_energy([2,1,1,1],target)
+# e_final = (2.*np.abs(0.815939)) - np.abs(e_ground)
+# d_phi = np.pi/5
+# angle = []
+# data = []
+# for fold in folders:
+#     print(fold)
+#     delay = float(fold.split("_")[-1])
+#     f = h5py.File(fold + "/TDSE.h5", "r")
+#     psi = f["Wavefunction"]["psi"][idx]
+#     psi = psi[:,0]+1.j*psi[:,1]
+#     cur_angle, cur_psi = get_k_slice(e_final, psi, r, l_values.max(), m_values.max(), helium_sae, target, plane='xz')
+#     data.append(cur_psi)
+#     angle.append([delay,cur_angle])
+# data = np.array(data)
+# angle = np.array(angle)
+# print(angle)
+
+# np.savetxt("xz_data_res.txt",np.abs(data.transpose())**2)
+# fig = plt.figure(figsize=(12, 9), dpi=80)
+# plt.title("xz_data_res")
+# d_ang = 0.001
+# plt.contourf(angle[:,0], np.arange(-np.pi,np.pi+d_ang,d_ang), np.abs(data.transpose())**2, 20)
+# plt.colorbar()
+# plt.xlim([0.0, 1.0])
+# plt.xlabel("delay")
+# plt.ylabel("Angle from x-axis ($\\phi$)")
+# plt.savefig("xz_data_res.png")
+# plt.clf()
+
+# e_ground = get_energy([1,0,0,1],target)
+# e_excited = get_energy([2,1,1,1],target)
+# e_final = ((1+0.8666666667)*np.abs(0.815939)) - np.abs(e_ground)
+# d_phi = np.pi/5
+# angle = []
+# data = []
+# for fold in folders:
+#     print(fold)
+#     delay = float(fold.split("_")[-1])
+#     f = h5py.File(fold + "/TDSE.h5", "r")
+#     psi = f["Wavefunction"]["psi"][idx]
+#     psi = psi[:,0]+1.j*psi[:,1]
+#     cur_angle, cur_psi = get_k_slice(e_final, psi, r, l_values.max(), m_values.max(), helium_sae, target, plane='xy')
+#     data.append(cur_psi)
+#     angle.append([delay,cur_angle])
+# data = np.array(data)
+# angle = np.array(angle)
+# print(angle)
+
+# np.savetxt("xy_data_las_res.txt",np.abs(data.transpose())**2)
+# fig = plt.figure(figsize=(12, 9), dpi=80)
+# plt.title("xy_data_las_res")
+# d_ang = 0.001
+# plt.contourf(angle[:,0], np.arange(-np.pi,np.pi+d_ang,d_ang), np.abs(data.transpose())**2, 20)
+# plt.colorbar()
+# plt.xlim([0.0, 1.0])
+# plt.xlabel("delay")
+# plt.ylabel("Angle from x-axis ($\\phi$)")
+# plt.savefig("xy_data_las_res.png")
+# plt.clf()
+
+# e_ground = get_energy([1,0,0,1],target)
+# e_excited = get_energy([2,1,1,1],target)
+# e_final = (2.*0.8666666667*np.abs(0.815939)) - np.abs(e_ground)
+# d_phi = np.pi/5
+# angle = []
+# data = []
+# for fold in folders:
+#     print(fold)
+#     delay = float(fold.split("_")[-1])
+#     f = h5py.File(fold + "/TDSE.h5", "r")
+#     psi = f["Wavefunction"]["psi"][idx]
+#     psi = psi[:,0]+1.j*psi[:,1]
+#     cur_angle, cur_psi = get_k_slice(e_final, psi, r, l_values.max(), m_values.max(), helium_sae, target, plane='xy')
+#     data.append(cur_psi)
+#     angle.append([delay,cur_angle])
+# data = np.array(data)
+# angle = np.array(angle)
+# print(angle)
+
+# np.savetxt("xy_data_las.txt",np.abs(data.transpose())**2)
+# fig = plt.figure(figsize=(12, 9), dpi=80)
+# plt.title("xy_data_las")
+# d_ang = 0.001
+# plt.contourf(angle[:,0], np.arange(-np.pi,np.pi+d_ang,d_ang), np.abs(data.transpose())**2, 20)
+# plt.colorbar()
+# plt.xlim([0.0, 1.0])
+# plt.xlabel("delay")
+# plt.ylabel("Angle from x-axis ($\\phi$)")
+# plt.savefig("xy_data_las.png")
+# plt.clf()
+
+# e_ground = get_energy([1,0,0,1],target)
+# e_excited = get_energy([2,1,1,1],target)
+# e_final = (2.*np.abs(0.815939)) - np.abs(e_ground)
+# d_phi = np.pi/5
+# angle = []
+# data = []
+# for fold in folders:
+#     print(fold)
+#     delay = float(fold.split("_")[-1])
+#     f = h5py.File(fold + "/TDSE.h5", "r")
+#     psi = f["Wavefunction"]["psi"][idx]
+#     psi = psi[:,0]+1.j*psi[:,1]
+#     cur_angle, cur_psi = get_k_slice(e_final, psi, r, l_values.max(), m_values.max(), helium_sae, target, plane='xy')
+#     data.append(cur_psi)
+#     angle.append([delay,cur_angle])
+# data = np.array(data)
+# angle = np.array(angle)
+# print(angle)
+
+# np.savetxt("xy_data_res.txt",np.abs(data.transpose())**2)
+# fig = plt.figure(figsize=(12, 9), dpi=80)
+# plt.title("xy_data_res")
+# d_ang = 0.001
+# plt.contourf(angle[:,0], np.arange(-np.pi,np.pi+d_ang,d_ang), np.abs(data.transpose())**2, 20)
+# plt.colorbar()
+# plt.xlim([0.0, 1.0])
+# plt.xlabel("delay")
+# plt.ylabel("Angle from x-axis ($\\phi$)")
+# plt.savefig("xy_data_res.png")
+# plt.clf()

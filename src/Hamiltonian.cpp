@@ -87,6 +87,8 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
     arg_vals.resize(num_ang);
     sphere_1.resize(num_ang);
     sphere_2.resize(num_ang);
+
+    LoadRRC();
   }
   else
   {
@@ -2966,7 +2968,7 @@ double Hamiltonian::GetHypersphereCoulomb(int* lambda_a, int* lambda_b,
   PetscLogEventBegin(hyper_coulomb_time, 0, 0, 0, 0);
   num_ang += num_ang % 2;
   double d_angle, matrix_element, pre_fac_a, pre_fac_b, result, tmp;
-  int Ka, na, lxa, lya, La, Ma, Kb, nb, lxb, lyb, Lb, Mb;
+  int Ka, na, lxa, lya, La, Ma, Kb, nb, lxb, lyb, Lb, Mb, l_diff, l_sum;
   std::string key, internal_key;
   matrix_element = 0.0;
   Ka             = lambda_a[0];
@@ -3005,7 +3007,10 @@ double Hamiltonian::GetHypersphereCoulomb(int* lambda_a, int* lambda_b,
     {
       for (int ly = 0; ly < min(Ka, Kb) + 1; ++ly)
       {
-        if ((Ka - lx - ly) % 2 == 0 and (Kb - lx - ly) % 2 == 0)
+        l_diff = abs(lx - ly);
+        l_sum  = abs(lx + ly);
+        if ((Ka - lx - ly) % 2 == 0 and (Kb - lx - ly) % 2 == 0 and
+            La >= l_diff and Lb >= l_diff and La <= l_sum and Lb <= l_sum)
         {
           pre_fac_a = RRC(Ka, La, lx, ly, lxa, lya, 0) *
                       RRC(Kb, Lb, lx, ly, lxb, lyb, 0);

@@ -35,6 +35,7 @@ class Utils
   PetscLogEvent sphere_harm;
   PetscLogEvent jacobi_poly;
   PetscLogEvent rrc_time;
+  PetscLogEvent rrc_load_time;
 
  public:
   Utils();
@@ -48,6 +49,7 @@ class Utils
                   int i);
   PetscInt GetIdxFromLM(PetscInt l_val, PetscInt m_val, PetscInt m_max);
   PetscInt GetHypersphereSize(PetscInt k_max, PetscInt l_max);
+  void LoadRRC();
   double RRC(int total_angular_momentum, int L, int l_xi, int l_yi, int l_xk,
              int l_yk, int parity);
   double Factorial(double n);

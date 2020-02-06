@@ -5,6 +5,7 @@ Utils::Utils()
   PetscLogEventRegister("Sphere Harm", PETSC_VIEWER_CLASSID, &sphere_harm);
   PetscLogEventRegister("jacobi_poly", PETSC_VIEWER_CLASSID, &jacobi_poly);
   PetscLogEventRegister("RRC", PETSC_VIEWER_CLASSID, &rrc_time);
+  PetscLogEventRegister("RRC_LOAD", PETSC_VIEWER_CLASSID, &rrc_load_time);
 }
 /* prints error message, kills code and returns -1 */
 void Utils::EndRun(std::string str)
@@ -166,6 +167,37 @@ double Utils::Sign(double num)
   }
 }
 
+void Utils::LoadRRC()
+{
+  PetscLogEventBegin(rrc_load_time, 0, 0, 0, 0);
+  std::ifstream file("RRC.txt");
+
+  std::string line;
+  int count = 0;
+
+  while (std::getline(file, line))
+  {  // '\n' is the default delimiter
+
+    std::istringstream iss(line);
+    std::string token;
+    std::string key;
+    while (std::getline(iss, token, '\t'))
+    {
+      if (count % 2 == 0)
+      {
+        key = token;
+      }
+      else
+      {
+        rrc_lookup[key] = std::stod(token);
+      }
+      count++;
+    }
+  }
+  file.close();
+  PetscLogEventEnd(rrc_load_time, 0, 0, 0, 0);
+}
+
 double Utils::RRC(int total_angular_momentum, int L, int l_xi, int l_yi,
                   int l_xk, int l_yk, int parity)
 {
@@ -210,6 +242,7 @@ double Utils::RRC(int total_angular_momentum, int L, int l_xi, int l_yi,
     PetscLogEventEnd(rrc_time, 0, 0, 0, 0);
     return 0.0;
   }
+
   n_i = n_i2 / 2;
   n_k = n_k2 / 2;
 
