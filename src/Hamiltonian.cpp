@@ -480,8 +480,8 @@ void Hamiltonian::CalculateHamlitonian0(PetscInt l_val)
       if ((i_val == start or idx_array[4] == 0) and
           world.rank() == world.size() - 1)
       {
-        std::cout << "Calculating " << idx_array[2] + 1 << " of " << num_x[1]
-                  << "\n";
+        std::cout << "Calculating H_0:" << idx_array[2] + 1 << " of "
+                  << num_x[1] << "\n";
       }
 
       /* avoid recalculating if the grid is uniform */
@@ -1117,8 +1117,8 @@ void Hamiltonian::CalculateHamlitonian0ECS()
       if ((i_val == start or idx_array[4] == 0) and
           world.rank() == world.size() - 1)
       {
-        std::cout << "Calculating " << idx_array[2] + 1 << " of " << num_x[1]
-                  << "\n";
+        std::cout << "Calculating H_0_ecs:" << idx_array[2] + 1 << " of "
+                  << num_x[1] << "\n";
       }
 
       /* avoid recalculating if the grid is uniform */
