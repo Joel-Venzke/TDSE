@@ -114,13 +114,10 @@ def get_k_sphere(energy,
 
 
 beta_max = 10
-# folders = ["cycles_delay_0.00"]
-folders = ["cep_0.30"]
-# folders = ["cycles_delay_0.45","cycles_delay_0.60"]
-# folders = ["cycles_delay_0.00", "cycles_delay_0.10", "cycles_delay_0.20", "cycles_delay_0.30", "cycles_delay_0.40", "cycles_delay_0.50", "cycles_delay_0.60", "cycles_delay_0.70", "cycles_delay_0.80", "cycles_delay_0.90",
-#            "cycles_delay_1.00", "cycles_delay_0.05", "cycles_delay_0.15", "cycles_delay_0.25", "cycles_delay_0.35", "cycles_delay_0.45", "cycles_delay_0.55", "cycles_delay_0.65", "cycles_delay_0.75", "cycles_delay_0.85", "cycles_delay_0.95"]
-# folders = ["cycles_delay_0.00", "cycles_delay_0.10", "cycles_delay_0.20", "cycles_delay_0.30", "cycles_delay_0.40", "cycles_delay_0.50", "cycles_delay_0.60", "cycles_delay_0.70", "cycles_delay_0.80", "cycles_delay_0.90",
-#             "cycles_delay_1.00"]
+folders = [
+    "cep_0.00", "cep_0.10", "cep_0.20", "cep_0.30", "cep_0.40", "cep_0.50",
+    "cep_0.60", "cep_0.70", "cep_0.80", "cep_0.90"
+]
 folders.sort()
 target = h5py.File(folders[0] + "/H.h5", "r")
 f = h5py.File(folders[0] + "/TDSE.h5", "r")
@@ -286,12 +283,6 @@ for idx, fold in enumerate(folders):
             f.write("\n")
 
 beta_max = 10
-folders = ["cycles_delay_0.00"]
-# folders = ["cycles_delay_0.45","cycles_delay_0.60"]
-# folders = ["cycles_delay_0.00", "cycles_delay_0.10", "cycles_delay_0.20", "cycles_delay_0.30", "cycles_delay_0.40", "cycles_delay_0.50", "cycles_delay_0.60", "cycles_delay_0.70", "cycles_delay_0.80", "cycles_delay_0.90",
-#            "cycles_delay_1.00", "cycles_delay_0.05", "cycles_delay_0.15", "cycles_delay_0.25", "cycles_delay_0.35", "cycles_delay_0.45", "cycles_delay_0.55", "cycles_delay_0.65", "cycles_delay_0.75", "cycles_delay_0.85", "cycles_delay_0.95"]
-# folders = ["cycles_delay_0.00", "cycles_delay_0.10", "cycles_delay_0.20", "cycles_delay_0.30", "cycles_delay_0.40", "cycles_delay_0.50", "cycles_delay_0.60", "cycles_delay_0.70", "cycles_delay_0.80", "cycles_delay_0.90",
-#             "cycles_delay_1.00"]
 folders.sort()
 target = h5py.File(folders[0] + "/H.h5", "r")
 f = h5py.File(folders[0] + "/TDSE.h5", "r")
@@ -469,12 +460,6 @@ for idx, fold in enumerate(folders):
 ######################################################################################################################
 
 beta_max = 10
-folders = ["cycles_delay_0.00"]
-# folders = ["cycles_delay_0.45","cycles_delay_0.60"]
-# folders = ["cycles_delay_0.00", "cycles_delay_0.10", "cycles_delay_0.20", "cycles_delay_0.30", "cycles_delay_0.40", "cycles_delay_0.50", "cycles_delay_0.60", "cycles_delay_0.70", "cycles_delay_0.80", "cycles_delay_0.90",
-#            "cycles_delay_1.00", "cycles_delay_0.05", "cycles_delay_0.15", "cycles_delay_0.25", "cycles_delay_0.35", "cycles_delay_0.45", "cycles_delay_0.55", "cycles_delay_0.65", "cycles_delay_0.75", "cycles_delay_0.85", "cycles_delay_0.95"]
-# folders = ["cycles_delay_0.00", "cycles_delay_0.10", "cycles_delay_0.20", "cycles_delay_0.30", "cycles_delay_0.40", "cycles_delay_0.50", "cycles_delay_0.60", "cycles_delay_0.70", "cycles_delay_0.80", "cycles_delay_0.90",
-#             "cycles_delay_1.00"]
 folders.sort()
 target = h5py.File(folders[0] + "/H.h5", "r")
 f = h5py.File(folders[0] + "/TDSE.h5", "r")
@@ -652,12 +637,6 @@ if e_final > 0:
                 f.write("\n")
 
 beta_max = 10
-folders = ["cycles_delay_0.00"]
-# folders = ["cycles_delay_0.45","cycles_delay_0.60"]
-# folders = ["cycles_delay_0.00", "cycles_delay_0.10", "cycles_delay_0.20", "cycles_delay_0.30", "cycles_delay_0.40", "cycles_delay_0.50", "cycles_delay_0.60", "cycles_delay_0.70", "cycles_delay_0.80", "cycles_delay_0.90",
-#            "cycles_delay_1.00", "cycles_delay_0.05", "cycles_delay_0.15", "cycles_delay_0.25", "cycles_delay_0.35", "cycles_delay_0.45", "cycles_delay_0.55", "cycles_delay_0.65", "cycles_delay_0.75", "cycles_delay_0.85", "cycles_delay_0.95"]
-# folders = ["cycles_delay_0.00", "cycles_delay_0.10", "cycles_delay_0.20", "cycles_delay_0.30", "cycles_delay_0.40", "cycles_delay_0.50", "cycles_delay_0.60", "cycles_delay_0.70", "cycles_delay_0.80", "cycles_delay_0.90",
-#             "cycles_delay_1.00"]
 folders.sort()
 target = h5py.File(folders[0] + "/H.h5", "r")
 f = h5py.File(folders[0] + "/TDSE.h5", "r")
