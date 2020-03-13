@@ -1,14 +1,13 @@
-from mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.mplot3d import Axes3D  # needed for 3d plotting
 import numpy as np
 import h5py
 import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from scipy.special import sph_harm
-from matplotlib.colors import Normalize
 import matplotlib.cm as cm
 import json
 from scipy.special import legendre
+matplotlib.use('Agg')
 font = {'size': 22}
 matplotlib.rc('font', **font)
 
@@ -18,7 +17,7 @@ def helium_sae(r):
 
 
 def get_state(r, energy, l, potential, z=1.0, min_r=500.):
-    """ 
+    """
     Returns the continuum state and phase shift for a given
     potential, radius, energy, and angular momentum eigenvalue
     """
@@ -62,8 +61,6 @@ def get_state(r, energy, l, potential, z=1.0, min_r=500.):
 
 
 # gets energy of state
-
-
 def get_energy(psi_1, target):
     return target["Energy_l_" + str(psi_1[1])][psi_1[0] - 1 - psi_1[1], 0, 0]
 
@@ -75,6 +72,7 @@ def get_k_sphere(energy,
                  m_max,
                  potential,
                  target,
+                 folder,
                  d_angle=0.01):
     phi_angles = np.arange(-np.pi, np.pi, d_angle)
     phi = np.arange(-np.pi, np.pi, d_angle)
@@ -85,7 +83,7 @@ def get_k_sphere(energy,
     return_psi = np.zeros(phi.shape, dtype=complex)
     r_length = r.shape[0]
     lm_idx = 0
-    with open("spherical_harm_TDSE_" + fold + ".txt", "w") as f:
+    with open("spherical_harm_TDSE_" + folder + ".txt", "w") as f:
         f.write("# l, m, |Y_lm|, Arg(Y_lm)\n")
         for l_val in np.arange(0, l_max + 1):
             phase_shift, k_vec = get_state(r, energy, l_val, potential)
@@ -111,6 +109,30 @@ def get_k_sphere(energy,
                 lm_idx += 1
     max_angles = [np.argmax(np.abs(return_psi)**2)]
     return phi, theta, return_psi, phi_angles, d_angle
+
+
+def read_data(folders, e_final, r, l_values, m_values, potential, target):
+    pad_yield = []
+    phi_angles = None
+    for fold in folders:
+        f = h5py.File(fold + "/TDSE.h5", "r")
+        psi = f["Wavefunction"]["psi"][-1]
+        psi = psi[:, 0] + 1.j * psi[:, 1]
+        # print(e_final)
+        phi, theta, cur_psi, phi_angles, d_angle = get_k_sphere(
+            e_final, psi, r, l_values.max(), m_values.max(), potential, target,
+            fold)
+        pad_yield.append(np.abs(cur_psi)**2)
+
+    pad_yield = np.array(pad_yield)
+    return pad_yield, phi_angles, theta, phi, d_angle
+
+
+def get_average_pad(pad_yield):
+    num_shots = pad_yield.shape[0]
+    average_pad = pad_yield.sum(axis=0)
+    average_pad /= num_shots
+    return average_pad
 
 
 beta_max = 10
@@ -145,18 +167,10 @@ e_ground = get_energy([1, 0, 0, 1], target)
 e_excited = get_energy([2, 1, 1, 1], target)
 e_final = (2 * np.abs(laser_energy)) - np.abs(e_ground)
 
-pad_yield = []
-phi_angles = None
-for fold in folders:
-    f = h5py.File(fold + "/TDSE.h5", "r")
-    psi = f["Wavefunction"]["psi"][-1]
-    psi = psi[:, 0] + 1.j * psi[:, 1]
-    # print(e_final)
-    phi, theta, cur_psi, phi_angles, d_angle = get_k_sphere(
-        e_final, psi, r, l_values.max(), m_values.max(), helium_sae, target)
-    pad_yield.append(np.abs(cur_psi)**2)
-
-pad_yield = np.array(pad_yield)
+pad_yield, phi_angles, theta, phi, d_angle = read_data(folders, e_final, r,
+                                                       l_values, m_values,
+                                                       helium_sae, target)
+average_pad = get_average_pad(pad_yield)
 max_val = pad_yield.max()
 print("# delay theta phi")
 fig = plt.figure()
@@ -204,8 +218,36 @@ for idx, fold in enumerate(folders):
         # plt.savefig("PAD_%02.0f_%.1e_%.2f.png" % (cycles, intensity, delay))
         plt.savefig("PAD_%02.0f_%.1e_%.2f_0p4.png" %
                     (cycles, intensity, delay))
-        # plt.savefig("PAD_%02.0f_%.1e_%.2f_1p0.png" % (cycles, intensity, delay))
         plt.clf()
+
+with open(folders[0] + '/input.json') as json_file:
+    input_file = json.load(json_file)
+    delay = float(fold.split("_")[-1])
+    cur_data = average_pad / average_pad.max()
+    max_idx = np.unravel_index(np.argmax(cur_data), cur_data.shape)
+    intensity = input_file["laser"]["pulses"][0]["intensity"]
+    cycles = input_file["laser"]["pulses"][0]["cycles_on"] + \
+        input_file["laser"]["pulses"][0]["cycles_off"]
+    X = cur_data * np.sin(theta) * np.cos(phi)
+    Y = cur_data * np.sin(theta) * np.sin(phi)
+    Z = cur_data * np.cos(theta)
+    ax = fig.add_subplot(111, projection='3d')
+    cmap = cm.get_cmap("viridis")
+    ax.plot_surface(X, Y, Z, facecolors=cmap(cur_data))
+    ax.set_xlim(-0.6, 0.6)
+    ax.set_ylim(-0.6, 0.6)
+    ax.set_zlim(-0.6, 0.6)
+    # make the panes transparent
+    ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    # make the grid lines transparent
+    ax.xaxis._axinfo["grid"]['color'] = (1, 1, 1, 0)
+    ax.yaxis._axinfo["grid"]['color'] = (1, 1, 1, 0)
+    ax.zaxis._axinfo["grid"]['color'] = (1, 1, 1, 0)
+    ax.axis('off')
+    plt.savefig("PAD_%02.0f_%.1e_avg.png" % (cycles, intensity))
+    plt.clf()
 
 for idx, fold in enumerate(folders):
     with open("Asym_from_x_" + fold + ".txt", "w") as f:
@@ -233,8 +275,9 @@ for idx, fold in enumerate(folders):
                     cur_data[idx_right] * d_angle * d_angle *
                     np.sin(theta[idx_right]))[theta[idx_right] >= (np.pi / 2)])
 
-                X, Y, Z = np.sin(theta)*np.cos(phi), np.sin(theta) * \
-                    np.sin(phi), np.cos(theta)
+                X = cur_data * np.sin(theta) * np.cos(phi)
+                Y = cur_data * np.sin(theta) * np.sin(phi)
+                Z = cur_data * np.cos(theta)
 
                 f.write(
                     str(angle) + ", " +
@@ -246,6 +289,43 @@ for idx, fold in enumerate(folders):
                          (right_top_sum + left_bottom_sum)) /
                         (left_top_sum + left_bottom_sum + right_top_sum +
                          right_bottom_sum)) + "\n")
+with open("Asym_avg_from_x.txt", "w") as f:
+    f.write("# angle, front_back, flip_about_xy\n")
+    with open(fold + '/input.json') as json_file:
+        input_file = json.load(json_file)
+        delay = float(fold.split("_")[-1])
+        cur_data = average_pad / average_pad.max()
+        for angle in phi_angles:
+            idx_left = np.abs(phi - angle)
+            idx_left[idx_left > np.pi] = np.pi * 2 - idx_left[idx_left > np.pi]
+            idx_left = idx_left < np.pi / 2
+            idx_right = np.logical_not(idx_left)
+            left_top_sum = np.sum(
+                (cur_data[idx_left] * d_angle * d_angle *
+                 np.sin(theta[idx_left]))[theta[idx_left] < (np.pi / 2)])
+            left_bottom_sum = np.sum(
+                (cur_data[idx_left] * d_angle * d_angle *
+                 np.sin(theta[idx_left]))[theta[idx_left] >= (np.pi / 2)])
+            right_top_sum = np.sum(
+                (cur_data[idx_right] * d_angle * d_angle *
+                 np.sin(theta[idx_right]))[theta[idx_right] < (np.pi / 2)])
+            right_bottom_sum = np.sum(
+                (cur_data[idx_right] * d_angle * d_angle *
+                 np.sin(theta[idx_right]))[theta[idx_right] >= (np.pi / 2)])
+
+            X = cur_data * np.sin(theta) * np.cos(phi)
+            Y = cur_data * np.sin(theta) * np.sin(phi)
+            Z = cur_data * np.cos(theta)
+
+            f.write(
+                str(angle) + ", " + str((left_top_sum + left_bottom_sum -
+                                         (right_top_sum + right_bottom_sum)) /
+                                        (left_top_sum + left_bottom_sum +
+                                         right_top_sum + right_bottom_sum)) +
+                ", " + str((left_top_sum + right_bottom_sum -
+                            (right_top_sum + left_bottom_sum)) /
+                           (left_top_sum + left_bottom_sum + right_top_sum +
+                            right_bottom_sum)) + "\n")
 
 for idx, fold in enumerate(folders):
     # do not normalize to get good cross section
@@ -260,9 +340,6 @@ for idx, fold in enumerate(folders):
                               cur_data * d_angle * d_angle * np.sin(theta))
             f.write(str(beta_val) + " ")
         f.write("\n")
-
-X, Y, Z = cur_data*np.sin(theta)*np.cos(phi), cur_data * \
-            np.sin(theta)*np.sin(phi), cur_data*np.cos(theta)
 
 for idx, fold in enumerate(folders):
     cur_data = pad_yield[idx] / max_val
@@ -316,18 +393,10 @@ e_excited = get_energy([2, 1, 1, 1], target)
 e_final = (1 * np.abs(laser_energy)) - np.abs(e_excited)
 # e_final = (1 * np.abs(laser_energy)) - np.abs(e_excited) - U_p
 
-pad_yield = []
-phi_angles = None
-for fold in folders:
-    f = h5py.File(fold + "/TDSE.h5", "r")
-    psi = f["Wavefunction"]["psi"][-1]
-    psi = psi[:, 0] + 1.j * psi[:, 1]
-    # print(e_final)
-    phi, theta, cur_psi, phi_angles, d_angle = get_k_sphere(
-        e_final, psi, r, l_values.max(), m_values.max(), helium_sae, target)
-    pad_yield.append(np.abs(cur_psi)**2)
-
-pad_yield = np.array(pad_yield)
+pad_yield, phi_angles, theta, phi, d_angle = read_data(folders, e_final, r,
+                                                       l_values, m_values,
+                                                       helium_sae, target)
+average_pad = get_average_pad(pad_yield)
 max_val = pad_yield.max()
 print("# delay theta phi")
 fig = plt.figure()
@@ -377,6 +446,34 @@ for idx, fold in enumerate(folders):
                     (cycles, intensity, delay))
         # plt.savefig("PAD_%02.0f_%.1e_%.2f_1p0.png" % (cycles, intensity, delay))
         plt.clf()
+with open(folders[0] + '/input.json') as json_file:
+    input_file = json.load(json_file)
+    delay = float(fold.split("_")[-1])
+    cur_data = average_pad / average_pad.max()
+    max_idx = np.unravel_index(np.argmax(cur_data), cur_data.shape)
+    intensity = input_file["laser"]["pulses"][0]["intensity"]
+    cycles = input_file["laser"]["pulses"][0]["cycles_on"] + \
+        input_file["laser"]["pulses"][0]["cycles_off"]
+    X = cur_data * np.sin(theta) * np.cos(phi)
+    Y = cur_data * np.sin(theta) * np.sin(phi)
+    Z = cur_data * np.cos(theta)
+    ax = fig.add_subplot(111, projection='3d')
+    cmap = cm.get_cmap("viridis")
+    ax.plot_surface(X, Y, Z, facecolors=cmap(cur_data))
+    ax.set_xlim(-0.6, 0.6)
+    ax.set_ylim(-0.6, 0.6)
+    ax.set_zlim(-0.6, 0.6)
+    # make the panes transparent
+    ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    # make the grid lines transparent
+    ax.xaxis._axinfo["grid"]['color'] = (1, 1, 1, 0)
+    ax.yaxis._axinfo["grid"]['color'] = (1, 1, 1, 0)
+    ax.zaxis._axinfo["grid"]['color'] = (1, 1, 1, 0)
+    ax.axis('off')
+    plt.savefig("PAD_%02.0f_%.1e_avg_excited.png" % (cycles, intensity))
+    plt.clf()
 
 for idx, fold in enumerate(folders):
     with open("Asym_excited_from_x_" + fold + ".txt", "w") as f:
@@ -417,6 +514,43 @@ for idx, fold in enumerate(folders):
                          (right_top_sum + left_bottom_sum)) /
                         (left_top_sum + left_bottom_sum + right_top_sum +
                          right_bottom_sum)) + "\n")
+with open("Asym_avg_excited_from_x.txt", "w") as f:
+    f.write("# angle, front_back, flip_about_xy\n")
+    with open(fold + '/input.json') as json_file:
+        input_file = json.load(json_file)
+        delay = float(fold.split("_")[-1])
+        cur_data = average_pad / average_pad.max()
+        for angle in phi_angles:
+            idx_left = np.abs(phi - angle)
+            idx_left[idx_left > np.pi] = np.pi * 2 - idx_left[idx_left > np.pi]
+            idx_left = idx_left < np.pi / 2
+            idx_right = np.logical_not(idx_left)
+            left_top_sum = np.sum(
+                (cur_data[idx_left] * d_angle * d_angle *
+                 np.sin(theta[idx_left]))[theta[idx_left] < (np.pi / 2)])
+            left_bottom_sum = np.sum(
+                (cur_data[idx_left] * d_angle * d_angle *
+                 np.sin(theta[idx_left]))[theta[idx_left] >= (np.pi / 2)])
+            right_top_sum = np.sum(
+                (cur_data[idx_right] * d_angle * d_angle *
+                 np.sin(theta[idx_right]))[theta[idx_right] < (np.pi / 2)])
+            right_bottom_sum = np.sum(
+                (cur_data[idx_right] * d_angle * d_angle *
+                 np.sin(theta[idx_right]))[theta[idx_right] >= (np.pi / 2)])
+
+            X = cur_data * np.sin(theta) * np.cos(phi)
+            Y = cur_data * np.sin(theta) * np.sin(phi)
+            Z = cur_data * np.cos(theta)
+
+            f.write(
+                str(angle) + ", " + str((left_top_sum + left_bottom_sum -
+                                         (right_top_sum + right_bottom_sum)) /
+                                        (left_top_sum + left_bottom_sum +
+                                         right_top_sum + right_bottom_sum)) +
+                ", " + str((left_top_sum + right_bottom_sum -
+                            (right_top_sum + left_bottom_sum)) /
+                           (left_top_sum + left_bottom_sum + right_top_sum +
+                            right_bottom_sum)) + "\n")
 
 for idx, fold in enumerate(folders):
     # do not normalize to get good cross section
@@ -494,19 +628,9 @@ e_excited = get_energy([2, 1, 1, 1], target)
 e_final = (2 * np.abs(laser_energy)) - np.abs(e_ground) - U_p
 
 if e_final > 0:
-    pad_yield = []
-    phi_angles = None
-    for fold in folders:
-        f = h5py.File(fold + "/TDSE.h5", "r")
-        psi = f["Wavefunction"]["psi"][-1]
-        psi = psi[:, 0] + 1.j * psi[:, 1]
-        # print(e_final)
-        phi, theta, cur_psi, phi_angles, d_angle = get_k_sphere(
-            e_final, psi, r, l_values.max(), m_values.max(), helium_sae,
-            target)
-        pad_yield.append(np.abs(cur_psi)**2)
-
-    pad_yield = np.array(pad_yield)
+    pad_yield, phi_angles, theta, phi, d_angle = read_data(
+        folders, e_final, r, l_values, m_values, helium_sae, target)
+    average_pad = get_average_pad(pad_yield)
     max_val = pad_yield.max()
     print("# delay theta phi")
     fig = plt.figure()
@@ -557,6 +681,35 @@ if e_final > 0:
             # plt.savefig("PAD_%02.0f_%.1e_%.2f_1p0.png" % (cycles, intensity, delay))
             plt.clf()
 
+    with open(folders[0] + '/input.json') as json_file:
+        input_file = json.load(json_file)
+        delay = float(fold.split("_")[-1])
+        cur_data = average_pad / average_pad.max()
+        max_idx = np.unravel_index(np.argmax(cur_data), cur_data.shape)
+        intensity = input_file["laser"]["pulses"][0]["intensity"]
+        cycles = input_file["laser"]["pulses"][0]["cycles_on"] + \
+            input_file["laser"]["pulses"][0]["cycles_off"]
+        X = cur_data * np.sin(theta) * np.cos(phi)
+        Y = cur_data * np.sin(theta) * np.sin(phi)
+        Z = cur_data * np.cos(theta)
+        ax = fig.add_subplot(111, projection='3d')
+        cmap = cm.get_cmap("viridis")
+        ax.plot_surface(X, Y, Z, facecolors=cmap(cur_data))
+        ax.set_xlim(-0.6, 0.6)
+        ax.set_ylim(-0.6, 0.6)
+        ax.set_zlim(-0.6, 0.6)
+        # make the panes transparent
+        ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+        ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+        ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+        # make the grid lines transparent
+        ax.xaxis._axinfo["grid"]['color'] = (1, 1, 1, 0)
+        ax.yaxis._axinfo["grid"]['color'] = (1, 1, 1, 0)
+        ax.zaxis._axinfo["grid"]['color'] = (1, 1, 1, 0)
+        ax.axis('off')
+        plt.savefig("PAD_%02.0f_%.1e_avg_up.png" % (cycles, intensity))
+        plt.clf()
+
     for idx, fold in enumerate(folders):
         with open("Asym_up_from_x_" + fold + ".txt", "w") as f:
             f.write("# angle, front_back, flip_about_xy\n")
@@ -600,6 +753,45 @@ if e_final > 0:
                              (right_top_sum + left_bottom_sum)) /
                             (left_top_sum + left_bottom_sum + right_top_sum +
                              right_bottom_sum)) + "\n")
+    with open("Asym_avg_up_from_x.txt", "w") as f:
+        f.write("# angle, front_back, flip_about_xy\n")
+        with open(fold + '/input.json') as json_file:
+            input_file = json.load(json_file)
+            delay = float(fold.split("_")[-1])
+            cur_data = average_pad / average_pad.max()
+            for angle in phi_angles:
+                idx_left = np.abs(phi - angle)
+                idx_left[
+                    idx_left > np.pi] = np.pi * 2 - idx_left[idx_left > np.pi]
+                idx_left = idx_left < np.pi / 2
+                idx_right = np.logical_not(idx_left)
+                left_top_sum = np.sum(
+                    (cur_data[idx_left] * d_angle * d_angle *
+                     np.sin(theta[idx_left]))[theta[idx_left] < (np.pi / 2)])
+                left_bottom_sum = np.sum(
+                    (cur_data[idx_left] * d_angle * d_angle *
+                     np.sin(theta[idx_left]))[theta[idx_left] >= (np.pi / 2)])
+                right_top_sum = np.sum(
+                    (cur_data[idx_right] * d_angle * d_angle *
+                     np.sin(theta[idx_right]))[theta[idx_right] < (np.pi / 2)])
+                right_bottom_sum = np.sum((
+                    cur_data[idx_right] * d_angle * d_angle *
+                    np.sin(theta[idx_right]))[theta[idx_right] >= (np.pi / 2)])
+
+                X = cur_data * np.sin(theta) * np.cos(phi)
+                Y = cur_data * np.sin(theta) * np.sin(phi)
+                Z = cur_data * np.cos(theta)
+
+                f.write(
+                    str(angle) + ", " +
+                    str((left_top_sum + left_bottom_sum -
+                         (right_top_sum + right_bottom_sum)) /
+                        (left_top_sum + left_bottom_sum + right_top_sum +
+                         right_bottom_sum)) + ", " +
+                    str((left_top_sum + right_bottom_sum -
+                         (right_top_sum + left_bottom_sum)) /
+                        (left_top_sum + left_bottom_sum + right_top_sum +
+                         right_bottom_sum)) + "\n")
 
     for idx, fold in enumerate(folders):
         # do not normalize to get good cross section
@@ -671,19 +863,9 @@ e_excited = get_energy([2, 1, 1, 1], target)
 e_final = (1 * np.abs(laser_energy)) - np.abs(e_excited) - U_p
 
 if e_final > 0:
-    pad_yield = []
-    phi_angles = None
-    for fold in folders:
-        f = h5py.File(fold + "/TDSE.h5", "r")
-        psi = f["Wavefunction"]["psi"][-1]
-        psi = psi[:, 0] + 1.j * psi[:, 1]
-        # print(e_final)
-        phi, theta, cur_psi, phi_angles, d_angle = get_k_sphere(
-            e_final, psi, r, l_values.max(), m_values.max(), helium_sae,
-            target)
-        pad_yield.append(np.abs(cur_psi)**2)
-
-    pad_yield = np.array(pad_yield)
+    pad_yield, phi_angles, theta, phi, d_angle = read_data(
+        folders, e_final, r, l_values, m_values, helium_sae, target)
+    average_pad = get_average_pad(pad_yield)
     max_val = pad_yield.max()
     print("# delay theta phi")
     fig = plt.figure()
@@ -733,6 +915,34 @@ if e_final > 0:
                         (cycles, intensity, delay))
             # plt.savefig("PAD_%02.0f_%.1e_%.2f_1p0.png" % (cycles, intensity, delay))
             plt.clf()
+    with open(folders[0] + '/input.json') as json_file:
+        input_file = json.load(json_file)
+        delay = float(fold.split("_")[-1])
+        cur_data = average_pad / average_pad.max()
+        max_idx = np.unravel_index(np.argmax(cur_data), cur_data.shape)
+        intensity = input_file["laser"]["pulses"][0]["intensity"]
+        cycles = input_file["laser"]["pulses"][0]["cycles_on"] + \
+            input_file["laser"]["pulses"][0]["cycles_off"]
+        X = cur_data * np.sin(theta) * np.cos(phi)
+        Y = cur_data * np.sin(theta) * np.sin(phi)
+        Z = cur_data * np.cos(theta)
+        ax = fig.add_subplot(111, projection='3d')
+        cmap = cm.get_cmap("viridis")
+        ax.plot_surface(X, Y, Z, facecolors=cmap(cur_data))
+        ax.set_xlim(-0.6, 0.6)
+        ax.set_ylim(-0.6, 0.6)
+        ax.set_zlim(-0.6, 0.6)
+        # make the panes transparent
+        ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+        ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+        ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+        # make the grid lines transparent
+        ax.xaxis._axinfo["grid"]['color'] = (1, 1, 1, 0)
+        ax.yaxis._axinfo["grid"]['color'] = (1, 1, 1, 0)
+        ax.zaxis._axinfo["grid"]['color'] = (1, 1, 1, 0)
+        ax.axis('off')
+        plt.savefig("PAD_%02.0f_%.1e_avg_up_excited.png" % (cycles, intensity))
+        plt.clf()
 
     for idx, fold in enumerate(folders):
         with open("Asym_up_excited_from_x_" + fold + ".txt", "w") as f:
@@ -777,6 +987,45 @@ if e_final > 0:
                              (right_top_sum + left_bottom_sum)) /
                             (left_top_sum + left_bottom_sum + right_top_sum +
                              right_bottom_sum)) + "\n")
+    with open("Asym_avg_up_excited_from_x.txt", "w") as f:
+        f.write("# angle, front_back, flip_about_xy\n")
+        with open(fold + '/input.json') as json_file:
+            input_file = json.load(json_file)
+            delay = float(fold.split("_")[-1])
+            cur_data = average_pad / average_pad.max()
+            for angle in phi_angles:
+                idx_left = np.abs(phi - angle)
+                idx_left[
+                    idx_left > np.pi] = np.pi * 2 - idx_left[idx_left > np.pi]
+                idx_left = idx_left < np.pi / 2
+                idx_right = np.logical_not(idx_left)
+                left_top_sum = np.sum(
+                    (cur_data[idx_left] * d_angle * d_angle *
+                     np.sin(theta[idx_left]))[theta[idx_left] < (np.pi / 2)])
+                left_bottom_sum = np.sum(
+                    (cur_data[idx_left] * d_angle * d_angle *
+                     np.sin(theta[idx_left]))[theta[idx_left] >= (np.pi / 2)])
+                right_top_sum = np.sum(
+                    (cur_data[idx_right] * d_angle * d_angle *
+                     np.sin(theta[idx_right]))[theta[idx_right] < (np.pi / 2)])
+                right_bottom_sum = np.sum((
+                    cur_data[idx_right] * d_angle * d_angle *
+                    np.sin(theta[idx_right]))[theta[idx_right] >= (np.pi / 2)])
+
+                X = cur_data * np.sin(theta) * np.cos(phi)
+                Y = cur_data * np.sin(theta) * np.sin(phi)
+                Z = cur_data * np.cos(theta)
+
+                f.write(
+                    str(angle) + ", " +
+                    str((left_top_sum + left_bottom_sum -
+                         (right_top_sum + right_bottom_sum)) /
+                        (left_top_sum + left_bottom_sum + right_top_sum +
+                         right_bottom_sum)) + ", " +
+                    str((left_top_sum + right_bottom_sum -
+                         (right_top_sum + left_bottom_sum)) /
+                        (left_top_sum + left_bottom_sum + right_top_sum +
+                         right_bottom_sum)) + "\n")
 
     for idx, fold in enumerate(folders):
         # do not normalize to get good cross section
