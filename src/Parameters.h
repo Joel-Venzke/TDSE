@@ -124,6 +124,20 @@ class Parameters : protected Utils
   Parameters(std::string file_name);
   ~Parameters();
 
+  void ReadGridCylindrical(json data);
+  void ReadGridSpherical(json data);
+  void ReadGridHypersphericalRRC(json data);
+  void ReadGridNormal(json data);
+  void ReadNumerics(json data);
+
+  void ReadSolver(json data);
+  void ReadExponentialPot(json data, PetscInt i);
+  void ReadGaussianPot(json data, PetscInt i);
+  void ReadSquareWellPot(json data, PetscInt i);
+  void ReadYukawaPot(json data, PetscInt i);
+  void ReadTarget(json data);
+
+  void ReadData(json data);
   void Validate();
 
   /* getters */
