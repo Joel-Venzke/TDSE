@@ -420,7 +420,7 @@ void Simulation::EigenSolve(PetscInt num_states)
       }
     }
   }
-  else if (coordinate_system_idx == 4)
+  else if (coordinate_system_idx == 4 or coordinate_system_idx == 5)
   {
     psi = wavefunction->GetPsi();
     EPS eps; /* eigen solver */

@@ -30,6 +30,7 @@ class Hamiltonian : protected Utils
   std::unordered_map< std::string, double > hypersphere_coulomb_lookup;
   std::unordered_map< std::string, double > hypersphere_radial_int_lookup;
   std::unordered_map< std::string, double > hypersphere_laser_lookup;
+  std::unordered_map< std::string, double > hypersphere_ee_repulsion_lookup;
 
   PetscInt num_dims;
   PetscInt num_electrons;
@@ -146,6 +147,8 @@ class Hamiltonian : protected Utils
                                double z);
   double GetHypersphereNonRRCCoulomb(int *lambda_a, int *lambda_b, double r,
                                      double z);
+  double GetHypersphereNonRRCeeRepulsion(int *lambda_a, int *lambda_b,
+                                         double r);
   dcomp GetHypersphereLaser(std::vector< PetscInt > &idx_array);
   double GetHypersphereLaserVal(int *lambda_a, int *lambda_b, double r);
   dcomp GetElectronElectronTerm(std::vector< PetscInt > &idx_array);

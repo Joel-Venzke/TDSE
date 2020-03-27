@@ -3614,17 +3614,20 @@ dcomp Hamiltonian::GetHypersphereNonRRCPotential(
   PetscLogEventBegin(hyper_pot_time, 0, 0, 0, 0);
   if (eigen_values[idx_array[2]][4] == eigen_values[idx_array[2 + 1]][4])
   {
+    r = x_value[2][idx_array[2 * 2]];
+
     /* loop over each nuclei */
     for (PetscInt nuclei_idx = 0; nuclei_idx < num_nuclei; ++nuclei_idx)
     {
-      r = x_value[2][idx_array[2 * 2]];
       /* Coulomb term */
       nuclei += GetHypersphereNonRRCCoulomb(eigen_values[idx_array[2]],
                                             eigen_values[idx_array[2 + 1]], r,
                                             z[nuclei_idx]);
     }
+    /* include ee repulsion term */
+    nuclei += GetHypersphereNonRRCeeRepulsion(
+        eigen_values[idx_array[2]], eigen_values[idx_array[2 + 1]], r);
   }
-  std::cout << "need to implement ee repulsion for hyperspherical\n";
   PetscLogEventEnd(hyper_pot_time, 0, 0, 0, 0);
   return nuclei;
 }
@@ -3695,6 +3698,96 @@ double Hamiltonian::GetHypersphereNonRRCCoulomb(int* lambda_a, int* lambda_b,
   }
   hypersphere_coulomb_lookup[key] = matrix_element;
   PetscLogEventEnd(hyper_coulomb_time, 0, 0, 0, 0);
+  return matrix_element / r;
+}
+
+double Hamiltonian::GetHypersphereNonRRCeeRepulsion(int* lambda_a,
+                                                    int* lambda_b, double r)
+{
+  /* Note using a as prime side in <psi'|v|psi> */
+  num_ang += num_ang % 2;
+  double d_angle, matrix_element, result, tmp;
+  int Ka, na, lxa, lya, La, Ma, Kb, nb, lxb, lyb, Lb, Mb, l_lower_bound,
+      l_upper_bound, m_r2a, m_r2b, m_loop_val;
+  std::string key, internal_key;
+  matrix_element = 0.0;
+  Ka             = lambda_a[0];
+  na             = lambda_a[1];
+  lxa            = lambda_a[2];
+  lya            = lambda_a[3];
+  La             = lambda_a[4];
+  Ma             = lambda_a[5];
+  Kb             = lambda_b[0];
+  nb             = lambda_b[1];
+  lxb            = lambda_b[2];
+  lyb            = lambda_b[3];
+  Lb             = lambda_b[4];
+  Mb             = lambda_b[5];
+  key = to_string(Ka) + "_" + to_string(na) + "_" + to_string(lxa) + "_" +
+        to_string(lya) + "_" + to_string(La) + "_" + to_string(Kb) + "_" +
+        to_string(nb) + "_" + to_string(lxb) + "_" + to_string(lyb) + "_" +
+        to_string(Lb) + "_" + to_string(num_ang);
+
+  /* check to see if this has been calculated already */
+  if (hypersphere_ee_repulsion_lookup.count(key) == 1)
+  {
+    return hypersphere_ee_repulsion_lookup[key] / r;
+  }
+
+  if (La == Lb and Ma == Mb)
+  {
+    std::cout << "need to implement ee repulsion for hyperspherical\n";
+    d_angle = pi / (2 * num_ang);
+    for (int idx = 0; idx < num_ang; ++idx)
+    {
+      angle[idx]    = idx * d_angle + d_angle / 2.;
+      arg_vals[idx] = cos(2. * angle[idx]);
+    }
+    SpherHarm(Ka, na, lxa, lya, La, Ma, angle, sphere_1, arg_vals);
+    SpherHarm(Kb, nb, lxb, lyb, Lb, Mb, angle, sphere_2, arg_vals);
+
+    /* these are due to selection rules for CG coef */
+    l_lower_bound = max(abs(lxa - lxb), abs(lya - lyb));
+    l_upper_bound = min(abs(lxa - lxb), abs(lya - lyb));
+    for (int l_loop_val = l_lower_bound; l_loop_val <= l_upper_bound;
+         ++l_loop_val)
+    {
+      for (int m_r1a = -lxa; m_r1a <= lxa; ++m_r1a)
+      {
+        m_r2a = Ma - m_r1a;
+        for (int m_r1b = -lxb; m_r1b <= lxb; ++m_r1b)
+        {
+          m_r2b      = Mb - m_r1b;
+          m_loop_val = m_r1b - m_r1a;
+          if (m_loop_val == m_r2a - m_r2b)
+          {
+            /* code for CG */
+          }
+          else
+          {
+            /* zero */
+          }
+        }
+        /* code for CG */
+      }
+      /* code for integrals*/
+      // result = 0.0;
+      //   for (int idx = 0; idx < num_ang; ++idx)
+      //   {
+      //     tmp = sin(angle[idx]);
+      //     result += sphere_1[idx] * sphere_2[idx] * cos(angle[idx]) * tmp *
+      //     tmp;
+      //   }
+      //   result *= d_angle;
+
+      /* code for CG, l level */
+    }
+
+    /* normalization */
+    matrix_element *=
+        sqrt((2 * lxa + 1) * (2 * lya + 1) / ((2 * lxb + 1) * (2 * lyb + 1)));
+  }
+  hypersphere_ee_repulsion_lookup[key] = matrix_element;
   return matrix_element / r;
 }
 
