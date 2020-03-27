@@ -3504,49 +3504,6 @@ dcomp Hamiltonian::GetHyperspherePotential(std::vector< PetscInt >& idx_array)
       nuclei += GetHypersphereCoulomb(eigen_values[idx_array[2]],
                                       eigen_values[idx_array[2 + 1]], r,
                                       z[nuclei_idx]);
-      // std::cout << tmp << "\n";
-
-      // /* Gaussian Donuts */
-      // for (PetscInt i = 0; i < gaussian_size[nuclei_idx]; ++i)
-      // {
-      //   tmp = gaussian_decay_rate[nuclei_idx][i] *
-      //         (r - gaussian_r_0[nuclei_idx][i]);
-      //   nuclei -= dcomp(
-      //       gaussian_amplitude[nuclei_idx][i] * exp(-0.5 * (tmp * tmp)),
-      //       0.0);
-      // }
-
-      // /* Exponential Donuts */
-      // for (PetscInt i = 0; i < exponential_size[nuclei_idx]; ++i)
-      // {
-      //   tmp = exponential_decay_rate[nuclei_idx][i] *
-      //         std::abs(r - exponential_r_0[nuclei_idx][i]);
-      //   nuclei -= dcomp(exponential_amplitude[nuclei_idx][i] * exp(-tmp),
-      //   0.0);
-      // }
-
-      // /* Square Well Donuts */
-      // for (PetscInt i = 0; i < square_well_size[nuclei_idx]; ++i)
-      // {
-      //   /* only apply square well between r_0 and r_0+width */
-      //   if ((r >= square_well_r_0[nuclei_idx][i]) and
-      //       (r <= (square_well_r_0[nuclei_idx][i] +
-      //              square_well_width[nuclei_idx][i])))
-      //   {
-      //     nuclei -= dcomp(square_well_amplitude[nuclei_idx][i], 0.0);
-      //   }
-      // }
-
-      // /* Yukawa Donuts */
-      // for (PetscInt i = 0; i < yukawa_size[nuclei_idx]; ++i)
-      // {
-      //   tmp = yukawa_decay_rate[nuclei_idx][i] *
-      //         std::abs(r - yukawa_r_0[nuclei_idx][i]);
-      //   tmp_soft = std::abs(r_soft - yukawa_r_0[nuclei_idx][i]);
-      //   nuclei -=
-      //       dcomp(yukawa_amplitude[nuclei_idx][i] * exp(-tmp) / tmp_soft,
-      //       0.0);
-      // }
     }
   }
   PetscLogEventEnd(hyper_pot_time, 0, 0, 0, 0);
@@ -3653,6 +3610,95 @@ double Hamiltonian::GetHypersphereCoulomb(int* lambda_a, int* lambda_b,
       result *= d_angle / sqrt(2.);
       matrix_element += result;
     }
+  }
+  hypersphere_coulomb_lookup[key] = matrix_element;
+  PetscLogEventEnd(hyper_coulomb_time, 0, 0, 0, 0);
+  return matrix_element / r;
+}
+
+dcomp Hamiltonian::GetHypersphereNonRRCPotential(
+    std::vector< PetscInt >& idx_array)
+{
+  dcomp nuclei(0.0, 0.0);
+  double r;
+  PetscLogEventBegin(hyper_pot_time, 0, 0, 0, 0);
+  if (eigen_values[idx_array[2]][4] == eigen_values[idx_array[2 + 1]][4])
+  {
+    /* loop over each nuclei */
+    for (PetscInt nuclei_idx = 0; nuclei_idx < num_nuclei; ++nuclei_idx)
+    {
+      r = x_value[2][idx_array[2 * 2]];
+      /* Coulomb term */
+      nuclei += GetHypersphereNonRRCCoulomb(eigen_values[idx_array[2]],
+                                            eigen_values[idx_array[2 + 1]], r,
+                                            z[nuclei_idx]);
+    }
+  }
+  PetscLogEventEnd(hyper_pot_time, 0, 0, 0, 0);
+  return nuclei;
+}
+
+double Hamiltonian::GetHypersphereNonRRCCoulomb(int* lambda_a, int* lambda_b,
+                                                double r, double z)
+{
+  PetscLogEventBegin(hyper_coulomb_time, 0, 0, 0, 0);
+  num_ang += num_ang % 2;
+  double d_angle, matrix_element, result, tmp;
+  int Ka, na, lxa, lya, La, Ma, Kb, nb, lxb, lyb, Lb, Mb;
+  std::string key, internal_key;
+  matrix_element = 0.0;
+  Ka             = lambda_a[0];
+  na             = lambda_a[1];
+  lxa            = lambda_a[2];
+  lya            = lambda_a[3];
+  La             = lambda_a[4];
+  Ma             = lambda_a[5];
+  Kb             = lambda_b[0];
+  nb             = lambda_b[1];
+  lxb            = lambda_b[2];
+  lyb            = lambda_b[3];
+  Lb             = lambda_b[4];
+  Mb             = lambda_b[5];
+  key = to_string(Ka) + "_" + to_string(na) + "_" + to_string(lxa) + "_" +
+        to_string(lya) + "_" + to_string(La) + "_" + to_string(Kb) + "_" +
+        to_string(nb) + "_" + to_string(lxb) + "_" + to_string(lyb) + "_" +
+        to_string(Lb) + "_" + to_string(z) + "_" + to_string(num_ang);
+
+  /* check to see if this has been calculated already */
+  if (hypersphere_coulomb_lookup.count(key) == 1)
+  {
+    PetscLogEventEnd(hyper_coulomb_time, 0, 0, 0, 0);
+    return hypersphere_coulomb_lookup[key] / r;
+  }
+
+  if (La == Lb and lxa == lxb and lya == lyb and Ma == Mb)
+  {
+    d_angle = pi / (2 * num_ang);
+    for (int idx = 0; idx < num_ang; ++idx)
+    {
+      angle[idx]    = idx * d_angle + d_angle / 2.;
+      arg_vals[idx] = cos(2. * angle[idx]);
+    }
+    SpherHarm(Ka, na, lxa, lya, La, Ma, angle, sphere_1, arg_vals);
+    SpherHarm(Kb, nb, lxb, lyb, Lb, Mb, angle, sphere_2, arg_vals);
+
+    /* Calculate the term for r_1 */
+    result = 0.0;
+    for (int idx = 0; idx < num_ang; ++idx)
+    {
+      tmp = sin(angle[idx]);
+      result -= sphere_1[idx] * sphere_2[idx] * cos(angle[idx]) * tmp * tmp;
+    }
+    matrix_element += z * result;
+
+    /* Calculate the term for r_2 */
+    result = 0.0;
+    for (int idx = 0; idx < num_ang; ++idx)
+    {
+      tmp = cos(angle[idx]);
+      result -= sphere_1[idx] * sphere_2[idx] * sin(angle[idx]) * tmp * tmp;
+    }
+    matrix_element += z * result;
   }
   hypersphere_coulomb_lookup[key] = matrix_element;
   PetscLogEventEnd(hyper_coulomb_time, 0, 0, 0, 0);
