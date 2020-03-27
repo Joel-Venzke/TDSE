@@ -67,6 +67,12 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
     m_max = p.GetMMax();
     k_max = p.GetKMax();
   }
+  else if (coordinate_system_idx == 5)
+  {
+    l_max = p.GetLMax();
+    m_max = p.GetMMax();
+    k_max = p.GetKMax();
+  }
   else
   {
     l_max = 0;
@@ -116,7 +122,8 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
           EndRun("ECS (gobbler) starts inside delta_x_max_start");
         }
       }
-      if (not((coordinate_system_idx == 3 or coordinate_system_idx == 4) and
+      if (not((coordinate_system_idx == 3 or coordinate_system_idx == 4 or
+               coordinate_system_idx == 5) and
               dim_idx != 2))
       {
         gobbler_idx[dim_idx][0] = -1;
@@ -127,7 +134,8 @@ Wavefunction::Wavefunction(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
             gobbler_idx[dim_idx][1] = i;
           }
         }
-        if ((coordinate_system_idx == 3 or coordinate_system_idx == 4) and
+        if ((coordinate_system_idx == 3 or coordinate_system_idx == 4 or
+             coordinate_system_idx == 5) and
             num_x[dim_idx] - gobbler_idx[dim_idx][1] < order)
         {
           EndRun(
@@ -249,6 +257,19 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
           "and m values to avoid issues with tensor grids");
     }
     if (coordinate_system_idx == 4)
+    {
+      int* cur_vals;
+      for (int i = 0; i < num_x[1]; ++i)
+      {
+        cur_vals = eigen_values[i];
+        h5_file.WriteObject(
+            &cur_vals[0], 6, "/Wavefunction/eigen_values",
+            "spherical harmonic eigen values k_val, n, l_1, l_2, L, M", i);
+      }
+      h5_file.WriteObject(l_block_size, k_max + 1, "/Wavefunction/l_block_size",
+                          "number of elements in blocks with L eigen value");
+    }
+    if (coordinate_system_idx == 5)
     {
       int* cur_vals;
       for (int i = 0; i < num_x[1]; ++i)
@@ -1217,6 +1238,188 @@ void Wavefunction::CreateGrid()
       }
     }
   }
+  else if (coordinate_system_idx == 5) /* hyperspherical code*/
+  {
+    double slope;
+    double x_total;
+    double max_x;
+    double amplitude;
+    double w;
+    double s1;
+    PetscInt count;
+    PetscInt dim_idx;
+    PetscInt index;
+    PetscInt block_size;
+
+    /* initialize for loop */
+    num_psi_build = 1.0;
+
+    /* build grid */
+    /********************************************************************/
+    /********************************************************************/
+    /*                                                                  */
+    /* This dimension is used to tell the code that we are working in 3 */
+    /* spacial dimensions. It is set to size one to avoid unneeded      */
+    /* computation                                                      */
+    /*                                                                  */
+    /********************************************************************/
+    /********************************************************************/
+    dim_idx        = 0;
+    num_x[dim_idx] = 1;
+
+    /* allocate grid */
+    x_value[dim_idx] = new double[num_x[dim_idx]];
+
+    /* size of 1d array for psi */
+    num_psi_build *= num_x[dim_idx];
+
+    x_value[dim_idx][0] = 0;
+
+    /**************************************************************************/
+    /**************************************************************************/
+    /*                                                                        */
+    /* k, n, l_1, l_2, L, and m values */
+    /* Since l and m cannot be written as a tensor product we combine them */
+    /* into one dimension. This avoids having |m| > l which would happen with
+     */
+    /* a tensor like grid */
+    /*                                                                        */
+    /**************************************************************************/
+    /**************************************************************************/
+    dim_idx = 1;
+
+    /* combines both m and l in one dimension  */
+    num_x[dim_idx] = GetHypersphereSizeNonRRC(k_max, l_max);
+
+    /* allocate grid */
+    x_value[dim_idx] = new double[num_x[dim_idx]];
+    /* these vectors are small, so it is easier (and possible faster) to store
+     * them rather than convert and index to l and m values */
+    eigen_values = new PetscInt*[num_x[dim_idx]];
+    l_block_size = new PetscInt[k_max + 1];
+
+    /* size of 1d array for psi */
+    num_psi_build *= num_x[dim_idx];
+    index = 0;
+    for (int L_val = 0; L_val < l_max + 1; ++L_val)
+    {
+      block_size = 0;
+      for (int k_val = 0; k_val < k_max + 1; ++k_val)
+      {
+        for (int l_1 = 0; l_1 < k_max + 1; l_1 += 1)
+        {
+          for (int l_2 = 0; l_2 < k_max + 1; ++l_2)
+          {
+            for (int n = 0; n < k_val / 2 + 1; ++n)
+            {
+              if (k_val == l_1 + l_2 + 2 * n)
+              {
+                for (int L = abs(l_1 - l_2); L < l_1 + l_2 + 1; ++L)
+                {
+                  if (L == L_val)
+                  {
+                    eigen_values[index]    = new PetscInt[6];
+                    eigen_values[index][0] = k_val;
+                    eigen_values[index][1] = n;
+                    eigen_values[index][2] = l_1;
+                    eigen_values[index][3] = l_2;
+                    eigen_values[index][4] = L;
+                    eigen_values[index][5] =
+                        0; /* M value only m=0 for linear */
+                    x_value[dim_idx][index] = index;
+                    index++;
+                    block_size++;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      l_block_size[L_val] = block_size;
+      max_block_size      = max(max_block_size, block_size);
+    }
+    /****************************************************************/
+    /****************************************************************/
+    /*                                                              */
+    /* handle radial direction                                      */
+    /* This is a tensor grid with respect to the l and m dimension  */
+    /*                                                              */
+    /****************************************************************/
+    /****************************************************************/
+    dim_idx = 2;
+
+    /* get change in dx */
+    amplitude = delta_x_max[dim_idx] - delta_x_min[dim_idx];
+    w = pi / (2.0 * (delta_x_max_start[dim_idx] - delta_x_min_end[dim_idx]));
+
+    /* start at dx */
+    x_total = delta_x_min[dim_idx];
+    count   = 0;
+    max_x   = dim_size[dim_idx];
+
+    while (x_total < max_x)
+    {
+      if (x_total < delta_x_min_end[dim_idx])
+      {
+        x_total += delta_x_min[dim_idx];
+      }
+      else if (x_total < delta_x_max_start[dim_idx])
+      {
+        s1 = std::sin(w * (x_total - delta_x_min_end[dim_idx]));
+        x_total += amplitude * s1 * s1 + delta_x_min[dim_idx];
+      }
+      else
+      {
+        x_total += delta_x_max[dim_idx];
+      }
+      count++;
+    }
+    num_x[dim_idx] = count;
+
+    if (num_x[dim_idx] % 2 != 0)
+    {
+      num_x[dim_idx]++;
+    }
+    if (num_x[dim_idx] <= order + 1)
+    {
+      EndRun(
+          "Not enough gird points to support this order of Finite "
+          "Difference. "
+          "Please increase grid size.");
+    }
+
+    /* allocate grid */
+    x_value[dim_idx] = new double[num_x[dim_idx]];
+
+    /* size of 1d array for psi */
+    num_psi_build *= num_x[dim_idx];
+
+    slope = (delta_x_max[dim_idx] - delta_x_min[dim_idx]) /
+            (delta_x_max_start[dim_idx] - delta_x_min_end[dim_idx]);
+
+    x_value[dim_idx][0] = delta_x_min[dim_idx];
+    for (int x_idx = 1; x_idx < num_x[dim_idx]; ++x_idx)
+    {
+      if (x_value[dim_idx][x_idx - 1] < delta_x_min_end[dim_idx])
+      {
+        x_value[dim_idx][x_idx] =
+            x_value[dim_idx][x_idx - 1] + delta_x_min[dim_idx];
+      }
+      else if (x_value[dim_idx][x_idx - 1] < delta_x_max_start[dim_idx])
+      {
+        s1                      = std::sin(w *
+                      (x_value[dim_idx][x_idx - 1] - delta_x_min_end[dim_idx]));
+        x_value[dim_idx][x_idx] = x_value[dim_idx][x_idx - 1] +
+                                  amplitude * s1 * s1 + delta_x_min[dim_idx];
+      }
+      else
+      {
+        x_value[dim_idx][x_idx] =
+            x_value[dim_idx][x_idx - 1] + delta_x_max[dim_idx];
+      }
+    }
+  }
   else
   {
     PetscInt center;  /* idx of the 0.0 in the grid */
@@ -2034,6 +2237,22 @@ double Wavefunction::GetPosition(PetscInt elec_idx, PetscInt dim_idx)
       expectation = 0.0;
     }
   }
+  else if (coordinate_system_idx == 5)
+  {
+    if (position_mat_alloc)
+    {
+      /* apply position matrix */
+      MatMult(position_mat[dim_idx], psi, psi_tmp_cyl);
+      /* apply Jacobian after (doesn't commute with matrix) */
+      VecPointwiseMult(psi_tmp, jacobian, psi_tmp_cyl);
+      VecDot(psi, psi_tmp, &expectation);
+    }
+    else /* return zero if the position expectation matrix has not been built
+          */
+    {
+      expectation = 0.0;
+    }
+  }
   else
   {
     /* apply Jacobian */
@@ -2349,6 +2568,15 @@ Wavefunction::~Wavefunction()
     delete m_values;
   }
   if (coordinate_system_idx == 4)
+  {
+    for (int i = 0; i < num_x[1]; ++i)
+    {
+      delete eigen_values[i];
+    }
+    delete[] eigen_values;
+    delete l_block_size;
+  }
+  if (coordinate_system_idx == 5)
   {
     for (int i = 0; i < num_x[1]; ++i)
     {
