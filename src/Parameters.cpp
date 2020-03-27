@@ -36,7 +36,7 @@ void Parameters::Setup(std::string file_name)
   {
     coordinate_system_idx = 3;
   }
-  else if (coordinate_system == "Hyperspherical_RRC")
+  else if (coordinate_system == "HypersphericalRRC")
   {
     coordinate_system_idx = 4;
   }
