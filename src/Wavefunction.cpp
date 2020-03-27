@@ -266,7 +266,7 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
             &cur_vals[0], 6, "/Wavefunction/eigen_values",
             "spherical harmonic eigen values k_val, n, l_1, l_2, L, M", i);
       }
-      h5_file.WriteObject(l_block_size, k_max + 1, "/Wavefunction/l_block_size",
+      h5_file.WriteObject(l_block_size, l_max + 1, "/Wavefunction/l_block_size",
                           "number of elements in blocks with L eigen value");
     }
     if (coordinate_system_idx == 5)
@@ -279,7 +279,7 @@ void Wavefunction::Checkpoint(HDF5Wrapper& h5_file, ViewWrapper& viewer_file,
             &cur_vals[0], 6, "/Wavefunction/eigen_values",
             "spherical harmonic eigen values k_val, n, l_1, l_2, L, M", i);
       }
-      h5_file.WriteObject(l_block_size, k_max + 1, "/Wavefunction/l_block_size",
+      h5_file.WriteObject(l_block_size, l_max + 1, "/Wavefunction/l_block_size",
                           "number of elements in blocks with L eigen value");
     }
 
@@ -1114,7 +1114,7 @@ void Wavefunction::CreateGrid()
     /* these vectors are small, so it is easier (and possible faster) to store
      * them rather than convert and index to l and m values */
     eigen_values = new PetscInt*[num_x[dim_idx]];
-    l_block_size = new PetscInt[k_max + 1];
+    l_block_size = new PetscInt[l_max + 1];
 
     /* size of 1d array for psi */
     num_psi_build *= num_x[dim_idx];
@@ -1296,7 +1296,7 @@ void Wavefunction::CreateGrid()
     /* these vectors are small, so it is easier (and possible faster) to store
      * them rather than convert and index to l and m values */
     eigen_values = new PetscInt*[num_x[dim_idx]];
-    l_block_size = new PetscInt[k_max + 1];
+    l_block_size = new PetscInt[l_max + 1];
 
     /* size of 1d array for psi */
     num_psi_build *= num_x[dim_idx];
