@@ -1086,7 +1086,7 @@ void Wavefunction::CreateGrid()
     dim_idx = 1;
 
     /* combines both m and l in one dimension  */
-    num_x[dim_idx] = GetHypersphereSize(k_max, l_max);
+    num_x[dim_idx] = GetHypersphereSizeRRC(k_max, l_max);
 
     /* allocate grid */
     x_value[dim_idx] = new double[num_x[dim_idx]];

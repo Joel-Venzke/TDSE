@@ -227,7 +227,89 @@ void Parameters::ReadGridHypersphericalRRC(json data)
   m_max = data["dimensions"][0]["m_max"];
 
   /* this dimension combines l and m to avoid tensor grid issues */
-  dim_size[1] = GetHypersphereSize(k_max, l_max);
+  dim_size[1] = GetHypersphereSizeRRC(k_max, l_max);
+
+  CheckParameter(data["gobbler"].size(), "gobbler");
+  gobbler = data["gobbler"];
+
+  CheckParameter(data["order"].size(), "order");
+  order = data["order"];
+}
+
+void Parameters::ReadGridHyperspherical(json data)
+{
+  CheckParameter(data["dimensions"].size(), "dimensions");
+  if (data["dimensions"].size() != 1)
+  {
+    EndRun(
+        "The Hyperspherical code take 1 dimension parameter with 'k_max', "
+        "'l_max' and 'm_max' as additional parameter");
+  }
+  /* The number of electrons is set to one since the 6D space is not
+   *  a tensor product of 2 - 3D spaces. If once codes up the bi-spherical
+   * code then this tensor product will be useful
+   */
+  num_electrons     = 1;
+  num_dims          = 3;
+  dim_size          = std::make_unique< double[] >(num_dims);
+  delta_x_min       = std::make_unique< double[] >(num_dims);
+  delta_x_min_end   = std::make_unique< double[] >(num_dims);
+  delta_x_max       = std::make_unique< double[] >(num_dims);
+  delta_x_max_start = std::make_unique< double[] >(num_dims);
+
+  /* The last dimension (diagonal of matrix) is r and we use Finite
+   * difference for this */
+  int dim_input_idx = 0;
+  int dim_idx       = 2;
+  CheckParameter(data["dimensions"][dim_input_idx]["dim_size"].size(),
+                 "dimensions - dim_size");
+  dim_size[dim_idx] = data["dimensions"][dim_input_idx]["dim_size"];
+
+  CheckParameter(data["dimensions"][dim_input_idx]["delta_x_min"].size(),
+                 "dimensions - delta_x_min");
+  delta_x_min[dim_idx] = data["dimensions"][dim_input_idx]["delta_x_min"];
+
+  CheckParameter(data["dimensions"][dim_input_idx]["delta_x_min_end"].size(),
+                 "dimensions - delta_x_min_end");
+  delta_x_min_end[dim_idx] =
+      data["dimensions"][dim_input_idx]["delta_x_min_end"];
+
+  CheckParameter(data["dimensions"][dim_input_idx]["delta_x_max"].size(),
+                 "dimensions - delta_x_max");
+  delta_x_max[dim_idx] = data["dimensions"][dim_input_idx]["delta_x_max"];
+
+  CheckParameter(data["dimensions"][dim_input_idx]["delta_x_max_start"].size(),
+                 "dimensions - delta_x_max_start");
+  delta_x_max_start[dim_idx] =
+      data["dimensions"][dim_input_idx]["delta_x_max_start"];
+
+  /* avoiding issues with lack of tensor product */
+  for (dim_idx = 0; dim_idx < 2; ++dim_idx)
+  {
+    delta_x_min[dim_idx]     = 1.0;
+    delta_x_min_end[dim_idx] = 0.0;
+    delta_x_max[dim_idx]     = 1.0;
+  }
+
+  /* dim 0 is set to 1 since hyperspherical harmonics cannot be written
+   *  as a tensor product
+   */
+  dim_size[0] = 1;
+
+  /* get k_max */
+  CheckParameter(data["dimensions"][0]["k_max"].size(), "dimensions - k_max");
+  k_max = data["dimensions"][0]["k_max"];
+
+  /* get l_max */
+  CheckParameter(data["dimensions"][0]["l_max"].size(), "dimensions - l_max");
+  l_max = data["dimensions"][0]["l_max"];
+
+  /* get m_max */
+  CheckParameter(data["dimensions"][0]["m_max"].size(), "dimensions - m_max");
+  m_max = data["dimensions"][0]["m_max"];
+
+  /* this dimension combines l and m to avoid tensor grid issues */
+  dim_size[1] = GetHypersphereSizeNonRRC(k_max, l_max);
 
   CheckParameter(data["gobbler"].size(), "gobbler");
   gobbler = data["gobbler"];
@@ -296,6 +378,10 @@ void Parameters::ReadNumerics(json data)
   {
     ReadGridHypersphericalRRC(data);
   }
+  else if (coordinate_system_idx == 5)
+  {
+    ReadGridHyperspherical(data);
+  }
   else
   {
     ReadGridNormal(data);
@@ -325,6 +411,25 @@ void Parameters::ReadSolver(json data)
   else
   {
     state_solver_idx = -1;
+  }
+
+  if (state_solver_idx != 2)
+  {
+    CheckParameter(data["states"].size(), "states");
+    num_states = data["states"];
+  }
+  else
+  {
+    CheckParameter(data["states"].size(), "states");
+    num_states = data["states"].size();
+
+    state_energy = std::make_unique< double[] >(num_states);
+
+    for (PetscInt i = 0; i < num_states; i++)
+    {
+      CheckParameter(data["states"][i]["energy"].size(), "states - energy");
+      state_energy[i] = data["states"][i]["energy"];
+    }
   }
 }
 
@@ -451,7 +556,8 @@ void Parameters::ReadTarget(json data)
   CheckParameter(data["alpha"].size(), "alpha");
   alpha = data["alpha"];
 
-  if (num_electrons > 1 or coordinate_system_idx == 4)
+  if (num_electrons > 1 or coordinate_system_idx == 4 or
+      coordinate_system_idx == 5)
   {
     CheckParameter(data["ee_soft_core"].size(), "ee_soft_core");
     ee_soft_core = data["ee_soft_core"];
@@ -578,53 +684,32 @@ void Parameters::ReadInitialStateSpherical(json data)
   }
 }
 
-void Parameters::ReadInitialState(json data)
+void Parameters::ReadInitialStateDefault(json data)
 {
-  if (coordinate_system_idx == 3)
-  {
-  }
-  else
-  {
-    CheckParameter(data["start_state"]["index"].size(), "start_state - index");
-    num_start_state = data["start_state"]["index"].size();
+  CheckParameter(data["start_state"]["index"].size(), "start_state - index");
+  num_start_state = data["start_state"]["index"].size();
 
-    if (data["start_state"]["amplitude"].size() != num_start_state)
-    {
-      EndRun(
-          "'start_state - amplitude' and 'start_state - index' sizes do not "
-          "match. Double check input file.");
-    }
-    if (data["start_state"]["phase"].size() != num_start_state)
-    {
-      EndRun(
-          "'start_state - phase' and 'start_state - index' sizes do not match. "
-          "Double check input file.");
-    }
+  if (data["start_state"]["amplitude"].size() != num_start_state)
+  {
+    EndRun(
+        "'start_state - amplitude' and 'start_state - index' sizes do not "
+        "match. Double check input file.");
+  }
+  if (data["start_state"]["phase"].size() != num_start_state)
+  {
+    EndRun(
+        "'start_state - phase' and 'start_state - index' sizes do not match. "
+        "Double check input file.");
   }
   start_state_idx       = new PetscInt[num_start_state];
   start_state_amplitude = new double[num_start_state];
   start_state_phase     = new double[num_start_state];
   for (PetscInt i = 0; i < num_start_state; i++)
   {
-    /* You need an n and l index for spherical */
-    if (coordinate_system_idx == 3)
-    {
-      CheckParameter(data["start_state"]["n_index"][i].size(),
-                     "start_state - n_index");
-      start_state_idx[i] = data["start_state"]["n_index"][i];
-      CheckParameter(data["start_state"]["l_index"][i].size(),
-                     "start_state - l_index");
-      start_state_l_idx[i] = data["start_state"]["l_index"][i];
-      CheckParameter(data["start_state"]["m_index"][i].size(),
-                     "start_state - m_index");
-      start_state_m_idx[i] = data["start_state"]["m_index"][i];
-    }
-    else
-    {
-      CheckParameter(data["start_state"]["index"][i].size(),
-                     "start_state - index");
-      start_state_idx[i] = data["start_state"]["index"][i];
-    }
+    CheckParameter(data["start_state"]["index"][i].size(),
+                   "start_state - index");
+    start_state_idx[i] = data["start_state"]["index"][i];
+
     CheckParameter(data["start_state"]["amplitude"][i].size(),
                    "start_state - amplitude");
     start_state_amplitude[i] = data["start_state"]["amplitude"][i];
@@ -634,81 +719,102 @@ void Parameters::ReadInitialState(json data)
   }
 }
 
-void Parameters::ReadData(json data)
+void Parameters::ReadInitialState(json data)
+{
+  if (coordinate_system_idx == 3)
+  {
+    ReadInitialStateSpherical(data);
+  }
+  else
+  {
+    ReadInitialStateDefault(data);
+  }
+}
+
+void Parameters::ReadExperimentFile(json data)
+{
+  double polar_norm    = 0.0; /* the norm for the polarization vector */
+  double poynting_norm = 0.0; /* the norm for the poynting vector */
+
+  for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
+  {
+    /* Keep from breaking other things */
+    pulse_shape_idx[pulse_idx] = 0;
+    power_on[pulse_idx]        = 2.0;
+    power_off[pulse_idx]       = 2.0;
+    cycles_on[pulse_idx]       = 1.0;
+    cycles_plateau[pulse_idx]  = 0.0;
+    cycles_off[pulse_idx]      = 1.0;
+    cycles_delay[pulse_idx]    = 0.0;
+    cep[pulse_idx]             = 0.0;
+    energy[pulse_idx]          = 1.0;
+    field_max[pulse_idx]       = 1.0;
+    ellipticity[pulse_idx]     = 0.0;
+    helicity_idx[pulse_idx]    = 0;
+    gaussian_length[pulse_idx] = 5.0;
+
+    /* Get polarization */
+    polarization_vector[pulse_idx] = new double[num_dims];
+    polar_norm                     = 0.0;
+    if (num_dims == 3)
+    {
+      poynting_vector[pulse_idx] = new double[num_dims];
+      poynting_norm              = 0.0;
+    }
+    for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+    {
+      CheckParameter(
+          data["laser"]["pulses"][pulse_idx]["polarization_vector"][dim_idx]
+              .size(),
+          "laser - pulses - polarization_vector");
+      polarization_vector[pulse_idx][dim_idx] =
+          data["laser"]["pulses"][pulse_idx]["polarization_vector"][dim_idx];
+      polar_norm += polarization_vector[pulse_idx][dim_idx] *
+                    polarization_vector[pulse_idx][dim_idx];
+
+      if (num_dims == 3)
+      {
+        CheckParameter(
+            data["laser"]["pulses"][pulse_idx]["poynting_vector"][dim_idx]
+                .size(),
+            "laser - pulses - poynting_vector");
+        poynting_vector[pulse_idx][dim_idx] =
+            data["laser"]["pulses"][pulse_idx]["poynting_vector"][dim_idx];
+        poynting_norm += poynting_vector[pulse_idx][dim_idx] *
+                         poynting_vector[pulse_idx][dim_idx];
+      }
+    }
+    /* normalize the polarization vector*/
+    if (polar_norm < 1e-10)
+    {
+      EndRun("Polarization Vector has Norm of Zero");
+    }
+    polar_norm = sqrt(polar_norm);
+    if (num_dims == 3)
+    {
+      if (poynting_norm < 1e-10)
+      {
+        EndRun("Poynting Vector has Norm of Zero");
+      }
+      poynting_norm = sqrt(poynting_norm);
+    }
+    for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+    {
+      polarization_vector[pulse_idx][dim_idx] /= polar_norm;
+      if (num_dims == 3 and poynting_norm > 1e-10)
+      {
+        poynting_vector[pulse_idx][dim_idx] /= poynting_norm;
+      }
+    }
+  }
+}
+
+void Parameters::ReadPulse(json data)
 {
   double polar_norm    = 0.0; /* the norm for the polarization vector */
   double poynting_norm = 0.0; /* the norm for the poynting vector */
   double intensity     = 0.0; /* the norm for the poynting vector */
 
-  ReadNumerics(data);
-
-  /* get simulation behavior */
-  CheckParameter(data["restart"].size(), "restart");
-  restart = data["restart"];
-
-  CheckParameter(data["write_frequency_checkpoint"].size(),
-                 "write_frequency_checkpoint");
-  write_frequency_checkpoint = data["write_frequency_checkpoint"];
-
-  CheckParameter(data["write_frequency_observables"].size(),
-                 "write_frequency_observables");
-  write_frequency_observables = data["write_frequency_observables"];
-
-  CheckParameter(data["write_frequency_eigin_state"].size(),
-                 "write_frequency_eigin_state");
-  write_frequency_eigin_state = data["write_frequency_eigin_state"];
-
-  CheckParameter(data["sigma"].size(), "sigma");
-  sigma = data["sigma"];
-
-  CheckParameter(data["gauge"].size(), "gauge");
-  gauge = data["gauge"];
-  if (gauge == "Velocity")
-  {
-    gauge_idx = 0;
-  }
-  else if (gauge == "Length")
-  {
-    gauge_idx = 1;
-  }
-  else
-  {
-    gauge_idx = -1;
-  }
-
-  ReadTarget(data);
-
-  ReadInitialState(data);
-
-  if (state_solver_idx != 2)
-  {
-    CheckParameter(data["states"].size(), "states");
-    num_states = data["states"];
-  }
-  else
-  {
-    CheckParameter(data["states"].size(), "states");
-    num_states = data["states"].size();
-
-    state_energy = std::make_unique< double[] >(num_states);
-
-    for (PetscInt i = 0; i < num_states; i++)
-    {
-      CheckParameter(data["states"][i]["energy"].size(), "states - energy");
-      state_energy[i] = data["states"][i]["energy"];
-    }
-  }
-
-  CheckParameter(data["propagate"].size(), "propagate");
-  propagate = data["propagate"];
-
-  CheckParameter(data["free_propagate"].size(), "free_propagate");
-  free_propagate = data["free_propagate"];
-
-  CheckParameter(data["field_max_states"].size(), "field_max_states");
-  field_max_states = data["field_max_states"];
-
-  /* get pulse information */
   CheckParameter(data["laser"]["pulses"].size(), "laser - pulses");
   num_pulses = data["laser"]["pulses"].size();
 
@@ -743,77 +849,7 @@ void Parameters::ReadData(json data)
 
   if (experiment_type == "File")
   {
-    for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
-    {
-      /* Keep from breaking other things */
-      pulse_shape_idx[pulse_idx] = 0;
-      power_on[pulse_idx]        = 2.0;
-      power_off[pulse_idx]       = 2.0;
-      cycles_on[pulse_idx]       = 1.0;
-      cycles_plateau[pulse_idx]  = 0.0;
-      cycles_off[pulse_idx]      = 1.0;
-      cycles_delay[pulse_idx]    = 0.0;
-      cep[pulse_idx]             = 0.0;
-      energy[pulse_idx]          = 1.0;
-      field_max[pulse_idx]       = 1.0;
-      ellipticity[pulse_idx]     = 0.0;
-      helicity_idx[pulse_idx]    = 0;
-      gaussian_length[pulse_idx] = 5.0;
-
-      /* Get polarization */
-      polarization_vector[pulse_idx] = new double[num_dims];
-      polar_norm                     = 0.0;
-      if (num_dims == 3)
-      {
-        poynting_vector[pulse_idx] = new double[num_dims];
-        poynting_norm              = 0.0;
-      }
-      for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
-      {
-        CheckParameter(
-            data["laser"]["pulses"][pulse_idx]["polarization_vector"][dim_idx]
-                .size(),
-            "laser - pulses - polarization_vector");
-        polarization_vector[pulse_idx][dim_idx] =
-            data["laser"]["pulses"][pulse_idx]["polarization_vector"][dim_idx];
-        polar_norm += polarization_vector[pulse_idx][dim_idx] *
-                      polarization_vector[pulse_idx][dim_idx];
-
-        if (num_dims == 3)
-        {
-          CheckParameter(
-              data["laser"]["pulses"][pulse_idx]["poynting_vector"][dim_idx]
-                  .size(),
-              "laser - pulses - poynting_vector");
-          poynting_vector[pulse_idx][dim_idx] =
-              data["laser"]["pulses"][pulse_idx]["poynting_vector"][dim_idx];
-          poynting_norm += poynting_vector[pulse_idx][dim_idx] *
-                           poynting_vector[pulse_idx][dim_idx];
-        }
-      }
-      /* normalize the polarization vector*/
-      if (polar_norm < 1e-10)
-      {
-        EndRun("Polarization Vector has Norm of Zero");
-      }
-      polar_norm = sqrt(polar_norm);
-      if (num_dims == 3)
-      {
-        if (poynting_norm < 1e-10)
-        {
-          EndRun("Poynting Vector has Norm of Zero");
-        }
-        poynting_norm = sqrt(poynting_norm);
-      }
-      for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
-      {
-        polarization_vector[pulse_idx][dim_idx] /= polar_norm;
-        if (num_dims == 3 and poynting_norm > 1e-10)
-        {
-          poynting_vector[pulse_idx][dim_idx] /= poynting_norm;
-        }
-      }
-    }
+    ReadExperimentFile(data);
   }
   else
   {
@@ -840,7 +876,8 @@ void Parameters::ReadData(json data)
       if (pulse_shape[pulse_idx] == "sin2")
       {
         EndRun(
-            "\"sin2\" is no longer an option. Please change to \"sin\" and set "
+            "\"sin2\" is no longer an option. Please change to \"sin\" and "
+            "set "
             "\"power_on\" and \"power_off\" to \"2\"\n");
       }
       else if (pulse_shape[pulse_idx] == "sin")
@@ -999,7 +1036,8 @@ void Parameters::ReadData(json data)
         if (data["laser"]["pulses"][pulse_idx]["tau_delay"].size() == 0)
         {
           std::cout
-              << "\n\nERROR: You are using the streaking 'experiment_type'\n   "
+              << "\n\nERROR: You are using the streaking 'experiment_type'\n "
+                 "  "
                  "    For every pulse after the first one you need to "
                  "replace 'cycles_delay' with 'tau_delay'.\n       Use the "
                  "default 'experiment_type' if you wish to uses "
@@ -1038,11 +1076,6 @@ void Parameters::ReadData(json data)
           cycles_delay[pulse_idx] = 0;
         }
       }
-      /* transient absorption spectroscopy */
-      else if (experiment_type == "transient")
-      {
-        EndRun("\ntransient absorption not supported yet\n");
-      }
       else
       {
         EndRun("Unsupported experiment_type");
@@ -1056,11 +1089,12 @@ void Parameters::ReadData(json data)
     if (experiment_type == "streaking" or experiment_type == "transient")
     {
       /* could be fixed at end of next for loop
-       * This will require re-calculating cycles_delay from tau_delay since the
-       * time of the peak of each laser pulse is subject to change with the
-       * frequency shift */
+       * This will require re-calculating cycles_delay from tau_delay since
+       * the time of the peak of each laser pulse is subject to change with
+       * the frequency shift */
       EndRun(
-          "\nFrequency shift is not supported for streaking or transient type "
+          "\nFrequency shift is not supported for streaking or transient "
+          "type "
           "experiments. "
           "\nAll of the cycles_delay value needs to be corrected. "
           "\nParameters.cpp file for notes on how to make this fix\n");
@@ -1136,10 +1170,64 @@ void Parameters::ReadData(json data)
   }
 }
 
+void Parameters::ReadData(json data)
+{
+  ReadNumerics(data);
+
+  /* get simulation behavior */
+  CheckParameter(data["restart"].size(), "restart");
+  restart = data["restart"];
+
+  CheckParameter(data["write_frequency_checkpoint"].size(),
+                 "write_frequency_checkpoint");
+  write_frequency_checkpoint = data["write_frequency_checkpoint"];
+
+  CheckParameter(data["write_frequency_observables"].size(),
+                 "write_frequency_observables");
+  write_frequency_observables = data["write_frequency_observables"];
+
+  CheckParameter(data["write_frequency_eigin_state"].size(),
+                 "write_frequency_eigin_state");
+  write_frequency_eigin_state = data["write_frequency_eigin_state"];
+
+  CheckParameter(data["sigma"].size(), "sigma");
+  sigma = data["sigma"];
+
+  CheckParameter(data["gauge"].size(), "gauge");
+  gauge = data["gauge"];
+  if (gauge == "Velocity")
+  {
+    gauge_idx = 0;
+  }
+  else if (gauge == "Length")
+  {
+    gauge_idx = 1;
+  }
+  else
+  {
+    gauge_idx = -1;
+  }
+
+  CheckParameter(data["propagate"].size(), "propagate");
+  propagate = data["propagate"];
+
+  CheckParameter(data["free_propagate"].size(), "free_propagate");
+  free_propagate = data["free_propagate"];
+
+  CheckParameter(data["field_max_states"].size(), "field_max_states");
+  field_max_states = data["field_max_states"];
+
+  ReadTarget(data);
+
+  ReadInitialState(data);
+
+  ReadPulse(data);
+}
+
 /**
  * @brief Ensures the parameter exists in the input.json file
- * @details If the size is zero, an error message is printed and the simulation
- * is aborted
+ * @details If the size is zero, an error message is printed and the
+ * simulation is aborted
  *
  * @param size the size of the json object (use the .size() function)
  * @param doc_string the subsubsection of the Input documentation
@@ -1263,7 +1351,8 @@ void Parameters::Validate()
         {
           error_found = true;
           err_str +=
-              "\nSpherical coordinate systems requires m_max>0 for laser that "
+              "\nSpherical coordinate systems requires m_max>0 for laser "
+              "that "
               "are not z - polarized\nPulse" +
               std::to_string(pulse_idx) + " does not meet this requirement\n ";
         }
@@ -1271,7 +1360,8 @@ void Parameters::Validate()
         {
           error_found = true;
           err_str +=
-              "\nSpherical coordinate systems requires m_max>0 for pulses with "
+              "\nSpherical coordinate systems requires m_max>0 for pulses "
+              "with "
               "nonzero ellipticity\nPulse " +
               std::to_string(pulse_idx) + " has a non zero ellipticity\n";
         }
@@ -1292,7 +1382,60 @@ void Parameters::Validate()
       {
         error_found = true;
         err_str +=
-            "\nSpherical coordinate systems only supports nuclei on the z axis "
+            "\nSpherical coordinate systems only supports nuclei on the z "
+            "axis "
+            "(i.e. [0.0, 0.0, 0.0])\nNuclei " +
+            std::to_string(nuclei_idx) +=
+            " has a non zero radial coordinate\n ";
+      }
+    }
+    if (m_max > 0)
+    {
+      error_found = true;
+      err_str += "\nHyperspherical only supports m = 0\n";
+    }
+    for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; pulse_idx++)
+    {
+      if (polarization_vector[pulse_idx][0] > 1e-14 or
+          polarization_vector[pulse_idx][1] > 1e-14)
+      {
+        error_found = true;
+        err_str += "\nHyperspherical only supports z-polarized lasers\nPulse" +
+                   std::to_string(pulse_idx) +
+                   " does not meet this requirement\n";
+      }
+      if (ellipticity[pulse_idx] > 1e-14)
+      {
+        error_found = true;
+        err_str +=
+            "\nHyperspherical coordinate systems only supports linear "
+            "polarized light\nPulse " +
+            std::to_string(pulse_idx) + " has a non zero ellipticity\n";
+      }
+    }
+    if (abs(alpha) > 0 or abs(ee_soft_core) > 0)
+    {
+      error_found = true;
+      err_str +=
+          "\nHyperspherical coordinate systems does not support soft cores\n";
+    }
+  }
+  if (coordinate_system_idx == 5) /* Hyperspherical code */
+  {
+    if (gauge_idx != 1)
+    {
+      error_found = true;
+      err_str += "\nSpherical only supports \"Length\" gauge currently\n";
+    }
+    for (PetscInt nuclei_idx = 0; nuclei_idx < num_nuclei; ++nuclei_idx)
+    {
+      if (location[nuclei_idx][0] > 1e-14 or location[nuclei_idx][1] > 1e-14 or
+          location[nuclei_idx][2] > 1e-14)
+      {
+        error_found = true;
+        err_str +=
+            "\nSpherical coordinate systems only supports nuclei on the z "
+            "axis "
             "(i.e. [0.0, 0.0, 0.0])\nNuclei " +
             std::to_string(nuclei_idx) +=
             " has a non zero radial coordinate\n ";
@@ -1537,7 +1680,8 @@ void Parameters::Validate()
       {
         error_found = true;
         err_str +=
-            "\nThe start_state - n_index must be less than the total number of "
+            "\nThe start_state - n_index must be less than the total number "
+            "of "
             "states you wish to calculate\n";
       }
       if (start_state_l_idx[idx] >= start_state_idx[idx])

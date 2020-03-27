@@ -48,7 +48,8 @@ class Utils
   double Wigner9j(int a, int b, int c, int d, int e, int f, int g, int h,
                   int i);
   PetscInt GetIdxFromLM(PetscInt l_val, PetscInt m_val, PetscInt m_max);
-  PetscInt GetHypersphereSize(PetscInt k_max, PetscInt l_max);
+  PetscInt GetHypersphereSizeRRC(PetscInt k_max, PetscInt l_max);
+  PetscInt GetHypersphereSizeNonRRC(PetscInt k_max, PetscInt l_max);
   void LoadRRC();
   double RRC(int total_angular_momentum, int L, int l_xi, int l_yi, int l_xk,
              int l_yk, int parity);

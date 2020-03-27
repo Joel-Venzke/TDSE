@@ -127,6 +127,7 @@ class Parameters : protected Utils
   void ReadGridCylindrical(json data);
   void ReadGridSpherical(json data);
   void ReadGridHypersphericalRRC(json data);
+  void ReadGridHyperspherical(json data);
   void ReadGridNormal(json data);
   void ReadNumerics(json data);
 
@@ -136,6 +137,13 @@ class Parameters : protected Utils
   void ReadSquareWellPot(json data, PetscInt i);
   void ReadYukawaPot(json data, PetscInt i);
   void ReadTarget(json data);
+
+  void ReadInitialStateSpherical(json data);
+  void ReadInitialStateDefault(json data);
+  void ReadInitialState(json data);
+
+  void ReadExperimentFile(json data);
+  void ReadPulse(json data);
 
   void ReadData(json data);
   void Validate();

@@ -102,7 +102,7 @@ PetscInt Utils::GetIdxFromLM(PetscInt l_val, PetscInt m_val, PetscInt m_max)
   }
 }
 
-PetscInt Utils::GetHypersphereSize(PetscInt k_max, PetscInt l_max)
+PetscInt Utils::GetHypersphereSizeRRC(PetscInt k_max, PetscInt l_max)
 {
   /* These loops ranges could be optimized though this is only called a few
    *  times and therefore the simple implementation is uses
@@ -124,6 +124,40 @@ PetscInt Utils::GetHypersphereSize(PetscInt k_max, PetscInt l_max)
               for (int L = abs(l_1 - l_2); L < l_1 + l_2 + 1; ++L)
               {
                 if (L == L_val and k_val % 2 == L_val % 2)
+                {
+                  count++;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return count;
+}
+
+PetscInt Utils::GetHypersphereSizeNonRRC(PetscInt k_max, PetscInt l_max)
+{
+  /* These loops ranges could be optimized though this is only called a few
+   *  times and therefore the simple implementation is uses
+   */
+  PetscInt count = 0;
+  for (int L_val = 0; L_val < l_max + 1; ++L_val)
+  {
+    for (int k_val = 0; k_val < k_max + 1; ++k_val)
+    {
+      for (int l_1 = 0; l_1 < k_val + 1; l_1 += 1)
+      {
+        for (int l_2 = 0; l_2 < k_val + 1; ++l_2)
+        {
+          for (int n = 0; n < k_val / 2 + 1; ++n)
+          {
+            if (k_val == l_1 + l_2 + 2 * n)
+            {
+              for (int L = abs(l_1 - l_2); L < l_1 + l_2 + 1; ++L)
+              {
+                if (L == L_val)
                 {
                   count++;
                 }
