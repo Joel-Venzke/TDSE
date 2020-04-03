@@ -94,11 +94,14 @@ def get_k_sphere(energy,
                 upper_idx = (lm_idx + 1) * r_length
                 # project out bound states
                 try:
-                    for psi_bound in target["/psi_l_" + str(l_val) + "/psi"]:
-                        psi_bound = psi_bound[:, 0] + 1.j * psi_bound[:, 1]
-                        psi[lower_idx:upper_idx] -= np.sum(
-                            psi_bound.conj() *
-                            psi[lower_idx:upper_idx]) * psi_bound
+                    for cur_psi_energy, psi_bound in zip(
+                            target["/Energy_l_" + str(l_val)],
+                            target["/psi_l_" + str(l_val) + "/psi"]):
+                        if cur_psi_energy[0, 0] < 0:
+                            psi_bound = psi_bound[:, 0] + 1.j * psi_bound[:, 1]
+                            psi[lower_idx:upper_idx] -= np.sum(
+                                psi_bound.conj() *
+                                psi[lower_idx:upper_idx]) * psi_bound
                 except:
                     pass
                 coef = np.exp(-1.j*phase_shift)*1.j**l_val * \

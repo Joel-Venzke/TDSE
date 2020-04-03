@@ -103,7 +103,7 @@ x, y, z, r, theta, phi, r_vals = cacluate_xy_plane(psi_cooridnate_values,
 
 fig = plt.figure(figsize=(12, 9), dpi=80)
 for i, psi in enumerate(psi_value):
-    if i > 0:  # the 0th index is garbage
+    if i > psi_value.shape[0] - 2:  # the 0th index is garbage
         print("plotting", i)
         psi = psi[:, 0] + 1j * psi[:, 1]
         psi.shape = shape
@@ -145,7 +145,7 @@ x, y, z, r, theta, phi, r_vals = cacluate_xz_plane(psi_cooridnate_values,
 
 fig = plt.figure(figsize=(12, 9), dpi=80)
 for i, psi in enumerate(psi_value):
-    if i > 0:  # the 0th index is garbage
+    if i > psi_value.shape[0] - 2:  # the 0th index is garbage
         print("plotting", i)
         psi = psi[:, 0] + 1j * psi[:, 1]
         psi.shape = shape
@@ -187,7 +187,7 @@ x, y, z, r, theta, phi, r_vals = cacluate_yz_plane(psi_cooridnate_values,
 
 fig = plt.figure(figsize=(12, 9), dpi=80)
 for i, psi in enumerate(psi_value):
-    if i > 0:  # the 0th index is garbage
+    if i > psi_value.shape[0] - 2:  # the 0th index is garbage
         print("plotting", i)
         psi = psi[:, 0] + 1j * psi[:, 1]
         psi.shape = shape

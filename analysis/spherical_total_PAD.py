@@ -74,13 +74,7 @@ def get_energy(psi_1, target):
     return target["Energy_l_" + str(psi_1[1])][psi_1[0] - 1 - psi_1[1], 0, 0]
 
 
-def get_k_sphere(energy,
-                 psi,
-                 r,
-                 l_max,
-                 m_max,
-                 potential,
-                 target,
+def get_k_sphere(energy, psi, r, l_max, m_max, potential, target,
                  d_angle=0.01):
     phi_angles = np.arange(-np.pi, np.pi, d_angle)
     phi = np.arange(-np.pi, np.pi, d_angle)
@@ -101,11 +95,14 @@ def get_k_sphere(energy,
                 upper_idx = (lm_idx + 1) * r_length
                 # project out bound states
                 try:
-                    for psi_bound in target["/psi_l_" + str(l_val) + "/psi"]:
-                        psi_bound = psi_bound[:, 0] + 1.j * psi_bound[:, 1]
-                        psi[lower_idx:upper_idx] -= np.sum(
-                            psi_bound.conj() *
-                            psi[lower_idx:upper_idx]) * psi_bound
+                    for cur_psi_energy, psi_bound in zip(
+                            target["/Energy_l_" + str(l_val)],
+                            target["/psi_l_" + str(l_val) + "/psi"]):
+                        if cur_psi_energy[0, 0] < 0:
+                            psi_bound = psi_bound[:, 0] + 1.j * psi_bound[:, 1]
+                            psi[lower_idx:upper_idx] -= np.sum(
+                                psi_bound.conj() *
+                                psi[lower_idx:upper_idx]) * psi_bound
                 except:
                     pass
                 coef = np.exp(-1.j*phase_shift)*1.j**l_val * \
