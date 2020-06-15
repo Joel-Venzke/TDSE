@@ -3715,9 +3715,8 @@ double Hamiltonian::GetHypersphereNonRRCeeRepulsion(int* lambda_a,
    * electron 1 and 2 with respect to the nucleus rather than
    * coordinates that are dependent on the "rotated" coordinate system
    */
-  double d_angle, matrix_element, result, cos_term, cos_val, sin_term, sin_val,
-      l_loop_prod, l_loop_sum, m_loop1_prod, m_loop1_sum, m_loop2_prod,
-      m_loop2_sum;
+  double d_angle, matrix_element, result, cos_term, sin_term, l_loop_prod,
+      l_loop_sum, m_loop1_prod, m_loop1_sum, m_loop2_prod, m_loop2_sum;
   int Ka, na, lr1a, lr2a, La, Ma, Kb, nb, lr1b, lr2b, Lb, Mb, cos_power,
       sin_power, l_lower_bound, l_upper_bound, mr2a, mr2b, m_loop_val;
   std::string key, internal_key;
