@@ -6,6 +6,7 @@ from matplotlib.colors import LogNorm
 from scipy.special import sph_harm
 import pylab as plb
 from scipy.interpolate import interp2d
+import json
 font = {'size': 22}
 matplotlib.rc('font', **font)
 
@@ -116,6 +117,12 @@ folders = [
     "cycles_delay_0.55", "cycles_delay_0.65", "cycles_delay_0.75",
     "cycles_delay_0.85", "cycles_delay_0.95"
 ]
+# folders = [
+#     "cycles_delay_0.00", "cycles_delay_0.10", "cycles_delay_0.20",
+#     "cycles_delay_0.30", "cycles_delay_0.40", "cycles_delay_0.50",
+#     "cycles_delay_0.60", "cycles_delay_0.70", "cycles_delay_0.80",
+#     "cycles_delay_0.90"
+# ]
 folders.sort()
 print(folders)
 
@@ -134,9 +141,14 @@ r = psi_cooridnate_values[2]
 
 idx = -1
 
+laser_energy = 0
+with open(folders[0] + '/input.json') as json_file:
+    input_file = json.load(json_file)
+    laser_energy = input_file["laser"]["pulses"][0]["energy"]
+
 e_ground = get_energy([1, 0, 0, 1], target)
 e_excited = get_energy([2, 1, 1, 1], target)
-e_final = 0.7233645
+e_final = (1 * np.abs(laser_energy)) - np.abs(e_excited)
 d_phi = np.pi / 5
 angle = []
 data = []
@@ -174,8 +186,8 @@ plt.savefig("xy_data_2p_signal.png")
 plt.clf()
 
 e_ground = get_energy([1, 0, 0, 1], target)
-e_excited = get_energy([2, 1, 1, 1], target)
-e_final = 0.7951555
+e_excited = get_energy([3, 1, 1, 1], target)
+e_final = (1 * np.abs(laser_energy)) - np.abs(e_excited)
 d_phi = np.pi / 5
 angle = []
 data = []

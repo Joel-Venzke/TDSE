@@ -3704,28 +3704,38 @@ double Hamiltonian::GetHypersphereNonRRCCoulomb(int* lambda_a, int* lambda_b,
 double Hamiltonian::GetHypersphereNonRRCeeRepulsion(int* lambda_a,
                                                     int* lambda_b, double r)
 {
-  /* Note using a as prime side in <psi'|v|psi> */
+  /* calculating <psi_a|1/|r_1-r_2||psi_b>
+   * This code is a bit of a mess since the equation is messy
+   * The r_1 and r_2 are the x and y respectively in other sections
+   * This is done since r_1 and r_2 are the coordinates for
+   * electron 1 and 2 with respect to the nucleus rather than
+   * coordinates that are dependent on the "rotated" coordinate system
+   */
   num_ang += num_ang % 2;
-  double d_angle, matrix_element, result, tmp;
-  int Ka, na, lxa, lya, La, Ma, Kb, nb, lxb, lyb, Lb, Mb, l_lower_bound,
-      l_upper_bound, m_r2a, m_r2b, m_loop_val;
+  double d_angle, matrix_element, result, cos_term, cos_val, cos_power,
+      sin_term, sin_val, sin_power, l_loop_prod, l_loop_sum, m_loop1_prod,
+      m_loop1_sum, m_loop2_prod, m_loop2_sum;
+  int Ka, na, lr1a, lr2a, La, Ma, Kb, nb, lr1b, lr2b, Lb, Mb, l_lower_bound,
+      l_upper_bound, mr2a, mr2b, m_loop_val;
   std::string key, internal_key;
+
+  /* Extract the quantum numbers */
   matrix_element = 0.0;
   Ka             = lambda_a[0];
   na             = lambda_a[1];
-  lxa            = lambda_a[2];
-  lya            = lambda_a[3];
+  lr1a           = lambda_a[2];
+  lr2a           = lambda_a[3];
   La             = lambda_a[4];
   Ma             = lambda_a[5];
   Kb             = lambda_b[0];
   nb             = lambda_b[1];
-  lxb            = lambda_b[2];
-  lyb            = lambda_b[3];
+  lr1b           = lambda_b[2];
+  lr2b           = lambda_b[3];
   Lb             = lambda_b[4];
   Mb             = lambda_b[5];
-  key = to_string(Ka) + "_" + to_string(na) + "_" + to_string(lxa) + "_" +
-        to_string(lya) + "_" + to_string(La) + "_" + to_string(Kb) + "_" +
-        to_string(nb) + "_" + to_string(lxb) + "_" + to_string(lyb) + "_" +
+  key = to_string(Ka) + "_" + to_string(na) + "_" + to_string(lr1a) + "_" +
+        to_string(lr2a) + "_" + to_string(La) + "_" + to_string(Kb) + "_" +
+        to_string(nb) + "_" + to_string(lr1b) + "_" + to_string(lr2b) + "_" +
         to_string(Lb) + "_" + to_string(num_ang);
 
   /* check to see if this has been calculated already */
@@ -3734,58 +3744,134 @@ double Hamiltonian::GetHypersphereNonRRCeeRepulsion(int* lambda_a,
     return hypersphere_ee_repulsion_lookup[key] / r;
   }
 
+  /* make sure the matrix element is non zero */
   if (La == Lb and Ma == Mb)
   {
-    std::cout << "need to implement ee repulsion for hyperspherical\n";
     d_angle = pi / (2 * num_ang);
     for (int idx = 0; idx < num_ang; ++idx)
     {
       angle[idx]    = idx * d_angle + d_angle / 2.;
       arg_vals[idx] = cos(2. * angle[idx]);
     }
-    SpherHarm(Ka, na, lxa, lya, La, Ma, angle, sphere_1, arg_vals);
-    SpherHarm(Kb, nb, lxb, lyb, Lb, Mb, angle, sphere_2, arg_vals);
+    /* precalculate the spherical harmonics used in the integrals */
+    SpherHarm(Ka, na, lr1a, lr2a, La, Ma, angle, sphere_1, arg_vals);
+    SpherHarm(Kb, nb, lr1b, lr2b, Lb, Mb, angle, sphere_2, arg_vals);
 
     /* these are due to selection rules for CG coef */
-    l_lower_bound = max(abs(lxa - lxb), abs(lya - lyb));
-    l_upper_bound = min(abs(lxa - lxb), abs(lya - lyb));
+    l_lower_bound = max(abs(lr1a - lr1b), abs(lr2a - lr2b));
+    l_upper_bound = min(abs(lr1a - lr1b), abs(lr2a - lr2b));
+    l_loop_sum    = 0;
+    /* loop over cross terms for l */
     for (int l_loop_val = l_lower_bound; l_loop_val <= l_upper_bound;
          ++l_loop_val)
     {
-      for (int m_r1a = -lxa; m_r1a <= lxa; ++m_r1a)
+      m_loop1_sum = 0;
+      /* loop over possible m values for a side */
+      for (int mr1a = -lr1a; mr1a <= lr1a; ++mr1a)
       {
-        m_r2a = Ma - m_r1a;
-        for (int m_r1b = -lxb; m_r1b <= lxb; ++m_r1b)
+        mr2a        = Ma - mr1a;
+        m_loop2_sum = 0;
+        /* loop over possible m values for b side */
+        for (int mr1b = -lr1b; mr1b <= lr1b; ++mr1b)
         {
-          m_r2b      = Mb - m_r1b;
-          m_loop_val = m_r1b - m_r1a;
-          if (m_loop_val == m_r2a - m_r2b)
+          mr2b       = Mb - mr1b;
+          m_loop_val = mr1b - mr1a;
+          /* apply selection rules */
+          if (m_loop_val == mr2a - mr2b)
           {
             /* code for CG */
-          }
-          else
-          {
-            /* zero */
+            m_loop2_prod = 1;
+            m_loop2_prod *= ClebschGordanCoef(lr1b, lr2b, Lb, mr1b, mr2b, Mb);
+            m_loop2_prod *= ClebschGordanCoef(lr1a, l_loop_val, lr1b, mr1a,
+                                              m_loop_val, mr1b);
+            m_loop2_prod *= ClebschGordanCoef(lr2a, l_loop_val, lr2b, mr2a,
+                                              m_loop_val, mr2b);
+            m_loop2_sum += m_loop2_prod;
           }
         }
         /* code for CG */
+        m_loop1_prod = m_loop2_sum;
+        m_loop1_prod *= ClebschGordanCoef(lr1a, lr2a, La, mr1a, mr2a, Ma);
+        m_loop1_sum += m_loop1_prod;
       }
       /* code for integrals*/
-      // result = 0.0;
-      //   for (int idx = 0; idx < num_ang; ++idx)
-      //   {
-      //     tmp = sin(angle[idx]);
-      //     result += sphere_1[idx] * sphere_2[idx] * cos(angle[idx]) * tmp *
-      //     tmp;
-      //   }
-      //   result *= d_angle;
+      result = 0.0;
+      for (int idx = 0; idx < num_ang; ++idx)
+      {
+        /* integral with factor sin^(l+2)/cos(l-1) from 0 -> pi/4 */
+        if (angle[idx] < pi / 4.)
+        {
+          /* calculated sin^(l+2) */
+          sin_power = l_loop_val + 2;
+          sin_val   = sin(angle[idx]);
+          sin_term  = 1;
+          for (int sin_idx = 0; sin_idx < abs(sin_power); ++sin_idx)
+          {
+            sin_term *= sin_val;
+          }
+          if (sin_power < 0)
+          {
+            sin_term = 1 / sin_term;
+          }
+          /* calculated 1/cos^(l-1) */
+          cos_power = l_loop_val - 1;
+          cos_val   = cos(angle[idx]);
+          cos_term  = 1;
+          for (int cos_idx = 0; cos_idx < abs(cos_power); ++cos_idx)
+          {
+            cos_term *= cos_val;
+          }
+          if ((-1 * cos_power) < 0) /* account for division by this term */
+          {
+            cos_term = 1 / cos_term;
+          }
+          /* calculate integral term */
+          result += sphere_1[idx] * sphere_2[idx] * cos_term * sin_term;
+        }
+        /* integral with factor sin^(l+2)/cos(l-1) from p/4 -> pi/2 */
+        else
+        {
+          /* calculated 1/sin^(l-1) */
+          sin_power = l_loop_val - 1;
+          sin_val   = sin(angle[idx]);
+          sin_term  = 1;
+          for (int sin_idx = 0; sin_idx < abs(sin_power); ++sin_idx)
+          {
+            sin_term *= sin_val;
+          }
+          if ((-1 * sin_power) < 0) /* account for division by this term */
+          {
+            sin_term = 1 / sin_term;
+          }
+          /* calculated cos^(l+2) */
+          cos_power = l_loop_val + 2;
+          cos_val   = cos(angle[idx]);
+          cos_term  = 1;
+          for (int cos_idx = 0; cos_idx < abs(cos_power); ++cos_idx)
+          {
+            cos_term *= cos_val;
+          }
+          if (cos_power < 0)
+          {
+            cos_term = 1 / cos_term;
+          }
+          /* calculate integral term */
+          result += sphere_1[idx] * sphere_2[idx] * cos_term * sin_term;
+        }
+      }
+      /* normalize the integral */
+      result *= d_angle;
 
       /* code for CG, l level */
+      l_loop_prod = result;
+      l_loop_prod *= ClebschGordanCoef(lr1a, l_loop_val, lr1b, 0, 0, 0);
+      l_loop_prod *= ClebschGordanCoef(lr2a, l_loop_val, lr2b, 0, 0, 0);
+      l_loop_sum += l_loop_prod;
     }
 
     /* normalization */
-    matrix_element *=
-        sqrt((2 * lxa + 1) * (2 * lya + 1) / ((2 * lxb + 1) * (2 * lyb + 1)));
+    matrix_element = l_loop_sum * sqrt((2 * lr1a + 1) * (2 * lr2a + 1) /
+                                       ((2 * lr1b + 1) * (2 * lr2b + 1)));
   }
   hypersphere_ee_repulsion_lookup[key] = matrix_element;
   return matrix_element / r;
