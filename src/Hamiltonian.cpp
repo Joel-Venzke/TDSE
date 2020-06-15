@@ -80,7 +80,7 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
     max_block_size = w.GetMaxBlockSize();
     l_values       = NULL;
     m_values       = NULL;
-    num_ang        = 1e4;
+    num_ang        = 1e5;
 
     /* pre allocate arrays for integrals over hyper radius */
     angle.resize(num_ang);
@@ -100,7 +100,7 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
     max_block_size = w.GetMaxBlockSize();
     l_values       = NULL;
     m_values       = NULL;
-    num_ang        = 1e4;
+    num_ang        = 1e5;
 
     num_ang += num_ang % 2;
 
@@ -3761,11 +3761,11 @@ double Hamiltonian::GetHypersphereNonRRCeeRepulsion(int* lambda_a,
     SpherHarm(Kb, nb, lr1b, lr2b, Lb, Mb, angle, sphere_2, arg_vals);
 
     /* these are due to selection rules for CG coef */
-    // l_lower_bound = min(abs(lr1a - lr1b), abs(lr2a - lr2b));
-    // l_upper_bound = max(abs(lr1a - lr1b), abs(lr2a - lr2b));
-    l_lower_bound = 0;
-    l_upper_bound = max(max(max(lr1a, lr1b), lr2a), lr2b);
-    l_loop_sum    = 0;
+    l_lower_bound = min(abs(lr1a - lr1b), abs(lr2a - lr2b));
+    l_upper_bound = max(abs(lr1a - lr1b), abs(lr2a - lr2b));
+    // l_lower_bound = 0;
+    // l_upper_bound = max(max(max(lr1a, lr1b), lr2a), lr2b);
+    l_loop_sum = 0;
     /* loop over cross terms for l */
     for (int l_loop_val = l_lower_bound; l_loop_val <= l_upper_bound;
          ++l_loop_val)
