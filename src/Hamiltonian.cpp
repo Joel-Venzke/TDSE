@@ -80,7 +80,7 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
     max_block_size = w.GetMaxBlockSize();
     l_values       = NULL;
     m_values       = NULL;
-    num_ang        = 1e5;
+    num_ang        = 1e4;
 
     /* pre allocate arrays for integrals over hyper radius */
     angle.resize(num_ang);
@@ -100,7 +100,9 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
     max_block_size = w.GetMaxBlockSize();
     l_values       = NULL;
     m_values       = NULL;
-    num_ang        = 1e5;
+    num_ang        = 1e4;
+
+    num_ang += num_ang % 2;
 
     /* pre allocate arrays for integrals over hyper radius */
     angle.resize(num_ang);
@@ -523,7 +525,7 @@ void Hamiltonian::CalculateHamlitonian0(PetscInt l_val)
       if ((i_val == start or idx_array[4] == 0) and
           world.rank() == world.size() - 1)
       {
-        std::cout << "Calculating H_0:" << idx_array[2] + 1 << " of "
+        std::cout << "Calculating H_0: " << idx_array[2] + 1 << " of "
                   << num_x[1] << "\n";
       }
 
@@ -3507,7 +3509,6 @@ double Hamiltonian::GetHypersphereCoulomb(int* lambda_a, int* lambda_b,
                                           double r, double z)
 {
   PetscLogEventBegin(hyper_coulomb_time, 0, 0, 0, 0);
-  num_ang += num_ang % 2;
   double d_angle, matrix_element, pre_fac_a, pre_fac_b, result, tmp;
   int Ka, na, lxa, lya, La, Ma, Kb, nb, lxb, lyb, Lb, Mb, l_diff, l_sum;
   std::string key, internal_key;
@@ -3601,6 +3602,7 @@ double Hamiltonian::GetHypersphereCoulomb(int* lambda_a, int* lambda_b,
         result += sphere_1[idx] * sphere_2[idx] * cos(angle[idx]) * tmp * tmp;
       }
       result *= d_angle / sqrt(2.);
+
       matrix_element += result;
     }
   }
@@ -3639,7 +3641,6 @@ double Hamiltonian::GetHypersphereNonRRCCoulomb(int* lambda_a, int* lambda_b,
                                                 double r, double z)
 {
   PetscLogEventBegin(hyper_coulomb_time, 0, 0, 0, 0);
-  num_ang += num_ang % 2;
   double d_angle, matrix_element, result, tmp;
   int Ka, na, lxa, lya, La, Ma, Kb, nb, lxb, lyb, Lb, Mb;
   std::string key, internal_key;
@@ -3714,12 +3715,11 @@ double Hamiltonian::GetHypersphereNonRRCeeRepulsion(int* lambda_a,
    * electron 1 and 2 with respect to the nucleus rather than
    * coordinates that are dependent on the "rotated" coordinate system
    */
-  num_ang += num_ang % 2;
-  double d_angle, matrix_element, result, cos_term, cos_val, cos_power,
-      sin_term, sin_val, sin_power, l_loop_prod, l_loop_sum, m_loop1_prod,
-      m_loop1_sum, m_loop2_prod, m_loop2_sum;
-  int Ka, na, lr1a, lr2a, La, Ma, Kb, nb, lr1b, lr2b, Lb, Mb, l_lower_bound,
-      l_upper_bound, mr2a, mr2b, m_loop_val;
+  double d_angle, matrix_element, result, cos_term, cos_val, sin_term, sin_val,
+      l_loop_prod, l_loop_sum, m_loop1_prod, m_loop1_sum, m_loop2_prod,
+      m_loop2_sum;
+  int Ka, na, lr1a, lr2a, La, Ma, Kb, nb, lr1b, lr2b, Lb, Mb, cos_power,
+      sin_power, l_lower_bound, l_upper_bound, mr2a, mr2b, m_loop_val;
   std::string key, internal_key;
 
   /* Extract the quantum numbers */
@@ -3761,8 +3761,10 @@ double Hamiltonian::GetHypersphereNonRRCeeRepulsion(int* lambda_a,
     SpherHarm(Kb, nb, lr1b, lr2b, Lb, Mb, angle, sphere_2, arg_vals);
 
     /* these are due to selection rules for CG coef */
-    l_lower_bound = max(abs(lr1a - lr1b), abs(lr2a - lr2b));
-    l_upper_bound = min(abs(lr1a - lr1b), abs(lr2a - lr2b));
+    // l_lower_bound = min(abs(lr1a - lr1b), abs(lr2a - lr2b));
+    // l_upper_bound = max(abs(lr1a - lr1b), abs(lr2a - lr2b));
+    l_lower_bound = 0;
+    l_upper_bound = max(max(max(lr1a, lr1b), lr2a), lr2b);
     l_loop_sum    = 0;
     /* loop over cross terms for l */
     for (int l_loop_val = l_lower_bound; l_loop_val <= l_upper_bound;
@@ -3783,12 +3785,12 @@ double Hamiltonian::GetHypersphereNonRRCeeRepulsion(int* lambda_a,
           if (m_loop_val == mr2a - mr2b)
           {
             /* code for CG */
-            m_loop2_prod = 1;
+            ((m_loop_val) % 2 == 0) ? m_loop2_prod = 1 : m_loop2_prod = -1;
             m_loop2_prod *= ClebschGordanCoef(lr1b, lr2b, Lb, mr1b, mr2b, Mb);
             m_loop2_prod *= ClebschGordanCoef(lr1a, l_loop_val, lr1b, mr1a,
                                               m_loop_val, mr1b);
             m_loop2_prod *= ClebschGordanCoef(lr2a, l_loop_val, lr2b, mr2a,
-                                              m_loop_val, mr2b);
+                                              -1 * m_loop_val, mr2b);
             m_loop2_sum += m_loop2_prod;
           }
         }
@@ -3808,7 +3810,7 @@ double Hamiltonian::GetHypersphereNonRRCeeRepulsion(int* lambda_a,
           sin_power = l_loop_val + 2;
           sin_val   = sin(angle[idx]);
           sin_term  = 1;
-          for (int sin_idx = 0; sin_idx < abs(sin_power); ++sin_idx)
+          for (int sin_idx = 1; sin_idx <= abs(sin_power); ++sin_idx)
           {
             sin_term *= sin_val;
           }
@@ -3820,7 +3822,7 @@ double Hamiltonian::GetHypersphereNonRRCeeRepulsion(int* lambda_a,
           cos_power = l_loop_val - 1;
           cos_val   = cos(angle[idx]);
           cos_term  = 1;
-          for (int cos_idx = 0; cos_idx < abs(cos_power); ++cos_idx)
+          for (int cos_idx = 1; cos_idx <= abs(cos_power); ++cos_idx)
           {
             cos_term *= cos_val;
           }
@@ -3838,7 +3840,7 @@ double Hamiltonian::GetHypersphereNonRRCeeRepulsion(int* lambda_a,
           sin_power = l_loop_val - 1;
           sin_val   = sin(angle[idx]);
           sin_term  = 1;
-          for (int sin_idx = 0; sin_idx < abs(sin_power); ++sin_idx)
+          for (int sin_idx = 1; sin_idx <= abs(sin_power); ++sin_idx)
           {
             sin_term *= sin_val;
           }
@@ -3850,7 +3852,7 @@ double Hamiltonian::GetHypersphereNonRRCeeRepulsion(int* lambda_a,
           cos_power = l_loop_val + 2;
           cos_val   = cos(angle[idx]);
           cos_term  = 1;
-          for (int cos_idx = 0; cos_idx < abs(cos_power); ++cos_idx)
+          for (int cos_idx = 1; cos_idx <= abs(cos_power); ++cos_idx)
           {
             cos_term *= cos_val;
           }
@@ -3866,15 +3868,17 @@ double Hamiltonian::GetHypersphereNonRRCeeRepulsion(int* lambda_a,
       result *= d_angle;
 
       /* code for CG, l level */
-      l_loop_prod = result;
+      l_loop_prod = m_loop1_sum;
+      l_loop_prod *= result;
       l_loop_prod *= ClebschGordanCoef(lr1a, l_loop_val, lr1b, 0, 0, 0);
       l_loop_prod *= ClebschGordanCoef(lr2a, l_loop_val, lr2b, 0, 0, 0);
       l_loop_sum += l_loop_prod;
     }
 
     /* normalization */
-    matrix_element = l_loop_sum * sqrt((2 * lr1a + 1) * (2 * lr2a + 1) /
-                                       ((2 * lr1b + 1) * (2 * lr2b + 1)));
+    matrix_element = l_loop_sum;
+    matrix_element *= sqrt((2.0 * lr1a + 1.0) * (2.0 * lr2a + 1.0) /
+                           ((2.0 * lr1b + 1.0) * (2.0 * lr2b + 1.0)));
   }
   hypersphere_ee_repulsion_lookup[key] = matrix_element;
   return matrix_element / r;
@@ -3896,7 +3900,7 @@ double Hamiltonian::GetHypersphereLaserVal(int* lambda_a, int* lambda_b,
                                            double r)
 {
   PetscLogEventBegin(hyper_laser_time, 0, 0, 0, 0);
-  num_ang += num_ang % 2;
+
   double d_angle, matrix_element, result, m_sum, tmp_sin, tmp_cos;
   int Ka, na, lxa, lya, La, Ma, Kb, nb, lxb, lyb, Lb, Mb;
   std::string key;
