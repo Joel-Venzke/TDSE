@@ -941,7 +941,10 @@ void Hamiltonian::CalculateHamlitonian0(PetscInt l_val)
         }
       }
 
-      std::cout << "TODO allocate space for laser in H_0. \n";
+      if (i_val < 10)
+      {
+        std::cout << "TODO allocate space for laser in H_0. \n";
+      }
       // /* allocate for laser  <Y_k'|V|Y_k> terms */
       // for (int diagonal_idx = 0; diagonal_idx < num_x[1]; ++diagonal_idx)
       // {
