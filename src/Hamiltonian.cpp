@@ -3808,24 +3808,14 @@ double Hamiltonian::GetHypersphereNonRRCeeRepulsion(int* lambda_a,
         {
           /* calculated sin^(l+2) */
           sin_power = l_loop_val + 2;
-          sin_val   = sin(angle[idx]);
-          sin_term  = 1;
-          for (int sin_idx = 1; sin_idx <= abs(sin_power); ++sin_idx)
-          {
-            sin_term *= sin_val;
-          }
+          sin_term  = pow(sin(angle[idx]), abs(sin_power));
           if (sin_power < 0)
           {
             sin_term = 1 / sin_term;
           }
           /* calculated 1/cos^(l-1) */
           cos_power = l_loop_val - 1;
-          cos_val   = cos(angle[idx]);
-          cos_term  = 1;
-          for (int cos_idx = 1; cos_idx <= abs(cos_power); ++cos_idx)
-          {
-            cos_term *= cos_val;
-          }
+          cos_term  = pow(cos(angle[idx]), abs(cos_power));
           if ((-1 * cos_power) < 0) /* account for division by this term */
           {
             cos_term = 1 / cos_term;
@@ -3838,24 +3828,14 @@ double Hamiltonian::GetHypersphereNonRRCeeRepulsion(int* lambda_a,
         {
           /* calculated 1/sin^(l-1) */
           sin_power = l_loop_val - 1;
-          sin_val   = sin(angle[idx]);
-          sin_term  = 1;
-          for (int sin_idx = 1; sin_idx <= abs(sin_power); ++sin_idx)
-          {
-            sin_term *= sin_val;
-          }
+          sin_term  = pow(sin(angle[idx]), abs(sin_power));
           if ((-1 * sin_power) < 0) /* account for division by this term */
           {
             sin_term = 1 / sin_term;
           }
           /* calculated cos^(l+2) */
           cos_power = l_loop_val + 2;
-          cos_val   = cos(angle[idx]);
-          cos_term  = 1;
-          for (int cos_idx = 1; cos_idx <= abs(cos_power); ++cos_idx)
-          {
-            cos_term *= cos_val;
-          }
+          cos_term  = pow(cos(angle[idx]), abs(cos_power));
           if (cos_power < 0)
           {
             cos_term = 1 / cos_term;
