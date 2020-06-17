@@ -20,6 +20,7 @@ class Hamiltonian : protected Utils
   PetscLogEvent create_h_0_ecs;
   PetscLogEvent create_h_laser;
   PetscLogEvent hyper_pot_time;
+  PetscLogEvent hyper_ee_time;
   PetscLogEvent hyper_coulomb_time;
   PetscLogEvent hyper_laser_time;
   PetscLogEvent idx_array_time;
