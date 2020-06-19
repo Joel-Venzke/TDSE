@@ -146,8 +146,10 @@ class Hamiltonian : protected Utils
   dcomp GetHypersphereNonRRCPotential(std::vector< PetscInt > &idx_array);
   double GetHypersphereCoulomb(int *lambda_a, int *lambda_b, double r,
                                double z);
+  void LoadCoulomb();
   double GetHypersphereNonRRCCoulomb(int *lambda_a, int *lambda_b, double r,
                                      double z);
+  void LoadeeRepulsion();
   double GetHypersphereNonRRCeeRepulsion(int *lambda_a, int *lambda_b,
                                          double r);
   dcomp GetHypersphereLaser(std::vector< PetscInt > &idx_array);
