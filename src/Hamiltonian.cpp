@@ -3718,13 +3718,13 @@ double Hamiltonian::GetHypersphereNonRRCCoulomb(int* lambda_a, int* lambda_b,
   key = to_string(Ka) + "_" + to_string(na) + "_" + to_string(lxa) + "_" +
         to_string(lya) + "_" + to_string(La) + "_" + to_string(Kb) + "_" +
         to_string(nb) + "_" + to_string(lxb) + "_" + to_string(lyb) + "_" +
-        to_string(Lb) + "_" + to_string(z) + "_" + to_string(num_ang);
+        to_string(Lb) + "_" + to_string(num_ang);
 
   /* check to see if this has been calculated already */
   if (hypersphere_coulomb_lookup.count(key) == 1)
   {
     PetscLogEventEnd(hyper_coulomb_time, 0, 0, 0, 0);
-    return hypersphere_coulomb_lookup[key] / r;
+    return hypersphere_coulomb_lookup[key] * z / r;
   }
 
   if (La == Lb and lxa == lxb and lya == lyb and Ma == Mb)
@@ -3746,7 +3746,7 @@ double Hamiltonian::GetHypersphereNonRRCCoulomb(int* lambda_a, int* lambda_b,
       result += sphere_1[idx] * sphere_2[idx] * cos(angle[idx]) * tmp * tmp;
     }
     result *= d_angle;
-    matrix_element -= z * result;
+    matrix_element -= result;
 
     /* Calculate the term for r_2 */
     result = 0.0;
@@ -3756,13 +3756,13 @@ double Hamiltonian::GetHypersphereNonRRCCoulomb(int* lambda_a, int* lambda_b,
       result += sphere_1[idx] * sphere_2[idx] * sin(angle[idx]) * tmp * tmp;
     }
     result *= d_angle;
-    matrix_element -= z * result;
+    matrix_element -= result;
   }
   hypersphere_coulomb_lookup[key] = matrix_element;
   std::cout << std::setprecision(16) << "coulomb.txt " << key << "\t"
             << matrix_element << "\n";
   PetscLogEventEnd(hyper_coulomb_time, 0, 0, 0, 0);
-  return matrix_element / r;
+  return matrix_element * z / r;
 }
 
 void Hamiltonian::LoadeeRepulsion()
