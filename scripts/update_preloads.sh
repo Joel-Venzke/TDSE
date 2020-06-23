@@ -1,3 +1,7 @@
 #!/bin/bash
-grep "^eeRepulsion.txt" *.log | sed "s/^.*log:eeRepulsion.txt //g" >> eeRepulsion.txt 
-grep "^coulomb.txt" *.log | sed "s/^.*log:coulomb.txt //g" >> coulomb.txt 
+echo "creating eeRepulsion.txt"
+cat eeRepulsion.txt.* >> eeRepulsion.txt
+rm eeRepulsion.txt.*
+echo "creating coulomb.txt"
+cat coulomb.txt.* >> coulomb.txt
+rm coulomb.txt.*
