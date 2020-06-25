@@ -112,11 +112,7 @@ Hamiltonian::Hamiltonian(Wavefunction& w, Pulse& pulse, HDF5Wrapper& data_file,
     sphere_2.resize(num_ang);
 
     /* load and existing matrix elements */
-    std::cout << "starting load ee \n";
-    world.barrier();
     LoadeeRepulsion();
-    std::cout << "starting load coulomb\n";
-    world.barrier();
     LoadCoulomb();
   }
   else
@@ -3678,7 +3674,11 @@ void Hamiltonian::LoadCoulomb()
   int count = 0;
 
   while (std::getline(file, line))
-  {  // '\n' is the default delimiter
+  {
+    if (count == 0)
+    {
+      std::cout << "rank: " << world.rank() << " found coulomb.txt\n";
+    }
 
     std::istringstream iss(line);
     std::string token;
@@ -3728,6 +3728,14 @@ double Hamiltonian::GetHypersphereNonRRCCoulomb(int* lambda_a, int* lambda_b,
   /* check to see if this has been calculated already */
   if (hypersphere_coulomb_lookup.count(key) == 1)
   {
+    if (La == Lb and lxa == lxb and lya == lyb and Ma == Mb)
+    {
+      matrix_element = hypersphere_coulomb_lookup[key];
+
+      outfile.open("coulomb.txt." + std::to_string(world.rank()),
+                   std::ios_base::app);
+      outfile << std::setprecision(16) << key << "\t" << matrix_element << "\n";
+    }
     PetscLogEventEnd(hyper_coulomb_time, 0, 0, 0, 0);
     return hypersphere_coulomb_lookup[key] * z / r;
   }
@@ -3781,7 +3789,11 @@ void Hamiltonian::LoadeeRepulsion()
   int count = 0;
 
   while (std::getline(file, line))
-  {  // '\n' is the default delimiter
+  {
+    if (count == 0)
+    {
+      std::cout << "rank: " << world.rank() << " found eeRepulsion.txt\n";
+    }
 
     std::istringstream iss(line);
     std::string token;
@@ -3842,6 +3854,13 @@ double Hamiltonian::GetHypersphereNonRRCeeRepulsion(int* lambda_a,
   /* check to see if this has been calculated already */
   if (hypersphere_ee_repulsion_lookup.count(key) == 1)
   {
+    if (La == Lb and Ma == Mb)
+    {
+      matrix_element = hypersphere_ee_repulsion_lookup[key];
+      outfile.open("eeRepulsion.txt." + std::to_string(world.rank()),
+                   std::ios_base::app);
+      outfile << std::setprecision(16) << key << "\t" << matrix_element << "\n";
+    }
     PetscLogEventEnd(hyper_ee_time, 0, 0, 0, 0);
     return hypersphere_ee_repulsion_lookup[key] / r;
   }
