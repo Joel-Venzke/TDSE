@@ -3762,12 +3762,13 @@ double Hamiltonian::GetHypersphereNonRRCCoulomb(int* lambda_a, int* lambda_b,
     }
     result *= d_angle;
     matrix_element -= result;
-  }
-  hypersphere_coulomb_lookup[key] = matrix_element;
 
-  outfile.open("coulomb.txt." + std::to_string(world.rank()),
-               std::ios_base::app);
-  outfile << std::setprecision(16) << key << "\t" << matrix_element << "\n";
+    hypersphere_coulomb_lookup[key] = matrix_element;
+
+    outfile.open("coulomb.txt." + std::to_string(world.rank()),
+                 std::ios_base::app);
+    outfile << std::setprecision(16) << key << "\t" << matrix_element << "\n";
+  }
   PetscLogEventEnd(hyper_coulomb_time, 0, 0, 0, 0);
   return matrix_element * z / r;
 }
@@ -3787,7 +3788,6 @@ void Hamiltonian::LoadeeRepulsion()
     std::string key;
     while (std::getline(iss, token, '\t'))
     {
-      std::cout << "count: " << count << " " << token << "\n";
       if (count % 2 == 0)
       {
         key = token;
@@ -3958,11 +3958,11 @@ double Hamiltonian::GetHypersphereNonRRCeeRepulsion(int* lambda_a,
     matrix_element = l_loop_sum;
     matrix_element *= sqrt((2.0 * lr1a + 1.0) * (2.0 * lr2a + 1.0) /
                            ((2.0 * lr1b + 1.0) * (2.0 * lr2b + 1.0)));
+    hypersphere_ee_repulsion_lookup[key] = matrix_element;
+    outfile.open("eeRepulsion.txt." + std::to_string(world.rank()),
+                 std::ios_base::app);
+    outfile << std::setprecision(16) << key << "\t" << matrix_element << "\n";
   }
-  hypersphere_ee_repulsion_lookup[key] = matrix_element;
-  outfile.open("eeRepulsion.txt." + std::to_string(world.rank()),
-               std::ios_base::app);
-  outfile << std::setprecision(16) << key << "\t" << matrix_element << "\n";
   PetscLogEventEnd(hyper_ee_time, 0, 0, 0, 0);
   return matrix_element / r;
 }
