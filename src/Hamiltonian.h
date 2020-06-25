@@ -28,12 +28,10 @@ class Hamiltonian : protected Utils
   PetscLogEvent build_H_0;
   PetscLogEvent build_H_0_ecs;
 
-  std::unordered_map< std::string, double > hypersphere_coulomb_calculated;
   std::unordered_map< std::string, double > hypersphere_coulomb_lookup;
   std::unordered_map< std::string, double > hypersphere_radial_int_lookup;
   std::unordered_map< std::string, double > hypersphere_laser_lookup;
   std::unordered_map< std::string, double > hypersphere_ee_repulsion_lookup;
-  std::unordered_map< std::string, double > hypersphere_ee_calculated;
 
   PetscInt num_dims;
   PetscInt num_electrons;

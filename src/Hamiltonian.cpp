@@ -3728,16 +3728,6 @@ double Hamiltonian::GetHypersphereNonRRCCoulomb(int* lambda_a, int* lambda_b,
   /* check to see if this has been calculated already */
   if (hypersphere_coulomb_lookup.count(key) == 1)
   {
-    if (La == Lb and lxa == lxb and lya == lyb and Ma == Mb and
-        hypersphere_coulomb_calculated.count(key) != 1)
-    {
-      matrix_element                      = hypersphere_coulomb_lookup[key];
-      hypersphere_coulomb_calculated[key] = matrix_element;
-
-      outfile.open("coulomb.txt." + std::to_string(world.rank()),
-                   std::ios_base::app);
-      outfile << std::setprecision(16) << key << "\t" << matrix_element << "\n";
-    }
     PetscLogEventEnd(hyper_coulomb_time, 0, 0, 0, 0);
     return hypersphere_coulomb_lookup[key] * z / r;
   }
@@ -3856,14 +3846,6 @@ double Hamiltonian::GetHypersphereNonRRCeeRepulsion(int* lambda_a,
   /* check to see if this has been calculated already */
   if (hypersphere_ee_repulsion_lookup.count(key) == 1)
   {
-    if (La == Lb and Ma == Mb and hypersphere_ee_calculated.count(key) != 1)
-    {
-      matrix_element                 = hypersphere_ee_repulsion_lookup[key];
-      hypersphere_ee_calculated[key] = matrix_element;
-      outfile.open("eeRepulsion.txt." + std::to_string(world.rank()),
-                   std::ios_base::app);
-      outfile << std::setprecision(16) << key << "\t" << matrix_element << "\n";
-    }
     PetscLogEventEnd(hyper_ee_time, 0, 0, 0, 0);
     return hypersphere_ee_repulsion_lookup[key] / r;
   }
