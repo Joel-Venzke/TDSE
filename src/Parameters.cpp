@@ -1341,7 +1341,7 @@ void Parameters::Validate()
             std::to_string(nuclei_idx) + " has a non zero radial coordinate\n";
       }
     }
-    if (m_max > 0)
+    if (m_max < 1)
     {
       for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; pulse_idx++)
       {

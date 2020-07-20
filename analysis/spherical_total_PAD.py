@@ -133,10 +133,15 @@ r = psi_cooridnate_values[2]
 e_ground = get_energy([1, 0, 0, 1], target)
 e_excited = get_energy([2, 1, 1, 1], target)
 # e_final_list = np.arange(0.01,1.0,0.1)
-e_final_list = [0.01928205187, 0.1346748821, 0.224546544, 0.3399393742]
+laser_energy = 0
+with open('input.json') as json_file:
+    input_file = json.load(json_file)
+    laser_energy = input_file["laser"]["pulses"][0]["energy"]
+e_final_list = [(1. * np.abs(laser_energy)) - np.abs(e_excited), 0.01928205187,
+                0.1346748821, 0.224546544, 0.3399393742]
 de = 0.01
 e_final_list = np.arange(de, 1.5 + de / 2, de)
-#e_final_list = [0.09375897933, 0.1836306412, 0.2990234714]
+# e_final_list = [0.09375897933, 0.1836306412, 0.2990234714]
 
 pad_yield = []
 phi_angles = None
