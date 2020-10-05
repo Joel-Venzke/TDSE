@@ -211,7 +211,7 @@ void Simulation::Propagate()
       if (i % write_frequency_observables == 0)
       {
         /* write a checkpoint */
-        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1), 1);
+        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i, 1);
       }
 
       /* only checkpoint so often */
@@ -235,7 +235,7 @@ void Simulation::Propagate()
           converged = true;
         }
         /* write a checkpoint */
-        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
+        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
         if (world.rank() == 0) t = clock();
       }
       if (world.rank() == 0)
@@ -261,7 +261,7 @@ void Simulation::Propagate()
       if (i % write_frequency_observables == 0)
       {
         /* write a checkpoint */
-        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1), 1);
+        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i, 1);
       }
 
       /* only checkpoint so often */
@@ -277,7 +277,7 @@ void Simulation::Propagate()
                     << "\n"
                     << std::flush;
         /* write a checkpoint */
-        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
+        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
         if (world.rank() == 0) t = clock();
       }
       if (world.rank() == 0)
