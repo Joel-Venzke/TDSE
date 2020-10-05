@@ -17,6 +17,7 @@ class Parameters : protected Utils
 
   PetscInt m_max;
   PetscInt l_max;
+  PetscInt k_max;  ///< Max angular momentum value for hyperspehrical
 
   PetscInt restart;     ///< simulation behavior restart mode (0 no restart, 1
                         /// restart) from file */
@@ -69,7 +70,7 @@ class Parameters : protected Utils
   PetscInt field_max_states;  ///< 1 if states at max, 0 if field free
 
   /* pulse data */
-  PetscInt num_pulses;           ///< number of pulses
+  PetscInt num_pulses;  ///< number of pulses
   PetscInt frequency_shift;
   double** polarization_vector;  ///< polarization vector for each pulse
   double** poynting_vector;      ///< poynting vector of the field
@@ -123,6 +124,28 @@ class Parameters : protected Utils
   Parameters(std::string file_name);
   ~Parameters();
 
+  void ReadGridCylindrical(json data);
+  void ReadGridSpherical(json data);
+  void ReadGridHypersphericalRRC(json data);
+  void ReadGridHyperspherical(json data);
+  void ReadGridNormal(json data);
+  void ReadNumerics(json data);
+
+  void ReadSolver(json data);
+  void ReadExponentialPot(json data, PetscInt i);
+  void ReadGaussianPot(json data, PetscInt i);
+  void ReadSquareWellPot(json data, PetscInt i);
+  void ReadYukawaPot(json data, PetscInt i);
+  void ReadTarget(json data);
+
+  void ReadInitialStateSpherical(json data);
+  void ReadInitialStateDefault(json data);
+  void ReadInitialState(json data);
+
+  void ReadExperimentFile(json data);
+  void ReadPulse(json data);
+
+  void ReadData(json data);
   void Validate();
 
   /* getters */
@@ -133,6 +156,7 @@ class Parameters : protected Utils
 
   PetscInt GetMMax();
   PetscInt GetLMax();
+  PetscInt GetKMax();
 
   PetscInt GetRestart();
   std::string GetTarget();

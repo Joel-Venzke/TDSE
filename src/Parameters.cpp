@@ -13,10 +13,6 @@ void Parameters::Setup(std::string file_name)
               << std::flush;
   }
 
-  double polar_norm    = 0.0; /* the norm for the polarization vector */
-  double poynting_norm = 0.0; /* the norm for the poynting vector */
-  double intensity     = 0.0; /* the norm for the poynting vector */
-
   /* read data from file */
   json data = FileToJson(file_name);
 
@@ -40,11 +36,330 @@ void Parameters::Setup(std::string file_name)
   {
     coordinate_system_idx = 3;
   }
+  else if (coordinate_system == "HypersphericalRRC")
+  {
+    coordinate_system_idx = 4;
+  }
+  else if (coordinate_system == "Hyperspherical")
+  {
+    coordinate_system_idx = 5;
+  }
   else
   {
     coordinate_system_idx = -1;
   }
+  ReadData(data);
 
+  /* ensure input is good */
+  Validate();
+
+  if (world.rank() == 0)
+  {
+    std::cout << "Reading input complete\n" << std::flush;
+  }
+}
+
+void Parameters::ReadGridCylindrical(json data)
+{
+  num_dims          = 3;
+  dim_size          = std::make_unique< double[] >(num_dims);
+  delta_x_min       = std::make_unique< double[] >(num_dims);
+  delta_x_min_end   = std::make_unique< double[] >(num_dims);
+  delta_x_max       = std::make_unique< double[] >(num_dims);
+  delta_x_max_start = std::make_unique< double[] >(num_dims);
+
+  for (PetscInt i = 0; i < num_dims; ++i)
+  {
+    dim_size[i]          = 0.0;
+    delta_x_min[i]       = 0.0;
+    delta_x_min_end[i]   = 0.0;
+    delta_x_max[i]       = 0.0;
+    delta_x_max_start[i] = 0.0;
+  }
+
+  gobbler = 0.0;
+  order   = 0;
+}
+
+void Parameters::ReadGridSpherical(json data)
+{
+  CheckParameter(data["dimensions"].size(), "dimensions");
+  if (data["dimensions"].size() != 1)
+  {
+    EndRun(
+        "The Spherical code take 1 dimension parameter with 'l_max' and "
+        "'m_max' as additional parameter");
+  }
+  num_dims          = 3;
+  dim_size          = std::make_unique< double[] >(num_dims);
+  delta_x_min       = std::make_unique< double[] >(num_dims);
+  delta_x_min_end   = std::make_unique< double[] >(num_dims);
+  delta_x_max       = std::make_unique< double[] >(num_dims);
+  delta_x_max_start = std::make_unique< double[] >(num_dims);
+
+  /* The last dimension (diagonal of matrix) is r and we use Finite
+   * difference for this */
+  int dim_input_idx = 0;
+  int dim_idx       = 2;
+  CheckParameter(data["dimensions"][dim_input_idx]["dim_size"].size(),
+                 "dimensions - dim_size");
+  dim_size[dim_idx] = data["dimensions"][dim_input_idx]["dim_size"];
+
+  CheckParameter(data["dimensions"][dim_input_idx]["delta_x_min"].size(),
+                 "dimensions - delta_x_min");
+  delta_x_min[dim_idx] = data["dimensions"][dim_input_idx]["delta_x_min"];
+
+  CheckParameter(data["dimensions"][dim_input_idx]["delta_x_min_end"].size(),
+                 "dimensions - delta_x_min_end");
+  delta_x_min_end[dim_idx] =
+      data["dimensions"][dim_input_idx]["delta_x_min_end"];
+
+  CheckParameter(data["dimensions"][dim_input_idx]["delta_x_max"].size(),
+                 "dimensions - delta_x_max");
+  delta_x_max[dim_idx] = data["dimensions"][dim_input_idx]["delta_x_max"];
+
+  CheckParameter(data["dimensions"][dim_input_idx]["delta_x_max_start"].size(),
+                 "dimensions - delta_x_max_start");
+  delta_x_max_start[dim_idx] =
+      data["dimensions"][dim_input_idx]["delta_x_max_start"];
+
+  /* The next two dimensions are expanded in spherical harmonics with indexes
+   * l and m */
+  for (dim_idx = 0; dim_idx < 2; ++dim_idx)
+  {
+    delta_x_min[dim_idx]     = 1.0;
+    delta_x_min_end[dim_idx] = 0.0;
+    delta_x_max[dim_idx]     = 1.0;
+  }
+
+  /* get m_max note m goes from -m to m so 2m+1 terms*/
+
+  dim_size[0] = 1;
+
+  /* get l_max */
+  CheckParameter(data["dimensions"][0]["l_max"].size(), "dimensions - l_max");
+  l_max = data["dimensions"][0]["l_max"];
+
+  /* get m_max */
+  CheckParameter(data["dimensions"][0]["m_max"].size(), "dimensions - m_max");
+  m_max = data["dimensions"][0]["m_max"];
+
+  /* this dimension combines l and m to avoid tensor grid issues */
+  dim_size[1] = GetIdxFromLM(l_max, m_max, m_max) + 1;
+
+  CheckParameter(data["gobbler"].size(), "gobbler");
+  gobbler = data["gobbler"];
+
+  CheckParameter(data["order"].size(), "order");
+  order = data["order"];
+}
+
+void Parameters::ReadGridHypersphericalRRC(json data)
+{
+  CheckParameter(data["dimensions"].size(), "dimensions");
+  if (data["dimensions"].size() != 1)
+  {
+    EndRun(
+        "The Hyperspherical code take 1 dimension parameter with 'k_max', "
+        "'l_max' and 'm_max' as additional parameter");
+  }
+  /* The number of electrons is set to one since the 6D space is not
+   *  a tensor product of 2 - 3D spaces. If once codes up the bi-spherical
+   * code then this tensor product will be useful
+   */
+  num_electrons     = 1;
+  num_dims          = 3;
+  dim_size          = std::make_unique< double[] >(num_dims);
+  delta_x_min       = std::make_unique< double[] >(num_dims);
+  delta_x_min_end   = std::make_unique< double[] >(num_dims);
+  delta_x_max       = std::make_unique< double[] >(num_dims);
+  delta_x_max_start = std::make_unique< double[] >(num_dims);
+
+  /* The last dimension (diagonal of matrix) is r and we use Finite
+   * difference for this */
+  int dim_input_idx = 0;
+  int dim_idx       = 2;
+  CheckParameter(data["dimensions"][dim_input_idx]["dim_size"].size(),
+                 "dimensions - dim_size");
+  dim_size[dim_idx] = data["dimensions"][dim_input_idx]["dim_size"];
+
+  CheckParameter(data["dimensions"][dim_input_idx]["delta_x_min"].size(),
+                 "dimensions - delta_x_min");
+  delta_x_min[dim_idx] = data["dimensions"][dim_input_idx]["delta_x_min"];
+
+  CheckParameter(data["dimensions"][dim_input_idx]["delta_x_min_end"].size(),
+                 "dimensions - delta_x_min_end");
+  delta_x_min_end[dim_idx] =
+      data["dimensions"][dim_input_idx]["delta_x_min_end"];
+
+  CheckParameter(data["dimensions"][dim_input_idx]["delta_x_max"].size(),
+                 "dimensions - delta_x_max");
+  delta_x_max[dim_idx] = data["dimensions"][dim_input_idx]["delta_x_max"];
+
+  CheckParameter(data["dimensions"][dim_input_idx]["delta_x_max_start"].size(),
+                 "dimensions - delta_x_max_start");
+  delta_x_max_start[dim_idx] =
+      data["dimensions"][dim_input_idx]["delta_x_max_start"];
+
+  /* avoiding issues with lack of tensor product */
+  for (dim_idx = 0; dim_idx < 2; ++dim_idx)
+  {
+    delta_x_min[dim_idx]     = 1.0;
+    delta_x_min_end[dim_idx] = 0.0;
+    delta_x_max[dim_idx]     = 1.0;
+  }
+
+  /* dim 0 is set to 1 since hyperspherical harmonics cannot be written
+   *  as a tensor product
+   */
+  dim_size[0] = 1;
+
+  /* get k_max */
+  CheckParameter(data["dimensions"][0]["k_max"].size(), "dimensions - k_max");
+  k_max = data["dimensions"][0]["k_max"];
+
+  /* get l_max */
+  CheckParameter(data["dimensions"][0]["l_max"].size(), "dimensions - l_max");
+  l_max = data["dimensions"][0]["l_max"];
+
+  /* get m_max */
+  CheckParameter(data["dimensions"][0]["m_max"].size(), "dimensions - m_max");
+  m_max = data["dimensions"][0]["m_max"];
+
+  /* this dimension combines l and m to avoid tensor grid issues */
+  dim_size[1] = GetHypersphereSizeRRC(k_max, l_max);
+
+  CheckParameter(data["gobbler"].size(), "gobbler");
+  gobbler = data["gobbler"];
+
+  CheckParameter(data["order"].size(), "order");
+  order = data["order"];
+}
+
+void Parameters::ReadGridHyperspherical(json data)
+{
+  CheckParameter(data["dimensions"].size(), "dimensions");
+  if (data["dimensions"].size() != 1)
+  {
+    EndRun(
+        "The Hyperspherical code take 1 dimension parameter with 'k_max', "
+        "'l_max' and 'm_max' as additional parameter");
+  }
+  /* The number of electrons is set to one since the 6D space is not
+   *  a tensor product of 2 - 3D spaces. If once codes up the bi-spherical
+   * code then this tensor product will be useful
+   */
+  num_electrons     = 1;
+  num_dims          = 3;
+  dim_size          = std::make_unique< double[] >(num_dims);
+  delta_x_min       = std::make_unique< double[] >(num_dims);
+  delta_x_min_end   = std::make_unique< double[] >(num_dims);
+  delta_x_max       = std::make_unique< double[] >(num_dims);
+  delta_x_max_start = std::make_unique< double[] >(num_dims);
+
+  /* The last dimension (diagonal of matrix) is r and we use Finite
+   * difference for this */
+  int dim_input_idx = 0;
+  int dim_idx       = 2;
+  CheckParameter(data["dimensions"][dim_input_idx]["dim_size"].size(),
+                 "dimensions - dim_size");
+  dim_size[dim_idx] = data["dimensions"][dim_input_idx]["dim_size"];
+
+  CheckParameter(data["dimensions"][dim_input_idx]["delta_x_min"].size(),
+                 "dimensions - delta_x_min");
+  delta_x_min[dim_idx] = data["dimensions"][dim_input_idx]["delta_x_min"];
+
+  CheckParameter(data["dimensions"][dim_input_idx]["delta_x_min_end"].size(),
+                 "dimensions - delta_x_min_end");
+  delta_x_min_end[dim_idx] =
+      data["dimensions"][dim_input_idx]["delta_x_min_end"];
+
+  CheckParameter(data["dimensions"][dim_input_idx]["delta_x_max"].size(),
+                 "dimensions - delta_x_max");
+  delta_x_max[dim_idx] = data["dimensions"][dim_input_idx]["delta_x_max"];
+
+  CheckParameter(data["dimensions"][dim_input_idx]["delta_x_max_start"].size(),
+                 "dimensions - delta_x_max_start");
+  delta_x_max_start[dim_idx] =
+      data["dimensions"][dim_input_idx]["delta_x_max_start"];
+
+  /* avoiding issues with lack of tensor product */
+  for (dim_idx = 0; dim_idx < 2; ++dim_idx)
+  {
+    delta_x_min[dim_idx]     = 1.0;
+    delta_x_min_end[dim_idx] = 0.0;
+    delta_x_max[dim_idx]     = 1.0;
+  }
+
+  /* dim 0 is set to 1 since hyperspherical harmonics cannot be written
+   *  as a tensor product
+   */
+  dim_size[0] = 1;
+
+  /* get k_max */
+  CheckParameter(data["dimensions"][0]["k_max"].size(), "dimensions - k_max");
+  k_max = data["dimensions"][0]["k_max"];
+
+  /* get l_max */
+  CheckParameter(data["dimensions"][0]["l_max"].size(), "dimensions - l_max");
+  l_max = data["dimensions"][0]["l_max"];
+
+  /* get m_max */
+  CheckParameter(data["dimensions"][0]["m_max"].size(), "dimensions - m_max");
+  m_max = data["dimensions"][0]["m_max"];
+
+  /* this dimension combines l and m to avoid tensor grid issues */
+  dim_size[1] = GetHypersphereSizeNonRRC(k_max, l_max);
+
+  CheckParameter(data["gobbler"].size(), "gobbler");
+  gobbler = data["gobbler"];
+
+  CheckParameter(data["order"].size(), "order");
+  order = data["order"];
+}
+
+void Parameters::ReadGridNormal(json data)
+{
+  CheckParameter(data["dimensions"].size(), "dimensions");
+  num_dims          = data["dimensions"].size();
+  dim_size          = std::make_unique< double[] >(num_dims);
+  delta_x_min       = std::make_unique< double[] >(num_dims);
+  delta_x_min_end   = std::make_unique< double[] >(num_dims);
+  delta_x_max       = std::make_unique< double[] >(num_dims);
+  delta_x_max_start = std::make_unique< double[] >(num_dims);
+
+  for (PetscInt i = 0; i < num_dims; ++i)
+  {
+    CheckParameter(data["dimensions"][i]["dim_size"].size(),
+                   "dimensions - dim_size");
+    dim_size[i] = data["dimensions"][i]["dim_size"];
+
+    CheckParameter(data["dimensions"][i]["delta_x_min"].size(),
+                   "dimensions - delta_x_min");
+    delta_x_min[i] = data["dimensions"][i]["delta_x_min"];
+
+    CheckParameter(data["dimensions"][i]["delta_x_min_end"].size(),
+                   "dimensions - delta_x_min_end");
+    delta_x_min_end[i] = data["dimensions"][i]["delta_x_min_end"];
+
+    CheckParameter(data["dimensions"][i]["delta_x_max"].size(),
+                   "dimensions - delta_x_max");
+    delta_x_max[i] = data["dimensions"][i]["delta_x_max"];
+
+    CheckParameter(data["dimensions"][i]["delta_x_max_start"].size(),
+                   "dimensions - delta_x_max_start");
+    delta_x_max_start[i] = data["dimensions"][i]["delta_x_max_start"];
+  }
+
+  CheckParameter(data["gobbler"].size(), "gobbler");
+  gobbler = data["gobbler"];
+
+  CheckParameter(data["order"].size(), "order");
+  order = data["order"];
+}
+
+void Parameters::ReadNumerics(json data)
+{
   CheckParameter(data["delta_t"].size(), "delta_t");
   delta_t = data["delta_t"];
 
@@ -53,179 +368,28 @@ void Parameters::Setup(std::string file_name)
 
   if (coordinate_system_idx == 2)
   {
-    num_dims          = 3;
-    dim_size          = std::make_unique< double[] >(num_dims);
-    delta_x_min       = std::make_unique< double[] >(num_dims);
-    delta_x_min_end   = std::make_unique< double[] >(num_dims);
-    delta_x_max       = std::make_unique< double[] >(num_dims);
-    delta_x_max_start = std::make_unique< double[] >(num_dims);
-
-    for (PetscInt i = 0; i < num_dims; ++i)
-    {
-      dim_size[i]          = 0.0;
-      delta_x_min[i]       = 0.0;
-      delta_x_min_end[i]   = 0.0;
-      delta_x_max[i]       = 0.0;
-      delta_x_max_start[i] = 0.0;
-    }
-
-    gobbler = 0.0;
-    order   = 0;
+    ReadGridCylindrical(data);
   }
   else if (coordinate_system_idx == 3)
   {
-    CheckParameter(data["dimensions"].size(), "dimensions");
-    if (data["dimensions"].size() != 1)
-    {
-      EndRun(
-          "The Spherical code take 1 dimension parameter with 'l_max' and "
-          "'m_max' as additional parameter");
-    }
-    num_dims          = 3;
-    dim_size          = std::make_unique< double[] >(num_dims);
-    delta_x_min       = std::make_unique< double[] >(num_dims);
-    delta_x_min_end   = std::make_unique< double[] >(num_dims);
-    delta_x_max       = std::make_unique< double[] >(num_dims);
-    delta_x_max_start = std::make_unique< double[] >(num_dims);
-
-    /* The last dimension (diagonal of matrix) is r and we use Finite
-     * difference for this */
-    int dim_input_idx = 0;
-    int dim_idx       = 2;
-    CheckParameter(data["dimensions"][dim_input_idx]["dim_size"].size(),
-                   "dimensions - dim_size");
-    dim_size[dim_idx] = data["dimensions"][dim_input_idx]["dim_size"];
-
-    CheckParameter(data["dimensions"][dim_input_idx]["delta_x_min"].size(),
-                   "dimensions - delta_x_min");
-    delta_x_min[dim_idx] = data["dimensions"][dim_input_idx]["delta_x_min"];
-
-    CheckParameter(data["dimensions"][dim_input_idx]["delta_x_min_end"].size(),
-                   "dimensions - delta_x_min_end");
-    delta_x_min_end[dim_idx] =
-        data["dimensions"][dim_input_idx]["delta_x_min_end"];
-
-    CheckParameter(data["dimensions"][dim_input_idx]["delta_x_max"].size(),
-                   "dimensions - delta_x_max");
-    delta_x_max[dim_idx] = data["dimensions"][dim_input_idx]["delta_x_max"];
-
-    CheckParameter(
-        data["dimensions"][dim_input_idx]["delta_x_max_start"].size(),
-        "dimensions - delta_x_max_start");
-    delta_x_max_start[dim_idx] =
-        data["dimensions"][dim_input_idx]["delta_x_max_start"];
-
-    /* The next two dimensions are expanded in spherical harmonics with indexes
-     * l and m */
-    for (dim_idx = 0; dim_idx < 2; ++dim_idx)
-    {
-      delta_x_min[dim_idx]     = 1.0;
-      delta_x_min_end[dim_idx] = 0.0;
-      delta_x_max[dim_idx]     = 1.0;
-    }
-
-    /* get m_max note m goes from -m to m so 2m+1 terms*/
-
-    dim_size[0] = 1;
-
-    /* get l_max */
-    CheckParameter(data["dimensions"][0]["l_max"].size(), "dimensions - l_max");
-    l_max = data["dimensions"][0]["l_max"];
-
-    /* get m_max */
-    CheckParameter(data["dimensions"][0]["m_max"].size(), "dimensions - m_max");
-    m_max = data["dimensions"][0]["m_max"];
-
-    /* this dimension combines l and m to avoid tensor grid issues */
-    dim_size[1] = GetIdxFromLM(l_max, m_max, m_max) + 1;
-
-    CheckParameter(data["gobbler"].size(), "gobbler");
-    gobbler = data["gobbler"];
-
-    CheckParameter(data["order"].size(), "order");
-    order = data["order"];
+    ReadGridSpherical(data);
+  }
+  else if (coordinate_system_idx == 4)
+  {
+    ReadGridHypersphericalRRC(data);
+  }
+  else if (coordinate_system_idx == 5)
+  {
+    ReadGridHyperspherical(data);
   }
   else
   {
-    CheckParameter(data["dimensions"].size(), "dimensions");
-    num_dims          = data["dimensions"].size();
-    dim_size          = std::make_unique< double[] >(num_dims);
-    delta_x_min       = std::make_unique< double[] >(num_dims);
-    delta_x_min_end   = std::make_unique< double[] >(num_dims);
-    delta_x_max       = std::make_unique< double[] >(num_dims);
-    delta_x_max_start = std::make_unique< double[] >(num_dims);
-
-    for (PetscInt i = 0; i < num_dims; ++i)
-    {
-      CheckParameter(data["dimensions"][i]["dim_size"].size(),
-                     "dimensions - dim_size");
-      dim_size[i] = data["dimensions"][i]["dim_size"];
-
-      CheckParameter(data["dimensions"][i]["delta_x_min"].size(),
-                     "dimensions - delta_x_min");
-      delta_x_min[i] = data["dimensions"][i]["delta_x_min"];
-
-      CheckParameter(data["dimensions"][i]["delta_x_min_end"].size(),
-                     "dimensions - delta_x_min_end");
-      delta_x_min_end[i] = data["dimensions"][i]["delta_x_min_end"];
-
-      CheckParameter(data["dimensions"][i]["delta_x_max"].size(),
-                     "dimensions - delta_x_max");
-      delta_x_max[i] = data["dimensions"][i]["delta_x_max"];
-
-      CheckParameter(data["dimensions"][i]["delta_x_max_start"].size(),
-                     "dimensions - delta_x_max_start");
-      delta_x_max_start[i] = data["dimensions"][i]["delta_x_max_start"];
-    }
-
-    CheckParameter(data["gobbler"].size(), "gobbler");
-    gobbler = data["gobbler"];
-
-    CheckParameter(data["order"].size(), "order");
-    order = data["order"];
+    ReadGridNormal(data);
   }
+}
 
-  /* get simulation behavior */
-  CheckParameter(data["restart"].size(), "restart");
-  restart = data["restart"];
-
-  CheckParameter(data["target"]["name"].size(), "target - name");
-  target = data["target"]["name"];
-
-  CheckParameter(data["target"]["nuclei"].size(), "target - nuclei");
-  num_nuclei = data["target"]["nuclei"].size();
-
-  CheckParameter(data["alpha"].size(), "alpha");
-  alpha = data["alpha"];
-
-  if (num_electrons > 1)
-  {
-    CheckParameter(data["ee_soft_core"].size(), "ee_soft_core");
-    ee_soft_core = data["ee_soft_core"];
-  }
-  else
-  {
-    ee_soft_core = 0.0;
-  }
-
-  CheckParameter(data["write_frequency_checkpoint"].size(),
-                 "write_frequency_checkpoint");
-  write_frequency_checkpoint = data["write_frequency_checkpoint"];
-
-  CheckParameter(data["write_frequency_observables"].size(),
-                 "write_frequency_observables");
-  write_frequency_observables = data["write_frequency_observables"];
-
-  CheckParameter(data["write_frequency_eigin_state"].size(),
-                 "write_frequency_eigin_state");
-  write_frequency_eigin_state = data["write_frequency_eigin_state"];
-
-  CheckParameter(data["sigma"].size(), "sigma");
-  sigma = data["sigma"];
-
-  CheckParameter(data["tol"].size(), "tol");
-  tol = data["tol"];
-
+void Parameters::ReadSolver(json data)
+{
   CheckParameter(data["state_solver"].size(), "state_solver");
   state_solver = data["state_solver"];
   if (state_solver == "File")
@@ -249,101 +413,6 @@ void Parameters::Setup(std::string file_name)
     state_solver_idx = -1;
   }
 
-  CheckParameter(data["gauge"].size(), "gauge");
-  gauge = data["gauge"];
-  if (gauge == "Velocity")
-  {
-    gauge_idx = 0;
-  }
-  else if (gauge == "Length")
-  {
-    gauge_idx = 1;
-  }
-  else
-  {
-    gauge_idx = -1;
-  }
-
-  if (coordinate_system_idx == 3)
-  {
-    CheckParameter(data["start_state"]["n_index"].size(),
-                   "start_state - n_index");
-    num_start_state   = data["start_state"]["n_index"].size();
-    start_state_l_idx = new PetscInt[num_start_state];
-    start_state_m_idx = new PetscInt[num_start_state];
-    if (data["start_state"]["amplitude"].size() != num_start_state)
-    {
-      EndRun(
-          "'start_state - amplitude' and 'start_state - n_index' sizes do not "
-          "match. Double check input file.");
-    }
-    if (data["start_state"]["phase"].size() != num_start_state)
-    {
-      EndRun(
-          "'start_state - phase' and 'start_state - n_index' sizes do not "
-          "match. Double check input file.");
-    }
-    if (data["start_state"]["l_index"].size() != num_start_state)
-    {
-      EndRun(
-          "'start_state - l_index' and 'start_state - n_index' sizes do not "
-          "match. Double check input file.");
-    }
-    if (data["start_state"]["m_index"].size() != num_start_state)
-    {
-      EndRun(
-          "'start_state - m_index' and 'start_state - n_index' sizes do not "
-          "match. Double check input file.");
-    }
-  }
-  else
-  {
-    CheckParameter(data["start_state"]["index"].size(), "start_state - index");
-    num_start_state = data["start_state"]["index"].size();
-
-    if (data["start_state"]["amplitude"].size() != num_start_state)
-    {
-      EndRun(
-          "'start_state - amplitude' and 'start_state - index' sizes do not "
-          "match. Double check input file.");
-    }
-    if (data["start_state"]["phase"].size() != num_start_state)
-    {
-      EndRun(
-          "'start_state - phase' and 'start_state - index' sizes do not match. "
-          "Double check input file.");
-    }
-  }
-  start_state_idx       = new PetscInt[num_start_state];
-  start_state_amplitude = new double[num_start_state];
-  start_state_phase     = new double[num_start_state];
-  for (PetscInt i = 0; i < num_start_state; i++)
-  {
-    /* You need an n and l index for spherical */
-    if (coordinate_system_idx == 3)
-    {
-      CheckParameter(data["start_state"]["n_index"][i].size(),
-                     "start_state - n_index");
-      start_state_idx[i] = data["start_state"]["n_index"][i];
-      CheckParameter(data["start_state"]["l_index"][i].size(),
-                     "start_state - l_index");
-      start_state_l_idx[i] = data["start_state"]["l_index"][i];
-      CheckParameter(data["start_state"]["m_index"][i].size(),
-                     "start_state - m_index");
-      start_state_m_idx[i] = data["start_state"]["m_index"][i];
-    }
-    else
-    {
-      CheckParameter(data["start_state"]["index"][i].size(),
-                     "start_state - index");
-      start_state_idx[i] = data["start_state"]["index"][i];
-    }
-    start_state_amplitude[i] = data["start_state"]["amplitude"][i];
-    CheckParameter(data["start_state"]["phase"][i].size(),
-                   "start_state - phase");
-    start_state_phase[i] = data["start_state"]["phase"][i];
-  }
-
   if (state_solver_idx != 2)
   {
     CheckParameter(data["states"].size(), "states");
@@ -362,6 +431,146 @@ void Parameters::Setup(std::string file_name)
       state_energy[i] = data["states"][i]["energy"];
     }
   }
+}
+
+void Parameters::ReadExponentialPot(json data, PetscInt i)
+{
+  /* exponential Donuts */
+  exponential_size[i] = data["target"]["nuclei"][i]["exponential_r_0"].size();
+  exponential_r_0[i]  = new double[exponential_size[i]];
+  exponential_amplitude[i]  = new double[exponential_size[i]];
+  exponential_decay_rate[i] = new double[exponential_size[i]];
+  if (exponential_size[i] == 0 and world.rank() == 0)
+  {
+    std::cout << "WARNING: No exponential potential for nuclei " << i << "\n";
+  }
+  else if (data["target"]["nuclei"][i]["exponential_r_0"].size() !=
+               data["target"]["nuclei"][i]["exponential_amplitude"].size() or
+           data["target"]["nuclei"][i]["exponential_r_0"].size() !=
+               data["target"]["nuclei"][i]["exponential_decay_rate"].size())
+  {
+    EndRun("Nuclei " + std::to_string(i) +
+           " all exponential terms must have the same size");
+  }
+  for (PetscInt j = 0; j < exponential_size[i]; ++j)
+  {
+    exponential_r_0[i][j] = data["target"]["nuclei"][i]["exponential_r_0"][j];
+    exponential_amplitude[i][j] =
+        data["target"]["nuclei"][i]["exponential_amplitude"][j];
+    exponential_decay_rate[i][j] =
+        data["target"]["nuclei"][i]["exponential_decay_rate"][j];
+  }
+}
+
+void Parameters::ReadGaussianPot(json data, PetscInt i)
+{ /* Gaussian Donuts */
+  gaussian_size[i]       = data["target"]["nuclei"][i]["gaussian_r_0"].size();
+  gaussian_r_0[i]        = new double[gaussian_size[i]];
+  gaussian_amplitude[i]  = new double[gaussian_size[i]];
+  gaussian_decay_rate[i] = new double[gaussian_size[i]];
+  if (gaussian_size[i] == 0 and world.rank() == 0)
+  {
+    std::cout << "WARNING: No Gaussian potential for nuclei " << i << "\n";
+  }
+  else if (data["target"]["nuclei"][i]["gaussian_r_0"].size() !=
+               data["target"]["nuclei"][i]["gaussian_amplitude"].size() or
+           data["target"]["nuclei"][i]["gaussian_r_0"].size() !=
+               data["target"]["nuclei"][i]["gaussian_decay_rate"].size())
+  {
+    EndRun("Nuclei " + std::to_string(i) +
+           " all Gaussian terms must have the same size");
+  }
+  for (PetscInt j = 0; j < gaussian_size[i]; ++j)
+  {
+    gaussian_r_0[i][j] = data["target"]["nuclei"][i]["gaussian_r_0"][j];
+    gaussian_amplitude[i][j] =
+        data["target"]["nuclei"][i]["gaussian_amplitude"][j];
+    gaussian_decay_rate[i][j] =
+        data["target"]["nuclei"][i]["gaussian_decay_rate"][j];
+  }
+}
+
+void Parameters::ReadSquareWellPot(json data, PetscInt i)
+{ /* Square well Donuts */
+  square_well_size[i] = data["target"]["nuclei"][i]["square_well_r_0"].size();
+  square_well_r_0[i]  = new double[square_well_size[i]];
+  square_well_amplitude[i] = new double[square_well_size[i]];
+  square_well_width[i]     = new double[square_well_size[i]];
+  if (square_well_size[i] == 0 and world.rank() == 0)
+  {
+    std::cout << "WARNING: No square well potential for nuclei " << i << "\n";
+  }
+  else if (data["target"]["nuclei"][i]["square_well_r_0"].size() !=
+               data["target"]["nuclei"][i]["square_well_amplitude"].size() or
+           data["target"]["nuclei"][i]["square_well_r_0"].size() !=
+               data["target"]["nuclei"][i]["square_well_width"].size())
+  {
+    EndRun("Nuclei " + std::to_string(i) +
+           " all square_well terms must have the same size");
+  }
+  for (PetscInt j = 0; j < square_well_size[i]; ++j)
+  {
+    square_well_r_0[i][j] = data["target"]["nuclei"][i]["square_well_r_0"][j];
+    square_well_amplitude[i][j] =
+        data["target"]["nuclei"][i]["square_well_amplitude"][j];
+    square_well_width[i][j] =
+        data["target"]["nuclei"][i]["square_well_width"][j];
+  }
+}
+
+void Parameters::ReadYukawaPot(json data, PetscInt i)
+{ /* yukawa Donuts */
+  yukawa_size[i]       = data["target"]["nuclei"][i]["yukawa_r_0"].size();
+  yukawa_r_0[i]        = new double[yukawa_size[i]];
+  yukawa_amplitude[i]  = new double[yukawa_size[i]];
+  yukawa_decay_rate[i] = new double[yukawa_size[i]];
+  if (yukawa_size[i] == 0 and world.rank() == 0)
+  {
+    std::cout << "WARNING: No Yukawa potential for nuclei " << i << "\n";
+  }
+  else if (data["target"]["nuclei"][i]["yukawa_r_0"].size() !=
+               data["target"]["nuclei"][i]["yukawa_amplitude"].size() or
+           data["target"]["nuclei"][i]["yukawa_r_0"].size() !=
+               data["target"]["nuclei"][i]["yukawa_decay_rate"].size())
+  {
+    EndRun("Nuclei " + std::to_string(i) +
+           " all yukawa terms must have the same size");
+  }
+  for (PetscInt j = 0; j < yukawa_size[i]; ++j)
+  {
+    yukawa_r_0[i][j]       = data["target"]["nuclei"][i]["yukawa_r_0"][j];
+    yukawa_amplitude[i][j] = data["target"]["nuclei"][i]["yukawa_amplitude"][j];
+    yukawa_decay_rate[i][j] =
+        data["target"]["nuclei"][i]["yukawa_decay_rate"][j];
+  }
+}
+
+void Parameters::ReadTarget(json data)
+{
+  CheckParameter(data["target"]["name"].size(), "target - name");
+  target = data["target"]["name"];
+
+  CheckParameter(data["target"]["nuclei"].size(), "target - nuclei");
+  num_nuclei = data["target"]["nuclei"].size();
+
+  CheckParameter(data["alpha"].size(), "alpha");
+  alpha = data["alpha"];
+
+  if (num_electrons > 1 or coordinate_system_idx == 4 or
+      coordinate_system_idx == 5)
+  {
+    CheckParameter(data["ee_soft_core"].size(), "ee_soft_core");
+    ee_soft_core = data["ee_soft_core"];
+  }
+  else
+  {
+    ee_soft_core = 0;
+  }
+
+  CheckParameter(data["tol"].size(), "tol");
+  tol = data["tol"];
+
+  ReadSolver(data);
 
   z                      = std::make_unique< double[] >(num_nuclei);
   exponential_size       = std::make_unique< PetscInt[] >(num_nuclei);
@@ -388,109 +597,10 @@ void Parameters::Setup(std::string file_name)
                    "target - nuclei - z");
     z[i] = data["target"]["nuclei"][i]["z"];
 
-    /* exponential Donuts */
-    exponential_size[i] = data["target"]["nuclei"][i]["exponential_r_0"].size();
-    exponential_r_0[i]  = new double[exponential_size[i]];
-    exponential_amplitude[i]  = new double[exponential_size[i]];
-    exponential_decay_rate[i] = new double[exponential_size[i]];
-    if (exponential_size[i] == 0 and world.rank() == 0)
-    {
-      std::cout << "WARNING: No exponential potential for nuclei " << i << "\n";
-    }
-    else if (data["target"]["nuclei"][i]["exponential_r_0"].size() !=
-                 data["target"]["nuclei"][i]["exponential_amplitude"].size() or
-             data["target"]["nuclei"][i]["exponential_r_0"].size() !=
-                 data["target"]["nuclei"][i]["exponential_decay_rate"].size())
-    {
-      EndRun("Nuclei " + std::to_string(i) +
-             " all exponential terms must have the same size");
-    }
-    for (PetscInt j = 0; j < exponential_size[i]; ++j)
-    {
-      exponential_r_0[i][j] = data["target"]["nuclei"][i]["exponential_r_0"][j];
-      exponential_amplitude[i][j] =
-          data["target"]["nuclei"][i]["exponential_amplitude"][j];
-      exponential_decay_rate[i][j] =
-          data["target"]["nuclei"][i]["exponential_decay_rate"][j];
-    }
-
-    /* Gaussian Donuts */
-    gaussian_size[i]       = data["target"]["nuclei"][i]["gaussian_r_0"].size();
-    gaussian_r_0[i]        = new double[gaussian_size[i]];
-    gaussian_amplitude[i]  = new double[gaussian_size[i]];
-    gaussian_decay_rate[i] = new double[gaussian_size[i]];
-    if (gaussian_size[i] == 0 and world.rank() == 0)
-    {
-      std::cout << "WARNING: No Gaussian potential for nuclei " << i << "\n";
-    }
-    else if (data["target"]["nuclei"][i]["gaussian_r_0"].size() !=
-                 data["target"]["nuclei"][i]["gaussian_amplitude"].size() or
-             data["target"]["nuclei"][i]["gaussian_r_0"].size() !=
-                 data["target"]["nuclei"][i]["gaussian_decay_rate"].size())
-    {
-      EndRun("Nuclei " + std::to_string(i) +
-             " all Gaussian terms must have the same size");
-    }
-    for (PetscInt j = 0; j < gaussian_size[i]; ++j)
-    {
-      gaussian_r_0[i][j] = data["target"]["nuclei"][i]["gaussian_r_0"][j];
-      gaussian_amplitude[i][j] =
-          data["target"]["nuclei"][i]["gaussian_amplitude"][j];
-      gaussian_decay_rate[i][j] =
-          data["target"]["nuclei"][i]["gaussian_decay_rate"][j];
-    }
-
-    /* Square well Donuts */
-    square_well_size[i] = data["target"]["nuclei"][i]["square_well_r_0"].size();
-    square_well_r_0[i]  = new double[square_well_size[i]];
-    square_well_amplitude[i] = new double[square_well_size[i]];
-    square_well_width[i]     = new double[square_well_size[i]];
-    if (square_well_size[i] == 0 and world.rank() == 0)
-    {
-      std::cout << "WARNING: No square well potential for nuclei " << i << "\n";
-    }
-    else if (data["target"]["nuclei"][i]["square_well_r_0"].size() !=
-                 data["target"]["nuclei"][i]["square_well_amplitude"].size() or
-             data["target"]["nuclei"][i]["square_well_r_0"].size() !=
-                 data["target"]["nuclei"][i]["square_well_width"].size())
-    {
-      EndRun("Nuclei " + std::to_string(i) +
-             " all square_well terms must have the same size");
-    }
-    for (PetscInt j = 0; j < square_well_size[i]; ++j)
-    {
-      square_well_r_0[i][j] = data["target"]["nuclei"][i]["square_well_r_0"][j];
-      square_well_amplitude[i][j] =
-          data["target"]["nuclei"][i]["square_well_amplitude"][j];
-      square_well_width[i][j] =
-          data["target"]["nuclei"][i]["square_well_width"][j];
-    }
-
-    /* yukawa Donuts */
-    yukawa_size[i]       = data["target"]["nuclei"][i]["yukawa_r_0"].size();
-    yukawa_r_0[i]        = new double[yukawa_size[i]];
-    yukawa_amplitude[i]  = new double[yukawa_size[i]];
-    yukawa_decay_rate[i] = new double[yukawa_size[i]];
-    if (yukawa_size[i] == 0 and world.rank() == 0)
-    {
-      std::cout << "WARNING: No Yukawa potential for nuclei " << i << "\n";
-    }
-    else if (data["target"]["nuclei"][i]["yukawa_r_0"].size() !=
-                 data["target"]["nuclei"][i]["yukawa_amplitude"].size() or
-             data["target"]["nuclei"][i]["yukawa_r_0"].size() !=
-                 data["target"]["nuclei"][i]["yukawa_decay_rate"].size())
-    {
-      EndRun("Nuclei " + std::to_string(i) +
-             " all yukawa terms must have the same size");
-    }
-    for (PetscInt j = 0; j < yukawa_size[i]; ++j)
-    {
-      yukawa_r_0[i][j] = data["target"]["nuclei"][i]["yukawa_r_0"][j];
-      yukawa_amplitude[i][j] =
-          data["target"]["nuclei"][i]["yukawa_amplitude"][j];
-      yukawa_decay_rate[i][j] =
-          data["target"]["nuclei"][i]["yukawa_decay_rate"][j];
-    }
+    ReadExponentialPot(data, i);
+    ReadGaussianPot(data, i);
+    ReadSquareWellPot(data, i);
+    ReadYukawaPot(data, i);
 
     location[i] = new double[num_dims];
     CheckParameter(data["target"]["nuclei"][i]["location"].size(),
@@ -506,8 +616,6 @@ void Parameters::Setup(std::string file_name)
     }
   }
 
-  /* index is used throughout code for efficiency */
-  /* and ease of writing to hdf5 */
   if (target == "He")
   {
     target_idx = 0;
@@ -520,17 +628,193 @@ void Parameters::Setup(std::string file_name)
   {
     target_idx = -1;
   }
+}
 
-  CheckParameter(data["propagate"].size(), "propagate");
-  propagate = data["propagate"];
+void Parameters::ReadInitialStateSpherical(json data)
+{
+  CheckParameter(data["start_state"]["n_index"].size(),
+                 "start_state - n_index");
+  num_start_state   = data["start_state"]["n_index"].size();
+  start_state_l_idx = new PetscInt[num_start_state];
+  start_state_m_idx = new PetscInt[num_start_state];
+  if (data["start_state"]["amplitude"].size() != num_start_state)
+  {
+    EndRun(
+        "'start_state - amplitude' and 'start_state - n_index' sizes do not "
+        "match. Double check input file.");
+  }
+  if (data["start_state"]["phase"].size() != num_start_state)
+  {
+    EndRun(
+        "'start_state - phase' and 'start_state - n_index' sizes do not "
+        "match. Double check input file.");
+  }
+  if (data["start_state"]["l_index"].size() != num_start_state)
+  {
+    EndRun(
+        "'start_state - l_index' and 'start_state - n_index' sizes do not "
+        "match. Double check input file.");
+  }
+  if (data["start_state"]["m_index"].size() != num_start_state)
+  {
+    EndRun(
+        "'start_state - m_index' and 'start_state - n_index' sizes do not "
+        "match. Double check input file.");
+  }
+  start_state_idx       = new PetscInt[num_start_state];
+  start_state_amplitude = new double[num_start_state];
+  start_state_phase     = new double[num_start_state];
+  for (PetscInt i = 0; i < num_start_state; i++)
+  {
+    CheckParameter(data["start_state"]["n_index"][i].size(),
+                   "start_state - n_index");
+    start_state_idx[i] = data["start_state"]["n_index"][i];
+    CheckParameter(data["start_state"]["l_index"][i].size(),
+                   "start_state - l_index");
+    start_state_l_idx[i] = data["start_state"]["l_index"][i];
+    CheckParameter(data["start_state"]["m_index"][i].size(),
+                   "start_state - m_index");
+    start_state_m_idx[i] = data["start_state"]["m_index"][i];
+    CheckParameter(data["start_state"]["amplitude"][i].size(),
+                   "start_state - amplitude");
+    start_state_amplitude[i] = data["start_state"]["amplitude"][i];
+    CheckParameter(data["start_state"]["phase"][i].size(),
+                   "start_state - phase");
+    start_state_phase[i] = data["start_state"]["phase"][i];
+  }
+}
 
-  CheckParameter(data["free_propagate"].size(), "free_propagate");
-  free_propagate = data["free_propagate"];
+void Parameters::ReadInitialStateDefault(json data)
+{
+  CheckParameter(data["start_state"]["index"].size(), "start_state - index");
+  num_start_state = data["start_state"]["index"].size();
 
-  CheckParameter(data["field_max_states"].size(), "field_max_states");
-  field_max_states = data["field_max_states"];
+  if (data["start_state"]["amplitude"].size() != num_start_state)
+  {
+    EndRun(
+        "'start_state - amplitude' and 'start_state - index' sizes do not "
+        "match. Double check input file.");
+  }
+  if (data["start_state"]["phase"].size() != num_start_state)
+  {
+    EndRun(
+        "'start_state - phase' and 'start_state - index' sizes do not match. "
+        "Double check input file.");
+  }
+  start_state_idx       = new PetscInt[num_start_state];
+  start_state_amplitude = new double[num_start_state];
+  start_state_phase     = new double[num_start_state];
+  for (PetscInt i = 0; i < num_start_state; i++)
+  {
+    CheckParameter(data["start_state"]["index"][i].size(),
+                   "start_state - index");
+    start_state_idx[i] = data["start_state"]["index"][i];
 
-  /* get pulse information */
+    CheckParameter(data["start_state"]["amplitude"][i].size(),
+                   "start_state - amplitude");
+    start_state_amplitude[i] = data["start_state"]["amplitude"][i];
+    CheckParameter(data["start_state"]["phase"][i].size(),
+                   "start_state - phase");
+    start_state_phase[i] = data["start_state"]["phase"][i];
+  }
+}
+
+void Parameters::ReadInitialState(json data)
+{
+  if (coordinate_system_idx == 3)
+  {
+    ReadInitialStateSpherical(data);
+  }
+  else
+  {
+    ReadInitialStateDefault(data);
+  }
+}
+
+void Parameters::ReadExperimentFile(json data)
+{
+  double polar_norm    = 0.0; /* the norm for the polarization vector */
+  double poynting_norm = 0.0; /* the norm for the poynting vector */
+
+  for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
+  {
+    /* Keep from breaking other things */
+    pulse_shape_idx[pulse_idx] = 0;
+    power_on[pulse_idx]        = 2.0;
+    power_off[pulse_idx]       = 2.0;
+    cycles_on[pulse_idx]       = 1.0;
+    cycles_plateau[pulse_idx]  = 0.0;
+    cycles_off[pulse_idx]      = 1.0;
+    cycles_delay[pulse_idx]    = 0.0;
+    cep[pulse_idx]             = 0.0;
+    energy[pulse_idx]          = 1.0;
+    field_max[pulse_idx]       = 1.0;
+    ellipticity[pulse_idx]     = 0.0;
+    helicity_idx[pulse_idx]    = 0;
+    gaussian_length[pulse_idx] = 5.0;
+
+    /* Get polarization */
+    polarization_vector[pulse_idx] = new double[num_dims];
+    polar_norm                     = 0.0;
+    if (num_dims == 3)
+    {
+      poynting_vector[pulse_idx] = new double[num_dims];
+      poynting_norm              = 0.0;
+    }
+    for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+    {
+      CheckParameter(
+          data["laser"]["pulses"][pulse_idx]["polarization_vector"][dim_idx]
+              .size(),
+          "laser - pulses - polarization_vector");
+      polarization_vector[pulse_idx][dim_idx] =
+          data["laser"]["pulses"][pulse_idx]["polarization_vector"][dim_idx];
+      polar_norm += polarization_vector[pulse_idx][dim_idx] *
+                    polarization_vector[pulse_idx][dim_idx];
+
+      if (num_dims == 3)
+      {
+        CheckParameter(
+            data["laser"]["pulses"][pulse_idx]["poynting_vector"][dim_idx]
+                .size(),
+            "laser - pulses - poynting_vector");
+        poynting_vector[pulse_idx][dim_idx] =
+            data["laser"]["pulses"][pulse_idx]["poynting_vector"][dim_idx];
+        poynting_norm += poynting_vector[pulse_idx][dim_idx] *
+                         poynting_vector[pulse_idx][dim_idx];
+      }
+    }
+    /* normalize the polarization vector*/
+    if (polar_norm < 1e-10)
+    {
+      EndRun("Polarization Vector has Norm of Zero");
+    }
+    polar_norm = sqrt(polar_norm);
+    if (num_dims == 3)
+    {
+      if (poynting_norm < 1e-10)
+      {
+        EndRun("Poynting Vector has Norm of Zero");
+      }
+      poynting_norm = sqrt(poynting_norm);
+    }
+    for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
+    {
+      polarization_vector[pulse_idx][dim_idx] /= polar_norm;
+      if (num_dims == 3 and poynting_norm > 1e-10)
+      {
+        poynting_vector[pulse_idx][dim_idx] /= poynting_norm;
+      }
+    }
+  }
+}
+
+void Parameters::ReadPulse(json data)
+{
+  double polar_norm    = 0.0; /* the norm for the polarization vector */
+  double poynting_norm = 0.0; /* the norm for the poynting vector */
+  double intensity     = 0.0; /* the norm for the poynting vector */
+
   CheckParameter(data["laser"]["pulses"].size(), "laser - pulses");
   num_pulses = data["laser"]["pulses"].size();
 
@@ -565,77 +849,7 @@ void Parameters::Setup(std::string file_name)
 
   if (experiment_type == "File")
   {
-    for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; ++pulse_idx)
-    {
-      /* Keep from breaking other things */
-      pulse_shape_idx[pulse_idx] = 0;
-      power_on[pulse_idx]        = 2.0;
-      power_off[pulse_idx]       = 2.0;
-      cycles_on[pulse_idx]       = 1.0;
-      cycles_plateau[pulse_idx]  = 0.0;
-      cycles_off[pulse_idx]      = 1.0;
-      cycles_delay[pulse_idx]    = 0.0;
-      cep[pulse_idx]             = 0.0;
-      energy[pulse_idx]          = 1.0;
-      field_max[pulse_idx]       = 1.0;
-      ellipticity[pulse_idx]     = 0.0;
-      helicity_idx[pulse_idx]    = 0;
-      gaussian_length[pulse_idx] = 5.0;
-
-      /* Get polarization */
-      polarization_vector[pulse_idx] = new double[num_dims];
-      polar_norm                     = 0.0;
-      if (num_dims == 3)
-      {
-        poynting_vector[pulse_idx] = new double[num_dims];
-        poynting_norm              = 0.0;
-      }
-      for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
-      {
-        CheckParameter(
-            data["laser"]["pulses"][pulse_idx]["polarization_vector"][dim_idx]
-                .size(),
-            "laser - pulses - polarization_vector");
-        polarization_vector[pulse_idx][dim_idx] =
-            data["laser"]["pulses"][pulse_idx]["polarization_vector"][dim_idx];
-        polar_norm += polarization_vector[pulse_idx][dim_idx] *
-                      polarization_vector[pulse_idx][dim_idx];
-
-        if (num_dims == 3)
-        {
-          CheckParameter(
-              data["laser"]["pulses"][pulse_idx]["poynting_vector"][dim_idx]
-                  .size(),
-              "laser - pulses - poynting_vector");
-          poynting_vector[pulse_idx][dim_idx] =
-              data["laser"]["pulses"][pulse_idx]["poynting_vector"][dim_idx];
-          poynting_norm += poynting_vector[pulse_idx][dim_idx] *
-                           poynting_vector[pulse_idx][dim_idx];
-        }
-      }
-      /* normalize the polarization vector*/
-      if (polar_norm < 1e-10)
-      {
-        EndRun("Polarization Vector has Norm of Zero");
-      }
-      polar_norm = sqrt(polar_norm);
-      if (num_dims == 3)
-      {
-        if (poynting_norm < 1e-10)
-        {
-          EndRun("Poynting Vector has Norm of Zero");
-        }
-        poynting_norm = sqrt(poynting_norm);
-      }
-      for (PetscInt dim_idx = 0; dim_idx < num_dims; ++dim_idx)
-      {
-        polarization_vector[pulse_idx][dim_idx] /= polar_norm;
-        if (num_dims == 3 and poynting_norm > 1e-10)
-        {
-          poynting_vector[pulse_idx][dim_idx] /= poynting_norm;
-        }
-      }
-    }
+    ReadExperimentFile(data);
   }
   else
   {
@@ -662,7 +876,8 @@ void Parameters::Setup(std::string file_name)
       if (pulse_shape[pulse_idx] == "sin2")
       {
         EndRun(
-            "\"sin2\" is no longer an option. Please change to \"sin\" and set "
+            "\"sin2\" is no longer an option. Please change to \"sin\" and "
+            "set "
             "\"power_on\" and \"power_off\" to \"2\"\n");
       }
       else if (pulse_shape[pulse_idx] == "sin")
@@ -821,7 +1036,8 @@ void Parameters::Setup(std::string file_name)
         if (data["laser"]["pulses"][pulse_idx]["tau_delay"].size() == 0)
         {
           std::cout
-              << "\n\nERROR: You are using the streaking 'experiment_type'\n   "
+              << "\n\nERROR: You are using the streaking 'experiment_type'\n "
+                 "  "
                  "    For every pulse after the first one you need to "
                  "replace 'cycles_delay' with 'tau_delay'.\n       Use the "
                  "default 'experiment_type' if you wish to uses "
@@ -860,11 +1076,6 @@ void Parameters::Setup(std::string file_name)
           cycles_delay[pulse_idx] = 0;
         }
       }
-      /* transient absorption spectroscopy */
-      else if (experiment_type == "transient")
-      {
-        EndRun("\ntransient absorption not supported yet\n");
-      }
       else
       {
         EndRun("Unsupported experiment_type");
@@ -878,11 +1089,12 @@ void Parameters::Setup(std::string file_name)
     if (experiment_type == "streaking" or experiment_type == "transient")
     {
       /* could be fixed at end of next for loop
-       * This will require re-calculating cycles_delay from tau_delay since the
-       * time of the peak of each laser pulse is subject to change with the
-       * frequency shift */
+       * This will require re-calculating cycles_delay from tau_delay since
+       * the time of the peak of each laser pulse is subject to change with
+       * the frequency shift */
       EndRun(
-          "\nFrequency shift is not supported for streaking or transient type "
+          "\nFrequency shift is not supported for streaking or transient "
+          "type "
           "experiments. "
           "\nAll of the cycles_delay value needs to be corrected. "
           "\nParameters.cpp file for notes on how to make this fix\n");
@@ -956,20 +1168,66 @@ void Parameters::Setup(std::string file_name)
       field_max[pulse_idx] *= shift;
     }
   }
+}
 
-  /* ensure input is good */
-  Validate();
+void Parameters::ReadData(json data)
+{
+  ReadNumerics(data);
 
-  if (world.rank() == 0)
+  /* get simulation behavior */
+  CheckParameter(data["restart"].size(), "restart");
+  restart = data["restart"];
+
+  CheckParameter(data["write_frequency_checkpoint"].size(),
+                 "write_frequency_checkpoint");
+  write_frequency_checkpoint = data["write_frequency_checkpoint"];
+
+  CheckParameter(data["write_frequency_observables"].size(),
+                 "write_frequency_observables");
+  write_frequency_observables = data["write_frequency_observables"];
+
+  CheckParameter(data["write_frequency_eigin_state"].size(),
+                 "write_frequency_eigin_state");
+  write_frequency_eigin_state = data["write_frequency_eigin_state"];
+
+  CheckParameter(data["sigma"].size(), "sigma");
+  sigma = data["sigma"];
+
+  CheckParameter(data["gauge"].size(), "gauge");
+  gauge = data["gauge"];
+  if (gauge == "Velocity")
   {
-    std::cout << "Reading input complete\n" << std::flush;
+    gauge_idx = 0;
   }
+  else if (gauge == "Length")
+  {
+    gauge_idx = 1;
+  }
+  else
+  {
+    gauge_idx = -1;
+  }
+
+  CheckParameter(data["propagate"].size(), "propagate");
+  propagate = data["propagate"];
+
+  CheckParameter(data["free_propagate"].size(), "free_propagate");
+  free_propagate = data["free_propagate"];
+
+  CheckParameter(data["field_max_states"].size(), "field_max_states");
+  field_max_states = data["field_max_states"];
+
+  ReadTarget(data);
+
+  ReadInitialState(data);
+
+  ReadPulse(data);
 }
 
 /**
  * @brief Ensures the parameter exists in the input.json file
- * @details If the size is zero, an error message is printed and the simulation
- * is aborted
+ * @details If the size is zero, an error message is printed and the
+ * simulation is aborted
  *
  * @param size the size of the json object (use the .size() function)
  * @param doc_string the subsubsection of the Input documentation
@@ -1082,6 +1340,136 @@ void Parameters::Validate()
             "axis (i.e. [0.0, 0.0, 0.0])\nNuclei " +
             std::to_string(nuclei_idx) + " has a non zero radial coordinate\n";
       }
+    }
+    if (m_max < 1)
+    {
+      for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; pulse_idx++)
+      {
+        if ((polarization_vector[pulse_idx][0] > 1e-14 or
+             polarization_vector[pulse_idx][1] > 1e-14) and
+            m_max < 1)
+        {
+          error_found = true;
+          err_str +=
+              "\nSpherical coordinate systems requires m_max>0 for laser "
+              "that "
+              "are not z - polarized\nPulse" +
+              std::to_string(pulse_idx) + " does not meet this requirement\n ";
+        }
+        if (ellipticity[pulse_idx] > 1e-14)
+        {
+          error_found = true;
+          err_str +=
+              "\nSpherical coordinate systems requires m_max>0 for pulses "
+              "with "
+              "nonzero ellipticity\nPulse " +
+              std::to_string(pulse_idx) + " has a non zero ellipticity\n";
+        }
+      }
+    }
+  }
+  if (coordinate_system_idx == 4) /* Hyperspherical code */
+  {
+    if (gauge_idx != 1)
+    {
+      error_found = true;
+      err_str += "\nSpherical only supports \"Length\" gauge currently\n";
+    }
+    for (PetscInt nuclei_idx = 0; nuclei_idx < num_nuclei; ++nuclei_idx)
+    {
+      if (location[nuclei_idx][0] > 1e-14 or location[nuclei_idx][1] > 1e-14 or
+          location[nuclei_idx][2] > 1e-14)
+      {
+        error_found = true;
+        err_str +=
+            "\nSpherical coordinate systems only supports nuclei on the z "
+            "axis "
+            "(i.e. [0.0, 0.0, 0.0])\nNuclei " +
+            std::to_string(nuclei_idx) +=
+            " has a non zero radial coordinate\n ";
+      }
+    }
+    if (m_max > 0)
+    {
+      error_found = true;
+      err_str += "\nHyperspherical only supports m = 0\n";
+    }
+    for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; pulse_idx++)
+    {
+      if (polarization_vector[pulse_idx][0] > 1e-14 or
+          polarization_vector[pulse_idx][1] > 1e-14)
+      {
+        error_found = true;
+        err_str += "\nHyperspherical only supports z-polarized lasers\nPulse" +
+                   std::to_string(pulse_idx) +
+                   " does not meet this requirement\n";
+      }
+      if (ellipticity[pulse_idx] > 1e-14)
+      {
+        error_found = true;
+        err_str +=
+            "\nHyperspherical coordinate systems only supports linear "
+            "polarized light\nPulse " +
+            std::to_string(pulse_idx) + " has a non zero ellipticity\n";
+      }
+    }
+    if (abs(alpha) > 0 or abs(ee_soft_core) > 0)
+    {
+      error_found = true;
+      err_str +=
+          "\nHyperspherical coordinate systems does not support soft cores\n";
+    }
+  }
+  if (coordinate_system_idx == 5) /* Hyperspherical code */
+  {
+    if (gauge_idx != 1)
+    {
+      error_found = true;
+      err_str += "\nSpherical only supports \"Length\" gauge currently\n";
+    }
+    for (PetscInt nuclei_idx = 0; nuclei_idx < num_nuclei; ++nuclei_idx)
+    {
+      if (location[nuclei_idx][0] > 1e-14 or location[nuclei_idx][1] > 1e-14 or
+          location[nuclei_idx][2] > 1e-14)
+      {
+        error_found = true;
+        err_str +=
+            "\nSpherical coordinate systems only supports nuclei on the z "
+            "axis "
+            "(i.e. [0.0, 0.0, 0.0])\nNuclei " +
+            std::to_string(nuclei_idx) +=
+            " has a non zero radial coordinate\n ";
+      }
+    }
+    if (m_max > 0)
+    {
+      error_found = true;
+      err_str += "\nHyperspherical only supports m = 0\n";
+    }
+    for (PetscInt pulse_idx = 0; pulse_idx < num_pulses; pulse_idx++)
+    {
+      if (polarization_vector[pulse_idx][0] > 1e-14 or
+          polarization_vector[pulse_idx][1] > 1e-14)
+      {
+        error_found = true;
+        err_str += "\nHyperspherical only supports z-polarized lasers\nPulse" +
+                   std::to_string(pulse_idx) +
+                   " does not meet this requirement\n";
+      }
+      if (ellipticity[pulse_idx] > 1e-14)
+      {
+        error_found = true;
+        err_str +=
+            "\nHyperspherical coordinate systems only supports linear "
+            "polarized light\nPulse " +
+            std::to_string(pulse_idx) + " has a non zero ellipticity\n";
+      }
+    }
+    if (abs(alpha) > 0 or abs(ee_soft_core) > 0)
+    {
+      error_found = true;
+      err_str +=
+          "\nHyperspherical coordinate systems does not support soft cores\n";
     }
   }
   if (coordinate_system_idx == 1)
@@ -1292,7 +1680,8 @@ void Parameters::Validate()
       {
         error_found = true;
         err_str +=
-            "\nThe start_state - n_index must be less than the total number of "
+            "\nThe start_state - n_index must be less than the total number "
+            "of "
             "states you wish to calculate\n";
       }
       if (start_state_l_idx[idx] >= start_state_idx[idx])
@@ -1354,6 +1743,7 @@ PetscInt Parameters::GetCoordinateSystemIdx() { return coordinate_system_idx; }
 
 PetscInt Parameters::GetMMax() { return m_max; }
 PetscInt Parameters::GetLMax() { return l_max; }
+PetscInt Parameters::GetKMax() { return k_max; }
 PetscInt Parameters::GetRestart() { return restart; }
 
 std::string Parameters::GetTarget() { return target; }

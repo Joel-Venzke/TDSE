@@ -154,6 +154,10 @@ H5::PredType HDF5Wrapper::getter(T &data)
   {
     return H5::PredType::NATIVE_DOUBLE;
   }
+  else if (std::is_same< T, int >::value or std::is_same< T, int * >::value)
+  {
+    return H5::PredType::NATIVE_INT;
+  }
   else
   {
     std::string type_name(typeid(data).name());
@@ -1099,3 +1103,9 @@ template void HDF5Wrapper::WriteObject< dcomp * >(dcomp *, int, std::string,
                                                   std::string, int);
 template void HDF5Wrapper::WriteObject< dcomp * >(dcomp *, int, std::string,
                                                   int);
+template void HDF5Wrapper::WriteObject< int * >(int *, int, std::string,
+                                                std::string, int);
+template void HDF5Wrapper::WriteObject< int * >(int *, int, std::string, int);
+template void HDF5Wrapper::WriteObject< int ** >(int **, int, std::string,
+                                                 std::string, int);
+template void HDF5Wrapper::WriteObject< int ** >(int **, int, std::string, int);

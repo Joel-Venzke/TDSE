@@ -10,6 +10,29 @@ class Hamiltonian : protected Utils
  private:
   Wavefunction *wavefunction;
 
+  PetscLogEvent create_h_0;
+  PetscLogEvent create_h_0_diag;
+  PetscLogEvent create_h_0_fd;
+  PetscLogEvent create_h_0_hyper;
+  PetscLogEvent create_h_0_hyper_low;
+  PetscLogEvent create_h_0_hyper_low_get_val;
+  PetscLogEvent create_h_0_hyper_upper;
+  PetscLogEvent create_h_0_ecs;
+  PetscLogEvent create_h_laser;
+  PetscLogEvent hyper_pot_time;
+  PetscLogEvent hyper_ee_time;
+  PetscLogEvent hyper_coulomb_time;
+  PetscLogEvent hyper_laser_time;
+  PetscLogEvent idx_array_time;
+  PetscLogEvent diff_array_time;
+  PetscLogEvent build_H_0;
+  PetscLogEvent build_H_0_ecs;
+
+  std::unordered_map< std::string, double > hypersphere_coulomb_lookup;
+  std::unordered_map< std::string, double > hypersphere_radial_int_lookup;
+  std::unordered_map< std::string, double > hypersphere_laser_lookup;
+  std::unordered_map< std::string, double > hypersphere_ee_repulsion_lookup;
+
   PetscInt num_dims;
   PetscInt num_electrons;
   PetscInt num_nuclei; /* number of nuclei in potential */
@@ -20,8 +43,12 @@ class Hamiltonian : protected Utils
 
   PetscInt l_max;
   PetscInt m_max;
-  PetscInt *l_values; /* l_values for the spherical code */
-  PetscInt *m_values; /* m_values for the spherical code */
+  PetscInt k_max;
+  PetscInt *l_values;      /* l_values for the spherical code */
+  PetscInt *m_values;      /* m_values for the spherical code */
+  PetscInt **eigen_values; /* eigen_values for the hyperespherical code */
+  PetscInt *l_block_size;  /* L block for the hyperespherical code */
+  PetscInt max_block_size; /* max L block size for the hyperespherical code */
 
   PetscInt gauge_idx;  ///< index of gauge (0 velocity, 1 length)
   PetscInt current_l_val;
@@ -75,6 +102,11 @@ class Hamiltonian : protected Utils
   /* real_coef[dim_idx][derivative][index] */
   std::vector< std::vector< std::vector< dcomp > > > real_coef;
 
+  /* for hyper sphere stuff */
+  int num_ang;
+  std::vector< double > angle, arg_vals;
+  std::vector< double > sphere_1, sphere_2;
+
   void CreateHamlitonian();
   void GenerateHamlitonian();
   void CalculateHamlitonian0(PetscInt l_val = 0);
@@ -110,6 +142,18 @@ class Hamiltonian : protected Utils
                        PetscInt only_dim_idx);
   dcomp GetNucleiTerm(std::vector< PetscInt > &idx_array);
   dcomp GetNucleiTerm(PetscInt idx);
+  dcomp GetHyperspherePotential(std::vector< PetscInt > &idx_array);
+  dcomp GetHypersphereNonRRCPotential(std::vector< PetscInt > &idx_array);
+  double GetHypersphereCoulomb(int *lambda_a, int *lambda_b, double r,
+                               double z);
+  void LoadCoulomb();
+  double GetHypersphereNonRRCCoulomb(int *lambda_a, int *lambda_b, double r,
+                                     double z);
+  void LoadeeRepulsion();
+  double GetHypersphereNonRRCeeRepulsion(int *lambda_a, int *lambda_b,
+                                         double r);
+  dcomp GetHypersphereLaser(std::vector< PetscInt > &idx_array);
+  double GetHypersphereLaserVal(int *lambda_a, int *lambda_b, double r);
   dcomp GetElectronElectronTerm(std::vector< PetscInt > &idx_array);
   dcomp GetCentrifugalTerm(std::vector< PetscInt > &idx_array);
   PetscInt GetOffset(PetscInt elec_idx, PetscInt dim_idx);

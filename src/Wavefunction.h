@@ -18,21 +18,25 @@ class Wavefunction : protected Utils
   double delta_t;            /* time step in a.u. */
   PetscInt l_max;
   PetscInt m_max;
+  PetscInt k_max;
   PetscInt coordinate_system_idx;
   std::string target_file_name;
   PetscInt num_states;
-  PetscInt *num_x;        /* number of grid points in each dimension */
-  PetscInt num_psi_build; /* number of points in psi_1 and psi_2 */
-  PetscInt num_psi;       /* number of points in psi */
-  double **x_value;       /* location of grid point in each dimension */
-  PetscInt *l_values;     /* l_values for the spherical code */
-  PetscInt *m_values;     /* m_values for the spherical code */
-  dcomp ***psi_build;     /* used for allocating new wave functions */
-  Vec psi;                /* wavefunction for 2 electron system */
-  Vec psi_small;          /* wavefunction for spherical eigen states */
-  Vec psi_tmp;            /* wavefunction for 2 electron system */
-  Vec psi_proj;           /* wavefunction for 2 electron system */
-  Vec psi_tmp_cyl;        /* wavefunction for 2 electron system */
+  PetscInt *num_x;         /* number of grid points in each dimension */
+  PetscInt num_psi_build;  /* number of points in psi_1 and psi_2 */
+  PetscInt num_psi;        /* number of points in psi */
+  double **x_value;        /* location of grid point in each dimension */
+  PetscInt *l_values;      /* l_values for the spherical code */
+  PetscInt *m_values;      /* m_values for the spherical code */
+  PetscInt **eigen_values; /* eigen_values for the hyperespherical code */
+  PetscInt *l_block_size;  /* L block for the hyperespherical code */
+  PetscInt max_block_size; /* max L block size for the hyperespherical code */
+  dcomp ***psi_build;      /* used for allocating new wave functions */
+  Vec psi;                 /* wavefunction for 2 electron system */
+  Vec psi_small;           /* wavefunction for spherical eigen states */
+  Vec psi_tmp;             /* wavefunction for 2 electron system */
+  Vec psi_proj;            /* wavefunction for 2 electron system */
+  Vec psi_tmp_cyl;         /* wavefunction for 2 electron system */
   Vec jacobian;
   Vec ECS;
   Vec *position_expectation;
@@ -78,11 +82,11 @@ class Wavefunction : protected Utils
   double **yukawa_amplitude;        ///< yukawa amplitude
   double **yukawa_decay_rate;       ///< yukawa decay rate
   PetscInt *yukawa_size;            ///< number of elements in Gaussian
-  double alpha;          /* soft core atomic */
-  double alpha_2;        /* square of soft core atomic */
-  double ee_soft_core;   /* soft core atomic */
-  double ee_soft_core_2; /* square of soft core atomic */
-  PetscInt num_nuclei; /* number of nuclei in potential */
+  double alpha;                     /* soft core atomic */
+  double alpha_2;                   /* square of soft core atomic */
+  double ee_soft_core;              /* soft core atomic */
+  double ee_soft_core_2;            /* square of soft core atomic */
+  PetscInt num_nuclei;              /* number of nuclei in potential */
 
   /* hidden from user for safety */
   void CreateGrid();
@@ -169,6 +173,9 @@ class Wavefunction : protected Utils
   double **GetXValue();
   PetscInt *GetLValues();
   PetscInt *GetMValues();
+  PetscInt **GetEigenValues();
+  PetscInt *GetLBlockSize();
+  PetscInt GetMaxBlockSize();
   PetscInt **GetGobblerIdx();
   PetscInt GetWriteCounterCheckpoint();
 };

@@ -80,11 +80,11 @@ int main(int argc, char** argv)
   p_wrap.Print(
       "\n******************** Simulation Complete ********************\n\n");
 
-
   if (world.rank() == 0)
   {
     timing_file.open("total_run_time.log");
-    timing_file << "Total run time: " << ((float)clock() - sim_time) / CLOCKS_PER_SEC << " (sec)\n";
+    timing_file << "Total run time: "
+                << ((float)clock() - sim_time) / CLOCKS_PER_SEC << " (sec)\n";
     timing_file.close();
   }
   return 0;

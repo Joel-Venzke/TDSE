@@ -211,7 +211,7 @@ void Simulation::Propagate()
       if (i % write_frequency_observables == 0)
       {
         /* write a checkpoint */
-        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1), 1);
+        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i, 1);
       }
 
       /* only checkpoint so often */
@@ -235,7 +235,7 @@ void Simulation::Propagate()
           converged = true;
         }
         /* write a checkpoint */
-        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
+        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
         if (world.rank() == 0) t = clock();
       }
       if (world.rank() == 0)
@@ -261,7 +261,7 @@ void Simulation::Propagate()
       if (i % write_frequency_observables == 0)
       {
         /* write a checkpoint */
-        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1), 1);
+        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i, 1);
       }
 
       /* only checkpoint so often */
@@ -277,7 +277,7 @@ void Simulation::Propagate()
                     << "\n"
                     << std::flush;
         /* write a checkpoint */
-        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * (i - 1));
+        wavefunction->Checkpoint(*h5_file, *viewer_file, delta_t * i);
         if (world.rank() == 0) t = clock();
       }
       if (world.rank() == 0)
@@ -419,6 +419,46 @@ void Simulation::EigenSolve(PetscInt num_states)
         EPSDestroy(&eps);
       }
     }
+  }
+  else if (coordinate_system_idx == 4 or coordinate_system_idx == 5)
+  {
+    psi = wavefunction->GetPsi();
+    EPS eps; /* eigen solver */
+    EPSCreate(PETSC_COMM_WORLD, &eps);
+    if (parameters->GetFieldMaxStates())
+    {
+      h = hamiltonian->GetTotalHamiltonian(pulse->GetFieldMaxIdx(), false);
+    }
+    else
+    {
+      h = hamiltonian->GetTimeIndependent(false);
+    }
+    EPSSetOperators(eps, *(h), NULL);
+    EPSSetProblemType(eps, EPS_NHEP);
+    EPSSetTolerances(eps, tol, PETSC_DECIDE);
+    EPSSetWhichEigenpairs(eps, EPS_SMALLEST_REAL);
+    if (num_x[2] > 3000)
+    {
+      EPSSetDimensions(eps, num_states, PETSC_DECIDE, num_x[2] * 0.1);
+    }
+    else /* make it faster for small calculations */
+    {
+      EPSSetDimensions(eps, num_states, 300, PETSC_DECIDE);
+    }
+    EPSSetFromOptions(eps);
+    EPSSolve(eps);
+    EPSGetConverged(eps, &nconv);
+
+    for (int j = 0; j < num_states; j++)
+    {
+      EPSGetEigenpair(eps, j, &eigen_real, NULL, *psi, NULL);
+      if (world.rank() == 0)
+        std::cout << "Eigen: " << j << "\t" << eigen_real << "\n";
+      wavefunction->Normalize();
+      CheckpointState(h_states_file, v_states_file, j, h);
+    }
+
+    EPSDestroy(&eps);
   }
   else
   {
