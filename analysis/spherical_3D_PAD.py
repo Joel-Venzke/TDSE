@@ -2,6 +2,7 @@ from mpl_toolkits.mplot3d import Axes3D  # needed for 3d plotting
 import numpy as np
 import h5py
 import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from scipy.special import sph_harm
 import matplotlib.cm as cm
