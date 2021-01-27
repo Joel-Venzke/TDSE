@@ -1,6 +1,6 @@
 # Time Dependent Schrodinger Equation (TDSE) Solver
 
-This code was developed at JILA in Boulder, CO by @Joel-Venzke during his PHD, and contributed to by Cory Goldsmith. It solves the Time Dependent Schroedinger Equation for ultrafast laser pulses interacting with matter.
+This code was developed at JILA in Boulder, CO by @Joel-Venzke during his PHD, and contributed to by Cory Goldsmith. It solves the Time Dependent Schroedinger Equation for ultrafast laser pulses interacting with matter. See docs/developer_notes.pdf for most up to date capablities.
 
 # Dependencies
 
