@@ -99,9 +99,10 @@ def get_k_slice(energy,
             coef = np.exp(-1.j * phase_shift) * 1.j**l_val * np.sum(
                 k_vec.conj() * psi[lower_idx:upper_idx])
             if plane == 'xz':
-                return_psi += coef * sph_harm(m_val, l_val, 0, phi)
+                return_psi += coef * np.conj(sph_harm(m_val, l_val, 0, phi))
             elif plane == 'xy':
-                return_psi += coef * sph_harm(m_val, l_val, phi, np.pi / 2)
+                return_psi += coef * np.conj(
+                    sph_harm(m_val, l_val, phi, np.pi / 2))
             lm_idx += 1
     max_angles = [np.argmax(np.abs(return_psi)**2)]
     return (phi[max_angles[np.abs(phi[max_angles]).argmin()]] +

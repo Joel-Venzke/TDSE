@@ -110,7 +110,8 @@ def get_k_sphere(energy,
                 f.write(
                     str(l_val) + ", " + str(m_val) + ", " + str(np.abs(coef)) +
                     ", " + str(np.angle(coef)) + "\n")
-                return_psi += coef * sph_harm(m_val, l_val, phi, theta)
+                return_psi += coef * np.conj(sph_harm(m_val, l_val, phi,
+                                                      theta))
                 lm_idx += 1
     max_angles = [np.argmax(np.abs(return_psi)**2)]
     return phi, theta, return_psi, phi_angles, d_angle
